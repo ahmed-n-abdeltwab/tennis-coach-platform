@@ -1,0 +1,13 @@
+@startuml
+(*) --> "Coach logs into Admin Panel"
+--> "Coach navigates to Booking Types"
+--> "Coach selects a Booking Type"
+-> "Coach edits name/price/details"
+-> "System validates input"
+-> "Update Booking Type in DB"
+-> "Display success message"
+if "More booking type changes?" then
+  -> "Return to Booking Types list"
+else
+  -> (*)
+@enduml

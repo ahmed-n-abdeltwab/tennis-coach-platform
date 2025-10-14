@@ -1,0 +1,49 @@
+@startuml
+package "Frontend (React/Vite)" {
+  [Booking UI]
+  [Profile/Coach Page]
+  [Chat Component]
+  [Admin Dashboard]
+}
+
+package "Backend (NestJS/TypeScript)" {
+  [Auth Module]
+  [BookingType Module]
+  [Session Module]
+  [User Module]
+  [TimeSlot Module]
+  [Coach Module]
+  [Payment Module]
+  [Discount Module]
+  [CRM/Analytics Module]
+}
+
+database "Postgres" {
+  [Users Table]
+  [Coaches Table]
+  [BookingTypes Table]
+  [Sessions Table]
+  [Discounts Table]
+  [Messages Table]
+  [TimeSlots Table]
+}
+
+package "Services/Third-party" {
+  [PayPal Gateway]
+  [Google Calendar API]
+}
+
+[Booking UI] --> [BookingType Module]
+[Booking UI] --> [Session Module]
+[Profile/Coach Page] --> [Coach Module]
+[Admin Dashboard] --> [BookingType Module]
+[Chat Component] --> [Messages Table]
+[Auth Module] <--> [Users Table]
+[Coach Module] <--> [Coaches Table]
+[BookingType Module] <--> [BookingTypes Table]
+[Session Module] <--> [Sessions Table]
+[Payment Module] --> [PayPal Gateway]
+[Session Module] --> [Google Calendar API]
+[Discount Module] <--> [Discounts Table]
+[CRM/Analytics Module] <--> [Sessions Table]
+@enduml

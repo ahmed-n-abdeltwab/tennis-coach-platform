@@ -1,0 +1,20 @@
+@startuml
+node "User Device" {
+  component "Browser (React/Vite)"
+}
+node "Web Server" {
+  component "NestJS Backend"
+}
+node "Database Server" {
+  component "Postgres DB"
+}
+node "Third Party Service" {
+  component "PayPal API"
+  component "Google Calendar API"
+}
+
+"Browser (React/Vite)" --> "NestJS Backend"
+"NestJS Backend" --> "Postgres DB"
+"NestJS Backend" --> "PayPal API"
+"NestJS Backend" --> "Google Calendar API"
+@enduml

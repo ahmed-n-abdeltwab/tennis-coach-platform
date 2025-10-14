@@ -1,0 +1,15 @@
+@startuml
+[*] --> Available
+
+Available --> Reserved : User selects slot
+
+Reserved --> Paid : Payment completed
+
+Paid --> Scheduled : Google Calendar event created
+
+Scheduled --> Completed : Session finished
+
+Reserved --> Available : Payment cancelled/failed
+
+Paid --> Available : Calendar scheduling failed
+@enduml

@@ -1,0 +1,26 @@
+@startuml
+left to right direction
+actor Coach
+actor User
+rectangle "Tennis Coach Platform" {
+  User -- (Register)
+  User -- (Login)
+  User -- (View Coach Profile)
+  User -- (Browse Booking Types)
+  User -- (Book Session)
+  User -- (Pay for Session)
+  User -- (Chat with Coach)
+  User -- (Receive Notifications)
+  User -- (View Appointment History)
+  Coach -- (Set Availability)
+  Coach -- (Edit Profile & Credentials)
+  Coach -- (Add Booking Type)
+  Coach -- (Rename Booking Type)
+  Coach -- (Change Booking Type Price)
+  Coach -- (Remove Booking Type)
+  Coach -- (Create Discount Code)
+  Coach -- (View Analytics)
+  Coach -- (Send Messages/Feedback)
+  Coach -- (Access Admin Panel)
+}
+@enduml

@@ -1,0 +1,41 @@
+@startuml
+actor User
+participant "Frontend (React)" as FE
+participant "Backend (NestJS)" as BE
+participant "Database (Postgres)" as DB
+participant "Payment Gateway (PayPal)" as PayPal
+participant "Google Calendar API" as GCal
+
+User -> FE: Login/Register
+FE -> BE: Authenticate user
+BE -> DB: Check user credentials
+DB --> BE: User data
+BE --> FE: Success/Fail
+
+User -> FE: View available booking types
+FE -> BE: GET /bookingTypes
+BE -> DB: Query BookingType for coach
+DB --> BE: Return types
+BE --> FE: Send booking types
+
+User -> FE: Select booking type and time slot
+FE -> BE: Check coach availability
+BE -> DB: Query TimeSlot
+DB --> BE: Return free slots
+BE --> FE: Show slots
+
+User -> FE: Fill session details and proceed to payment
+FE -> BE: POST /sessions (all details)
+BE -> PayPal: Start transaction
+PayPal --> BE: Payment result
+alt Payment success
+    BE -> DB: Save Session (with bookingType, custom price)
+    BE -> GCal: Create events for user & coach
+    GCal --> BE: Event confirmation
+    BE --> FE: Confirmation + invite
+    FE --> User: Receipt and invite
+else Payment fail
+    BE --> FE: Error message
+    FE --> User: Payment fail
+end
+@enduml

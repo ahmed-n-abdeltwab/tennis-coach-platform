@@ -1,0 +1,104 @@
+@startuml
+class User {
+  id: UUID
+  email: string
+  passwordHash: string
+  name: string
+  gender: string
+  age: int
+  height: float
+  weight: float
+  disabilityStatus: boolean
+  country: string
+  address: string
+  sessions: Session[]
+  notes: string
+  +sendMessage(to: User|Coach, content: string)
+}
+
+class Coach {
+  id: UUID
+  email: string
+  passwordHash: string
+  name: string
+  bio: string
+  credentials: string
+  philosophy: string
+  profileImage: string
+  bookingTypes: BookingType[]
+  availabilities: TimeSlot[]
+  sessions: Session[]
+  discounts: Discount[]
+  messages: Message[]
+  +setAvailability(times: TimeSlot[])
+  +manageBookingType()
+  +createDiscount()
+}
+
+class BookingType {
+  id: UUID
+  name: string
+  description: string
+  basePrice: float
+  coach: Coach
+  isActive: boolean
+  sessions: Session[]
+  +updatePrice(amount: float)
+  +renameType(label: string)
+}
+
+class Session {
+  id: UUID
+  bookingType: BookingType
+  dateTime: DateTime
+  duration: int
+  price: float
+  user: User
+  coach: Coach
+  notes: string
+  isPaid: boolean
+  discountCode: string
+  paymentId: string
+  status: string
+  calendarEventId: string
+}
+
+class Discount {
+  code: string
+  amount: float
+  timeWindow: string
+  expiry: DateTime
+  useCount: int
+  maxUsage: int
+  isActive: boolean
+  coach: Coach
+}
+
+class Message {
+  id: UUID
+  sender: User|Coach
+  receiver: User|Coach
+  content: string
+  sentAt: DateTime
+  sessionId: UUID
+}
+
+class TimeSlot {
+  id: UUID
+  coach: Coach
+  dateTime: DateTime
+  duration: int
+  isAvailable: boolean
+}
+
+Coach "1" -- "N" BookingType
+Coach "1" -- "N" Session
+Coach "1" -- "N" Discount
+Coach "1" -- "N" Message
+Coach "1" -- "N" TimeSlot
+User "1" -- "N" Session
+Session "1" -- "1" BookingType
+Session "0..1" -- Discount
+Session "0..N" -- Message
+BookingType "1" -- "N" Session
+@enduml
