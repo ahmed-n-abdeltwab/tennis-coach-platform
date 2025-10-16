@@ -1,14 +1,15 @@
-import { Config } from 'jest';
+import type { Config } from 'jest';
 
 const config: Config = {
   displayName: 'api',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
   transform: {
-    '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
+    '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '../../tsconfig.spec.json' }],
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: '../../coverage/apps/api',
+  passWithNoTests: true,
 };
 
-export default config;
+module.exports = config;
