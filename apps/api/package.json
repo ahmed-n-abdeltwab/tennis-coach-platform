@@ -1,0 +1,10 @@
+{
+  "name": "api",
+  "version": "0.0.1",
+  "scripts": {
+    "db:seed": "tsx prisma/seed.ts",
+    "db:migrate": "npx prisma migrate dev --config ./prisma/prisma.config.ts",
+    "db:generate": "npx prisma generate --config ./prisma/prisma.config.ts",
+    "db:studio": "npx prisma studio --config ./prisma/prisma.config.ts"
+  }
+}

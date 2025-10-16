@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# Generated files
+*.min.js
+coverage/
+.nyc_output/
+
+# Package files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Logs
+*.log
+
+# Environment files
+.env*
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+test-results/
+reports/
+
+# Nx
+.nx/
+
+# Prisma generated
+prisma/generated/
+
+# Storybook
+.storybook-out/
+storybook-static/
+
+# Third-party
+vendor/
+libs/external/

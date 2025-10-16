@@ -1,0 +1,28 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "baseUrl": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2022",
+    "module": "commonjs",
+    "lib": ["es2023", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "alwaysStrict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "paths": {
+      "@tennis-coach-platform/domain": ["libs/domain/src/index.ts"],
+      "@tennis-coach-platform/ui": ["libs/ui/src/index.ts"],
+      "@tennis-coach-platform/utils": ["libs/utils/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"],
+  "include": []
+}
