@@ -1,0 +1,32 @@
+{
+  "name": "auth-helpers",
+  "root": "libs/auth-helpers",
+  "projectType": "library",
+  "sourceRoot": "libs/auth-helpers/lib",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "options": {
+        "outputPath": "dist/libs/auth-helpers",
+        "main": "libs/auth-helpers/index.ts",
+        "tsConfig": "libs/auth-helpers/tsconfig.json",
+        "assets": []
+      }
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "options": {
+        "lintFilePatterns": ["libs/auth-helpers/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/auth-helpers"],
+      "options": {
+        "jestConfig": "libs/auth-helpers/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  },
+  "tags": []
+}
