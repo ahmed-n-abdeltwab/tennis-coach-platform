@@ -38,7 +38,6 @@ const config: Config = {
     '^@discounts/(.*)$': '<rootDir>/src/app/discounts/$1',
     '^@time-slots/(.*)$': '<rootDir>/src/app/time-slots/$1',
     '^@health/(.*)$': '<rootDir>/src/app/health/$1',
-    '^@prisma/(.*)$': '<rootDir>/src/app/prisma/$1',
     '^@dto/(.*)$': '<rootDir>/src/common/dto/$1',
     '^@decorators/(.*)$': '<rootDir>/src/common/decorators/$1',
     '^@controllers/(.*)$': '<rootDir>/src/common/controllers/$1',

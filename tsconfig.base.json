@@ -3,26 +3,32 @@
   "compilerOptions": {
     "rootDir": ".",
     "baseUrl": ".",
-    "sourceMap": true,
-    "declaration": false,
-    "moduleResolution": "node",
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "importHelpers": true,
     "target": "es2022",
-    "module": "commonjs",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
     "lib": ["es2023", "dom"],
+    "declaration": false,
+    "sourceMap": true,
     "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
-    "alwaysStrict": true,
-    "noUncheckedIndexedAccess": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "noImplicitAny": false,
+    "noImplicitThis": true,
+    "strictNullChecks": true,
     "noImplicitOverride": true,
+    "importHelpers": true,
     "paths": {
-      "@tennis-coach-platform/domain": ["libs/domain/src/index.ts"],
-      "@tennis-coach-platform/ui": ["libs/ui/src/index.ts"],
-      "@tennis-coach-platform/utils": ["libs/utils/src/index.ts"]
+      "@workspace/*": ["*"],
+      "@apps/*": ["apps/*"],
+      "@docs/*": ["docs/*"],
+      "@scripts/*": ["scripts/*"],
+      "@tests/*": ["tests/*"],
+      "@k8s/*": ["k8s/*"],
+      "@auth-helpers/*": ["libs/auth-helpers/*"]
     }
   },
   "exclude": ["node_modules", "tmp"],
-  "include": []
+  "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts"]
 }

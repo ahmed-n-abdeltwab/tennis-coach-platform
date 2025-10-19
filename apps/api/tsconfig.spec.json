@@ -9,7 +9,7 @@
     "noEmit": true,
     "strict": true,
     "strictPropertyInitialization": false,
-    "isolatedModules": false
+    "isolatedModules": true
   },
   "include": [
     "jest.config.ts",
