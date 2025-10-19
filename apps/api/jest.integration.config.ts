@@ -1,13 +1,17 @@
 import type { Config } from 'jest';
 
 const config: Config = {
-  displayName: 'API Unit Tests',
+  displayName: 'API Integration Tests',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
 
-  // Test file patterns - only unit tests
-  testMatch: ['<rootDir>/src/**/__tests__/**/*.spec.ts', '<rootDir>/src/**/*.spec.ts'],
-  testPathIgnorePatterns: ['/node_modules/', '\\.integration\\.spec\\.ts$', '\\.e2e\\.spec\\.ts$'],
+  // Test file patterns - only integration tests
+  testMatch: ['<rootDir>/src/**/*.integration.spec.ts', '<rootDir>/test/integration/**/*.spec.ts'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '(?<!\\.integration)\\.spec\\.ts$',
+    '\\.e2e\\.spec\\.ts$',
+  ],
 
   // TypeScript configuration
   transform: {
@@ -15,7 +19,7 @@ const config: Config = {
       'ts-jest',
       {
         tsconfig: '<rootDir>/tsconfig.spec.json',
-        isolatedModules: true,
+        isolatedModules: false,
       },
     ],
   },
@@ -46,14 +50,11 @@ const config: Config = {
     '^@test/(.*)$': '<rootDir>/test/$1',
   },
 
-  // File extensions to consider
   moduleFileExtensions: ['js', 'json', 'ts'],
-
-  // Root directory
   rootDir: '.',
 
-  // Setup files
-  setupFilesAfterEnv: ['<rootDir>/test/setup/unit.setup.ts'],
+  // Setup files for integration testing
+  setupFilesAfterEnv: ['<rootDir>/test/setup/integration.setup.ts'],
 
   // Coverage configuration
   collectCoverage: true,
@@ -69,34 +70,36 @@ const config: Config = {
     '!src/**/*.enum.ts',
     '!src/**/*.type.ts',
   ],
-  coverageDirectory: '../../coverage/apps/api/unit',
+  coverageDirectory: '../../coverage/apps/api/integration',
   coverageReporters: ['text', 'lcov', 'html', 'json'],
   coverageThreshold: {
     global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70,
     },
   },
 
-  // Performance and reliability optimizations
-  maxWorkers: '50%',
-  testTimeout: 10000,
+  // Performance optimizations for integration tests
+  maxWorkers: 1,
+  testTimeout: 30000,
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
 
-  // Cache configuration
   cache: true,
-  cacheDirectory: '<rootDir>/../../node_modules/.cache/jest/unit',
+  cacheDirectory: '<rootDir>/../../node_modules/.cache/jest/integration',
 
   // Custom reporters
-  reporters: ['default', ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }]],
+  reporters: ['default', ['<rootDir>/test/utils/jest-custom-reporter.ts', { verbose: false }]],
 
-  // Global setup and teardown
-  globalSetup: '<rootDir>/test/setup/global.setup.ts',
-  globalTeardown: '<rootDir>/test/setup/global.teardown.ts',
+  // Global setup and teardown for database management
+  globalSetup: '<rootDir>/test/setup/integration-global.setup.ts',
+  globalTeardown: '<rootDir>/test/setup/integration-global.teardown.ts',
+
+  forceExit: true,
+  detectOpenHandles: true,
 };
 
 export default config;

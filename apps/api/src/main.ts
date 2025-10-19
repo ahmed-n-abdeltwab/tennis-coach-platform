@@ -24,16 +24,16 @@ async function bootstrap() {
   });
 
   // API Documentation
-  const config = new DocumentBuilder()
+  const options = new DocumentBuilder()
     .setTitle('Tennis Coach API')
     .setDescription('API for tennis coach booking platform')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = parseInt(process.env.PORT, 10) || 3333;
+  const port = parseInt(process.env.PORT ?? '3333', 10);
 
   await app.listen(port);
   console.log(`🚀 API is running on: http://localhost:${port}/api`);

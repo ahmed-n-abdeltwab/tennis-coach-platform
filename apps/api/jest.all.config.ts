@@ -1,13 +1,18 @@
 import type { Config } from 'jest';
 
 const config: Config = {
-  displayName: 'API Unit Tests',
+  displayName: 'API All Tests',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
 
-  // Test file patterns - only unit tests
-  testMatch: ['<rootDir>/src/**/__tests__/**/*.spec.ts', '<rootDir>/src/**/*.spec.ts'],
-  testPathIgnorePatterns: ['/node_modules/', '\\.integration\\.spec\\.ts$', '\\.e2e\\.spec\\.ts$'],
+  // Test file patterns - all test types
+  testMatch: [
+    '<rootDir>/src/**/__tests__/**/*.spec.ts',
+    '<rootDir>/src/**/*.spec.ts',
+    '<rootDir>/src/**/*.integration.spec.ts',
+    '<rootDir>/src/**/*.e2e.spec.ts',
+    '<rootDir>/test/**/*.spec.ts',
+  ],
 
   // TypeScript configuration
   transform: {
@@ -15,7 +20,7 @@ const config: Config = {
       'ts-jest',
       {
         tsconfig: '<rootDir>/tsconfig.spec.json',
-        isolatedModules: true,
+        isolatedModules: false,
       },
     ],
   },
@@ -46,14 +51,8 @@ const config: Config = {
     '^@test/(.*)$': '<rootDir>/test/$1',
   },
 
-  // File extensions to consider
   moduleFileExtensions: ['js', 'json', 'ts'],
-
-  // Root directory
   rootDir: '.',
-
-  // Setup files
-  setupFilesAfterEnv: ['<rootDir>/test/setup/unit.setup.ts'],
 
   // Coverage configuration
   collectCoverage: true,
@@ -69,34 +68,31 @@ const config: Config = {
     '!src/**/*.enum.ts',
     '!src/**/*.type.ts',
   ],
-  coverageDirectory: '../../coverage/apps/api/unit',
+  coverageDirectory: '../../coverage/apps/api/all',
   coverageReporters: ['text', 'lcov', 'html', 'json'],
   coverageThreshold: {
     global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
+      branches: 75,
+      functions: 75,
+      lines: 75,
+      statements: 75,
     },
   },
 
-  // Performance and reliability optimizations
+  // Performance optimizations
   maxWorkers: '50%',
-  testTimeout: 10000,
+  testTimeout: 30000,
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
 
-  // Cache configuration
+  bail: false,
+  verbose: true,
   cache: true,
-  cacheDirectory: '<rootDir>/../../node_modules/.cache/jest/unit',
+  cacheDirectory: '<rootDir>/../../node_modules/.cache/jest/all',
 
   // Custom reporters
-  reporters: ['default', ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }]],
-
-  // Global setup and teardown
-  globalSetup: '<rootDir>/test/setup/global.setup.ts',
-  globalTeardown: '<rootDir>/test/setup/global.teardown.ts',
+  reporters: ['default', ['<rootDir>/test/utils/jest-custom-reporter.ts', { verbose: true }]],
 };
 
 export default config;

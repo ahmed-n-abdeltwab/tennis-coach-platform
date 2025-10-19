@@ -2,13 +2,22 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
-    "module": "commonjs",
+    "module": "CommonJS",
     "types": ["jest", "node"],
-    "moduleResolution": "node",
-    "verbatimModuleSyntax": true,
-    "noImplicitOverride": true,
-    "exactOptionalPropertyTypes": true,
-    "strictNullChecks": true
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "noEmit": true,
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "isolatedModules": false
   },
-  "include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]
+  "include": [
+    "jest.config.ts",
+    "jest.integration.config.ts",
+    "jest.e2e.config.ts",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "src/**/*.d.ts",
+    "test/**/*.ts"
+  ]
 }

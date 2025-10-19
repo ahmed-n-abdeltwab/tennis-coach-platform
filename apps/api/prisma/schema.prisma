@@ -1,0 +1,178 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl"]
+}
+
+model User {
+  id           String @id @default(cuid())
+  email        String @unique
+  name         String
+  passwordHash String
+
+  // Personal details for coaching
+  gender     String?
+  age        Int?
+  height     Float?
+  weight     Float?
+  disability Boolean @default(false)
+  country    String?
+  address    String?
+  notes      String?
+
+  // Relations
+  sessions         Session[]
+  sentMessages     Message[] @relation("MessageSender")
+  receivedMessages Message[] @relation("MessageReceiver")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Coach {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  name         String
+  passwordHash String
+  isAdmin      Boolean @default(true)
+
+  // Profile details
+  bio          String?
+  credentials  String?
+  philosophy   String?
+  profileImage String?
+
+  // Relations
+  bookingTypes     BookingType[]
+  timeSlots        TimeSlot[]
+  sessions         Session[]
+  discounts        Discount[]
+  sentMessages     Message[]     @relation("CoachMessageSender")
+  receivedMessages Message[]     @relation("CoachMessageReceiver")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("coaches")
+}
+
+model BookingType {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  basePrice   Float
+  isActive    Boolean @default(true)
+
+  // Relations
+  coach    Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId  String
+  sessions Session[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("booking_types")
+}
+
+model TimeSlot {
+  id          String   @id @default(cuid())
+  dateTime    DateTime
+  durationMin Int      @default(60)
+  isAvailable Boolean  @default(true)
+
+  // Relations
+  coach    Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId  String
+  sessions Session[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("time_slots")
+}
+
+model Session {
+  id          String   @id @default(cuid())
+  dateTime    DateTime
+  durationMin Int      @default(60)
+  price       Float // Denormalized price at booking time
+  isPaid      Boolean  @default(false)
+  status      String   @default("scheduled") // scheduled, completed, cancelled, refunded
+  notes       String?
+
+  // Payment details
+  paymentId    String?
+  discountCode String?
+
+  // Calendar integration
+  calendarEventId String?
+
+  // Relations
+  user          User        @relation(fields: [userId], references: [id])
+  userId        String
+  coach         Coach       @relation(fields: [coachId], references: [id])
+  coachId       String
+  bookingType   BookingType @relation(fields: [bookingTypeId], references: [id])
+  bookingTypeId String
+  timeSlot      TimeSlot    @relation(fields: [timeSlotId], references: [id])
+  timeSlotId    String
+  discount      Discount?   @relation(fields: [discountId], references: [id])
+  discountId    String?
+  messages      Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sessions")
+}
+
+model Discount {
+  id       String   @id @default(cuid())
+  code     String   @unique
+  amount   Float // Flat discount amount
+  expiry   DateTime
+  useCount Int      @default(0)
+  maxUsage Int      @default(1)
+  isActive Boolean  @default(true)
+
+  // Relations
+  coach    Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId  String
+  sessions Session[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("discounts")
+}
+
+model Message {
+  id      String   @id @default(cuid())
+  content String
+  sentAt  DateTime @default(now())
+
+  // Polymorphic sender/receiver (User or Coach)
+  senderType      String // "user" | "coach"
+  senderUserId    String?
+  senderCoachId   String?
+  receiverType    String // "user" | "coach"
+  receiverUserId  String?
+  receiverCoachId String?
+
+  // Relations
+  senderUser    User?  @relation("MessageSender", fields: [senderUserId], references: [id])
+  senderCoach   Coach? @relation("CoachMessageSender", fields: [senderCoachId], references: [id])
+  receiverUser  User?  @relation("MessageReceiver", fields: [receiverUserId], references: [id])
+  receiverCoach Coach? @relation("CoachMessageReceiver", fields: [receiverCoachId], references: [id])
+
+  session   Session? @relation(fields: [sessionId], references: [id])
+  sessionId String?
+
+  @@map("messages")
+}

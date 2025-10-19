@@ -1,13 +1,17 @@
 import type { Config } from 'jest';
 
 const config: Config = {
-  displayName: 'API Unit Tests',
+  displayName: 'API E2E Tests',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
 
-  // Test file patterns - only unit tests
-  testMatch: ['<rootDir>/src/**/__tests__/**/*.spec.ts', '<rootDir>/src/**/*.spec.ts'],
-  testPathIgnorePatterns: ['/node_modules/', '\\.integration\\.spec\\.ts$', '\\.e2e\\.spec\\.ts$'],
+  // Test file patterns - only e2e tests
+  testMatch: ['<rootDir>/src/**/*.e2e.spec.ts', '<rootDir>/test/e2e/**/*.spec.ts'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '(?<!\\.e2e)\\.spec\\.ts$',
+    '\\.integration\\.spec\\.ts$',
+  ],
 
   // TypeScript configuration
   transform: {
@@ -15,7 +19,7 @@ const config: Config = {
       'ts-jest',
       {
         tsconfig: '<rootDir>/tsconfig.spec.json',
-        isolatedModules: true,
+        isolatedModules: false,
       },
     ],
   },
@@ -46,17 +50,14 @@ const config: Config = {
     '^@test/(.*)$': '<rootDir>/test/$1',
   },
 
-  // File extensions to consider
   moduleFileExtensions: ['js', 'json', 'ts'],
-
-  // Root directory
   rootDir: '.',
 
-  // Setup files
-  setupFilesAfterEnv: ['<rootDir>/test/setup/unit.setup.ts'],
+  // Setup files for e2e testing
+  setupFilesAfterEnv: ['<rootDir>/test/setup/e2e.setup.ts'],
 
-  // Coverage configuration
-  collectCoverage: true,
+  // Coverage configuration (optional for e2e)
+  collectCoverage: false,
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.spec.ts',
@@ -69,34 +70,31 @@ const config: Config = {
     '!src/**/*.enum.ts',
     '!src/**/*.type.ts',
   ],
-  coverageDirectory: '../../coverage/apps/api/unit',
+  coverageDirectory: '../../coverage/apps/api/e2e',
   coverageReporters: ['text', 'lcov', 'html', 'json'],
-  coverageThreshold: {
-    global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
-    },
-  },
 
-  // Performance and reliability optimizations
-  maxWorkers: '50%',
-  testTimeout: 10000,
+  // Performance optimizations for e2e tests
+  maxWorkers: 1,
+  testTimeout: 60000,
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
 
-  // Cache configuration
   cache: true,
-  cacheDirectory: '<rootDir>/../../node_modules/.cache/jest/unit',
+  cacheDirectory: '<rootDir>/../../node_modules/.cache/jest/e2e',
 
   // Custom reporters
-  reporters: ['default', ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }]],
+  reporters: ['default', ['<rootDir>/test/utils/jest-custom-reporter.ts', { verbose: true }]],
 
-  // Global setup and teardown
-  globalSetup: '<rootDir>/test/setup/global.setup.ts',
-  globalTeardown: '<rootDir>/test/setup/global.teardown.ts',
+  // Global setup and teardown for full application
+  globalSetup: '<rootDir>/test/setup/e2e-global.setup.ts',
+  globalTeardown: '<rootDir>/test/setup/e2e-global.teardown.ts',
+
+  forceExit: true,
+  detectOpenHandles: true,
+
+  // Additional e2e specific configurations
+  testSequencer: '<rootDir>/test/utils/e2e-sequencer.ts',
 };
 
 export default config;
