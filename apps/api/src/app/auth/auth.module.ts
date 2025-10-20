@@ -10,25 +10,14 @@ import authConfig from './config/auth.config';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import jwtConfig from './config/jwt.config';
 
-const jwtFactory = {
-  imports: [ConfigModule],
-  useFactory: async (configService: ConfigService) => {
-    const raw = configService.get<string>('JWT_EXPIRES_IN') ?? '24h';
-    const expiresIn = /^\d+$/.test(raw) ? Number(raw) : (raw as StringValue);
-    return {
-      global: true,
-      secret: configService.get<string>('JWT_SECRET') as string,
-      signOptions: { expiresIn },
-    };
-  },
-  inject: [ConfigService],
-};
+
 
 @Module({
   imports: [
     PrismaModule,
-    JwtModule.registerAsync(jwtFactory),
+    JwtModule.registerAsync(jwtConfig.asProvider()),
     ConfigModule.forFeature(authConfig),
     PassportModule,
   ],
