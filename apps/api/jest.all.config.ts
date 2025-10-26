@@ -28,25 +28,16 @@ const config: Config = {
   // Module resolution with clean imports
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+
     '^@app/(.*)$': '<rootDir>/src/app/$1',
+
+    '^@common$': '<rootDir>/src/common/index',
     '^@common/(.*)$': '<rootDir>/src/common/$1',
+
     '^@config/(.*)$': '<rootDir>/src/config/$1',
-    '^@auth/(.*)$': '<rootDir>/src/app/auth/$1',
-    '^@users/(.*)$': '<rootDir>/src/app/users/$1',
-    '^@sessions/(.*)$': '<rootDir>/src/app/sessions/$1',
-    '^@bookings/(.*)$': '<rootDir>/src/app/booking-types/$1',
-    '^@coaches/(.*)$': '<rootDir>/src/app/coaches/$1',
-    '^@calendar/(.*)$': '<rootDir>/src/app/calendar/$1',
-    '^@messages/(.*)$': '<rootDir>/src/app/messages/$1',
-    '^@payments/(.*)$': '<rootDir>/src/app/payments/$1',
-    '^@notifications/(.*)$': '<rootDir>/src/app/notifications/$1',
-    '^@discounts/(.*)$': '<rootDir>/src/app/discounts/$1',
-    '^@time-slots/(.*)$': '<rootDir>/src/app/time-slots/$1',
-    '^@health/(.*)$': '<rootDir>/src/app/health/$1',
-    '^@dto/(.*)$': '<rootDir>/src/common/dto/$1',
-    '^@decorators/(.*)$': '<rootDir>/src/common/decorators/$1',
-    '^@controllers/(.*)$': '<rootDir>/src/common/controllers/$1',
+
     '^@test-utils/(.*)$': '<rootDir>/test/utils/$1',
+
     '^@test/(.*)$': '<rootDir>/test/$1',
   },
 

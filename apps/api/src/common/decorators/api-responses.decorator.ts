@@ -1,4 +1,4 @@
-import { ErrorResponseDto, ValidationErrorResponseDto } from '@common';
+import { ErrorResponseDto, ValidationErrorResponseDto } from '../dto/base-response.dto';
 import { ApiResponse } from '@nestjs/swagger';
 
 // Individual error response decorators for reuse across modules

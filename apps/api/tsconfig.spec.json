@@ -14,6 +14,7 @@
   "include": [
     "jest.config.ts",
     "jest.integration.config.ts",
+    "jest.all.config.ts",
     "jest.e2e.config.ts",
     "src/**/*.test.ts",
     "src/**/*.spec.ts",
