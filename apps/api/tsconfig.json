@@ -16,26 +16,16 @@
     "baseUrl": "./",
     "paths": {
       "@app/*": ["src/app/*"],
+      // Common
+      "@common": ["src/common/index"],
       "@common/*": ["src/common/*"],
+      // Configurations
+      "@config": ["src/config/index"],
       "@config/*": ["src/config/*"],
-      "@auth/*": ["src/app/auth/*"],
-      "@users/*": ["src/app/users/*"],
-      "@sessions/*": ["src/app/sessions/*"],
-      "@bookings/*": ["src/app/booking-types/*"],
-      "@coaches/*": ["src/app/coaches/*"],
-      "@calendar/*": ["src/app/calendar/*"],
-      "@messages/*": ["src/app/messages/*"],
-      "@payments/*": ["src/app/payments/*"],
-      "@notifications/*": ["src/app/notifications/*"],
-      "@discounts/*": ["src/app/discounts/*"],
-      "@time-slots/*": ["src/app/time-slots/*"],
-      "@health/*": ["src/app/health/*"],
-      "@prisma/*": ["src/app/prisma/*"],
-      "@dto/*": ["src/common/dto/*"],
-      "@decorators/*": ["src/common/decorators/*"],
-      "@controllers/*": ["src/common/controllers/*"],
+      // Tests
       "@test-utils/*": ["test/utils/*"],
       "@test/*": ["test/*"],
+
       "/*": ["*"]
     }
   }

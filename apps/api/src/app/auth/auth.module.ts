@@ -1,39 +1,30 @@
+import { CoachesModule } from '@app/coaches/coaches.module';
+import { PrismaModule } from '@app/prisma/prisma.module';
+import { UsersModule } from '@app/users/users.module';
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { PrismaModule } from '@prisma/prisma.module';
-import { StringValue } from 'ms';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import authConfig from './config/auth.config';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RolesGuard } from './guards/roles.guard';
-import { JwtStrategy } from './strategies/jwt.strategy';
 import jwtConfig from './config/jwt.config';
-
-
+import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { LocalCoachStrategy } from './strategies/local-coach.strategy';
+import { LocalUserStrategy } from './strategies/local-user.strategy';
 
 @Module({
   imports: [
     PrismaModule,
+    UsersModule,
+    CoachesModule,
+    PassportModule,
     JwtModule.registerAsync(jwtConfig.asProvider()),
     ConfigModule.forFeature(authConfig),
-    PassportModule,
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    {
-      provide: 'APP_GUARD',
-      useClass: JwtAuthGuard,
-    },
-    {
-      provide: 'APP_GUARD',
-      useClass: RolesGuard,
-    },
-  ],
+  providers: [AuthService, LocalUserStrategy, LocalCoachStrategy, JwtStrategy, JwtRefreshStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}

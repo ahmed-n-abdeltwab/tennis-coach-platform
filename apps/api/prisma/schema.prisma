@@ -15,22 +15,27 @@ model User {
   passwordHash String
 
   // Personal details for coaching
-  gender     String?
-  age        Int?
-  height     Float?
-  weight     Float?
-  disability Boolean @default(false)
-  country    String?
-  address    String?
-  notes      String?
+  gender          String?
+  age             Int?
+  height          Float?
+  weight          Float?
+  disability      Boolean @default(false)
+  disabilityCause String? // 👈 required if disability = true
+  country         String?
+  address         String?
+  notes           String?
 
   // Relations
   sessions         Session[]
   sentMessages     Message[] @relation("MessageSender")
   receivedMessages Message[] @relation("MessageReceiver")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role          UserRole       @default(USER)
+  isActive      Boolean        @default(true)
+  isOnline      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  refreshTokens RefreshToken[]
 
   @@map("users")
 }
@@ -56,8 +61,12 @@ model Coach {
   sentMessages     Message[]     @relation("CoachMessageSender")
   receivedMessages Message[]     @relation("CoachMessageReceiver")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role          AdminRole      @default(COACH)
+  isActive      Boolean        @default(true)
+  isOnline      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  refreshTokens RefreshToken[]
 
   @@map("coaches")
 }
@@ -175,4 +184,28 @@ model Message {
   sessionId String?
 
   @@map("messages")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String?
+  coachId   String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user  User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coach Coach? @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+enum UserRole {
+  USER
+  PREMIUM_USER
+}
+
+enum AdminRole {
+  ADMIN
+  COACH
 }

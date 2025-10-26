@@ -1,56 +1,116 @@
-import { ApiConflictResponse } from '@decorators/api-responses.decorator';
-import { Body, Controller, Get, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
-import { CurrentUser } from './decorators/current-user.decorator';
-import { Public } from './decorators/public.decorator';
-import { AuthApiResponses, LoginDto, RegisterDto, UserProfileApiResponses } from './dto/auth.dto';
-import { JwtPayload } from './strategies/jwt.strategy';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { AuthResponseDto, LoginDto } from './dto/auth.dto';
 
-@ApiTags('auth')
+import {
+  CurrentUser,
+  ErrorResponseDto,
+  JwtPayload,
+  JwtRefreshGuard,
+  LocalCoachAuthGuard,
+  LocalUserAuthGuard,
+  Public,
+  Role,
+  Roles,
+} from '@common';
+import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { SignupCoachDto, SignupUserDto } from './dto/auth.dto';
+@ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private authService: AuthService) {}
 
   @Public()
-  @Post('register')
-  @ApiOperation({ summary: 'Register new user' })
-  @AuthApiResponses.AuthSuccess('User registered successfully')
-  @ApiConflictResponse('User already exists')
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  @Post('user/signup')
+  @ApiOperation({ summary: 'Register a new user account' })
+  @ApiCreatedResponse({
+    description: 'User successfully registered',
+    type: AuthResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input data',
+    type: ErrorResponseDto,
+  })
+  async userSignup(@Body() signupDto: SignupUserDto): Promise<AuthResponseDto> {
+    return this.authService.signupUser(signupDto);
   }
 
   @Public()
-  @Post('login')
-  @ApiOperation({ summary: 'Login user' })
-  @AuthApiResponses.AuthSuccess('User logged in successfully')
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(LocalUserAuthGuard)
+  @Post('user/login')
+  @ApiOperation({ summary: 'User login' })
+  @ApiOkResponse({
+    description: 'Login successful',
+    type: AuthResponseDto,
+  })
+  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
+  async userLogin(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
+    return this.authService.loginUser(loginDto);
+  }
+
+  // Coach endpoints
+  @Public()
+  @Post('coach/signup')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Register a new coach account' })
+  @ApiCreatedResponse({
+    description: 'Coach successfully registered',
+    type: AuthResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  async coachSignup(@Body() signupDto: SignupCoachDto): Promise<AuthResponseDto> {
+    return this.authService.signupCoach(signupDto);
   }
 
   @Public()
-  @Post('coach/register')
-  @ApiOperation({ summary: 'Register new coach' })
-  @AuthApiResponses.AuthSuccess('Coach registered successfully')
-  @ApiConflictResponse('Coach already exists')
-  async registerCoach(@Body() registerDto: RegisterDto) {
-    return this.authService.registerCoach(registerDto);
-  }
-
-  @Public()
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(LocalCoachAuthGuard)
   @Post('coach/login')
-  @ApiOperation({ summary: 'Login coach' })
-  @AuthApiResponses.AuthSuccess('Coach logged in successfully')
-  async loginCoach(@Body() loginDto: LoginDto) {
+  @ApiOperation({ summary: 'Coach login' })
+  @ApiOkResponse({
+    description: 'Login successful',
+    type: AuthResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid credentials',
+    type: ErrorResponseDto,
+  })
+  async coachLogin(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
     return this.authService.loginCoach(loginDto);
   }
 
-  @Get('profile')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get user/coach profile' })
-  @UserProfileApiResponses.Found('User profile retrieved successfully')
-  async getProfile(@CurrentUser() user: JwtPayload) {
-    return user;
+  // Shared endpoints
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtRefreshGuard)
+  @Post('refresh')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Refresh access token using refresh token' })
+  @ApiOkResponse({
+    description: 'Token refreshed successfully',
+    type: AuthResponseDto,
+  })
+  @ApiUnauthorizedResponse({ description: 'Invalid or expired refresh token' })
+  async refresh(@CurrentUser() user: JwtPayload): Promise<{ accessToken: string }> {
+    return this.authService.refreshToken(user);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('logout')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Logout and invalidate refresh tokens' })
+  @ApiOkResponse({ description: 'Logout successful' })
+  async logout(@CurrentUser() user: JwtPayload): Promise<{ message: string }> {
+    await this.authService.logout(user);
+    return { message: 'Logged out successfully' };
   }
 }

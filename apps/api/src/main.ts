@@ -28,7 +28,17 @@ async function bootstrap() {
     .setTitle('Tennis Coach API')
     .setDescription('API for tennis coach booking platform')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth'
+    )
     .build();
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api/docs', app, document);

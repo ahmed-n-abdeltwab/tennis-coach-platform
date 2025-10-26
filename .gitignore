@@ -114,6 +114,8 @@ out/
 # Logs
 logs
 *.log
+test-reports/
+*.nbbuildlog
 
 # OS generated files
 .DS_Store
@@ -227,3 +229,4 @@ certificates/
 uploads/
 storage/
 public/uploads/
+
