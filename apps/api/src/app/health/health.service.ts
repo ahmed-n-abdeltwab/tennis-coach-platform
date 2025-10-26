@@ -1,6 +1,6 @@
+import { PrismaService } from '@app/prisma/prisma.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import { PrismaService } from '@prisma/prisma.service';
 import healthConfig from './config/health.config';
 @Injectable()
 export class HealthService {
