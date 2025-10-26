@@ -8,7 +8,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import authConfig from '../config/auth.config';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(
     @Inject(authConfig.KEY)
     private readonly authConfiguration: ConfigType<typeof authConfig>,
@@ -18,7 +18,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: authConfiguration.jwt.secret,
+      secretOrKey: authConfiguration.jwt.signOptions.refreshSecret,
     });
   }
 
@@ -31,12 +31,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       entity = await this.coachesService.findById(payload.sub);
     }
 
-    if (!entity) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    if (!entity.isActive) {
-      throw new UnauthorizedException('Account is inactive');
+    if (!entity || !entity.isActive) {
+      throw new UnauthorizedException('Invalid refresh token');
     }
 
     return {
