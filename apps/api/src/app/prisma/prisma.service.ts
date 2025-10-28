@@ -1,15 +1,28 @@
 import { logger } from '@config/logging.config';
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
+import { Prisma, PrismaClient } from '@prisma/client';
+import prismaConfig from './config/prisma.config';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  constructor() {
-    super();
+export class PrismaService
+  extends PrismaClient<Prisma.PrismaClientOptions, 'query' | 'info' | 'warn' | 'error'>
+  implements OnModuleInit, OnModuleDestroy
+{
+  constructor(
+    @Inject(prismaConfig.KEY) private readonly prismaConfiguration: ConfigType<typeof prismaConfig>
+  ) {
+    super({
+      datasources: {
+        db: { url: prismaConfiguration.database_url },
+      },
+      log: ['query', 'info', 'warn', 'error'],
+      errorFormat: 'pretty',
+    });
 
-    (this as any).$on('query', (event: any) => {
+    this.$on('query', queryEvent => {
       logger.info(
-        `[Prisma] Query took ${event.duration}ms\nSQL: ${event.query}\nParams: ${event.params}`
+        `[Prisma] Query took ${queryEvent.duration}ms\nSQL: ${queryEvent.query}\nParams: ${queryEvent.params}`
       );
     });
   }
