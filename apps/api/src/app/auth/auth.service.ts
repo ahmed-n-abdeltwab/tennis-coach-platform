@@ -26,7 +26,7 @@ export class AuthService {
     // Update online status
     await this.usersService.updateOnlineStatus(user.id, true);
 
-    return this.generateTokens(user.id, user.email, UserType.USER, user.role);
+    return this.generateTokens(user.id, user.email, UserType.USER);
   }
 
   async signupCoach(signupDto: SignupCoachDto): Promise<AuthResponseDto> {
@@ -35,7 +35,7 @@ export class AuthService {
     // Update online status
     await this.coachesService.updateOnlineStatus(coach.id, true);
 
-    return this.generateTokens(coach.id, coach.email, UserType.COACH, coach.role);
+    return this.generateTokens(coach.id, coach.email, UserType.COACH);
   }
 
   async loginUser(loginDto: LoginDto): Promise<AuthResponseDto> {
@@ -60,7 +60,7 @@ export class AuthService {
 
     await this.usersService.updateOnlineStatus(user.id, true);
 
-    return this.generateTokens(user.id, user.email, UserType.USER, user.role);
+    return this.generateTokens(user.id, user.email, UserType.USER);
   }
 
   async loginCoach(loginDto: LoginDto): Promise<AuthResponseDto> {
@@ -85,13 +85,13 @@ export class AuthService {
 
     await this.coachesService.updateOnlineStatus(coach.id, true);
 
-    return this.generateTokens(coach.id, coach.email, UserType.COACH, coach.role);
+    return this.generateTokens(coach.id, coach.email, UserType.COACH);
   }
 
   async logout(user: JwtPayload): Promise<void> {
-    if (user.userType === UserType.USER) {
+    if (user.type === UserType.USER) {
       await this.usersService.updateOnlineStatus(user.sub, false);
-    } else if (user.userType === UserType.COACH) {
+    } else if (user.type === UserType.COACH) {
       await this.coachesService.updateOnlineStatus(user.sub, false);
     }
     await this.prisma.refreshToken.deleteMany({ where: { userId: user.sub } });
@@ -101,8 +101,9 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: user.sub,
       email: user.email,
-      userType: user.userType,
-      role: user.role,
+      type: user.type,
+      iat: user?.iat,
+      exp: user?.exp,
     };
     const accessToken = this.jwtService.sign(payload, {
       secret: this.authConfiguration.jwt.secret,
@@ -115,14 +116,12 @@ export class AuthService {
   private async generateTokens(
     userId: string,
     email: string,
-    userType: UserType,
-    role: string
+    userType: UserType
   ): Promise<AuthResponseDto> {
     const payload: JwtPayload = {
       sub: userId,
       email,
-      userType,
-      role,
+      type: userType,
     };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -154,7 +153,7 @@ export class AuthService {
       user: {
         id: userId,
         email,
-        role,
+        type: userType === UserType.USER ? 'USER' : 'COACH',
       },
     };
   }
