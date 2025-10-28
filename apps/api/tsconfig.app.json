@@ -14,6 +14,6 @@
     "strictPropertyInitialization": false,
     "forceConsistentCasingInFileNames": true
   },
-  "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts", "**/__tests__/**"],
-  "include": ["src/**/*.ts"]
+  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts", "**/__tests__/**"],
+  "include": ["src/**/*.ts", "prisma/**/*.ts"]
 }

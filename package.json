@@ -38,13 +38,13 @@
     "build:api": "nx build api",
     "build:web": "nx build web",
     "@comment:database": "Database lifecycle commands using Prisma and TypeScript execution.",
-    "db:generate": "prisma generate --config apps/api/prisma/prisma.config.ts",
-    "db:migrate": "prisma migrate dev --config apps/api/prisma/prisma.config.ts",
-    "db:migrate:deploy": "prisma migrate deploy --config apps/api/prisma/prisma.config.ts",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx apps/api/prisma/seed.ts",
     "db:seed:test": "DATABASE_URL=postgresql://postgres:password@localhost:5433/tennis_coach_test?schema=public tsx apps/api/prisma/seed.ts",
-    "db:reset": "prisma migrate reset --config apps/api/prisma/prisma.config.ts --force --skip-seed",
-    "db:studio": "prisma studio --config apps/api/prisma/prisma.config.ts",
+    "db:reset": "prisma migrate reset --force --skip-seed",
+    "db:studio": "prisma studio",
     "@comment:testing": "Centralized testing configuration powered by Nx and Jest.",
     "test": "nx run-many --target=test --all",
     "test:watch": "nx run-many --target=test --all --watch",
@@ -201,6 +201,8 @@
     "includedScripts": []
   },
   "prisma": {
-    "seed": "tsx apps/api/prisma/seed.ts"
+    "seed": "tsx apps/api/prisma/seed.ts",
+    "schema": "./apps/api/prisma/schema.prisma",
+    "config": "apps/api/prisma/prisma.config.ts"
   }
 }
