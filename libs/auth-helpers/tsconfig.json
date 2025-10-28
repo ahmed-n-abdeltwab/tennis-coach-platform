@@ -7,6 +7,6 @@
     "declarationMap": true,
     "composite": true
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "../../apps/api/src/common"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts"]
 }

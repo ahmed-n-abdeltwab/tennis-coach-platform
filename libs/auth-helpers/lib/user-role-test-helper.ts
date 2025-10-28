@@ -1,3 +1,4 @@
+import { UserType } from '@common';
 import { AuthHeaders, AuthTestHelper, TestUser } from './auth-test-helper';
 
 export class UserRoleTestHelper {
@@ -7,20 +8,19 @@ export class UserRoleTestHelper {
     this.authHelper = new AuthTestHelper(jwtSecret);
   }
 
-  createUserTestData(role: 'user' | 'coach', overrides?: Partial<TestUser>): TestUser {
+  createUserTestData(role: UserType, overrides?: Partial<TestUser>): TestUser {
     const baseData: TestUser = {
       id: `test-${role}-id`,
       email: `${role}@example.com`,
-      name: `Test ${role.charAt(0).toUpperCase() + role.slice(1)}`,
       type: role,
       ...overrides,
     };
     return baseData;
   }
 
-  createRoleAuthHeaders(role: 'user' | 'coach', overrides?: Partial<TestUser>): AuthHeaders {
+  createRoleAuthHeaders(role: UserType, overrides?: Partial<TestUser>): AuthHeaders {
     const userData = this.createUserTestData(role, overrides);
-    if (role === 'user') {
+    if (role === UserType.USER) {
       return this.authHelper.createUserAuthHeaders(userData);
     } else {
       return this.authHelper.createCoachAuthHeaders(userData);
@@ -32,17 +32,15 @@ export class UserRoleTestHelper {
     const coaches: TestUser[] = [];
     for (let i = 0; i < count; i++) {
       users.push(
-        this.createUserTestData('user', {
+        this.createUserTestData(UserType.USER, {
           id: `test-user-${i}`,
           email: `user${i}@example.com`,
-          name: `Test User ${i}`,
         })
       );
       coaches.push(
-        this.createUserTestData('coach', {
+        this.createUserTestData(UserType.COACH, {
           id: `test-coach-${i}`,
           email: `coach${i}@example.com`,
-          name: `Test Coach ${i}`,
         })
       );
     }
