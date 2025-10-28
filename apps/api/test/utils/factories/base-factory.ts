@@ -15,11 +15,11 @@ export abstract class BaseMockFactory<T> implements MockFactory<T> {
   }
 
   protected generateId(): string {
-    return `test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `test_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
   }
 
   protected generateEmail(prefix = 'test'): string {
-    return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}@example.com`;
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 5)}@example.com`;
   }
 
   protected generateFutureDate(daysFromNow = 7): Date {

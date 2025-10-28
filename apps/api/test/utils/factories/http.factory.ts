@@ -25,7 +25,7 @@ export interface MockResponse extends Partial<Response> {
 export interface MockHttpResponse {
   statusCode: number;
   data?: any;
-  message?: string[];
+  message?: string[] | string;
   error?: string;
   timestamp?: string;
   path?: string;
@@ -125,7 +125,11 @@ export class HttpMockFactory extends BaseMockFactory<MockRequest> {
     };
   }
 
-  createErrorResponse(message: string[], statusCode = 400, path?: string): MockHttpResponse {
+  createErrorResponse(
+    message: string[] | string,
+    statusCode = 400,
+    path?: string
+  ): MockHttpResponse {
     return {
       statusCode,
       error: this.getErrorName(statusCode),
@@ -135,7 +139,7 @@ export class HttpMockFactory extends BaseMockFactory<MockRequest> {
     };
   }
 
-  createValidationErrorResponse(messages: string[], path?: string): MockHttpResponse {
+  createValidationErrorResponse(messages: string[] | string, path?: string): MockHttpResponse {
     return {
       statusCode: 400,
       error: 'Bad Request',

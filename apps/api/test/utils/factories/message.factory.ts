@@ -25,9 +25,9 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
       id,
       content: this.randomContent(),
       sentAt: new Date(),
-      senderType: 'user',
+      senderType: 'USER',
       senderUserId: this.generateId(),
-      receiverType: 'coach',
+      receiverType: 'COACH',
       receiverCoachId: this.generateId(),
       ...overrides,
     };
@@ -39,9 +39,9 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
     overrides?: Partial<MockMessage>
   ): MockMessage {
     return this.create({
-      senderType: 'user',
+      senderType: 'USER',
       senderUserId: userId,
-      receiverType: 'coach',
+      receiverType: 'COACH',
       receiverCoachId: coachId,
       ...overrides,
     });
