@@ -21,11 +21,32 @@
     "importHelpers": true,
     "paths": {
       "@workspace/*": ["*"],
-      "@apps/*": ["apps/*"],
+      "/*": ["*"],
+      // Documentation
       "@docs/*": ["docs/*"],
+
       "@scripts/*": ["scripts/*"],
+
       "@k8s/*": ["k8s/*"],
-      "@auth-helpers/*": ["libs/auth-helpers/*"]
+
+      // Libs
+      "@auth-helpers": ["libs/auth-helpers/index"],
+      "@auth-helpers/*": ["libs/auth-helpers/*"],
+
+      // Applications
+      "@apps/*": ["apps/*"],
+
+      // Api
+      "@app/*": ["apps/api/src/app/*"],
+      // Common
+      "@common": ["apps/api/src/common/index"],
+      "@common/*": ["apps/api/src/common/*"],
+      // Configurations
+      "@config": ["apps/api/src/config/index"],
+      "@config/*": ["apps/api/src/config/*"],
+      // Tests
+      "@test-utils/*": ["apps/api/test/utils/*"],
+      "@test/*": ["apps/api/test/*"]
     }
   },
   "exclude": ["node_modules", "tmp", "test-reports"],

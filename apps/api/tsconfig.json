@@ -12,21 +12,6 @@
   ],
   "compilerOptions": {
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "baseUrl": "./",
-    "paths": {
-      "@app/*": ["src/app/*"],
-      // Common
-      "@common": ["src/common/index"],
-      "@common/*": ["src/common/*"],
-      // Configurations
-      "@config": ["src/config/index"],
-      "@config/*": ["src/config/*"],
-      // Tests
-      "@test-utils/*": ["test/utils/*"],
-      "@test/*": ["test/*"],
-
-      "/*": ["*"]
-    }
+    "emitDecoratorMetadata": true
   }
 }
