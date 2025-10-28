@@ -3,28 +3,8 @@
  */
 
 import { UserType } from '@common';
+import { MockUser } from '../mocks';
 import { BaseMockFactory } from './base-factory';
-
-export interface MockUser {
-  id: string;
-  email: string;
-  name: string;
-  passwordHash: string;
-  gender?: string;
-  age?: number;
-  height?: number;
-  weight?: number;
-  disability: boolean;
-  disabilityCause?: string;
-  country?: string;
-  address?: string;
-  notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  role: UserType.USER;
-  isActive: boolean;
-  isOnline: boolean;
-}
 
 export class UserMockFactory extends BaseMockFactory<MockUser> {
   create(overrides?: Partial<MockUser>): MockUser {

@@ -2,10 +2,11 @@
  * Factory exports for easy importing in tests
  */
 
+import { MockDiscount } from '../mocks';
 import { AuthMockFactory } from './auth.factory';
 import { BookingTypeMockFactory } from './booking-type.factory';
 import { CoachMockFactory } from './coach.factory';
-import { DiscountMockFactory, MockDiscount } from './discount.factory';
+import { DiscountMockFactory } from './discount.factory';
 import { HttpMockFactory } from './http.factory';
 import { MessageMockFactory } from './message.factory';
 import { PaymentMockFactory } from './payment.factory';

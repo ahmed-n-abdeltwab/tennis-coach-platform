@@ -4,29 +4,8 @@
 
 import { UserType } from '@common';
 import { JwtService } from '@nestjs/jwt';
+import { MockAuthHeaders, MockAuthPayload, MockAuthResponse } from '../mocks';
 import { BaseMockFactory } from './base-factory';
-
-export interface MockAuthPayload {
-  sub: string;
-  email: string;
-  type: UserType;
-  iat?: number;
-  exp?: number;
-}
-
-export interface MockAuthResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: {
-    id: string;
-    email: string;
-    type: 'USER' | 'COACH'; // Changed from 'role' to 'type' to match API response structure
-  };
-}
-
-export interface MockAuthHeaders {
-  authorization: string;
-}
 
 export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {
   private jwtService?: JwtService;

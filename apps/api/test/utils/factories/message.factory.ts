@@ -2,20 +2,8 @@
  * Message mock factory for creating test message data
  */
 
+import { MockMessage } from '../mocks';
 import { BaseMockFactory } from './base-factory';
-
-export interface MockMessage {
-  id: string;
-  content: string;
-  sentAt: Date;
-  senderType: string;
-  senderUserId?: string;
-  senderCoachId?: string;
-  receiverType: string;
-  receiverUserId?: string;
-  receiverCoachId?: string;
-  sessionId?: string;
-}
 
 export class MessageMockFactory extends BaseMockFactory<MockMessage> {
   create(overrides?: Partial<MockMessage>): MockMessage {

@@ -2,27 +2,8 @@
  * Session mock factory for creating test session data
  */
 
+import { MockSession } from '../mocks';
 import { BaseMockFactory } from './base-factory';
-
-export interface MockSession {
-  id: string;
-  dateTime: Date;
-  durationMin: number;
-  price: number;
-  isPaid: boolean;
-  status: string;
-  notes?: string;
-  paymentId?: string;
-  discountCode?: string;
-  calendarEventId?: string;
-  userId: string;
-  coachId: string;
-  bookingTypeId: string;
-  timeSlotId: string;
-  discountId?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 export class SessionMockFactory extends BaseMockFactory<MockSession> {
   create(overrides?: Partial<MockSession>): MockSession {

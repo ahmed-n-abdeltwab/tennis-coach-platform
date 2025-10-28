@@ -2,23 +2,8 @@
  * Coach mock factory for creating test coach data
  */
 
+import { MockCoach } from '../mocks';
 import { BaseMockFactory } from './base-factory';
-
-export interface MockCoach {
-  id: string;
-  email: string;
-  name: string;
-  passwordHash: string;
-  isAdmin: boolean;
-  isOnline: boolean;
-  isActive: boolean;
-  bio?: string;
-  credentials?: string;
-  philosophy?: string;
-  profileImage?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 export class CoachMockFactory extends BaseMockFactory<MockCoach> {
   create(overrides?: Partial<MockCoach>): MockCoach {
