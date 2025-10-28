@@ -15,20 +15,6 @@ services:
     networks:
       - tennis-coach-network
 
-  postgres_test:
-    image: postgres:15
-    container_name: tennis-coach-postgres-test
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: tennis_coach_test
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_test_data:/var/lib/postgresql/data
-    networks:
-      - tennis-coach-network
-
   redis:
     image: redis:7-alpine
     container_name: tennis-coach-redis
