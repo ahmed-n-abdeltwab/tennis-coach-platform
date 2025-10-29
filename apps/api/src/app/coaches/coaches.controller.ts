@@ -1,6 +1,7 @@
-import { CurrentUser, JwtPayload, Public, Role, Roles } from '@common';
+import { CurrentUser, JwtPayload, Public, Roles } from '@common';
 import { Body, Controller, Get, Param, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { AdminRole } from '@prisma/client';
 import { CoachesService } from './coaches.service';
 import { UpdateCoachDto } from './dto/coach.dto';
 
@@ -24,7 +25,7 @@ export class CoachesController {
   }
 
   @Put('profile')
-  @Roles(Role.COACH, Role.ADMIN)
+  @Roles(AdminRole.COACH, AdminRole.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update coach profile' })
   async updateProfile(@Body() updateDto: UpdateCoachDto, @CurrentUser() user: JwtPayload) {

@@ -1,7 +1,7 @@
 import { PrismaService } from '@app/prisma/prisma.service';
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import { Coach } from '@prisma/client';
+import { BookingType, Coach } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { SignupCoachDto } from '../auth/dto/auth.dto';
 import coachesConfig from './config/coaches.config';
@@ -62,7 +62,13 @@ export class CoachesService {
     });
   }
 
-  async findAll() {
+  async findAll(): Promise<
+    Array<
+      Pick<Coach, 'id' | 'name' | 'bio' | 'credentials' | 'philosophy' | 'profileImage'> & {
+        bookingTypes: Pick<BookingType, 'id' | 'name' | 'description' | 'basePrice'>[];
+      }
+    >
+  > {
     return this.prisma.coach.findMany({
       select: {
         id: true,
@@ -84,7 +90,11 @@ export class CoachesService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<
+    Pick<Coach, 'id' | 'name' | 'bio' | 'credentials' | 'philosophy' | 'profileImage'> & {
+      bookingTypes: Pick<BookingType, 'id' | 'name' | 'description' | 'basePrice'>[];
+    }
+  > {
     const coach = await this.prisma.coach.findUnique({
       where: { id },
       select: {
@@ -113,7 +123,7 @@ export class CoachesService {
     return coach;
   }
 
-  async updateProfile(id: string, updateDto: UpdateCoachDto) {
+  async updateProfile(id: string, updateDto: UpdateCoachDto): Promise<Coach> {
     return this.prisma.coach.update({
       where: { id },
       data: updateDto,
