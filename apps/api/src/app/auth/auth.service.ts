@@ -1,11 +1,11 @@
 import { CoachesService } from '@app/coaches/coaches.service';
 import { PrismaService } from '@app/prisma/prisma.service';
 import { UsersService } from '@app/users/users.service';
-import { JwtPayload, UserType } from '@common';
+import { JwtPayload } from '@common';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Coach, User } from '@prisma/client';
+import { AdminRole, Coach, User, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import authConfig from './config/auth.config';
 import { AuthResponseDto, LoginDto, SignupCoachDto, SignupUserDto } from './dto/auth.dto';
@@ -26,7 +26,7 @@ export class AuthService {
     // Update online status
     await this.usersService.updateOnlineStatus(user.id, true);
 
-    return this.generateTokens(user.id, user.email, UserType.USER);
+    return this.generateTokens(user.id, user.email, UserRole.USER);
   }
 
   async signupCoach(signupDto: SignupCoachDto): Promise<AuthResponseDto> {
@@ -35,7 +35,7 @@ export class AuthService {
     // Update online status
     await this.coachesService.updateOnlineStatus(coach.id, true);
 
-    return this.generateTokens(coach.id, coach.email, UserType.COACH);
+    return this.generateTokens(coach.id, coach.email, AdminRole.COACH);
   }
 
   async loginUser(loginDto: LoginDto): Promise<AuthResponseDto> {
@@ -60,7 +60,7 @@ export class AuthService {
 
     await this.usersService.updateOnlineStatus(user.id, true);
 
-    return this.generateTokens(user.id, user.email, UserType.USER);
+    return this.generateTokens(user.id, user.email, UserRole.USER);
   }
 
   async loginCoach(loginDto: LoginDto): Promise<AuthResponseDto> {
@@ -85,13 +85,13 @@ export class AuthService {
 
     await this.coachesService.updateOnlineStatus(coach.id, true);
 
-    return this.generateTokens(coach.id, coach.email, UserType.COACH);
+    return this.generateTokens(coach.id, coach.email, AdminRole.COACH);
   }
 
   async logout(user: JwtPayload): Promise<void> {
-    if (user.type === UserType.USER) {
+    if (user.role in UserRole) {
       await this.usersService.updateOnlineStatus(user.sub, false);
-    } else if (user.type === UserType.COACH) {
+    } else if (user.role in AdminRole) {
       await this.coachesService.updateOnlineStatus(user.sub, false);
     }
     await this.prisma.refreshToken.deleteMany({ where: { userId: user.sub } });
@@ -101,7 +101,7 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: user.sub,
       email: user.email,
-      type: user.type,
+      role: user.role,
       iat: user?.iat,
       exp: user?.exp,
     };
@@ -116,12 +116,12 @@ export class AuthService {
   private async generateTokens(
     userId: string,
     email: string,
-    userType: UserType
+    role: AdminRole | UserRole
   ): Promise<AuthResponseDto> {
     const payload: JwtPayload = {
       sub: userId,
       email,
-      type: userType,
+      role,
     };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -141,8 +141,8 @@ export class AuthService {
     await this.prisma.refreshToken.create({
       data: {
         token: hashedRefreshToken,
-        userId: userType === UserType.USER ? userId : null,
-        coachId: userType === UserType.COACH ? userId : null,
+        userId: role in UserRole ? userId : null,
+        coachId: role in AdminRole ? userId : null,
         expiresAt,
       },
     });
@@ -153,7 +153,7 @@ export class AuthService {
       user: {
         id: userId,
         email,
-        type: userType === UserType.USER ? 'USER' : 'COACH',
+        role,
       },
     };
   }

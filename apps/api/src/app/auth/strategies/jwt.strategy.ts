@@ -1,10 +1,10 @@
 import { CoachesService } from '@app/coaches/coaches.service';
 import { UsersService } from '@app/users/users.service';
-import { JwtPayload, UserType } from '@common';
+import { JwtPayload } from '@common';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { Coach, User } from '@prisma/client';
+import { AdminRole, Coach, User, UserRole } from '@prisma/client';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import authConfig from '../config/auth.config';
 
@@ -26,9 +26,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload): Promise<JwtPayload> {
     let entity: Coach | User | null = null;
 
-    if (payload.type === UserType.USER) {
+    if (payload.role in UserRole) {
       entity = await this.usersService.findById(payload.sub);
-    } else if (payload.type === UserType.COACH) {
+    } else if (payload.role in AdminRole) {
       entity = await this.coachesService.findById(payload.sub);
     }
 
@@ -43,7 +43,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       sub: entity.id,
       email: entity.email,
-      type: payload.type,
+      role: payload.role,
       iat: payload.iat,
       exp: payload.exp,
     };

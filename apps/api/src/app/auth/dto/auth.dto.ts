@@ -139,7 +139,7 @@ export class UserSummaryDto {
   @ApiProperty({ enum: ['USER', 'COACH', 'ADMIN'] })
   @IsString()
   @IsNotEmpty()
-  type: string;
+  role: string;
 }
 
 export class AuthResponseDto {
@@ -157,7 +157,7 @@ export class AuthResponseDto {
   user: {
     id: string;
     email: string;
-    type: string;
+    role: string;
   };
 }
 
