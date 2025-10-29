@@ -3,7 +3,7 @@
  */
 
 import { PrismaService } from '@app/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { BookingType, Coach, Prisma, User } from '@prisma/client';
 
 /**
  * Cleans all data from the test database
@@ -23,9 +23,9 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
  * Seeds the database with basic test data
  */
 export async function seedTestDatabase(prisma: PrismaService): Promise<{
-  users: any[];
-  coaches: any[];
-  bookingTypes: any[];
+  users: User[];
+  coaches: Coach[];
+  bookingTypes: BookingType[];
 }> {
   // Create test users
   const users = await Promise.all([
