@@ -1,9 +1,9 @@
-import { UserType } from '../enums/auth.enums';
+import { AdminRole, UserRole } from '@prisma/client';
 
 export interface JwtPayload {
   sub: string;
   email: string;
-  type: UserType;
+  type: UserRole | AdminRole;
   iat?: number;
   exp?: number;
 }
