@@ -3,10 +3,12 @@
  * Provides common patterns and utilities for testing NestJS controllers
  */
 
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Provider } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
+import { UserRole } from '@prisma/client';
 import request from 'supertest';
+import { JwtPayload } from '../../../src/common';
 
 export abstract class BaseControllerTest<TController, TService> {
   protected controller: TController;
@@ -35,7 +37,7 @@ export abstract class BaseControllerTest<TController, TService> {
 
     this.module = await Test.createTestingModule({
       controllers: [this.getControllerClass()],
-      providers: [...this.getProviders(), ...mocks],
+      providers: [...this.getTestProviders(), ...mocks],
     }).compile();
 
     await this.setupController();
@@ -67,7 +69,7 @@ export abstract class BaseControllerTest<TController, TService> {
    * Abstract method to get additional providers
    * Can be overridden by concrete test classes
    */
-  getProviders(): any[] {
+  getTestProviders(): Provider[] {
     return [];
   }
 
@@ -102,7 +104,13 @@ export abstract class BaseControllerTest<TController, TService> {
    * Creates a test JWT token for authentication
    */
   protected createTestJwtToken(
-    payload: any = { sub: 'test-user-id', email: 'test@example.com' }
+    payload: Partial<JwtPayload> = {
+      sub: 'test-user-id',
+      email: 'test@example.com',
+      type: UserRole.USER,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    }
   ): string {
     const jwtService = new JwtService({
       secret: process.env.JWT_SECRET || 'test-secret',
@@ -206,5 +214,15 @@ export abstract class BaseControllerTest<TController, TService> {
     if (expectedMessage) {
       expect(response.body.message).toContain(expectedMessage);
     }
+  }
+
+  /**
+   * Asserts that a response that has a certain set of keys
+   */
+  protected assertResponseHasKeys(response: any, expectedKeys: string[]): void {
+    expect(response.body).toBeDefined();
+    expectedKeys.forEach(key => {
+      expect(response.body).toHaveProperty(key);
+    });
   }
 }

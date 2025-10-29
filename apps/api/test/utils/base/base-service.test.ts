@@ -85,11 +85,11 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
    */
   protected createMockPrismaService(): Partial<PrismaService> {
     return {
-      $connect: jest.fn(),
-      $disconnect: jest.fn(),
-      $transaction: jest.fn(),
-      $executeRaw: jest.fn(),
-      $queryRaw: jest.fn(),
+      $connect: jest.fn() as jest.Mock,
+      $disconnect: jest.fn() as jest.Mock,
+      $transaction: jest.fn() as jest.Mock,
+      $executeRaw: jest.fn() as jest.Mock,
+      $queryRaw: jest.fn() as jest.Mock,
       user: this.createMockRepository(),
       coach: this.createMockRepository(),
       session: this.createMockRepository(),
@@ -126,14 +126,20 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Asserts that a service method was called with expected arguments
    */
-  protected assertMethodCalledWith(mockMethod: jest.Mock, expectedArgs: any[]): void {
+  protected assertMethodCalledWith(
+    mockMethod: jest.Mock | jest.MockInstance<any, any>,
+    expectedArgs: any[]
+  ): void {
     expect(mockMethod).toHaveBeenCalledWith(...expectedArgs);
   }
 
   /**
    * Asserts that a service method was called a specific number of times
    */
-  protected assertMethodCalledTimes(mockMethod: jest.Mock, expectedTimes: number): void {
+  protected assertMethodCalledTimes(
+    mockMethod: jest.Mock | jest.MockInstance<any, any>,
+    expectedTimes: number
+  ): void {
     expect(mockMethod).toHaveBeenCalledTimes(expectedTimes);
   }
 
@@ -157,14 +163,20 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Sets up a mock method to return specific data
    */
-  protected mockMethodToReturn(mockMethod: jest.Mock, returnValue: any): void {
+  protected mockMethodToReturn(
+    mockMethod: jest.Mock | jest.MockInstance<any, any>,
+    returnValue: any
+  ): void {
     mockMethod.mockResolvedValue(returnValue);
   }
 
   /**
    * Sets up a mock method to throw an error
    */
-  protected mockMethodToThrow(mockMethod: jest.Mock, error: Error | string): void {
+  protected mockMethodToThrow(
+    mockMethod: jest.Mock | jest.MockInstance<any, any>,
+    error: Error | string
+  ): void {
     const errorToThrow = typeof error === 'string' ? new Error(error) : error;
     mockMethod.mockRejectedValue(errorToThrow);
   }

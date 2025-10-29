@@ -1,13 +1,27 @@
+import { UserType } from './../../../src/common/enums/auth.enums';
 /**
  * Abstract base class for in testing
  * Provides database setup, cleanup, and common integration testing patterns
  */
 
 import { PrismaService } from '@app/prisma/prisma.service';
-import { INestApplication } from '@nestjs/common';
+import { JwtPayload } from '@common';
+import { INestApplication, Provider } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Prisma } from '@prisma/client';
+import {
+  AdminRole,
+  BookingType,
+  Coach,
+  Discount,
+  Message,
+  Prisma,
+  RefreshToken,
+  Session,
+  TimeSlot,
+  User,
+  UserRole,
+} from '@prisma/client';
 import request from 'supertest';
 import { cleanDatabase, seedTestDatabase } from '../database-helpers';
 
@@ -16,7 +30,22 @@ export abstract class BaseIntegrationTest {
   protected prisma: PrismaService;
   protected module: TestingModule;
   protected testData: any;
+  private cachedCoach?: Coach;
+  private cachedUser?: User;
 
+  protected async getCachedCoach(): Promise<Coach> {
+    if (!this.cachedCoach) {
+      this.cachedCoach = await this.createTestCoach();
+    }
+    return this.cachedCoach;
+  }
+
+  protected async getCachedUser(): Promise<User> {
+    if (!this.cachedUser) {
+      this.cachedUser = await this.createTestUser();
+    }
+    return this.cachedUser;
+  }
   /**
    * Abstract method to setup the test application
    * Must be implemented by concrete test classes
@@ -36,7 +65,7 @@ export abstract class BaseIntegrationTest {
   async setup(): Promise<void> {
     this.module = await Test.createTestingModule({
       imports: this.getTestModules(),
-      providers: this.getAdditionalProviders(),
+      providers: this.getTestProviders(),
     }).compile();
 
     await this.setupTestApp();
@@ -67,7 +96,7 @@ export abstract class BaseIntegrationTest {
    * Gets additional providers for the test module
    * Can be overridden by concrete test classes
    */
-  getAdditionalProviders(): any[] {
+  getTestProviders(): Provider[] {
     return [];
   }
 
@@ -100,7 +129,13 @@ export abstract class BaseIntegrationTest {
    * Creates a test JWT token for authentication
    */
   protected createTestJwtToken(
-    payload: any = { sub: 'test-user-id', email: 'test@example.com' }
+    payload: Partial<JwtPayload> = {
+      sub: 'test-user-id',
+      email: 'test@example.com',
+      type: UserRole.USER,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    }
   ): string {
     const jwtService = new JwtService({
       secret: process.env.JWT_SECRET || 'test-secret',
@@ -183,75 +218,226 @@ export abstract class BaseIntegrationTest {
   }
 
   /**
-   * Creates test data in the database
+   * Creates test user data in the database with sensible defaults.
+   * Allows overriding any field via partial parameter.
    */
-  protected async createTestUser(overrides: any = {}): Promise<any> {
+  protected async createTestUser(overrides: Partial<User> = {}): Promise<User> {
+    const userData = {
+      email: `test-user-${Date.now()}@example.com`,
+      name: 'Test User',
+      passwordHash: 'hashed-password',
+      role: UserRole.USER,
+      gender: 'OTHER',
+      age: 30,
+      height: 170,
+      weight: 70,
+      country: 'Test User Country',
+      address: '123 Test St, Test City',
+      isActive: true,
+      isOnline: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...overrides,
+    };
+
     return this.prisma.user.create({
-      data: {
-        email: `test-${Date.now()}@example.com`,
-        name: 'Test User',
-        phone: '+1234567890',
-        ...overrides,
-      },
+      data: userData,
     });
   }
 
   /**
-   * Creates test coach data in the database
+   * Creates test coach data in the database with sensible defaults.
+   * Allows overriding any field via partial parameter.
    */
-  protected async createTestCoach(userId?: string, overrides: any = {}): Promise<any> {
-    const user = userId ? { id: userId } : await this.createTestUser();
+  protected async createTestCoach(overrides: Partial<Coach> = {}): Promise<Coach> {
+    const coachData = {
+      email: `test-coach-${Date.now()}@example.com`,
+      name: 'Test Coach',
+      bio: 'Test coach bio',
+      passwordHash: 'hashed-password',
+      role: AdminRole.COACH,
+      isAdmin: true,
+      credentials: 'Certified Coach',
+      philosophy: 'Coaching Philosophy',
+      profileImage: 'http://example.com/profile.jpg',
+      isActive: true,
+      isOnline: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...overrides,
+    };
 
     return this.prisma.coach.create({
-      data: {
-        userId: user.id,
-        bio: 'Test coach bio',
-        experience: 5,
-        hourlyRate: 75.0,
-        specialties: ['Singles'],
-        availability: {},
-        ...overrides,
-      },
+      data: coachData,
     });
   }
 
   /**
-   * Creates test booking type data in the database
+   * Creates test booking type data in the database with sensible defaults.
+   * Related entities (coach) are created if not provided.
+   * Allows overriding any field via partial parameter.
    */
-  protected async createTestBookingType(overrides: any = {}): Promise<any> {
+  protected async createTestBookingType(
+    overrides: Partial<BookingType> = {}
+  ): Promise<BookingType> {
+    const coachId = overrides.coachId ?? (await this.getCachedCoach()).id;
+
+    const bookingTypeData = {
+      coachId,
+      name: 'Test Booking Type',
+      description: 'Test booking type description',
+      basePrice: 75.0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isActive: true,
+      ...overrides,
+    };
+
     return this.prisma.bookingType.create({
-      data: {
-        name: 'Test Booking Type',
-        description: 'Test booking type description',
-        duration: 60,
-        price: 75.0,
-        isActive: true,
-        ...overrides,
-      },
+      data: bookingTypeData,
     });
   }
 
   /**
-   * Creates test session data in the database
+   * Creates test session data in the database with sensible defaults.
+   * Related entities (coach, user, bookingType, timeSlot) are created if not provided.
+   * Allows overriding any field via partial parameter.
    */
-  protected async createTestSession(
-    coachId?: string,
-    userId?: string,
-    overrides: any = {}
-  ): Promise<any> {
-    const coach = coachId ? { id: coachId } : await this.createTestCoach();
-    const user = userId ? { id: userId } : await this.createTestUser();
+  protected async createTestSession(overrides: Partial<Session> = {}): Promise<Session> {
+    const coachId = overrides.coachId ?? (await this.getCachedCoach()).id;
+    const userId = overrides.userId ?? (await this.getCachedUser()).id;
+    const bookingTypeId =
+      overrides.bookingTypeId ?? (await this.createTestBookingType({ coachId })).id;
+    const timeSlotId = overrides.timeSlotId ?? (await this.createTestTimeSlot({ coachId })).id;
+
+    const sessionData = {
+      coachId,
+      userId,
+      notes: 'Test session notes',
+      dateTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+      durationMin: 60,
+      status: 'SCHEDULED',
+      price: 75.0,
+      isPaid: false,
+      bookingTypeId,
+      timeSlotId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...overrides,
+    };
 
     return this.prisma.session.create({
-      data: {
-        coachId: coach.id,
-        userId: user.id,
-        startTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-        endTime: new Date(Date.now() + 25 * 60 * 60 * 1000), // Tomorrow + 1 hour
-        status: 'SCHEDULED',
-        price: 75.0,
-        ...overrides,
-      },
+      data: sessionData,
+    });
+  }
+
+  /**
+   * Creates test Time slot data in the database with sensible defaults.
+   * Related entities (coach) are created if not provided.
+   * Allows overriding any field via partial parameter.
+   */
+  protected async createTestTimeSlot(overrides: Partial<TimeSlot> = {}): Promise<TimeSlot> {
+    const coachId = overrides.coachId ?? (await this.getCachedCoach()).id;
+
+    const timeSlotData = {
+      coachId,
+      dateTime: new Date(Date.now() + 48 * 60 * 60 * 1000), // Day after tomorrow
+      durationMin: 60,
+      isAvailable: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...overrides,
+    };
+
+    return this.prisma.timeSlot.create({
+      data: timeSlotData,
+    });
+  }
+
+  /**
+   * Creates test Discount data in the database with sensible defaults.
+   * Related entities (coach) are created if not provided.
+   * Allows overriding any field via partial parameter.
+   */
+  protected async createTestDiscount(overrides: Partial<Discount> = {}): Promise<Discount> {
+    const coachId = overrides.coachId ?? (await this.getCachedCoach()).id;
+
+    const discountedData = {
+      coachId,
+      code: `DISCOUNT${Date.now()}`,
+      amount: 10.0,
+      isActive: true,
+      expiry: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
+      useCount: 0,
+      maxUsage: 100,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...overrides,
+    };
+
+    return this.prisma.discount.create({
+      data: discountedData,
+    });
+  }
+
+  /**
+   * Creates test Message data in the database with sensible defaults.
+   * Related entities (coach, user, session) are created if not provided.
+   * Allows overriding any field via partial parameter.
+   */
+  protected async createTestMessage(overrides: Partial<Message> = {}): Promise<Message> {
+    const senderCoachId = overrides.senderCoachId ?? (await this.getCachedCoach()).id;
+    const senderUserId = overrides.senderUserId ?? (await this.getCachedUser()).id;
+    const receiverUserId = overrides.receiverUserId ?? (await this.getCachedUser()).id;
+    const receiverCoachId = overrides.receiverCoachId ?? (await this.getCachedCoach()).id;
+    const sessionId = overrides.sessionId ?? (await this.createTestSession()).id;
+
+    const messageData = {
+      senderCoachId,
+      senderUserId,
+      receiverUserId,
+      receiverCoachId,
+      sessionId,
+      content: 'Test message content',
+      sentAt: overrides.sentAt ?? new Date(),
+      senderType: overrides.senderType ?? UserType.USER,
+      receiverType: overrides.receiverType ?? UserType.COACH,
+      ...overrides,
+    };
+
+    return this.prisma.message.create({
+      data: messageData,
+    });
+  }
+
+  /**
+   * Creates test RefreshToken data in the database with sensible defaults.
+   * Related entities (coach, user, JwtToken) are created if not provided.
+   * Allows overriding any field via partial parameter.
+   */
+  protected async createTestRefreshToken(
+    overrides: Partial<RefreshToken> = {}
+  ): Promise<RefreshToken> {
+    const coachId = overrides.coachId ?? (await this.getCachedCoach()).id;
+    const userId = overrides.userId ?? (await this.getCachedUser()).id;
+    const token =
+      overrides.token ??
+      (await this.createTestJwtToken({
+        sub: userId,
+        email: (await this.getCachedUser()).email,
+      }));
+    const refreshTokenData = {
+      coachId,
+      userId,
+      token,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...overrides,
+    };
+
+    return this.prisma.refreshToken.create({
+      data: refreshTokenData,
     });
   }
 
@@ -292,7 +478,7 @@ export abstract class BaseIntegrationTest {
    * Asserts that data exists in the database
    */
   protected async assertDataExists(model: string, where: any): Promise<void> {
-    const data = await (this.prisma as any)[model].findFirst({ where });
+    const data = await this.prisma[model].findFirst({ where });
     expect(data).toBeDefined();
   }
 
@@ -300,7 +486,7 @@ export abstract class BaseIntegrationTest {
    * Asserts that data does not exist in the database
    */
   protected async assertDataNotExists(model: string, where: any): Promise<void> {
-    const data = await (this.prisma as any)[model].findFirst({ where });
+    const data = await this.prisma[model].findFirst({ where });
     expect(data).toBeNull();
   }
 
@@ -308,6 +494,6 @@ export abstract class BaseIntegrationTest {
    * Counts records in a database table
    */
   protected async countRecords(model: string, where: any = {}): Promise<number> {
-    return (this.prisma as any)[model].count({ where });
+    return this.prisma[model].count({ where });
   }
 }
