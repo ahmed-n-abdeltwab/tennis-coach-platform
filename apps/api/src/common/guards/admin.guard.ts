@@ -1,5 +1,5 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
-import { UserType } from '../enums/auth.enums';
+import { AdminRole } from '@prisma/client';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
@@ -8,7 +8,7 @@ export class AdminGuard implements CanActivate {
     const user = request.user;
 
     // Check if user is a coach and has isAdmin flag
-    if (user.userType === UserType.COACH && user.isAdmin) {
+    if (user.role in AdminRole && user.isAdmin) {
       return true;
     }
 

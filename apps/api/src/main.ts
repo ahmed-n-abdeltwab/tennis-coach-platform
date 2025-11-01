@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app/app.module';
+import { generateApiRoutes } from './common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -40,8 +41,14 @@ async function bootstrap() {
       'JWT-auth'
     )
     .build();
+
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api/docs', app, document);
+
+  generateApiRoutes(document).catch(error => {
+    console.error('❌ Error generating routes:', error);
+    process.exit(1);
+  });
 
   const port = parseInt(process.env.PORT ?? '3333', 10);
 
