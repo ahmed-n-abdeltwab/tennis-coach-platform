@@ -1,4 +1,5 @@
-import { UserType } from '@common';
+import { Role } from '@auth-helpers/common';
+import { UserRole } from '@prisma/client';
 import { AuthHeaders, AuthTestHelper, TestUser } from './auth-test-helper';
 
 export class UserRoleTestHelper {
@@ -8,19 +9,19 @@ export class UserRoleTestHelper {
     this.authHelper = new AuthTestHelper(jwtSecret);
   }
 
-  createUserTestData(role: UserType, overrides?: Partial<TestUser>): TestUser {
+  createUserTestData(role: Role, overrides?: Partial<TestUser>): TestUser {
     const baseData: TestUser = {
       id: `test-${role}-id`,
       email: `${role}@example.com`,
-      type: role,
+      role,
       ...overrides,
     };
     return baseData;
   }
 
-  createRoleAuthHeaders(role: UserType, overrides?: Partial<TestUser>): AuthHeaders {
+  createRoleAuthHeaders(role: Role, overrides?: Partial<TestUser>): AuthHeaders {
     const userData = this.createUserTestData(role, overrides);
-    if (role === UserType.USER) {
+    if (role in UserRole) {
       return this.authHelper.createUserAuthHeaders(userData);
     } else {
       return this.authHelper.createCoachAuthHeaders(userData);
@@ -32,13 +33,13 @@ export class UserRoleTestHelper {
     const coaches: TestUser[] = [];
     for (let i = 0; i < count; i++) {
       users.push(
-        this.createUserTestData(UserType.USER, {
+        this.createUserTestData(Role.USER, {
           id: `test-user-${i}`,
           email: `user${i}@example.com`,
         })
       );
       coaches.push(
-        this.createUserTestData(UserType.COACH, {
+        this.createUserTestData(Role.COACH, {
           id: `test-coach-${i}`,
           email: `coach${i}@example.com`,
         })

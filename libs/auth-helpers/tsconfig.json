@@ -1,12 +1,13 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
+    "outDir": "../../dist/out-tsc/libs/auth-helpers",
+    "rootDir": ".",
     "types": [],
     "declaration": true,
     "declarationMap": true,
     "composite": true
   },
-  "include": ["**/*.ts", "../../apps/api/src/common"],
+  "include": ["**/*.ts", "../utils/index.ts"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts"]
 }

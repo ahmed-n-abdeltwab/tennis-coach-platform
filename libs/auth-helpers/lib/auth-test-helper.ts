@@ -1,4 +1,5 @@
-import { JwtPayload, parseJwtTime, UserType } from '@common';
+import { JwtPayload, Role } from '@auth-helpers';
+import { parseJwtTime } from '@utils';
 // Moved from test/utils/auth-helpers.ts
 import { JwtService } from '@nestjs/jwt';
 export interface HttpTestOptions {
@@ -10,7 +11,7 @@ export interface HttpTestOptions {
 export interface TestUser {
   id: string;
   email: string;
-  type: UserType;
+  role: Role;
 }
 
 export interface AuthHeaders {
@@ -31,7 +32,7 @@ export class AuthTestHelper {
     const defaultPayload: JwtPayload = {
       sub: 'test-user-id',
       email: 'test@example.com',
-      type: UserType.USER,
+      role: Role.USER,
       ...payload,
     };
     return this.jwtService.sign(defaultPayload);
@@ -41,20 +42,20 @@ export class AuthTestHelper {
     const user: TestUser = {
       id: 'test-user-id',
       email: 'user@example.com',
-      type: UserType.USER,
+      role: Role.USER,
       ...overrides,
     };
-    return this.createToken({ sub: user.id, email: user.email, type: user.type });
+    return this.createToken({ sub: user.id, email: user.email, role: user.role });
   }
 
   createCoachToken(overrides?: Partial<TestUser>): string {
     const coach: TestUser = {
       id: 'test-coach-id',
       email: 'coach@example.com',
-      type: UserType.COACH,
+      role: Role.COACH,
       ...overrides,
     };
-    return this.createToken({ sub: coach.id, email: coach.email, type: coach.type });
+    return this.createToken({ sub: coach.id, email: coach.email, role: coach.role });
   }
 
   createExpiredToken(payload?: Partial<JwtPayload>): string {
@@ -65,7 +66,7 @@ export class AuthTestHelper {
     const defaultPayload: JwtPayload = {
       sub: 'test-user-id',
       email: 'test@example.com',
-      type: UserType.USER,
+      role: Role.USER,
       ...payload,
     };
     return expiredJwtService.sign(defaultPayload);

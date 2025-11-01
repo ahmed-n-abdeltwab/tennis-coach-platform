@@ -1,0 +1,32 @@
+{
+  "name": "routes-helpers",
+  "root": "libs/routes-helpers",
+  "projectType": "library",
+  "sourceRoot": "libs/routes-helpers/lib",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "options": {
+        "outputPath": "dist/libs/routes-helpers",
+        "main": "libs/routes-helpers/index.ts",
+        "tsConfig": "libs/routes-helpers/tsconfig.json",
+        "assets": []
+      }
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "options": {
+        "lintFilePatterns": ["libs/routes-helpers/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/routes-helpers"],
+      "options": {
+        "jestConfig": "libs/routes-helpers/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  },
+  "tags": []
+}

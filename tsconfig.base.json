@@ -20,33 +20,19 @@
     "noImplicitOverride": true,
     "importHelpers": true,
     "paths": {
-      "@workspace/*": ["*"],
-      "/*": ["*"],
-      // Documentation
-      "@docs/*": ["docs/*"],
-
-      "@scripts/*": ["scripts/*"],
-
-      "@k8s/*": ["k8s/*"],
-
-      // Libs
+      "@apps/*": ["apps/*"],
       "@auth-helpers": ["libs/auth-helpers/index"],
       "@auth-helpers/*": ["libs/auth-helpers/*"],
-
-      // Applications
-      "@apps/*": ["apps/*"],
-
-      // Api
-      "@app/*": ["apps/api/src/app/*"],
-      // Common
-      "@common": ["apps/api/src/common/index"],
-      "@common/*": ["apps/api/src/common/*"],
-      // Configurations
-      "@config": ["apps/api/src/config/index"],
-      "@config/*": ["apps/api/src/config/*"],
-      // Tests
-      "@test-utils/*": ["apps/api/test/utils/*"],
-      "@test/*": ["apps/api/test/*"]
+      "@docs/*": ["docs/*"],
+      "@k8s/*": ["k8s/*"],
+      "@libs/*": ["libs/*"],
+      "@routes-helpers": ["libs/routes-helpers/index"],
+      "@routes-helpers/*": ["libs/routes-helpers/*"],
+      "@scripts/*": ["scripts/*"],
+      "@utils": ["libs/utils/index"],
+      "@utils/*": ["libs/utils/*"],
+      "@workspace/*": ["*"],
+      "utils": ["libs/utils/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp", "test-reports"],
