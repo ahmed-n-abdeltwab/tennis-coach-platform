@@ -9,18 +9,18 @@ import {
 } from '@nestjs/swagger';
 import { AuthResponseDto, LoginDto } from './dto/auth.dto';
 
+import { JwtPayload } from '@auth-helpers';
 import {
   CurrentUser,
   ErrorResponseDto,
-  JwtPayload,
   JwtRefreshGuard,
   LocalCoachAuthGuard,
   LocalUserAuthGuard,
   Public,
-  Role,
   Roles,
 } from '@common';
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { AdminRole } from '@prisma/client';
 import { AuthService } from './auth.service';
 import { SignupCoachDto, SignupUserDto } from './dto/auth.dto';
 @ApiTags('Authentication')
@@ -60,7 +60,7 @@ export class AuthController {
   // Coach endpoints
   @Public()
   @Post('coach/signup')
-  @Roles(Role.ADMIN)
+  @Roles(AdminRole.ADMIN)
   @ApiOperation({ summary: 'Register a new coach account' })
   @ApiCreatedResponse({
     description: 'Coach successfully registered',

@@ -1,6 +1,6 @@
 import { CoachesService } from '@app/coaches/coaches.service';
 import { UsersService } from '@app/users/users.service';
-import { JwtPayload } from '@common';
+import { JwtPayload } from '@auth-helpers/common';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
@@ -24,7 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload): Promise<JwtPayload> {
-    let entity: Coach | User | null = null;
+    let entity: Omit<Coach | User, 'passwordHash'> | null = null;
 
     if (payload.role in UserRole) {
       entity = await this.usersService.findById(payload.sub);

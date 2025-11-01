@@ -1,7 +1,7 @@
 import { CoachesService } from '@app/coaches/coaches.service';
 import { PrismaService } from '@app/prisma/prisma.service';
 import { UsersService } from '@app/users/users.service';
-import { JwtPayload } from '@common';
+import { JwtPayload, Role } from '@auth-helpers';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -9,7 +9,6 @@ import { AdminRole, Coach, User, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import authConfig from './config/auth.config';
 import { AuthResponseDto, LoginDto, SignupCoachDto, SignupUserDto } from './dto/auth.dto';
-
 @Injectable()
 export class AuthService {
   constructor(
@@ -26,7 +25,7 @@ export class AuthService {
     // Update online status
     await this.usersService.updateOnlineStatus(user.id, true);
 
-    return this.generateTokens(user.id, user.email, UserRole.USER);
+    return this.generateTokens(user.id, user.email, Role.USER);
   }
 
   async signupCoach(signupDto: SignupCoachDto): Promise<AuthResponseDto> {
@@ -35,7 +34,7 @@ export class AuthService {
     // Update online status
     await this.coachesService.updateOnlineStatus(coach.id, true);
 
-    return this.generateTokens(coach.id, coach.email, AdminRole.COACH);
+    return this.generateTokens(coach.id, coach.email, Role.COACH);
   }
 
   async loginUser(loginDto: LoginDto): Promise<AuthResponseDto> {
@@ -60,7 +59,7 @@ export class AuthService {
 
     await this.usersService.updateOnlineStatus(user.id, true);
 
-    return this.generateTokens(user.id, user.email, UserRole.USER);
+    return this.generateTokens(user.id, user.email, Role.USER);
   }
 
   async loginCoach(loginDto: LoginDto): Promise<AuthResponseDto> {
@@ -85,7 +84,7 @@ export class AuthService {
 
     await this.coachesService.updateOnlineStatus(coach.id, true);
 
-    return this.generateTokens(coach.id, coach.email, AdminRole.COACH);
+    return this.generateTokens(coach.id, coach.email, Role.COACH);
   }
 
   async logout(user: JwtPayload): Promise<void> {
@@ -116,7 +115,7 @@ export class AuthService {
   private async generateTokens(
     userId: string,
     email: string,
-    role: AdminRole | UserRole
+    role: Role
   ): Promise<AuthResponseDto> {
     const payload: JwtPayload = {
       sub: userId,

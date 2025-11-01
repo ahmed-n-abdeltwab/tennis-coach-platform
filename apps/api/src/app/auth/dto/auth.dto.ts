@@ -1,3 +1,4 @@
+import { Role } from '@auth-helpers';
 import { BaseResponseDto } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
@@ -136,10 +137,10 @@ export class UserSummaryDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ enum: ['USER', 'COACH', 'ADMIN'] })
+  @ApiProperty({ enum: Role, example: Role.USER })
   @IsString()
   @IsNotEmpty()
-  role: string;
+  role: Role;
 }
 
 export class AuthResponseDto {
@@ -157,7 +158,7 @@ export class AuthResponseDto {
   user: {
     id: string;
     email: string;
-    role: string;
+    role: Role;
   };
 }
 

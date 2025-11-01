@@ -1,6 +1,6 @@
-import { parseJwtTime } from '@common';
 import { registerAs } from '@nestjs/config';
 import { JwtModuleOptions } from '@nestjs/jwt';
+import { parseJwtTime } from '@utils';
 
 export default registerAs(
   'jwt',

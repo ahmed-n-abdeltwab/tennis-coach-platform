@@ -1,5 +1,5 @@
-import { parseJwtTime } from '@common';
 import { registerAs } from '@nestjs/config';
+import { parseJwtTime } from '@utils';
 
 export default registerAs('auth', () => ({
   jwt: {
