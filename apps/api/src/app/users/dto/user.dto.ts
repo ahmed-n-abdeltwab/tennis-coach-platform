@@ -1,8 +1,16 @@
+import { Role } from '@auth-helpers/common';
 import { BaseResponseDto, createTypedApiDecorators } from '@common';
+import { Transform } from 'class-transformer';
+
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class UpdateUserDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  id?: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
@@ -11,48 +19,61 @@ export class UpdateUserDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  gender?: string;
+  email?: string;
 
   @ApiProperty({ required: false })
+  @Transform(({ value }) => value ?? undefined)
+  @IsOptional()
+  @IsString()
+  gender?: string | null;
+
+  @ApiProperty({ required: false })
+  @Transform(({ value }) => value ?? undefined)
   @IsOptional()
   @IsNumber()
   @Min(5)
   @Max(120)
-  age?: number;
+  age?: number | null;
 
   @ApiProperty({ required: false })
+  @Transform(({ value }) => value ?? undefined)
   @IsOptional()
   @IsNumber()
   @Min(50)
   @Max(300)
-  height?: number;
+  height?: number | null;
 
   @ApiProperty({ required: false })
+  @Transform(({ value }) => value ?? undefined)
   @IsOptional()
   @IsNumber()
   @Min(20)
   @Max(500)
-  weight?: number;
+  weight?: number | null;
 
   @ApiProperty({ required: false })
+  @Transform(({ value }) => value ?? undefined)
   @IsOptional()
   @IsBoolean()
   disability?: boolean;
 
   @ApiProperty({ required: false })
+  @Transform(({ value }) => value ?? undefined)
   @IsOptional()
   @IsString()
-  country?: string;
+  country?: string | null;
 
   @ApiProperty({ required: false })
+  @Transform(({ value }) => value ?? undefined)
   @IsOptional()
   @IsString()
-  address?: string;
+  address?: string | null;
 
   @ApiProperty({ required: false })
+  @Transform(({ value }) => value ?? undefined)
   @IsOptional()
   @IsString()
-  notes?: string;
+  notes?: string | null;
 }
 
 export class UserResponseDto extends BaseResponseDto {
@@ -62,8 +83,8 @@ export class UserResponseDto extends BaseResponseDto {
   @ApiProperty({ example: 'John Doe' })
   name: string;
 
-  @ApiProperty({ enum: ['user', 'coach'], example: 'user' })
-  type: string;
+  @ApiProperty({ enum: Role, example: Role.USER })
+  role: Role;
 
   @ApiProperty({ required: false, enum: ['male', 'female', 'other'] })
   gender?: string;

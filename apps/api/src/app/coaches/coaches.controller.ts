@@ -1,4 +1,5 @@
-import { CurrentUser, JwtPayload, Public, Roles } from '@common';
+import { JwtPayload } from '@auth-helpers/common';
+import { CurrentUser, Public, Roles } from '@common';
 import { Body, Controller, Get, Param, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AdminRole } from '@prisma/client';

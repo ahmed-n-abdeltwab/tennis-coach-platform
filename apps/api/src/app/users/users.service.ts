@@ -48,32 +48,44 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.prisma.user.findUnique({
+    const user: User | null = await this.prisma.user.findUnique({
       where: { email },
     });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    return user;
   }
 
   async findById(id: string): Promise<User | null> {
-    return this.prisma.user.findUnique({
+    const user: User | null = await this.prisma.user.findUnique({
       where: { id },
     });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    return user;
   }
 
   async validatePassword(password: string, passwordHash: string): Promise<boolean> {
     return bcrypt.compare(password, passwordHash);
   }
 
-  async updateOnlineStatus(userId: string, isOnline: boolean): Promise<User> {
-    return this.prisma.user.update({
+  async updateOnlineStatus(userId: string, isOnline: boolean): Promise<User | null> {
+    const user: User | null = await this.prisma.user.update({
       where: {
         id: userId,
       },
       data: { isOnline },
     });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    return user;
   }
 
-  async updateProfile(id: string, updateDto: UpdateUserDto) {
-    return this.prisma.user.update({
+  async updateProfile(id: string, updateDto: UpdateUserDto): Promise<UpdateUserDto> {
+    const updatedUser = await this.prisma.user.update({
       where: { id },
       data: updateDto,
       select: {
@@ -90,5 +102,10 @@ export class UsersService {
         notes: true,
       },
     });
+    if (!updatedUser) {
+      throw new BadRequestException('User not found');
+    }
+
+    return updatedUser;
   }
 }
