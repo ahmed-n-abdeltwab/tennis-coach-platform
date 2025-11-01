@@ -9,6 +9,7 @@
  */
 
 import {
+  AdminRole,
   BookingType,
   Coach,
   Discount,
@@ -17,6 +18,7 @@ import {
   Session,
   TimeSlot,
   User,
+  UserRole,
 } from '@prisma/client';
 import { hash } from 'bcryptjs';
 
@@ -365,9 +367,9 @@ export class DatabaseSeeder {
       const userMessage: Message = await this.client.message.create({
         data: {
           content: `Hi ${coach?.name}, I'm looking forward to our session on ${session.dateTime.toDateString()}. Any specific things I should prepare?`,
-          senderType: 'user',
+          senderType: UserRole.USER,
           senderUserId: user?.id,
-          receiverType: 'coach',
+          receiverType: AdminRole.COACH,
           receiverCoachId: coach?.id,
           sessionId: session.id,
         },
@@ -378,9 +380,9 @@ export class DatabaseSeeder {
       const coachMessage: Message = await this.client.message.create({
         data: {
           content: `Hi ${user?.name}! Great to hear from you. Please bring comfortable athletic wear and a water bottle. We'll focus on your serve technique as discussed.`,
-          senderType: 'coach',
+          senderType: AdminRole.COACH,
           senderCoachId: coach?.id,
-          receiverType: 'user',
+          receiverType: UserRole.USER,
           receiverUserId: user?.id,
           sessionId: session.id,
         },

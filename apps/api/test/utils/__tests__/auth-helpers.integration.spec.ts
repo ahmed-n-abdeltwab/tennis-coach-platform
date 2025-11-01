@@ -9,7 +9,7 @@ import {
   ProtectedRouteTestHelper,
   UserRoleTestHelper,
 } from '@auth-helpers';
-import { parseJwtTime } from '@common';
+import { parseJwtTime, Role } from '@auth-helpers/common';
 import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
@@ -68,7 +68,7 @@ describe('Auth Helpers Integration Tests', () => {
       const customPayload = {
         sub: 'test-user-123',
         email: 'test@example.com',
-        type: 'user' as const,
+        role: Role.USER,
       };
 
       const token = authHelper.createToken(customPayload);
@@ -77,7 +77,7 @@ describe('Auth Helpers Integration Tests', () => {
       expect(decodedPayload).toBeDefined();
       expect(decodedPayload?.sub).toBe(customPayload.sub);
       expect(decodedPayload?.email).toBe(customPayload.email);
-      expect(decodedPayload?.type).toBe(customPayload.type);
+      expect(decodedPayload?.role).toBe(customPayload.role);
     });
 
     it('should create expired tokens that fail verification', () => {
@@ -102,18 +102,18 @@ describe('Auth Helpers Integration Tests', () => {
       const userPayload = authHelper.decodeToken(userToken);
       const coachPayload = authHelper.decodeToken(coachToken);
 
-      expect(userPayload?.type).toBe('user');
-      expect(coachPayload?.type).toBe('coach');
+      expect(userPayload?.role).toBe(Role.USER);
+      expect(coachPayload?.role).toBe(Role.COACH);
     });
   });
 
   describe('UserRoleTestHelper Integration', () => {
     it('should create consistent test data for different roles', () => {
-      const userData = userRoleHelper.createUserTestData('user');
-      const coachData = userRoleHelper.createUserTestData('coach');
+      const userData = userRoleHelper.createUserTestData(Role.USER);
+      const coachData = userRoleHelper.createUserTestData(Role.COACH);
 
-      expect(userData.type).toBe('user');
-      expect(coachData.type).toBe('coach');
+      expect(userData.role).toBe(Role.USER);
+      expect(coachData.role).toBe(Role.COACH);
       expect(userData.id).toBeDefined();
       expect(coachData.id).toBeDefined();
       expect(userData.email).toContain('@');
@@ -149,14 +149,14 @@ describe('Auth Helpers Integration Tests', () => {
         expect(header.Authorization).toMatch(/^Bearer .+/);
         const token = header.Authorization.replace('Bearer ', '');
         const payload = authHelper.decodeToken(token);
-        expect(payload?.type).toBe('user');
+        expect(payload?.role).toBe(Role.USER);
       });
 
       coachHeaders.forEach(header => {
         expect(header.Authorization).toMatch(/^Bearer .+/);
         const token = header.Authorization.replace('Bearer ', '');
         const payload = authHelper.decodeToken(token);
-        expect(payload?.type).toBe('coach');
+        expect(payload?.role).toBe(Role.COACH);
       });
     });
   });
@@ -166,7 +166,7 @@ describe('Auth Helpers Integration Tests', () => {
       const testPayload = {
         sub: 'test-user-456',
         email: 'compatibility@example.com',
-        type: 'user' as const,
+        role: Role.USER,
       };
 
       const token = authHelper.createToken(testPayload);
@@ -176,7 +176,7 @@ describe('Auth Helpers Integration Tests', () => {
       expect(decodedPayload).toBeDefined();
       expect(decodedPayload?.sub).toBe(testPayload.sub);
       expect(decodedPayload?.email).toBe(testPayload.email);
-      expect(decodedPayload?.type).toBe(testPayload.type);
+      expect(decodedPayload?.role).toBe(testPayload.role);
 
       // Token should be verifiable (not expired)
       const verifiedPayload = authHelper.verifyToken(token);
@@ -200,10 +200,9 @@ describe('Auth Helpers Integration Tests', () => {
   describe('Helper Consistency', () => {
     it('should maintain consistency between different helper methods', () => {
       // Create user data using UserRoleTestHelper
-      const userData = userRoleHelper.createUserTestData('user', {
+      const userData = userRoleHelper.createUserTestData(Role.USER, {
         id: 'consistent-user-123',
         email: 'consistent@example.com',
-        name: 'Consistent User',
       });
 
       // Create token using AuthTestHelper with same data
@@ -213,7 +212,7 @@ describe('Auth Helpers Integration Tests', () => {
       // Verify consistency
       expect(decodedPayload?.sub).toBe(userData.id);
       expect(decodedPayload?.email).toBe(userData.email);
-      expect(decodedPayload?.type).toBe(userData.type);
+      expect(decodedPayload?.role).toBe(userData.role);
     });
 
     it('should create headers that work with HTTP helpers', () => {
@@ -233,8 +232,8 @@ describe('Auth Helpers Integration Tests', () => {
       const userPayload = authHelper.decodeToken(userToken);
       const coachPayload = authHelper.decodeToken(coachToken);
 
-      expect(userPayload?.type).toBe('user');
-      expect(coachPayload?.type).toBe('coach');
+      expect(userPayload?.role).toBe(Role.USER);
+      expect(coachPayload?.role).toBe(Role.COACH);
     });
   });
 

@@ -1,3 +1,4 @@
+import { Role } from '@auth-helpers/common';
 /**
  * Tests for the mock factory system
  */
@@ -119,7 +120,7 @@ describe('Mock Factory System', () => {
     it('should create a user auth payload', () => {
       const payload = authFactory.createUserPayload();
 
-      expect(payload.type).toBe('USER');
+      expect(payload.role).toBe(Role.USER);
       expect(payload).toHaveProperty('sub');
       expect(payload).toHaveProperty('email');
       expect(payload).toHaveProperty('iat');
@@ -129,7 +130,7 @@ describe('Mock Factory System', () => {
     it('should create a coach auth payload', () => {
       const payload = authFactory.createCoachPayload();
 
-      expect(payload.type).toBe('COACH');
+      expect(payload.role).toBe(Role.COACH);
       expect(payload.email).toContain('coach');
     });
 
@@ -282,9 +283,9 @@ describe('Mock Factory System', () => {
     it('should create a user to coach message', () => {
       const message = messageFactory.createUserToCoach('user123', 'coach456');
 
-      expect(message.senderType).toBe('user');
+      expect(message.senderType).toBe(Role.USER);
       expect(message.senderUserId).toBe('user123');
-      expect(message.receiverType).toBe('coach');
+      expect(message.receiverType).toBe(Role.COACH);
       expect(message.receiverCoachId).toBe('coach456');
     });
 
@@ -294,10 +295,10 @@ describe('Mock Factory System', () => {
       expect(messages).toHaveLength(4);
 
       // Check alternating senders
-      expect(messages[0].senderType).toBe('user');
-      expect(messages[1].senderType).toBe('coach');
-      expect(messages[2].senderType).toBe('user');
-      expect(messages[3].senderType).toBe('coach');
+      expect(messages[0].senderType).toBe(Role.USER);
+      expect(messages[1].senderType).toBe(Role.COACH);
+      expect(messages[2].senderType).toBe(Role.USER);
+      expect(messages[3].senderType).toBe(Role.COACH);
 
       // Check chronological order
       expect(messages[0].sentAt.getTime()).toBeLessThan(messages[1].sentAt.getTime());

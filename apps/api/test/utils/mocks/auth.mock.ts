@@ -1,9 +1,9 @@
-import { UserType } from '@common';
+import { Role } from '@auth-helpers/common';
 
 export interface MockAuthPayload {
   sub: string;
   email: string;
-  type: UserType;
+  role: Role;
   iat?: number;
   exp?: number;
 }
@@ -14,7 +14,7 @@ export interface MockAuthResponse {
   user: {
     id: string;
     email: string;
-    type: UserType;
+    role: Role;
   };
 }
 

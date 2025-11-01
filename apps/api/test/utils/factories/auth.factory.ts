@@ -2,7 +2,7 @@
  * Authentication mock factory for creating test auth data
  */
 
-import { UserType } from '@common';
+import { Role } from '@auth-helpers/common';
 import { JwtService } from '@nestjs/jwt';
 import { MockAuthHeaders, MockAuthPayload, MockAuthResponse } from '../mocks';
 import { BaseMockFactory } from './base-factory';
@@ -22,7 +22,7 @@ export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {
     return {
       sub: id,
       email: this.generateEmail('test'),
-      type: UserType.USER,
+      role: Role.USER,
       iat: now,
       exp: now + 3600, // 1 hour from now
       ...overrides,
@@ -31,7 +31,7 @@ export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {
 
   createUserPayload(overrides?: Partial<MockAuthPayload>): MockAuthPayload {
     return this.create({
-      type: UserType.USER,
+      role: Role.USER,
       email: this.generateEmail('user'),
       ...overrides,
     });
@@ -39,7 +39,7 @@ export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {
 
   createCoachPayload(overrides?: Partial<MockAuthPayload>): MockAuthPayload {
     return this.create({
-      type: UserType.COACH,
+      role: Role.COACH,
       email: this.generateEmail('coach'),
       ...overrides,
     });
@@ -101,7 +101,7 @@ export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {
       user: {
         id: authPayload.sub,
         email: authPayload.email,
-        type: authPayload.type,
+        role: authPayload.role,
       },
     };
   }

@@ -4,7 +4,7 @@
 
 import { PrismaService } from '@app/prisma/prisma.service';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 
 declare global {
   var testApp: INestApplication;

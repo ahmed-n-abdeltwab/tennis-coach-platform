@@ -83,9 +83,9 @@ export class PaymentMockFactory extends BaseMockFactory<MockPayment> {
     };
   }
 
-  createAccessTokenResponse(): { access_token: string; expires_in: number } {
+  createAccessTokenResponse(): { accessToken: string; expires_in: number } {
     return {
-      access_token: this.generateAccessToken(),
+      accessToken: this.generateAccessToken(),
       expires_in: 32400,
     };
   }

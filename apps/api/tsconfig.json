@@ -1,17 +1,32 @@
 {
   "extends": "../../tsconfig.base.json",
-  "files": [],
-  "include": [],
-  "references": [
-    {
-      "path": "./tsconfig.app.json"
-    },
-    {
-      "path": "./tsconfig.spec.json"
-    }
-  ],
   "compilerOptions": {
+    "outDir": "../../dist/out-tsc/apps/api",
+    "types": ["node"],
+    "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
-  }
+    "target": "es2022",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "strict": true,
+    "noImplicitOverride": true,
+    "strictPropertyInitialization": false,
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      // Override or add API-specific aliases here:
+      "@api/*": ["src/app/*"],
+      "@common": ["src/common/index"],
+      "@common/*": ["src/common/*"],
+      "@config": ["src/config/index"],
+      "@config/*": ["src/config/*"],
+      "@test-utils/*": ["test/utils/*"],
+      "@test/*": ["test/*"]
+    }
+  },
+  "references": [
+    { "path": "../../libs/auth-helpers" },
+    { "path": "../../libs/routes-helpers" },
+    { "path": "../../libs/utils" }
+  ],
+  "include": ["src/**/*.ts", "prisma/**/*.ts"]
 }

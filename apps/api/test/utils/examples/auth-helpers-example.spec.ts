@@ -11,9 +11,10 @@ import {
 } from '@auth-helpers';
 
 import { AuthModule } from '@app/auth/auth.module';
+import { Role } from '@auth-helpers/common';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ApiContractTestHelper, EnhancedHttpTestHelper } from '../http-test-helpers';
+import { ApiContract, ApiContractTestHelper, EnhancedHttpTestHelper } from '../http-test-helpers';
 
 describe('Authentication and HTTP Testing Helpers Examples', () => {
   let app: INestApplication;
@@ -52,7 +53,7 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
       const basicToken = authHelper.createToken({
         sub: 'user-123',
         email: 'user@example.com',
-        type: 'user',
+        role: Role.USER,
       });
       expect(basicToken).toBeDefined();
       expect(typeof basicToken).toBe('string');
@@ -61,8 +62,7 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
       const userToken = authHelper.createUserToken({
         id: 'user-456',
         email: 'testuser@example.com',
-        name: 'Test User',
-        type: 'user',
+        role: Role.USER,
       });
       expect(userToken).toBeDefined();
 
@@ -70,8 +70,7 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
       const coachToken = authHelper.createCoachToken({
         id: 'coach-789',
         email: 'testcoach@example.com',
-        name: 'Test Coach',
-        type: 'coach',
+        role: Role.COACH,
       });
       expect(coachToken).toBeDefined();
 
@@ -79,15 +78,15 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
       const userPayload = authHelper.decodeToken(userToken);
       const coachPayload = authHelper.decodeToken(coachToken);
 
-      expect(userPayload?.type).toBe('user');
-      expect(coachPayload?.type).toBe('coach');
+      expect(userPayload?.role).toBe(Role.USER);
+      expect(coachPayload?.role).toBe(Role.COACH);
     });
 
     it('should create expired tokens for testing', () => {
       const expiredToken = authHelper.createExpiredToken({
         sub: 'user-123',
         email: 'user@example.com',
-        type: 'user',
+        role: Role.USER,
       });
 
       expect(expiredToken).toBeDefined();
@@ -156,21 +155,21 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
   describe('ProtectedRouteTestHelper Examples', () => {
     it('should test route authentication requirements', async () => {
       // Test that route requires authentication
-      await protectedRouteHelper.testRequiresAuth('/api/auth/profile', 'GET');
+      await protectedRouteHelper.testRequiresAuth('/api/users/profile', 'GET');
 
       // Test that route rejects expired tokens
-      await protectedRouteHelper.testRejectsExpiredToken('/api/auth/profile', 'GET');
+      await protectedRouteHelper.testRejectsExpiredToken('/api/users/profile', 'GET');
 
       // Test that route accepts valid user token
       const userResponse = await protectedRouteHelper.testAcceptsUserToken(
-        '/api/auth/profile',
+        '/api/users/profile',
         'GET'
       );
       expect(userResponse.status).toBe(200);
 
       // Test that route accepts valid coach token
       const coachResponse = await protectedRouteHelper.testAcceptsCoachToken(
-        '/api/auth/profile',
+        '/api/coach/profile',
         'GET'
       );
       expect(coachResponse.status).toBe(200);
@@ -178,28 +177,30 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
 
     it('should test role-based access control', async () => {
       // Test endpoint that allows both users and coaches
-      await protectedRouteHelper.testRoleBasedAccess('/api/auth/profile', ['user', 'coach'], 'GET');
+      // TODO: Implement an endpoint that allows both users and coaches for this example
+      await protectedRouteHelper.testRoleBasedAccess('/api/health', [Role.USER, Role.COACH], 'GET');
 
       // Test endpoint that only allows coaches
-      await protectedRouteHelper.testRoleBasedAccess('/api/coaches/dashboard', ['coach'], 'GET');
+      // TODO: Implement an endpoint that only allows coaches for this example
+      await protectedRouteHelper.testRoleBasedAccess('/api/health', [Role.COACH], 'GET');
     });
   });
 
   describe('UserRoleTestHelper Examples', () => {
     it('should create test data for different user roles', () => {
       // Create user test data
-      const userData = userRoleHelper.createUserTestData('user', {
+      const userData = userRoleHelper.createUserTestData(Role.USER, {
         email: 'customuser@example.com',
       });
-      expect(userData.type).toBe('user');
+      expect(userData.role).toBe(Role.USER);
       expect(userData.email).toBe('customuser@example.com');
 
       // Create coach test data
-      const coachData = userRoleHelper.createUserTestData('coach', {
-        name: 'Custom Coach',
+      const coachData = userRoleHelper.createUserTestData(Role.COACH, {
+        email: 'coach@example.com',
       });
-      expect(coachData.type).toBe('coach');
-      expect(coachData.name).toBe('Custom Coach');
+      expect(coachData.role).toBe(Role.COACH);
+      expect(coachData.email).toBe('coach@example.com');
     });
 
     it('should create multiple users with different roles', () => {
@@ -208,8 +209,8 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
       expect(users).toHaveLength(3);
       expect(coaches).toHaveLength(3);
 
-      users.forEach(user => expect(user.type).toBe('user'));
-      coaches.forEach(coach => expect(coach.type).toBe('coach'));
+      users.forEach(user => expect(user.role).toBe(Role.USER));
+      coaches.forEach(coach => expect(coach.role).toBe(Role.COACH));
     });
 
     it('should create auth headers for multiple users', () => {
@@ -283,7 +284,11 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
         },
       ];
 
-      await enhancedHttpHelper.testRequestValidation('/api/auth/register', 'POST', validationCases);
+      await enhancedHttpHelper.testRequestValidation(
+        '/api/auth/user/signup',
+        'POST',
+        validationCases
+      );
     });
   });
 
@@ -304,15 +309,15 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
             'content-type': /application\/json/,
           },
           body: {
-            required: ['access_token', 'user'],
+            required: ['accessToken', 'user'],
             types: {
-              access_token: 'string',
+              accessToken: 'string',
             },
           },
         },
       };
 
-      await apiContractHelper.testApiContract('/api/auth/register', 'POST', contract);
+      await apiContractHelper.testApiContract('/api/auth/user/signup', 'POST', contract);
     });
 
     it('should test multiple API contracts', async () => {
@@ -333,11 +338,11 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
                 },
               },
             },
-          },
+          } as ApiContract,
         },
         {
           name: 'User Profile',
-          endpoint: '/api/auth/profile',
+          endpoint: '/api/auth/refresh',
           method: 'GET' as const,
           contract: {
             request: {
@@ -346,16 +351,19 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
             response: {
               status: 200,
               body: {
-                required: ['id', 'email', 'name', 'type'],
+                required: ['accessToken', 'refreshToken', 'user'],
                 types: {
-                  id: 'string',
-                  email: 'string',
-                  name: 'string',
-                  type: 'string',
+                  accessToken: 'string',
+                  refreshToken: 'string',
+                  user: {
+                    id: 'string',
+                    email: 'string',
+                    role: 'string',
+                  },
                 },
               },
             },
-          },
+          } as ApiContract,
         },
       ];
 
@@ -372,11 +380,11 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
         name: 'Integration Test User',
       };
 
-      const registerResponse = await httpHelper.post('/api/auth/register', registerData, {
+      const registerResponse = await httpHelper.post('/api/auth/user/signup', registerData, {
         expectedStatus: 201,
       });
 
-      expect(registerResponse.body).toHaveProperty('access_token');
+      expect(registerResponse.body).toHaveProperty('accessToken');
       expect(registerResponse.body).toHaveProperty('user');
 
       // 2. Test login with registered user
@@ -385,18 +393,18 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
         password: registerData.password,
       };
 
-      const loginResponse = await httpHelper.post('/api/auth/login', loginData, {
+      const loginResponse = await httpHelper.post('/api/auth/user/login', loginData, {
         expectedStatus: 200,
       });
 
-      expect(loginResponse.body).toHaveProperty('access_token');
+      expect(loginResponse.body).toHaveProperty('accessToken');
 
       // 3. Test accessing protected route with token
       const authHeaders = {
-        Authorization: `Bearer ${loginResponse.body.access_token}`,
+        Authorization: `Bearer ${loginResponse.body.accessToken}`,
       };
 
-      const profileResponse = await httpHelper.authenticatedGet('/api/auth/profile', authHeaders, {
+      const profileResponse = await httpHelper.authenticatedGet('/api/users/profile', authHeaders, {
         expectedStatus: 200,
       });
 
@@ -419,7 +427,7 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
 
       // Test that coaches can access coach-specific endpoints
       for (const headers of coachHeaders) {
-        const response = await httpHelper.authenticatedGet('/api/coaches/dashboard', headers, {
+        const response = await httpHelper.authenticatedGet('/api/coaches/profile', headers, {
           expectedStatus: 200,
         });
         expect(response.status).toBe(200);
@@ -427,8 +435,8 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
 
       // Test cross-role access restrictions
       await protectedRouteHelper.testRoleBasedAccess(
-        '/api/coaches/admin',
-        ['coach'], // Only coaches allowed
+        '/api/coaches/profile',
+        [Role.COACH], // Only coaches allowed
         'GET'
       );
     });

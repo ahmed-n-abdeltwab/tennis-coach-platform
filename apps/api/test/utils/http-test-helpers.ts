@@ -27,6 +27,30 @@ export interface HttpRequestOptions {
   followRedirects?: boolean;
 }
 
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+
+type RequestData = {
+  headers?: Record<string, any>;
+  body?: any;
+  query?: Record<string, any>;
+};
+
+type ResponseData = {
+  status: number;
+  headers?: Record<string, any>;
+  body?: {
+    required?: string[];
+    optional?: string[];
+    types?: Record<string, any>;
+  };
+};
+
+export type ApiContract = {
+  request?: RequestData;
+  response: ResponseData;
+};
+
+
 /**
  * Enhanced HTTP Testing Helper with error handling
  */
@@ -37,7 +61,7 @@ export class EnhancedHttpTestHelper {
    * Makes a request with comprehensive error handling
    */
   async makeRequest(
-    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
+    method: HttpMethod,
     endpoint: string,
     data?: any,
     options: HttpRequestOptions = {}
@@ -126,7 +150,7 @@ export class EnhancedHttpTestHelper {
    */
   async testErrorScenarios(
     endpoint: string,
-    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
+    method: HttpMethod,
     errorCases: HttpErrorTestCase[],
     data?: any,
     options: HttpRequestOptions = {}
@@ -151,7 +175,7 @@ export class EnhancedHttpTestHelper {
    */
   async testStatusCodes(
     endpoint: string,
-    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
+    method: HttpMethod,
     scenarios: Array<{
       name: string;
       data?: any;
@@ -176,8 +200,8 @@ export class EnhancedHttpTestHelper {
    */
   async testResponseHeaders(
     endpoint: string,
-    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
-    expectedHeaders: Record<string, string | RegExp>,
+    method: HttpMethod,
+    expectedHeaders: Record<string, any>,
     data?: any,
     options: HttpRequestOptions = {}
   ): Promise<void> {
@@ -199,7 +223,7 @@ export class EnhancedHttpTestHelper {
    */
   async testResponseStructure(
     endpoint: string,
-    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
+    method: HttpMethod,
     expectedStructure: Record<string, any>,
     data?: any,
     options: HttpRequestOptions = {}
@@ -249,7 +273,7 @@ export class EnhancedHttpTestHelper {
    */
   async testCorsHeaders(
     endpoint: string,
-    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
+    method: HttpMethod = 'GET',
     origin: string = 'http://localhost:3000'
   ): Promise<void> {
     const options: HttpRequestOptions = {
@@ -333,7 +357,7 @@ export class EnhancedHttpTestHelper {
    */
   async testRateLimit(
     endpoint: string,
-    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
+    method: HttpMethod = 'GET',
     maxRequests: number = 100,
     timeWindow: number = 60000, // 1 minute
     options: HttpRequestOptions = {}
@@ -374,23 +398,8 @@ export class ApiContractTestHelper {
    */
   async testApiContract(
     endpoint: string,
-    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
-    contract: {
-      request?: {
-        headers?: Record<string, string>;
-        body?: any;
-        query?: Record<string, any>;
-      };
-      response: {
-        status: number;
-        headers?: Record<string, string | RegExp>;
-        body?: {
-          required?: string[];
-          optional?: string[];
-          types?: Record<string, string>;
-        };
-      };
-    },
+    method: HttpMethod,
+    contract: ApiContract,
     options: HttpRequestOptions = {}
   ): Promise<void> {
     // Prepare request options
@@ -437,6 +446,8 @@ export class ApiContractTestHelper {
           expect(typeof response.body[field]).toBe(expectedType);
         }
       });
+
+      // Optional fields are not strictly checked for presence
     }
   }
 
@@ -447,23 +458,8 @@ export class ApiContractTestHelper {
     contracts: Array<{
       name: string;
       endpoint: string;
-      method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-      contract: {
-        request?: {
-          headers?: Record<string, string>;
-          body?: any;
-          query?: Record<string, any>;
-        };
-        response: {
-          status: number;
-          headers?: Record<string, string | RegExp>;
-          body?: {
-            required?: string[];
-            optional?: string[];
-            types?: Record<string, string>;
-          };
-        };
-      };
+      method: HttpMethod;
+      contract: ApiContract;
       options?: HttpRequestOptions;
     }>
   ): Promise<void> {

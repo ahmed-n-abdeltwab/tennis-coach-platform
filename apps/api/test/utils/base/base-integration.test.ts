@@ -1,11 +1,10 @@
-import { UserType } from './../../../src/common/enums/auth.enums';
 /**
  * Abstract base class for in testing
  * Provides database setup, cleanup, and common integration testing patterns
  */
 
 import { PrismaService } from '@app/prisma/prisma.service';
-import { JwtPayload } from '@common';
+import { JwtPayload, Role } from '@auth-helpers/common';
 import { INestApplication, Provider } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -132,7 +131,7 @@ export abstract class BaseIntegrationTest {
     payload: Partial<JwtPayload> = {
       sub: 'test-user-id',
       email: 'test@example.com',
-      type: UserRole.USER,
+      role: Role.USER,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 3600,
     }
@@ -226,7 +225,7 @@ export abstract class BaseIntegrationTest {
       email: `test-user-${Date.now()}@example.com`,
       name: 'Test User',
       passwordHash: 'hashed-password',
-      role: UserRole.USER,
+      role: Role.USER,
       gender: 'OTHER',
       age: 30,
       height: 170,
@@ -255,7 +254,7 @@ export abstract class BaseIntegrationTest {
       name: 'Test Coach',
       bio: 'Test coach bio',
       passwordHash: 'hashed-password',
-      role: AdminRole.COACH,
+      role: Role.COACH,
       isAdmin: true,
       credentials: 'Certified Coach',
       philosophy: 'Coaching Philosophy',
@@ -400,8 +399,8 @@ export abstract class BaseIntegrationTest {
       sessionId,
       content: 'Test message content',
       sentAt: overrides.sentAt ?? new Date(),
-      senderType: overrides.senderType ?? UserType.USER,
-      receiverType: overrides.receiverType ?? UserType.COACH,
+      senderType: overrides.senderType ?? UserRole.USER,
+      receiverType: overrides.receiverType ?? AdminRole.COACH,
       ...overrides,
     };
 

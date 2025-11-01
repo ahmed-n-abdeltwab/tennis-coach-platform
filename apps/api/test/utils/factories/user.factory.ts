@@ -1,8 +1,8 @@
 /**
  * User mock factory for creating test user data
- */
+*/
 
-import { UserType } from '@common';
+import { Role } from '@auth-helpers/common';
 import { MockUser } from '../mocks';
 import { BaseMockFactory } from './base-factory';
 
@@ -26,7 +26,7 @@ export class UserMockFactory extends BaseMockFactory<MockUser> {
       notes: `Test notes for user ${id.slice(-8)}`,
       createdAt: now,
       updatedAt: now,
-      role: UserType.USER,
+      role: Role.USER,
       isActive: true,
       isOnline: true,
       ...overrides,
@@ -45,7 +45,7 @@ export class UserMockFactory extends BaseMockFactory<MockUser> {
       disability: false,
       createdAt: now,
       updatedAt: now,
-      role: UserType.USER,
+      role: Role.USER,
       isActive: true,
       isOnline: true,
       ...overrides,

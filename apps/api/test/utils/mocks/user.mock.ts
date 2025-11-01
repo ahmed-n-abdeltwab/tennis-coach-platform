@@ -1,4 +1,4 @@
-import { UserType } from '@common';
+import { UserRole } from '@prisma/client';
 
 export interface MockUser {
   id: string;
@@ -16,7 +16,7 @@ export interface MockUser {
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
-  role: UserType.USER;
+  role: UserRole;
   isActive: boolean;
   isOnline: boolean;
 }
