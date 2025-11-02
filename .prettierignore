@@ -69,3 +69,6 @@ libs/external/
 # Storybook
 .storybook-out/
 storybook-static/
+
+/.nx/cache
+/.nx/workspace-data

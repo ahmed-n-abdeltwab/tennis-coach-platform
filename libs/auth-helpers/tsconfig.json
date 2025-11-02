@@ -1,13 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "../../dist/out-tsc/libs/auth-helpers",
-    "rootDir": ".",
-    "types": [],
-    "declaration": true,
-    "declarationMap": true,
-    "composite": true
-  },
-  "include": ["**/*.ts", "../utils/index.ts"],
-  "exclude": ["**/*.spec.ts", "**/*.test.ts"]
+  "files": [],
+  "include": [],
+  "references": [
+    { "path": "./tsconfig.lib.json" },
+    { "path": "./tsconfig.spec.json" },
+    { "path": "../utils/tsconfig.lib.json" }
+  ]
 }

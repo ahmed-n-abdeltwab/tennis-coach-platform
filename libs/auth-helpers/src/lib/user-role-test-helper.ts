@@ -1,6 +1,7 @@
-import { Role } from '@auth-helpers/common';
 import { UserRole } from '@prisma/client';
+
 import { AuthHeaders, AuthTestHelper, TestUser } from './auth-test-helper';
+import { Role } from './common';
 
 export class UserRoleTestHelper {
   private authHelper: AuthTestHelper;
@@ -28,7 +29,7 @@ export class UserRoleTestHelper {
     }
   }
 
-  createMultipleRoleUsers(count: number = 2): { users: TestUser[]; coaches: TestUser[] } {
+  createMultipleRoleUsers(count = 2): { users: TestUser[]; coaches: TestUser[] } {
     const users: TestUser[] = [];
     const coaches: TestUser[] = [];
     for (let i = 0; i < count; i++) {
@@ -48,7 +49,7 @@ export class UserRoleTestHelper {
     return { users, coaches };
   }
 
-  createMultipleRoleAuthHeaders(count: number = 2): {
+  createMultipleRoleAuthHeaders(count = 2): {
     userHeaders: AuthHeaders[];
     coachHeaders: AuthHeaders[];
   } {

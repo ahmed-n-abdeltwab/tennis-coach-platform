@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc/libs/routes-helpers",
+    "tsBuildInfoFile": "../../dist/out-tsc/libs/routes-helpers/.tsbuildinfo",
+    "declaration": true,
+    "declarationMap": true,
+    "composite": true,
+    "module": "CommonJS",
+    "types": ["node"],
+    "target": "es2022",
+    "moduleResolution": "Node",
+    "esModuleInterop": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["**/*.spec.ts", "**/*.test.ts"]
+}

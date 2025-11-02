@@ -10,7 +10,7 @@
       "cache": true
     },
     "lint": {
-      "inputs": ["default", "{workspaceRoot}/.eslintrc.json", "{workspaceRoot}/.eslintignore"],
+      "inputs": ["default", "{workspaceRoot}/eslint.config.js", "{workspaceRoot}/.eslintignore"],
       "cache": true
     },
     "e2e": {
@@ -54,6 +54,9 @@
         "linter": "eslint"
       }
     }
+  },
+  "tui": {
+    "enabled": false
   },
   "nxCloudId": "6905dfe8e8533eec629bbbfc"
 }

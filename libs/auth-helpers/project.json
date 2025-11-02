@@ -1,20 +1,22 @@
 {
   "name": "auth-helpers",
-  "root": "libs/auth-helpers",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
-  "sourceRoot": "libs/auth-helpers/lib",
+  "sourceRoot": "libs/auth-helpers/src",
+  "tags": [],
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
       "options": {
         "outputPath": "dist/libs/auth-helpers",
-        "main": "libs/auth-helpers/index.ts",
-        "tsConfig": "libs/auth-helpers/tsconfig.json",
+        "main": "libs/auth-helpers/src/index.ts",
+        "tsConfig": "libs/auth-helpers/tsconfig.lib.json",
         "assets": []
       }
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": ["libs/auth-helpers/**/*.ts"]
       }
@@ -27,6 +29,5 @@
         "passWithNoTests": true
       }
     }
-  },
-  "tags": []
+  }
 }

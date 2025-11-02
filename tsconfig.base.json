@@ -1,7 +1,6 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "rootDir": ".",
     "baseUrl": ".",
     "target": "es2022",
     "module": "CommonJS",
@@ -20,21 +19,25 @@
     "noImplicitOverride": true,
     "importHelpers": true,
     "paths": {
-      "@apps/*": ["apps/*"],
-      "@auth-helpers": ["libs/auth-helpers/index"],
-      "@auth-helpers/*": ["libs/auth-helpers/*"],
-      "@docs/*": ["docs/*"],
-      "@k8s/*": ["k8s/*"],
-      "@libs/*": ["libs/*"],
-      "@routes-helpers": ["libs/routes-helpers/index"],
-      "@routes-helpers/*": ["libs/routes-helpers/*"],
-      "@scripts/*": ["scripts/*"],
-      "@utils": ["libs/utils/index"],
-      "@utils/*": ["libs/utils/*"],
-      "@workspace/*": ["*"],
-      "utils": ["libs/utils/src/index.ts"]
+      // Shared workspace paths (available to all projects)
+      "@apps": ["apps/*"],
+      "@auth-helpers": ["libs/auth-helpers/src/index"],
+      "@docs": ["docs/*"],
+      "@k8s": ["k8s/*"],
+      "@libs": ["libs/*"],
+      "@routes-helpers": ["libs/routes-helpers/src/index"],
+      "@scripts": ["scripts/*"],
+      "@utils": ["libs/utils/src/index"],
+      "@workspace": ["*"],
+      // API-specific paths (used by apps/api only, but defined in base for inheritance)
+      "@api/*": ["apps/api/src/app/*"],
+      "@common": ["apps/api/src/common/index"],
+      "@common/*": ["apps/api/src/common/*"],
+      "@config": ["apps/api/src/config/index"],
+      "@config/*": ["apps/api/src/config/*"],
+      "@test-utils/*": ["apps/api/test/utils/*"],
+      "@test/*": ["apps/api/test/*"]
     }
   },
-  "exclude": ["node_modules", "tmp", "test-reports"],
-  "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts"]
+  "exclude": ["node_modules", "tmp", "test-reports"]
 }

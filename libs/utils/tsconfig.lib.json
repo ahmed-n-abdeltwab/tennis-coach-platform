@@ -1,9 +1,14 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
+    "module": "commonjs",
+    "outDir": "../../dist/out-tsc/libs/utils",
+    "tsBuildInfoFile": "../../dist/out-tsc/libs/utils/.tsbuildinfo",
     "declaration": true,
-    "types": ["node"]
+    "types": ["node"],
+    "composite": true,
+    "declarationMap": true,
+    "rootDir": "."
   },
   "include": ["src/**/*.ts"]
 }

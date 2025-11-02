@@ -1,7 +1,8 @@
-import { JwtPayload, Role } from '@auth-helpers';
-import { parseJwtTime } from '@utils';
-// Moved from test/utils/auth-helpers.ts
 import { JwtService } from '@nestjs/jwt';
+import { parseJwtTime } from '@utils';
+
+import { JwtPayload, Role } from './common';
+// Moved from test/utils/auth-helpers.ts
 export interface HttpTestOptions {
   headers?: Record<string, string>;
   expectedStatus?: number;
