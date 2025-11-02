@@ -1,9 +1,11 @@
 /**
  * User mock factory for creating test user data
-*/
+ */
 
-import { Role } from '@auth-helpers/common';
+import { Role } from '@auth-helpers';
+
 import { MockUser } from '../mocks';
+
 import { BaseMockFactory } from './base-factory';
 
 export class UserMockFactory extends BaseMockFactory<MockUser> {

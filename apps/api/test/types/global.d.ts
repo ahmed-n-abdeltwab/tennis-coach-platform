@@ -2,9 +2,9 @@
  * Global type declarations for test utilities
  */
 
-import { PrismaService } from '@app/prisma/prisma.service';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { PrismaService } from '../prisma/prisma.service';
 
 declare global {
   var testApp: INestApplication;

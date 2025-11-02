@@ -5,6 +5,7 @@
 
 import { HealthController } from '@app/health/health.controller';
 import { HealthService } from '@app/health/health.service';
+
 import { BaseControllerTest } from '../base-controller.test';
 
 export class HealthControllerTest extends BaseControllerTest<HealthController, HealthService> {

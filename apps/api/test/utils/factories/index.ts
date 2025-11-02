@@ -3,6 +3,7 @@
  */
 
 import { MockDiscount } from '../mocks';
+
 import { AuthMockFactory } from './auth.factory';
 import { BookingTypeMockFactory } from './booking-type.factory';
 import { CoachMockFactory } from './coach.factory';

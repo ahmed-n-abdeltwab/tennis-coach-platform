@@ -29,13 +29,13 @@ export interface HttpRequestOptions {
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
-type RequestData = {
+interface RequestData {
   headers?: Record<string, any>;
   body?: any;
   query?: Record<string, any>;
-};
+}
 
-type ResponseData = {
+interface ResponseData {
   status: number;
   headers?: Record<string, any>;
   body?: {
@@ -43,12 +43,12 @@ type ResponseData = {
     optional?: string[];
     types?: Record<string, any>;
   };
-};
+}
 
-export type ApiContract = {
+export interface ApiContract {
   request?: RequestData;
   response: ResponseData;
-};
+}
 
 
 /**
@@ -274,7 +274,7 @@ export class EnhancedHttpTestHelper {
   async testCorsHeaders(
     endpoint: string,
     method: HttpMethod = 'GET',
-    origin: string = 'http://localhost:3000'
+    origin = 'http://localhost:3000'
   ): Promise<void> {
     const options: HttpRequestOptions = {
       headers: {
@@ -358,8 +358,8 @@ export class EnhancedHttpTestHelper {
   async testRateLimit(
     endpoint: string,
     method: HttpMethod = 'GET',
-    maxRequests: number = 100,
-    timeWindow: number = 60000, // 1 minute
+    maxRequests = 100,
+    timeWindow = 60000, // 1 minute
     options: HttpRequestOptions = {}
   ): Promise<void> {
     const requests: Promise<request.Response>[] = [];

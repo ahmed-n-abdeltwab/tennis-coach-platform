@@ -3,8 +3,7 @@
  * Provides database setup, cleanup, and common integration testing patterns
  */
 
-import { PrismaService } from '@app/prisma/prisma.service';
-import { JwtPayload, Role } from '@auth-helpers/common';
+import { JwtPayload, Role } from '@auth-helpers';
 import { INestApplication, Provider } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -22,6 +21,8 @@ import {
   UserRole,
 } from '@prisma/client';
 import request from 'supertest';
+import { PrismaService } from '../prisma/prisma.service';
+
 import { cleanDatabase, seedTestDatabase } from '../database-helpers';
 
 export abstract class BaseIntegrationTest {
@@ -453,7 +454,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Asserts that a response is a successful API response
    */
-  protected assertSuccessResponse(response: any, expectedStatus: number = 200): void {
+  protected assertSuccessResponse(response: any, expectedStatus = 200): void {
     expect(response.status).toBe(expectedStatus);
     expect(response.body).toBeDefined();
   }

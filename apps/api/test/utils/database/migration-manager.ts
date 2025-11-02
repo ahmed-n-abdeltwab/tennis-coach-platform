@@ -8,10 +8,11 @@
  * - Test-specific migration utilities
  */
 
-import { PrismaClient } from '@prisma/client';
 import { execSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+
+import { PrismaClient } from '@prisma/client';
 
 export interface MigrationInfo {
   id: string;
@@ -37,8 +38,8 @@ export class MigrationManager {
   private originalDatabaseUrl: string;
 
   constructor(
-    prismaSchemaPath: string = 'apps/api/prisma/schema.prisma',
-    migrationsPath: string = 'apps/api/prisma/migrations'
+    prismaSchemaPath = 'apps/api/prisma/schema.prisma',
+    migrationsPath = 'apps/api/prisma/migrations'
   ) {
     this.prismaSchemaPath = prismaSchemaPath;
     this.migrationsPath = migrationsPath;

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
-type ReportData = {
+interface ReportData {
   timestamp: string;
   testType: 'unit' | 'integration' | 'e2e' | 'all';
   summary: {
@@ -20,7 +20,7 @@ type ReportData = {
     failureMessage?: string;
   }[];
   coverage: CoverageReport | null;
-};
+}
 
 export interface TestResults {
   testType: 'unit' | 'integration' | 'e2e' | 'all';
@@ -238,7 +238,7 @@ export class TestReporter {
     const statusIcon = reportData.summary.success ? '✅' : '❌';
     const duration = (reportData.summary.duration / 1000).toFixed(2);
 
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${  '='.repeat(60)}`);
     console.log(`${statusIcon} TEST SUMMARY - ${reportData.testType.toUpperCase()}`);
     console.log('='.repeat(60));
     console.log(`📊 Total Tests: ${reportData.summary.total}`);
@@ -256,7 +256,7 @@ export class TestReporter {
       console.log(`Branches: ${reportData.coverage.branches.pct.toFixed(1)}%`);
     }
 
-    console.log('='.repeat(60) + '\n');
+    console.log(`${'='.repeat(60)  }\n`);
   }
 
   private extractCoverageData(coverageMap: ReportData): CoverageReport | null {

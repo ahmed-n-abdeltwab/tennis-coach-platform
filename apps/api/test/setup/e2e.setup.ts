@@ -2,12 +2,12 @@
  * E2E test setup
  * This file runs before each e2e test file
  */
-import { AppModule } from '@app/app.module';
-import { PrismaService } from '@app/prisma/prisma.service';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import TestAgent from 'supertest/lib/agent';
+import { AppModule } from '../../src/app/app.module';
+import { PrismaService } from '../../src/app/prisma/prisma.service';
 
 export class NestE2ETestContext {
   public app: INestApplication;

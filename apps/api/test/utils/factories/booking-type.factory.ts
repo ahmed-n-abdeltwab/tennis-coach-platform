@@ -3,6 +3,7 @@
  */
 
 import { MockBookingType } from '../mocks';
+
 import { BaseMockFactory } from './base-factory';
 
 export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {

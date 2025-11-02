@@ -3,6 +3,7 @@
  */
 
 import { MockTimeSlot } from '../mocks';
+
 import { BaseMockFactory } from './base-factory';
 
 export class TimeSlotMockFactory extends BaseMockFactory<MockTimeSlot> {

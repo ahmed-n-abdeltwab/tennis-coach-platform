@@ -1,11 +1,12 @@
 import { Reporter, ReporterOnStartOptions, Test, TestResult } from '@jest/reporters';
 import { AggregatedResult } from '@jest/test-result';
 import { Config } from '@jest/types';
+
 import TestReporter, { TestResults } from './test-reporter';
 
 export default class JestCustomReporter implements Reporter {
   private testReporter: TestReporter;
-  private startTime: number = 0;
+  private startTime = 0;
 
   constructor(
     private globalConfig: Config.GlobalConfig,
@@ -83,7 +84,7 @@ export default class JestCustomReporter implements Reporter {
         ? ((results.numPassedTests / results.numTotalTests) * 100).toFixed(1)
         : '0';
 
-    console.log('\n' + '─'.repeat(50));
+    console.log(`\n${  '─'.repeat(50)}`);
     console.log(`🎯 Quick Summary (${results.testType.toUpperCase()})`);
     console.log('─'.repeat(50));
     console.log(`Tests: ${results.numPassedTests}/${results.numTotalTests} passed (${passRate}%)`);

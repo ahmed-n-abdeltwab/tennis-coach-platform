@@ -3,8 +3,8 @@
  * Provides common patterns and utilities for testing NestJS services
  */
 
-import { PrismaService } from '@app/prisma/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
+import { PrismaService } from '../prisma/prisma.service';
 
 export abstract class BaseServiceTest<TService, TRepository = any> {
   protected service: TService;
@@ -116,7 +116,7 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Creates multiple test data items
    */
-  protected createTestDataArray(count: number = 3): any[] {
+  protected createTestDataArray(count = 3): any[] {
     return Array.from({ length: count }, (_, index) => ({
       ...this.createTestData(),
       id: `test-id-${index + 1}`,
@@ -201,7 +201,7 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Creates pagination parameters for testing
    */
-  protected createPaginationParams(page: number = 1, limit: number = 10): any {
+  protected createPaginationParams(page = 1, limit = 10): any {
     return {
       skip: (page - 1) * limit,
       take: limit,

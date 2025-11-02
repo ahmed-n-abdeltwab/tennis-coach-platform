@@ -3,8 +3,8 @@
  * This file runs before each integration test file
  */
 
-import { PrismaService } from '@app/prisma/prisma.service';
 import { Test } from '@nestjs/testing';
+import { PrismaService } from '../prisma/prisma.service';
 
 export class NestIntegrationTestContext {
   public prismaService: PrismaService;
@@ -40,7 +40,6 @@ export class NestIntegrationTestContext {
     }
   }
 }
-
 
 // Make Prisma service available globally for integration tests
 global.NestIntegrationTestContext = NestIntegrationTestContext;

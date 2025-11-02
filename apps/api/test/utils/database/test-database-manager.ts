@@ -8,9 +8,10 @@
  * - Database migration management for tests
  */
 
-import { Prisma, PrismaClient } from '@prisma/client';
 import { execSync } from 'child_process';
 import { randomUUID } from 'crypto';
+
+import { Prisma, PrismaClient } from '@prisma/client';
 
 export interface TestDatabaseConfig {
   type: 'unit' | 'integration' | 'e2e';

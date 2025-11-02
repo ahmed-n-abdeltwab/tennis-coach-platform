@@ -29,6 +29,37 @@ module.exports = composePlugins(withNx(), config => {
     ...config.experiments,
     topLevelAwait: true,
   };
-
+  config.watchOptions = {
+    ignored: [
+      'node_modules',
+      'dist',
+      'build',
+      'out',
+      '.next',
+      '.nuxt',
+      '.nx',
+      'coverage',
+      '.nyc_output',
+      '*.min.js',
+      'package-lock.json',
+      'yarn.lock',
+      'pnpm-lock.yaml',
+      '*.log',
+      '.env*',
+      '.vscode',
+      '.idea',
+      '.DS_Store',
+      'Thumbs.db',
+      'test-results',
+      'reports',
+      'prisma/generated',
+      '.storybook-out',
+      'storybook-static',
+      'vendor',
+      'libs/external',
+      '**/*.config.ts',
+      '**/jest.config.ts',
+    ],
+  };
   return config;
 });

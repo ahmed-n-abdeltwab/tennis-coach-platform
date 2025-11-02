@@ -3,6 +3,7 @@
  */
 
 import { MockEmailResult, MockNotification } from '../mocks';
+
 import { BaseMockFactory } from './base-factory';
 
 export class NotificationMockFactory extends BaseMockFactory<MockNotification> {
@@ -23,7 +24,7 @@ export class NotificationMockFactory extends BaseMockFactory<MockNotification> {
   }
 
   createEmailResult(
-    success: boolean = true,
+    success = true,
     overrides?: Partial<MockEmailResult>
   ): MockEmailResult {
     if (success) {

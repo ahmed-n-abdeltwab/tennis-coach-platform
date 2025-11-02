@@ -2,18 +2,18 @@
  * Example test file demonstrating authentication and HTTP testing helpers
  * This file shows how to use all the authentication and HTTP testing utilities
  */
-import { PrismaModule } from '@app/prisma/prisma.module';
+import { AuthModule } from '@app/auth/auth.module';
 import {
   AuthTestHelper,
   HttpTestHelper,
   ProtectedRouteTestHelper,
+  Role,
   UserRoleTestHelper,
 } from '@auth-helpers';
-
-import { AuthModule } from '@app/auth/auth.module';
-import { Role } from '@auth-helpers/common';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { PrismaModule } from '../prisma/prisma.module';
+
 import { ApiContract, ApiContractTestHelper, EnhancedHttpTestHelper } from '../http-test-helpers';
 
 describe('Authentication and HTTP Testing Helpers Examples', () => {

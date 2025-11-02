@@ -96,7 +96,7 @@ export class DatabaseSeeder {
   /**
    * Seed users with varied profiles
    */
-  async seedUsers(count: number = 3): Promise<User[]> {
+  async seedUsers(count = 3): Promise<User[]> {
     const users: User[] = [];
     const passwordHash = await hash('testpassword123', this.saltRounds);
 
@@ -130,7 +130,7 @@ export class DatabaseSeeder {
   /**
    * Seed coaches with different specialties
    */
-  async seedCoaches(count: number = 2): Promise<Coach[]> {
+  async seedCoaches(count = 2): Promise<Coach[]> {
     const coaches: Coach[] = [];
     const passwordHash = await hash('coachpassword123', this.saltRounds);
 
@@ -163,7 +163,7 @@ export class DatabaseSeeder {
   /**
    * Seed booking types for each coach
    */
-  async seedBookingTypes(count: number = 3, coaches: Coach[]): Promise<BookingType[]> {
+  async seedBookingTypes(count = 3, coaches: Coach[]): Promise<BookingType[]> {
     const bookingTypes: BookingType[] = [];
     const types = [
       {
@@ -213,7 +213,7 @@ export class DatabaseSeeder {
   /**
    * Seed time slots for coaches
    */
-  async seedTimeSlots(count: number = 10, coaches: Coach[]): Promise<TimeSlot[]> {
+  async seedTimeSlots(count = 10, coaches: Coach[]): Promise<TimeSlot[]> {
     const timeSlots: TimeSlot[] = [];
     const now = new Date();
 
@@ -296,7 +296,7 @@ export class DatabaseSeeder {
    * Seed sessions with various statuses
    */
   async seedSessions(
-    count: number = 5,
+    count = 5,
     data: {
       users: User[];
       coaches: Coach[];

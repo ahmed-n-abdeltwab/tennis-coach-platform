@@ -1,4 +1,4 @@
-import { Role } from '@auth-helpers/common';
+import { Role } from '@auth-helpers';
 /**
  * Tests for the mock factory system
  */

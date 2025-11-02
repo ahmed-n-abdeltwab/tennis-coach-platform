@@ -1,4 +1,4 @@
-import { Role } from '@auth-helpers/common';
+import { Role } from '@auth-helpers';
 
 export interface MockAuthPayload {
   sub: string;

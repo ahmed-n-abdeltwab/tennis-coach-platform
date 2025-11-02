@@ -3,7 +3,9 @@
  */
 
 import { AdminRole, UserRole } from '@prisma/client';
+
 import { MockMessage } from '../mocks';
+
 import { BaseMockFactory } from './base-factory';
 
 export class MessageMockFactory extends BaseMockFactory<MockMessage> {

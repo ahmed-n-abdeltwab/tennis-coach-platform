@@ -6,9 +6,10 @@
 import healthConfig from '@app/health/config/health.config';
 import { HealthModule } from '@app/health/health.module';
 import { HealthService } from '@app/health/health.service';
-import { PrismaModule } from '@app/prisma/prisma.module';
 import { Provider } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { PrismaModule } from '../prisma/prisma.module';
+
 import { BaseIntegrationTest } from '../base-integration.test';
 
 export class HealthIntegrationTest extends BaseIntegrationTest {

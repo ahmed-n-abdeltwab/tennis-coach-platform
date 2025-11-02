@@ -3,6 +3,7 @@
  */
 
 import { MockPayment, MockPayPalCapture, MockPayPalOrder } from '../mocks';
+
 import { BaseMockFactory } from './base-factory';
 
 export class PaymentMockFactory extends BaseMockFactory<MockPayment> {

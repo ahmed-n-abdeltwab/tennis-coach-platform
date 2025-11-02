@@ -2,9 +2,11 @@
  * Authentication mock factory for creating test auth data
  */
 
-import { Role } from '@auth-helpers/common';
+import { Role } from '@auth-helpers';
 import { JwtService } from '@nestjs/jwt';
+
 import { MockAuthHeaders, MockAuthPayload, MockAuthResponse } from '../mocks';
+
 import { BaseMockFactory } from './base-factory';
 
 export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {

@@ -9,6 +9,7 @@
  */
 
 import { Prisma, PrismaClient, User } from '@prisma/client';
+
 import { setupMinimalTestDatabase, setupTestDatabaseEnvironment } from '..';
 import { createDatabaseSeeder, DatabaseSeeder, SeedDataOptions } from '../database-seeder';
 import { TestDatabaseConfig, testDatabaseManager } from '../test-database-manager';
@@ -227,7 +228,7 @@ describe('Database Utilities', () => {
     });
 
     it('should commit transaction when using withCommittedTransaction', async () => {
-      let createdUserId: string = '';
+      let createdUserId = '';
 
       // Execute operation in committed transaction
       await transactionManager.withCommittedTransaction(testClient, async tx => {

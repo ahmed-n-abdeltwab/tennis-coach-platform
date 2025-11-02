@@ -6,10 +6,11 @@
 import {
   AuthTestHelper,
   HttpTestHelper,
+  parseJwtTime,
   ProtectedRouteTestHelper,
+  Role,
   UserRoleTestHelper,
 } from '@auth-helpers';
-import { parseJwtTime, Role } from '@auth-helpers/common';
 import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';

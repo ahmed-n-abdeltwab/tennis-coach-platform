@@ -11,22 +11,12 @@
     "strict": true,
     "noImplicitOverride": true,
     "strictPropertyInitialization": false,
-    "forceConsistentCasingInFileNames": true,
-    "paths": {
-      // Override or add API-specific aliases here:
-      "@api/*": ["src/app/*"],
-      "@common": ["src/common/index"],
-      "@common/*": ["src/common/*"],
-      "@config": ["src/config/index"],
-      "@config/*": ["src/config/*"],
-      "@test-utils/*": ["test/utils/*"],
-      "@test/*": ["test/*"]
-    }
+    "forceConsistentCasingInFileNames": true
   },
   "references": [
-    { "path": "../../libs/auth-helpers" },
-    { "path": "../../libs/routes-helpers" },
-    { "path": "../../libs/utils" }
+    { "path": "../../libs/auth-helpers/tsconfig.lib.json" },
+    { "path": "../../libs/routes-helpers/tsconfig.lib.json" },
+    { "path": "../../libs/utils/tsconfig.lib.json" }
   ],
   "include": ["src/**/*.ts", "prisma/**/*.ts"]
 }

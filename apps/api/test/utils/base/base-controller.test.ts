@@ -3,7 +3,7 @@
  * Provides common patterns and utilities for testing NestJS controllers
  */
 
-import { JwtPayload, Role } from '@auth-helpers/common';
+import { JwtPayload, Role } from '@auth-helpers';
 import { INestApplication, Provider } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -195,7 +195,7 @@ export abstract class BaseControllerTest<TController, TService> {
   /**
    * Asserts that a response is a successful API response
    */
-  protected assertSuccessResponse(response: any, expectedStatus: number = 200): void {
+  protected assertSuccessResponse(response: any, expectedStatus = 200): void {
     expect(response.status).toBe(expectedStatus);
     expect(response.body).toBeDefined();
   }
