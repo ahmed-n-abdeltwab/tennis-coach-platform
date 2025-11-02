@@ -1,13 +1,3 @@
-import {
-  ApiBadRequestResponse,
-  ApiBearerAuth,
-  ApiCreatedResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
-import { AuthResponseDto, LoginDto } from './dto/auth.dto';
 
 import { JwtPayload } from '@auth-helpers';
 import {
@@ -20,9 +10,19 @@ import {
   Roles,
 } from '@common';
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { AdminRole } from '@prisma/client';
+
 import { AuthService } from './auth.service';
-import { SignupCoachDto, SignupUserDto } from './dto/auth.dto';
+import { AuthResponseDto, LoginDto , SignupCoachDto, SignupUserDto } from './dto/auth.dto';
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {

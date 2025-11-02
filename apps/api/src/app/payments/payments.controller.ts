@@ -1,9 +1,9 @@
-import { JwtPayload } from '@auth-helpers/common';
+import { JwtPayload } from '@auth-helpers';
 import { CurrentUser, Roles } from '@common';
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-
 import { UserRole } from '@prisma/client';
+
 import { CapturePaymentDto, CreatePaymentDto } from './dto/payment.dto';
 import { PaymentsService } from './payments.service';
 

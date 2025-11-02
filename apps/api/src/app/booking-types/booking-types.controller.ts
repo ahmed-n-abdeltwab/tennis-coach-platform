@@ -1,7 +1,8 @@
-import { JwtPayload, Role } from '@auth-helpers/common';
+import { JwtPayload, Role } from '@auth-helpers';
 import { CurrentUser, Public, Roles } from '@common';
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+
 import { BookingTypesService } from './booking-types.service';
 import { CreateBookingTypeDto, UpdateBookingTypeDto } from './dto/booking-type.dto';
 

@@ -1,8 +1,8 @@
-import { CoachesService } from '@app/coaches/coaches.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Coach } from '@prisma/client';
 import { Strategy } from 'passport-local';
+import { CoachesService } from '../../coaches/coaches.service';
 
 @Injectable()
 export class LocalCoachStrategy extends PassportStrategy(Strategy, 'local-coach') {

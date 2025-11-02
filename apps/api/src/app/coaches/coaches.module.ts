@@ -1,6 +1,7 @@
-import { PrismaModule } from '@app/prisma/prisma.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { PrismaModule } from '../prisma/prisma.module';
+
 import { CoachesController } from './coaches.controller';
 import { CoachesService } from './coaches.service';
 import coachesConfig from './config/coaches.config';

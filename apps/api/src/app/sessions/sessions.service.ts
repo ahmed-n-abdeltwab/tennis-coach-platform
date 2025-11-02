@@ -1,5 +1,4 @@
-import { PrismaService } from '@app/prisma/prisma.service';
-import { Role } from '@auth-helpers/common';
+import { Role } from '@auth-helpers';
 import {
   BadRequestException,
   ForbiddenException,
@@ -7,6 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Discount, UserRole } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+
 import { CreateSessionDto, GetSessionsQuery, UpdateSessionDto } from './dto/session.dto';
 
 @Injectable()
@@ -95,7 +96,7 @@ export class SessionsService {
       where: { id: bookingTypeId },
     });
 
-    if (!bookingType || !bookingType.isActive) {
+    if (!bookingType?.isActive) {
       throw new BadRequestException('Invalid booking type');
     }
 
@@ -104,7 +105,7 @@ export class SessionsService {
       where: { id: timeSlotId },
     });
 
-    if (!timeSlot || !timeSlot.isAvailable) {
+    if (!timeSlot?.isAvailable) {
       throw new BadRequestException('Time slot not available');
     }
 

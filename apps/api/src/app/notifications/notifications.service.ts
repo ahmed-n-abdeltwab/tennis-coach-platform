@@ -3,6 +3,7 @@ import { ConfigType } from '@nestjs/config';
 import { MailtrapTransport } from 'mailtrap';
 import { MailtrapResponse, MailtrapTransporter } from 'mailtrap/dist/types/transport';
 import { createTransport } from 'nodemailer';
+
 import notificationsConfig from './config/notifications.config';
 import { SendEmailDto } from './dto/notification.dto';
 

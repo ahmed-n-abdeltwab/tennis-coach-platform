@@ -1,10 +1,11 @@
-import { PrismaService } from '@app/prisma/prisma.service';
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+
 import { CreateDiscountDto, UpdateDiscountDto } from './dto/discount.dto';
 
 @Injectable()

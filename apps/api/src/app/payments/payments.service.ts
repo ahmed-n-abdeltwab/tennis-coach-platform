@@ -1,6 +1,7 @@
-import { PrismaService } from '@app/prisma/prisma.service';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
+
 import paymentsConfig from './config/payments.config';
 import { CapturePaymentDto, CreatePaymentDto } from './dto/payment.dto';
 
@@ -31,7 +32,7 @@ export class PaymentsService {
       },
     });
 
-    if (!session || session.userId !== userId) {
+    if (session?.userId !== userId) {
       throw new BadRequestException('Invalid session');
     }
 
@@ -89,7 +90,7 @@ export class PaymentsService {
       where: { id: sessionId },
     });
 
-    if (!session || session.userId !== userId) {
+    if (session?.userId !== userId) {
       throw new BadRequestException('Invalid session');
     }
 

@@ -1,10 +1,12 @@
+import { validateEnv } from '@config/env.validation';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { PassportModule } from '@nestjs/passport';
 
-import { validateEnv } from '@config/env.validation';
-import { APP_GUARD } from '@nestjs/core';
+
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+
 import { AuthModule } from './auth/auth.module';
 import { BookingTypesModule } from './booking-types/booking-types.module';
 import { CalendarModule } from './calendar/calendar.module';

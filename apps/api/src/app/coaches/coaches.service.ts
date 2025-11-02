@@ -1,9 +1,11 @@
-import { PrismaService } from '@app/prisma/prisma.service';
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { BookingType, Coach } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { PrismaService } from '../prisma/prisma.service';
+
 import { SignupCoachDto } from '../auth/dto/auth.dto';
+
 import coachesConfig from './config/coaches.config';
 import { UpdateCoachDto } from './dto/coach.dto';
 

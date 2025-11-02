@@ -1,8 +1,7 @@
-import { Role } from '@auth-helpers/common';
+import { Role } from '@auth-helpers';
 import { BaseResponseDto, createTypedApiDecorators } from '@common';
-import { Transform } from 'class-transformer';
-
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsBoolean, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class UpdateUserDto {

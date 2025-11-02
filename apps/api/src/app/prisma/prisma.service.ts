@@ -2,6 +2,7 @@ import { logger } from '@config/logging.config';
 import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { Prisma, PrismaClient } from '@prisma/client';
+
 import prismaConfig from './config/prisma.config';
 
 @Injectable()

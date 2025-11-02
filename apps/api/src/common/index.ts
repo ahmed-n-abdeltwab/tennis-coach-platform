@@ -15,8 +15,8 @@ export * from './guards/jwt-refresh.guard';
 export * from './guards/local-auth.guard';
 export * from './guards/roles.guard';
 
-// Scripts
-export * from './scripts/generate-routes-from-swagger';
-
 // DTOs
 export * from './dto/base-response.dto';
+
+// Endpoints (dynamically generated from Swagger, shared from routes-helpers)
+export type { Endpoints } from '@routes-helpers';

@@ -1,6 +1,7 @@
-import { PrismaModule } from '@app/prisma/prisma.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { PrismaModule } from '../prisma/prisma.module';
+
 import healthConfig from './config/health.config';
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';

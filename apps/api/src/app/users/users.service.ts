@@ -1,9 +1,10 @@
-import { SignupUserDto } from '@app/auth/dto/auth.dto';
-import { PrismaService } from '@app/prisma/prisma.service';
 import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { User } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+
+import { SignupUserDto } from '../auth/dto/auth.dto';
+import { PrismaService } from '../prisma/prisma.service';
 import usersConfig from './config/users.config';
 import { UpdateUserDto } from './dto/user.dto';
 

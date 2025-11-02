@@ -1,14 +1,15 @@
-import { CoachesService } from '@app/coaches/coaches.service';
-import { PrismaService } from '@app/prisma/prisma.service';
-import { UsersService } from '@app/users/users.service';
 import { JwtPayload, Role } from '@auth-helpers';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { AdminRole, Coach, User, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from '../users/users.service';
+
 import authConfig from './config/auth.config';
 import { AuthResponseDto, LoginDto, SignupCoachDto, SignupUserDto } from './dto/auth.dto';
+import { CoachesService } from '../coaches/coaches.service';
 @Injectable()
 export class AuthService {
   constructor(

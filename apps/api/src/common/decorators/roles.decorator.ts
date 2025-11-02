@@ -1,4 +1,4 @@
-import { Role } from '@auth-helpers/common';
+import { Role } from '@auth-helpers';
 import { SetMetadata } from '@nestjs/common';
 
 export const ROLES_KEY = 'roles';

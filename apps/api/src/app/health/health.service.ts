@@ -1,7 +1,9 @@
-import { PrismaService } from '@app/prisma/prisma.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
+
 import healthConfig from './config/health.config';
+import { CheckHealthDto } from './dto/health.dto';
 @Injectable()
 export class HealthService {
   constructor(
@@ -10,7 +12,7 @@ export class HealthService {
     private readonly healthConfiguration: ConfigType<typeof healthConfig>
   ) {}
 
-  async check() {
+  async check(): Promise<CheckHealthDto> {
     const checks = {
       status: 'ok',
       timestamp: new Date().toISOString(),

@@ -1,5 +1,6 @@
-import { PrismaService } from '@app/prisma/prisma.service';
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+
 import { CreateBookingTypeDto, UpdateBookingTypeDto } from './dto/booking-type.dto';
 
 @Injectable()

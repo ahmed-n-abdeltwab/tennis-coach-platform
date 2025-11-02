@@ -1,9 +1,9 @@
-import { JwtPayload } from '@auth-helpers/common';
+import { JwtPayload } from '@auth-helpers';
 import { CurrentUser, Roles } from '@common';
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-
 import { AdminRole, UserRole } from '@prisma/client';
+
 import { GetMessagesQuery, SendMessageDto } from './dto/message.dto';
 import { MessagesService } from './messages.service';
 

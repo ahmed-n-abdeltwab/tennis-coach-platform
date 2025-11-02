@@ -1,11 +1,12 @@
-import { CoachesService } from '@app/coaches/coaches.service';
-import { UsersService } from '@app/users/users.service';
-import { JwtPayload } from '@auth-helpers/common';
+import { JwtPayload } from '@auth-helpers';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { AdminRole, Coach, User, UserRole } from '@prisma/client';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+
+import { CoachesService } from '../../coaches/coaches.service';
+import { UsersService } from '../../users/users.service';
 import authConfig from '../config/auth.config';
 
 @Injectable()

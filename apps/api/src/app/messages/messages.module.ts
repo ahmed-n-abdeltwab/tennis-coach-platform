@@ -1,5 +1,6 @@
-import { PrismaModule } from '@app/prisma/prisma.module';
 import { Module } from '@nestjs/common';
+
+import { PrismaModule } from '../prisma/prisma.module';
 import { MessagesController } from './messages.controller';
 import { MessagesGateway } from './messages.gateway';
 import { MessagesService } from './messages.service';

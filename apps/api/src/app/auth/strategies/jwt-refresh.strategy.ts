@@ -1,12 +1,13 @@
-import { CoachesService } from '@app/coaches/coaches.service';
-import { UsersService } from '@app/users/users.service';
-import { JwtPayload } from '@auth-helpers/common';
+import { JwtPayload } from '@auth-helpers';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { AdminRole, Coach, User, UserRole } from '@prisma/client';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+
 import authConfig from '../config/auth.config';
+import { CoachesService } from '../../coaches/coaches.service';
+import { UsersService } from '../../users/users.service';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
@@ -32,7 +33,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
       entity = await this.coachesService.findById(payload.sub);
     }
 
-    if (!entity || !entity.isActive) {
+    if (!entity?.isActive) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
