@@ -77,7 +77,7 @@ type PathsWithMethod<E extends Record<string, unknown>, M extends string> = Extr
  * ```
  */
 export class TypeSafeHttpClient<
-  E extends Record<string, unknown> = Record<string, Record<string, unknown>>,
+  E extends Record<string, any> = Record<string, Record<string, any>>,
 > {
   constructor(private app: INestApplication) {}
 

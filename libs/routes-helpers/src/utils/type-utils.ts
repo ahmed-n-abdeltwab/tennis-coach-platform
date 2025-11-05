@@ -58,7 +58,7 @@ export type ExtractResponseType<
 > =
   E[P] extends Record<string, unknown>
     ? M extends keyof E[P]
-      ? E[P][M] extends (arg: unknown) => infer R
+      ? E[P][M] extends (arg: any) => infer R
         ? R
         : never
       : never

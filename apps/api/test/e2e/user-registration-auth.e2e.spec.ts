@@ -21,31 +21,38 @@ describe('User Registration and Authentication Flow (E2E)', () => {
   });
 
   describe('User Registration Flow', () => {
-    it('should compleer registration workflow', async () => {
+    it('should complete user registration workflow', async () => {
       const userData = userFactory.createWithMinimalData({
         email: 'newuser@example.com',
         name: 'New Test User',
       });
 
       // Step 1: Register new user
-      const registerResponse = await httpHelper.post('/api/authentication/user/signup', {
-        email: userData.email,
-        name: userData.name,
-        password: 'TestPassword123!',
-      });
+      const registerResponse = await httpClient.post(
+        '/api/authentication/signup',
+        {
+          email: userData.email,
+          name: userData.name,
+          password: 'TestPassword123!',
+          role: Role.USER,
+        },
+        { expectedStatus: 201 }
+      );
 
       expect(registerResponse.status).toBe(201);
       expect(registerResponse.body).toHaveProperty('accessToken');
       expect(registerResponse.body).toHaveProperty('user');
-      expect(registerResponse.body.user.email).toBe(userData.email);
-      expect(registerResponse.body.user.name).toBe(userData.name);
+      expect(registerResponse.body.account.email).toBe(userData.email);
 
       const { accessToken } = registerResponse.body;
 
       // Step 2: Verify user can access protected profile endpoint
-      const profileResponse = await httpHelper.get('/api/users/profile', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const profileResponse = await httpClient.authenticatedGet(
+        '/api/accounts/me',
+        accessToken,
+        undefined,
+        { expectedStatus: 200 }
+      );
 
       expect(profileResponse.status).toBe(200);
       expect(profileResponse.body.email).toBe(userData.email);
@@ -57,9 +64,9 @@ describe('User Registration and Authentication Flow (E2E)', () => {
         age: 25,
         country: 'USA',
       };
-
-      const updateResponse = await httpHelper.put('/api/users/profile', updateData, {
-        headers: { Authorization: `Bearer ${accessToken}` },
+      // TODO: need to add a PUT method for the account medule to update the account
+      const updateResponse = await httpClient.authenticatedPut('/api/', accessToken, updateData, {
+        expectedStatus: 200,
       });
 
       expect(updateResponse.status).toBe(200);
@@ -68,9 +75,12 @@ describe('User Registration and Authentication Flow (E2E)', () => {
       expect(updateResponse.body.country).toBe(updateData.country);
 
       // Step 4: Verify updated profile persists
-      const updatedProfileResponse = await httpHelper.get('/api/users/profile', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const updatedProfileResponse = await httpClient.authenticatedGet(
+        '/api/accounts/me',
+        accessToken,
+        undefined,
+        { expectedStatus: 200 }
+      );
 
       expect(updatedProfileResponse.status).toBe(200);
       expect(updatedProfileResponse.body.name).toBe(updateData.name);
@@ -84,19 +94,21 @@ describe('User Registration and Authentication Flow (E2E)', () => {
       });
 
       // Register first user
-      await httpHelper.post('/api/authentication/user/signup', {
+      await httpClient.post('/api/authentication/signup', {
         email: userData.email,
         name: userData.name,
         password: 'TestPassword123!',
+        role: Role.USER,
       });
 
       // Attempt to register with same email
-      const duplicateResponse = await httpHelper.post(
-        '/api/authentication/user/signup',
+      const duplicateResponse = await httpClient.post(
+        '/api/authentication/signup',
         {
           email: userData.email,
           name: 'Second User',
           password: 'DifferentPassword123!',
+          role: Role.USER,
         },
         { expectedStatus: 409 }
       );
@@ -130,9 +142,13 @@ describe('User Registration and Authentication Flow (E2E)', () => {
       ];
 
       for (const testCase of invalidCases) {
-        const response = await httpHelper.post('/api/authentication/user/signup', testCase.data, {
-          expectedStatus: 400,
-        });
+        const response = await httpClient.post(
+          '/api/authentication/user/signup',
+          testCase.data as any,
+          {
+            expectedStatus: 400,
+          }
+        );
 
         expect(response.status).toBe(400);
         expect(response.body.message).toBeDefined();
@@ -150,7 +166,7 @@ describe('User Registration and Authentication Flow (E2E)', () => {
         name: 'Login Test User',
       });
 
-      const registerResponse = await httpHelper.post('/api/authentication/user/signup', {
+      const registerResponse = await httpClient.post('/api/authentication/user/signup', {
         email: userData.email,
         name: userData.name,
         password: 'TestPassword123!',
@@ -165,10 +181,14 @@ describe('User Registration and Authentication Flow (E2E)', () => {
 
     it('should complete successful login workflow', async () => {
       // Step 1: Login with valid credentials
-      const loginResponse = await httpHelper.post('/api/authentication/user/login', {
-        email: registeredUser.email,
-        password: registeredUser.password,
-      });
+      const loginResponse = await httpClient.post(
+        '/api/authentication/user/login',
+        {
+          email: registeredUser.email,
+          password: registeredUser.password,
+        },
+        { expectedStatus: 201 }
+      );
 
       expect(loginResponse.status).toBe(201);
       expect(loginResponse.body).toHaveProperty('accessToken');
@@ -177,9 +197,12 @@ describe('User Registration and Authentication Flow (E2E)', () => {
 
       // Step 2: Use token to access protected resources
       const { accessToken } = loginResponse.body;
-      const profileResponse = await httpHelper.get('/api/users/profile', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const profileResponse = await httpClient.authenticatedGet(
+        '/api/users/profile',
+        accessToken,
+        undefined,
+        { expectedStatus: 200 }
+      );
 
       expect(profileResponse.status).toBe(200);
       expect(profileResponse.body.email).toBe(registeredUser.email);
@@ -205,7 +228,7 @@ describe('User Registration and Authentication Flow (E2E)', () => {
       ];
 
       for (const testCase of invalidCases) {
-        const response = await httpHelper.post(
+        const response = await httpClient.post(
           '/api/authentication/user/login',
           {
             email: testCase.email,
@@ -227,11 +250,15 @@ describe('User Registration and Authentication Flow (E2E)', () => {
       });
 
       // Step 1: Register new coach
-      const registerResponse = await httpHelper.post('/api/authentication/coach/signup', {
-        email: coachData.email,
-        name: coachData.name,
-        password: 'CoachPassword123!',
-      });
+      const registerResponse = await httpClient.post(
+        '/api/authentication/coach/signup',
+        {
+          email: coachData.email,
+          name: coachData.name,
+          password: 'CoachPassword123!',
+        },
+        { expectedStatus: 201 }
+      );
 
       expect(registerResponse.status).toBe(201);
       expect(registerResponse.body).toHaveProperty('accessToken');
@@ -241,9 +268,12 @@ describe('User Registration and Authentication Flow (E2E)', () => {
       const { accessToken } = registerResponse.body;
 
       // Step 2: Verify coach can access profile
-      const profileResponse = await httpHelper.get('/api/users/profile', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const profileResponse = await httpClient.authenticatedGet(
+        '/api/users/profile',
+        accessToken,
+        undefined,
+        { expectedStatus: 200 }
+      );
 
       expect(profileResponse.status).toBe(200);
       expect(profileResponse.body.email).toBe(coachData.email);
@@ -255,9 +285,12 @@ describe('User Registration and Authentication Flow (E2E)', () => {
         credentials: 'USPTA Certified',
       };
 
-      const updateResponse = await httpHelper.put('/api/coaches/profile', updateData, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const updateResponse = await httpClient.authenticatedPut(
+        '/api/coaches/profile',
+        accessToken,
+        updateData,
+        { expectedStatus: 200 }
+      );
 
       expect(updateResponse.status).toBe(200);
       expect(updateResponse.body.name).toBe(updateData.name);
@@ -271,25 +304,32 @@ describe('User Registration and Authentication Flow (E2E)', () => {
         name: 'Coach Login Test',
       });
 
-      await httpHelper.post('/api/authentication/coach/signup', {
+      await httpClient.post('/api/authentication/coach/signup', {
         email: coachData.email,
         name: coachData.name,
         password: 'CoachPassword123!',
       });
 
       // Login as coach
-      const loginResponse = await httpHelper.post('/api/authentication/coach/login', {
-        email: coachData.email,
-        password: 'CoachPassword123!',
-      });
+      const loginResponse = await httpClient.post(
+        '/api/authentication/coach/login',
+        {
+          email: coachData.email,
+          password: 'CoachPassword123!',
+        },
+        { expectedStatus: 201 }
+      );
 
       expect(loginResponse.status).toBe(201);
       const { accessToken } = loginResponse.body;
 
       // Access coach profile
-      const profileResponse = await httpHelper.get('/api/coaches/profile', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const profileResponse = await httpClient.authenticatedGet(
+        '/api/coaches/profile',
+        accessToken,
+        undefined,
+        { expectedStatus: 200 }
+      );
 
       expect(profileResponse.status).toBe(200);
       expect(profileResponse.body.email).toBe(coachData.email);
@@ -299,20 +339,25 @@ describe('User Registration and Authentication Flow (E2E)', () => {
   describe('Authentication Security', () => {
     it('should reject requests without authentication token', async () => {
       const protectedEndpoints = [
-        { method: 'GET', path: '/api/coaches/profile' },
-        { method: 'GET', path: '/api/users/profile' },
-        { method: 'PUT', path: '/api/users/profile' },
-        { method: 'PUT', path: '/api/coaches/profile' },
-        { method: 'GET', path: '/api/sessions' },
+        { method: 'get' as const, path: '/api/coaches/profile' as const },
+        { method: 'get' as const, path: '/api/users/profile' as const },
+        { method: 'put' as const, path: '/api/users/profile' as const },
+        { method: 'put' as const, path: '/api/coaches/profile' as const },
+        { method: 'get' as const, path: '/api/sessions' as const },
       ];
 
       for (const endpoint of protectedEndpoints) {
-        const response = await httpHelper[endpoint.method.toLowerCase()](
-          endpoint.path,
-          endpoint.method === 'PUT' ? {} : undefined,
-          { expectedStatus: 401 }
-        );
-        expect(response.status).toBe(401);
+        if (endpoint.method === 'put') {
+          const response = await httpClient[endpoint.method](endpoint.path, {} as any, {
+            expectedStatus: 401,
+          });
+          expect(response.status).toBe(401);
+        } else {
+          const response = await httpClient[endpoint.method](endpoint.path, undefined, {
+            expectedStatus: 401,
+          });
+          expect(response.status).toBe(401);
+        }
       }
     });
 
@@ -325,8 +370,7 @@ describe('User Registration and Authentication Flow (E2E)', () => {
       ];
 
       for (const token of invalidTokens) {
-        const response = await httpHelper.get('/api/users/profile', {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await httpClient.authenticatedGet('/api/users/profile', token, undefined, {
           expectedStatus: 401,
         });
         expect(response.status).toBe(401);
@@ -340,7 +384,7 @@ describe('User Registration and Authentication Flow (E2E)', () => {
         name: 'Token Test User',
       });
 
-      const registerResponse = await httpHelper.post('/api/authentication/user/signup', {
+      const registerResponse = await httpClient.post('/api/authentication/user/signup', {
         email: userData.email,
         name: userData.name,
         password: 'TestPassword123!',
@@ -383,7 +427,7 @@ describe('User Registration and Authentication Flow (E2E)', () => {
 
     it('should validate login API contract', async () => {
       // First register a user
-      await httpHelper.post('/api/authentication/user/signup', {
+      await httpClient.post('/api/authentication/user/signup', {
         email: 'logincontract@example.com',
         name: 'Login Contract Test',
         password: 'TestPassword123!',
@@ -410,7 +454,7 @@ describe('User Registration and Authentication Flow (E2E)', () => {
 
     it('should validate profile API contract', async () => {
       // Register and get token
-      const registerResponse = await httpHelper.post('/api/authentication/user/signup', {
+      const registerResponse = await httpClient.post('/api/authentication/user/signup', {
         email: 'profilecontract@example.com',
         name: 'Profile Contract Test',
         password: 'TestPassword123!',

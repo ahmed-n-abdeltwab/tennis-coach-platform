@@ -3,6 +3,24 @@ import request from 'supertest';
 
 import { AuthHeaders, HttpTestOptions } from './auth-test-helper';
 
+/**
+ * @deprecated Use TypeSafeHttpClient instead for compile-time type safety
+ * This class is kept for backward compatibility but will be removed in a future version.
+ *
+ * Migration guide:
+ * ```typescript
+ * // Old way:
+ * const httpHelper = new HttpTestHelper(app);
+ * const response = await httpHelper.post('/api/auth/login', { email, password });
+ *
+ * // New way:
+ * import { TypeSafeHttpClient } from '@auth-helpers';
+ * import { Endpoints } from '@routes-helpers';
+ *
+ * const httpClient = new TypeSafeHttpClient<Endpoints>(app);
+ * const response = await httpClient.post('/api/authentication/user/login', { email, password });
+ * ```
+ */
 export class HttpTestHelper {
   constructor(private app: INestApplication) {}
 
