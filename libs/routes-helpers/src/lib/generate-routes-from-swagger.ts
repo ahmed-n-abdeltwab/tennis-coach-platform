@@ -177,8 +177,6 @@ function extractRoutesFromSwaggerDoc(document: OpenAPIObject): ExtractedRoute[] 
   // Iterate through all paths in Swagger document
   Object.entries(document.paths).forEach(([pathKey, pathObject]: [string, PathItemObject]) => {
     // Iterate through all HTTP methods
-    console.log(pathKey);
-    console.log(pathObject);
     Object.entries(pathObject).forEach(([method, operation]: [string, OperationObject]) => {
       // Skip non-HTTP method keys like 'parameters'
       if (!['get', 'post', 'put', 'delete', 'patch', 'options', 'head'].includes(method)) {
@@ -525,6 +523,11 @@ function schemaToTypeScript(
 
         const properties = Array.from(propertyMap.values());
         return `{ ${properties.join('; ')} }`;
+      }
+      // Check if this is a Date type (format: date-time or date)
+      // NestJS/Swagger sometimes represents Date as object with format
+      if (schema.format === 'date' || schema.format === 'date-time') {
+        return 'string';
       }
       // Empty object or object without properties
       return 'Record<string, unknown>';

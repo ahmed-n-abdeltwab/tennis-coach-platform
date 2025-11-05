@@ -3,10 +3,10 @@ export class BaseResponseDto {
   @ApiProperty()
   id!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: Date | string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String, format: 'date-time' })
   updatedAt!: Date | string;
 }
 
