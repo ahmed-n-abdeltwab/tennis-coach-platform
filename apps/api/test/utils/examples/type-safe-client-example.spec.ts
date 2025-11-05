@@ -1,4 +1,4 @@
-import { AuthTestHelper, AuthenticatedHttpClient, TypeSafeHttpClient } from '@auth-helpers';
+import { AuthTestHelper, TypeSafeHttpClient } from '@auth-helpers';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Endpoints } from '@routes-helpers';
@@ -7,7 +7,7 @@ import { AppModule } from '../../../src/app/app.module';
 /**
  * TypeSafeHttpClient Examples
  *
- * ThiauthHe demonstrates how to use the TypeSafeHttpClient for making
+ * This demonstrates how to use the TypeSafeHttpClient for making
  * type-safe HTTP requests to your API endpoints.
  */
 describe('TypeSafeHttpClient Examples', () => {
@@ -72,10 +72,10 @@ describe('TypeSafeHttpClient Examples', () => {
 
   describe('Authenticated Requests', () => {
     it('should make authenticated GET request to /api/accounts/me', async () => {
-      const authenticatedClient: AuthenticatedHttpClient<Endpoints> =
-        authHelper.createAuthenticatedClient(app, accessToken);
+      const authenticatedClient = authHelper.createAuthenticatedClient<Endpoints>(app, accessToken);
 
-      const response = await authenticatedClient.get('/api/accounts/me', undefined);
+      // GET request with no parameters (undefined is optional)
+      const response = await authenticatedClient.get('/api/accounts/me');
 
       // Response is fully typed with all account fields
       expect(response.status).toBe(200);
@@ -88,14 +88,14 @@ describe('TypeSafeHttpClient Examples', () => {
     });
 
     it('should make authenticated PATCH request to update account', async () => {
-      const authenticatedClient: AuthenticatedHttpClient<Endpoints> =
-        authHelper.createAuthenticatedClient(app, accessToken);
+      const authenticatedClient = authHelper.createAuthenticatedClient<Endpoints>(app, accessToken);
 
       // Get current account
-      const accountResponse = await authenticatedClient.get('/api/accounts/me', undefined);
+      const accountResponse = await authenticatedClient.get('/api/accounts/me');
       const accountId = accountResponse.body.id;
 
       // Update account with type-safe request
+      // Path parameters are included in the path string itself
       const response = await authenticatedClient.patch(`/api/accounts/${accountId}`, {
         name: 'Updated Name',
         bio: 'This is my bio',
@@ -124,6 +124,7 @@ describe('TypeSafeHttpClient Examples', () => {
       });
 
       expect(validRequest.status).toBe(201);
+      expect(validRequest.body.accessToken).toBeDefined();
 
       // ❌ These would cause TypeScript errors at compile time:
 
@@ -166,7 +167,7 @@ describe('TypeSafeHttpClient Examples', () => {
 
   describe('Best Practices', () => {
     it('shows how to handle GET requests with query parameters', async () => {
-      const authenticatedClient = authHelper.createAuthenticatedClient(app, accessToken);
+      const authenticatedClient = authHelper.createAuthenticatedClient<Endpoints>(app, accessToken);
 
       // GET requests with query parameters
       const response = await authenticatedClient.get('/api/time-slots', {
@@ -181,23 +182,22 @@ describe('TypeSafeHttpClient Examples', () => {
     });
 
     it('shows how to handle GET requests with path parameters', async () => {
-      const authenticatedClient = authHelper.createAuthenticatedClient(app, accessToken);
+      const authenticatedClient = authHelper.createAuthenticatedClient<Endpoints>(app, accessToken);
 
       // Get current account to get the ID
-      const accountResponse = await authenticatedClient.get('/api/accounts/me', undefined);
+      const accountResponse = await authenticatedClient.get('/api/accounts/me');
       const accountId = accountResponse.body.id;
 
       // GET request with path parameter
-      const response = await authenticatedClient.get(`/api/accounts/${accountId}`, {
-        id: accountId, // Path parameter
-      });
+      // Path parameters are included in the path string itself, not as data
+      const response = await authenticatedClient.get(`/api/accounts/${accountId}`);
 
       expect(response.status).toBe(200);
       expect(response.body.id).toBe(accountId);
     });
 
     it('shows how to handle POST requests with request bodies', async () => {
-      const authenticatedClient = authHelper.createAuthenticatedClient(app, accessToken);
+      const authenticatedClient = authHelper.createAuthenticatedClient<Endpoints>(app, accessToken);
 
       // POST request with typed body
       const response = await authenticatedClient.post('/api/time-slots', {

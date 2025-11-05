@@ -258,9 +258,8 @@ function generateCode(
   code += ` * - Generate Schemas: ${config.generateSchemas}\n`;
   code += ` */\n\n`;
 
-  // Add Endpoints interface with index signature for type compatibility
+  // Add Endpoints interface
   code += `export interface Endpoints {\n`;
-  code += `  [path: string]: Record<string, unknown>;\n`;
   code += `${interfaceBody}\n}\n`;
 
   // Optionally add utility types (for future use if needed inline)

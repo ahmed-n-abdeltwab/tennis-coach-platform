@@ -40,7 +40,7 @@ describe('Notification Workflow (E2E)', () => {
       name: testUser.name,
       password: 'UserPassword123!',
     });
-    userToken = usersponse.body.accessToken;
+    userToken = userRegisterResponse.body.accessToken;
     testUser.id = userRegisterResponse.body.user.id;
 
     // Register coach

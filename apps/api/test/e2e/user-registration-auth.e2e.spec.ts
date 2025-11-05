@@ -1,5 +1,6 @@
-import { AuthTestHelper, HttpTestHelper } from '@auth-helpers';
+import { AuthTestHelper, TypeSafeHttpClient } from '@auth-helpers';
 import { Role } from '@prisma/client';
+import { Endpoints } from '@routes-helpers';
 /**
  * E2E Tests: User Registration and Authentication Flow
  * Tests complete user registration, login, and profile management workflows
@@ -10,12 +11,12 @@ import { ApiContractTestHelper } from '@test-utils/http-test-helpers';
 
 describe('User Registration and Authentication Flow (E2E)', () => {
   let authHelper: AuthTestHelper;
-  let httpHelper: HttpTestHelper;
+  let httpClient: TypeSafeHttpClient<Endpoints>;
   let contractHelper: ApiContractTestHelper;
 
   beforeAll(() => {
     authHelper = new AuthTestHelper();
-    httpHelper = new HttpTestHelper(global.testApp);
+    httpClient = new TypeSafeHttpClient<Endpoints>(global.testApp);
     contractHelper = new ApiContractTestHelper(global.testApp);
   });
 
