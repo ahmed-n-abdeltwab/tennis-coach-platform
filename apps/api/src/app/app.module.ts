@@ -1,6 +1,7 @@
 import { validateEnv } from '@config/env.validation';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AccountsModule } from './accounts/accounts.module';
 import { BookingTypesModule } from './booking-types/booking-types.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { DiscountsModule } from './discounts/discounts.module';
@@ -23,7 +24,6 @@ import { TimeSlotsModule } from './time-slots/time-slots.module';
     }),
     PrismaModule,
     IamModule,
-    AccountsModule,
     BookingTypesModule,
     SessionsModule,
     TimeSlotsModule,
@@ -33,6 +33,7 @@ import { TimeSlotsModule } from './time-slots/time-slots.module';
     CalendarModule,
     NotificationsModule,
     HealthModule,
+    AccountsModule,
   ],
 })
 export class AppModule {}

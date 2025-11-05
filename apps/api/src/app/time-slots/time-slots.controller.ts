@@ -9,7 +9,7 @@ import {
 } from '@common';
 import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { AdminRole } from '@prisma/client';
+import { Role } from '@prisma/client';
 
 import { CreateTimeSlotDto, GetTimeSlotsQuery, TimeSlotApiResponses } from './dto/time-slot.dto';
 import { TimeSlotsService } from './time-slots.service';
@@ -37,7 +37,7 @@ export class TimeSlotsController {
   }
 
   @Post()
-  @Roles(AdminRole.COACH)
+  @Roles(Role.COACH)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create new time slot (coach only)' })
   @TimeSlotApiResponses.Created('Time slot created successfully')
@@ -47,7 +47,7 @@ export class TimeSlotsController {
   }
 
   @Delete(':id')
-  @Roles(AdminRole.COACH)
+  @Roles(Role.COACH)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete time slot (coach only)' })
   @TimeSlotApiResponses.Deleted('Time slot deleted successfully')

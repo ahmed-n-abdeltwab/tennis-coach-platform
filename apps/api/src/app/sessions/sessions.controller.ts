@@ -2,7 +2,7 @@ import { JwtPayload } from '@auth-helpers';
 import { CurrentUser, Roles } from '@common';
 import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { AdminRole, UserRole } from '@prisma/client';
+import { Role } from '@prisma/client';
 
 import {
   CreateSessionDto,
@@ -18,7 +18,7 @@ export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
 
   @Get()
-  @Roles(UserRole.USER, AdminRole.COACH)
+  @Roles(Role.USER, Role.COACH)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user sessions' })
   @SessionApiResponses.FoundMany('Sessions retrieved successfully')
@@ -27,7 +27,7 @@ export class SessionsController {
   }
 
   @Get(':id')
-  @Roles(UserRole.USER, AdminRole.COACH)
+  @Roles(Role.USER, Role.COACH)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get session by ID' })
   @SessionApiResponses.Found('Session retrieved successfully')
@@ -36,7 +36,7 @@ export class SessionsController {
   }
 
   @Post()
-  @Roles(UserRole.USER)
+  @Roles(Role.USER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create new session booking' })
   @SessionApiResponses.Created('Session created successfully')
@@ -45,7 +45,7 @@ export class SessionsController {
   }
 
   @Put(':id')
-  @Roles(UserRole.USER, AdminRole.COACH)
+  @Roles(Role.USER, Role.COACH)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update session' })
   @SessionApiResponses.Updated('Session updated successfully')
@@ -58,7 +58,7 @@ export class SessionsController {
   }
 
   @Put(':id/cancel')
-  @Roles(UserRole.USER, AdminRole.COACH)
+  @Roles(Role.USER, Role.COACH)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cancel session' })
   @SessionApiResponses.Updated('Session cancelled successfully')
