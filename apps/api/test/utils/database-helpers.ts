@@ -2,7 +2,7 @@
  * Database helper functions for testing
  */
 
-import { BookingType, Coach, Prisma, User } from '@prisma/client';
+import { BookingType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -15,45 +15,46 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
   await prisma.discount.deleteMany();
   await prisma.timeSlot.deleteMany();
   await prisma.bookingType.deleteMany();
-  await prisma.coach.deleteMany();
-  await prisma.user.deleteMany();
+  await prisma.account.deleteMany();
 }
 
 /**
  * Seeds the database with basic test data
  */
 export async function seedTestDatabase(prisma: PrismaService): Promise<{
-  users: User[];
-  coaches: Coach[];
+  users: Account[];
+  coaches: Account[];
   bookingTypes: BookingType[];
 }> {
   // Create test users
   const users = await Promise.all([
-    prisma.user.create({
+    prisma.account.create({
       data: {
         email: 'user1@test.com',
         name: 'Test User 1',
         passwordHash: '$2b$10$test.hash.for.user1',
+        role: Role.USER,
       },
     }),
-    prisma.user.create({
+    prisma.account.create({
       data: {
         email: 'user2@test.com',
         name: 'Test User 2',
         passwordHash: '$2b$10$test.hash.for.user2',
+        role: Role.USER,
       },
     }),
   ]);
 
   // Create test coaches
   const coaches = await Promise.all([
-    prisma.coach.create({
+    prisma.account.create({
       data: {
         email: 'testcoach1@test.com',
         name: 'Test Coach 1',
         passwordHash: '$2b$10$test.hash.for.coach1',
         bio: 'Experienced tennis coach',
-        isAdmin: false,
+        role: Role.COACH,
       },
     }),
   ]);

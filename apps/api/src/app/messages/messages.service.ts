@@ -1,6 +1,6 @@
 import { Role } from '@auth-helpers';
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { AdminRole, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { GetMessagesQuery, SendMessageDto } from './dto/message.dto';
@@ -34,16 +34,18 @@ export class MessagesService {
       take: limit,
       orderBy: { sentAt: 'desc' },
       include: {
-        senderUser: {
+        sender: {
           select: {
             id: true,
             name: true,
+            role: true,
           },
         },
-        senderCoach: {
+        receiver: {
           select: {
             id: true,
             name: true,
+            role: true,
           },
         },
       },
@@ -68,32 +70,31 @@ export class MessagesService {
       throw new ForbiddenException('Not authorized to send messages for this session');
     }
 
-    // Determine receiver
-    const receiverUserId = receiverType === Role.USER ? session.userId : null;
-    const receiverCoachId = receiverType === Role.COACH ? session.coachId : null;
+    // Determine receiver ID based on receiver type
+    const receiverId = receiverType === Role.USER ? session.userId : session.coachId;
 
     return this.prisma.message.create({
       data: {
         content,
         sessionId,
+        senderId: userId,
+        receiverId,
         senderType: role,
-        senderUserId: role in UserRole ? userId : null,
-        senderCoachId: role in AdminRole ? userId : null,
         receiverType,
-        receiverUserId,
-        receiverCoachId,
       },
       include: {
-        senderUser: {
+        sender: {
           select: {
             id: true,
             name: true,
+            role: true,
           },
         },
-        senderCoach: {
+        receiver: {
           select: {
             id: true,
             name: true,
+            role: true,
           },
         },
       },

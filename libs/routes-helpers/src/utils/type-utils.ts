@@ -34,11 +34,13 @@ export type ExtractMethods<
 export type ExtractRequestType<
   E extends Record<string, unknown>,
   P extends ExtractPaths<E>,
-  M extends ExtractMethods<E, P>,
+  M extends string,
 > =
   E[P] extends Record<string, unknown>
-    ? E[P][M] extends (arg: infer R) => unknown
-      ? R
+    ? M extends keyof E[P]
+      ? E[P][M] extends (arg: infer R) => unknown
+        ? R
+        : never
       : never
     : never;
 
@@ -52,11 +54,13 @@ export type ExtractRequestType<
 export type ExtractResponseType<
   E extends Record<string, unknown>,
   P extends ExtractPaths<E>,
-  M extends ExtractMethods<E, P>,
+  M extends string,
 > =
   E[P] extends Record<string, unknown>
-    ? E[P][M] extends (arg: unknown) => infer R
-      ? R
+    ? M extends keyof E[P]
+      ? E[P][M] extends (arg: unknown) => infer R
+        ? R
+        : never
       : never
     : never;
 

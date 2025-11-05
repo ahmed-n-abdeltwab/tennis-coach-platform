@@ -1,6 +1,6 @@
-import { UserRole } from '@prisma/client';
+import { Role } from '@prisma/client';
 
-export interface MockUser {
+export interface MockAccount {
   id: string;
   email: string;
   name: string;
@@ -9,6 +9,10 @@ export interface MockUser {
   age?: number;
   height?: number;
   weight?: number;
+  bio?: string;
+  credentials?: string;
+  philosophy?: string;
+  profileImage?: string;
   disability: boolean;
   disabilityCause?: string;
   country?: string;
@@ -16,7 +20,10 @@ export interface MockUser {
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
-  role: UserRole;
+  role: Role;
   isActive: boolean;
   isOnline: boolean;
 }
+
+// Legacy alias for backward compatibility
+export type MockUser = MockAccount;

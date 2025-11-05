@@ -44,10 +44,25 @@ export interface GenerationOptions {
 /**
  * Generates the Endpoints interface from Swagger document
  * Returns the TypeScript code as a string (in memory)
+ *
+ * @param document - The OpenAPI/Swagger document
+ * @param options - Configuration options for generation behavior
+ * @returns The generated TypeScript code as a string
  */
-export function generateEndpointsInterface(document: OpenAPIObject): string {
+export function generateEndpointsInterface(
+  document: OpenAPIObject,
+  options: GenerationOptions = {}
+): string {
+  // Apply default options
+  const config: Required<GenerationOptions> = {
+    inlineDTOs: options.inlineDTOs ?? true,
+    generateUtilityTypes: options.generateUtilityTypes ?? true,
+    generateSchemas: options.generateSchemas ?? false,
+    outputPath: options.outputPath ?? '',
+  };
+
   const routes = extractRoutesFromSwaggerDoc(document);
-  return generateCode(routes, document);
+  return generateCode(routes, document, config);
 }
 
 /**
@@ -184,7 +199,11 @@ function extractRoutesFromSwaggerDoc(document: OpenAPIObject): ExtractedRoute[] 
 /**
  * Generates TypeScript code from extracted routes
  */
-function generateCode(routes: ExtractedRoute[], document: OpenAPIObject): string {
+function generateCode(
+  routes: ExtractedRoute[],
+  document: OpenAPIObject,
+  config: Required<GenerationOptions>
+): string {
   // Group routes by path
   const routesByPath = new Map<string, ExtractedRoute[]>();
 
@@ -227,14 +246,43 @@ function generateCode(routes: ExtractedRoute[], document: OpenAPIObject): string
 
   const interfaceBody = interfaceEntries.join('\n\n');
 
-  return (
-    `/**\n` +
-    ` * AUTO-GENERATED FILE - DO NOT EDIT MANUALLY\n` +
-    ` * Generated from Swagger metadata: scripts/generate-routes-from-swagger.ts\n` +
-    ` * Run: npm run generate:routes\n` +
-    ` */\n\n` +
-    `export interface Endpoints {\n${interfaceBody}\n}\n`
-  );
+  // Build the output code
+  let code = '';
+
+  // Add header comment
+  code += `/**\n`;
+  code += ` * AUTO-GENERATED FILE - DO NOT EDIT MANUALLY\n`;
+  code += ` * Generated from Swagger metadata\n`;
+  code += ` * \n`;
+  code += ` * Generation Options:\n`;
+  code += ` * - Inline DTOs: ${config.inlineDTOs}\n`;
+  code += ` * - Generate Utility Types: ${config.generateUtilityTypes}\n`;
+  code += ` * - Generate Schemas: ${config.generateSchemas}\n`;
+  code += ` */\n\n`;
+
+  // Add Endpoints interface
+  code += `export interface Endpoints {\n${interfaceBody}\n}\n`;
+
+  // Optionally add utility types (for future use if needed inline)
+  if (config.generateUtilityTypes) {
+    code += `\n`;
+    code += `/**\n`;
+    code += ` * Utility types are exported from @routes-helpers\n`;
+    code += ` * Import them using: import { ExtractPaths, ExtractMethods, ... } from '@routes-helpers';\n`;
+    code += ` */\n`;
+  }
+
+  // Optionally add JSON schemas (placeholder for future implementation)
+  if (config.generateSchemas) {
+    code += `\n`;
+    code += `/**\n`;
+    code += ` * JSON Schemas for runtime validation\n`;
+    code += ` * TODO: Implement schema generation\n`;
+    code += ` */\n`;
+    code += `export const EndpointSchemas = {};\n`;
+  }
+
+  return code;
 }
 
 function isReferenceObject(obj: any): obj is ReferenceObject {
@@ -259,7 +307,9 @@ function extractParams(
 ): string {
   // Use a Map to track properties, keeping the last occurrence
   const propertyMap = new Map<string, string>();
-  if (!parameters) throw Error('the extractParams requires parameters');
+  if (!parameters || parameters.length === 0) {
+    return 'undefined | never';
+  }
   // Extract path parameters first
 
   const pathParams: ParameterObject[] = parameters

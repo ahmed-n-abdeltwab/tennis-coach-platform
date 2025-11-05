@@ -1,15 +1,15 @@
 /**
- * User mock factory for creating test user data
+ * User mock factory for creating test Account data with USER role
  */
 
-import { Role } from '@auth-helpers';
+import { Role } from '@prisma/client';
 
-import { MockUser } from '../mocks';
+import { MockAccount } from '../mocks';
 
 import { BaseMockFactory } from './base-factory';
 
-export class UserMockFactory extends BaseMockFactory<MockUser> {
-  create(overrides?: Partial<MockUser>): MockUser {
+export class UserMockFactory extends BaseMockFactory<MockAccount> {
+  create(overrides?: Partial<MockAccount>): MockAccount {
     const id = this.generateId();
     const now = new Date();
 
@@ -35,7 +35,7 @@ export class UserMockFactory extends BaseMockFactory<MockUser> {
     };
   }
 
-  createWithMinimalData(overrides?: Partial<MockUser>): MockUser {
+  createWithMinimalData(overrides?: Partial<MockAccount>): MockAccount {
     const id = this.generateId();
     const now = new Date();
 

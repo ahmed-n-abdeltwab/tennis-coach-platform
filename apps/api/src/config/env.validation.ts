@@ -14,6 +14,15 @@ const envSchema = z.object({
       message: 'JWT_EXPIRES_IN must be a number or time string like 15m, 2h, or 1d',
     })
     .default('24h'),
+  JWT_REFRESH_SECRET: z.string().min(32, {
+    message: 'JWT_REFRESH_SECRET must be at least 32 characters for security',
+  }),
+  JWT_REFRESH_EXPIRES_IN: z
+    .string()
+    .regex(/^\d+(s|m|h|d)?$/, {
+      message: 'JWT_REFRESH_EXPIRES_IN must be a number or time string like 15m, 2h, or 7d',
+    })
+    .default('7d'),
   BCRYPT_SALT_ROUNDS: z.coerce.number().int().positive().default(10),
 
   // PayPal

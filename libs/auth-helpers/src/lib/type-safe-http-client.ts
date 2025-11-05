@@ -41,7 +41,7 @@ export interface TypedResponse<T> {
  * Helper type to filter paths by HTTP method
  * Used internally to constrain method-specific request methods
  */
-type PathsWithMethod<E, M extends string> = Extract<
+type PathsWithMethod<E extends Record<string, unknown>, M extends string> = Extract<
   {
     [P in ExtractPaths<E>]: M extends keyof E[P] ? P : never;
   }[ExtractPaths<E>],
@@ -76,7 +76,9 @@ type PathsWithMethod<E, M extends string> = Extract<
  * await client.post('/api/auth/user/login', { invalidField: 'test' });
  * ```
  */
-export class TypeSafeHttpClient<E = Record<string, Record<string, unknown>>> {
+export class TypeSafeHttpClient<
+  E extends Record<string, unknown> = Record<string, Record<string, unknown>>,
+> {
   constructor(private app: INestApplication) {}
 
   /**
@@ -169,12 +171,41 @@ export class TypeSafeHttpClient<E = Record<string, Record<string, unknown>>> {
     params?: ExtractRequestType<E, P, 'GET'>,
     options: RequestOptions = {}
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
-    return this.request(
-      path,
-      'GET' as ExtractMethods<E, P>,
-      params as ExtractRequestType<E, P, ExtractMethods<E, P>>,
-      options
-    );
+    // Build path with parameters if needed
+    const builtPath = this.buildPathWithParams(path, params);
+
+    // Create supertest request
+    let req = request(this.app.getHttpServer()).get(builtPath);
+
+    // Add headers
+    if (options.headers) {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        req = req.set(key, value);
+      });
+    }
+
+    // Add query params for GET requests
+    if (params !== undefined && params !== null) {
+      req = req.query(params as Record<string, unknown>);
+    }
+
+    // Set timeout
+    if (options.timeout) {
+      req = req.timeout(options.timeout);
+    }
+
+    // Set expected status
+    if (options.expectedStatus) {
+      req = req.expect(options.expectedStatus);
+    }
+
+    const response = await req;
+
+    return {
+      status: response.status,
+      body: response.body as ExtractResponseType<E, P, 'GET'>,
+      headers: response.headers as Record<string, string>,
+    };
   }
 
   /**
@@ -199,12 +230,41 @@ export class TypeSafeHttpClient<E = Record<string, Record<string, unknown>>> {
     body: ExtractRequestType<E, P, 'POST'>,
     options: RequestOptions = {}
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
-    return this.request(
-      path,
-      'POST' as ExtractMethods<E, P>,
-      body as ExtractRequestType<E, P, ExtractMethods<E, P>>,
-      options
-    );
+    // Build path with parameters if needed
+    const builtPath = this.buildPathWithParams(path, body);
+
+    // Create supertest request
+    let req = request(this.app.getHttpServer()).post(builtPath);
+
+    // Add headers
+    if (options.headers) {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        req = req.set(key, value);
+      });
+    }
+
+    // Add body
+    if (body !== undefined && body !== null) {
+      req = req.send(body);
+    }
+
+    // Set timeout
+    if (options.timeout) {
+      req = req.timeout(options.timeout);
+    }
+
+    // Set expected status
+    if (options.expectedStatus) {
+      req = req.expect(options.expectedStatus);
+    }
+
+    const response = await req;
+
+    return {
+      status: response.status,
+      body: response.body as ExtractResponseType<E, P, 'POST'>,
+      headers: response.headers as Record<string, string>,
+    };
   }
 
   /**
@@ -229,12 +289,41 @@ export class TypeSafeHttpClient<E = Record<string, Record<string, unknown>>> {
     body: ExtractRequestType<E, P, 'PUT'>,
     options: RequestOptions = {}
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
-    return this.request(
-      path,
-      'PUT' as ExtractMethods<E, P>,
-      body as ExtractRequestType<E, P, ExtractMethods<E, P>>,
-      options
-    );
+    // Build path with parameters if needed
+    const builtPath = this.buildPathWithParams(path, body);
+
+    // Create supertest request
+    let req = request(this.app.getHttpServer()).put(builtPath);
+
+    // Add headers
+    if (options.headers) {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        req = req.set(key, value);
+      });
+    }
+
+    // Add body
+    if (body !== undefined && body !== null) {
+      req = req.send(body);
+    }
+
+    // Set timeout
+    if (options.timeout) {
+      req = req.timeout(options.timeout);
+    }
+
+    // Set expected status
+    if (options.expectedStatus) {
+      req = req.expect(options.expectedStatus);
+    }
+
+    const response = await req;
+
+    return {
+      status: response.status,
+      body: response.body as ExtractResponseType<E, P, 'PUT'>,
+      headers: response.headers as Record<string, string>,
+    };
   }
 
   /**
@@ -258,12 +347,36 @@ export class TypeSafeHttpClient<E = Record<string, Record<string, unknown>>> {
     params?: ExtractRequestType<E, P, 'DELETE'>,
     options: RequestOptions = {}
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
-    return this.request(
-      path,
-      'DELETE' as ExtractMethods<E, P>,
-      params as ExtractRequestType<E, P, ExtractMethods<E, P>>,
-      options
-    );
+    // Build path with parameters if needed
+    const builtPath = this.buildPathWithParams(path, params);
+
+    // Create supertest request
+    let req = request(this.app.getHttpServer()).delete(builtPath);
+
+    // Add headers
+    if (options.headers) {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        req = req.set(key, value);
+      });
+    }
+
+    // Set timeout
+    if (options.timeout) {
+      req = req.timeout(options.timeout);
+    }
+
+    // Set expected status
+    if (options.expectedStatus) {
+      req = req.expect(options.expectedStatus);
+    }
+
+    const response = await req;
+
+    return {
+      status: response.status,
+      body: response.body as ExtractResponseType<E, P, 'DELETE'>,
+      headers: response.headers as Record<string, string>,
+    };
   }
 
   /**
@@ -280,12 +393,41 @@ export class TypeSafeHttpClient<E = Record<string, Record<string, unknown>>> {
     body: ExtractRequestType<E, P, 'PATCH'>,
     options: RequestOptions = {}
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
-    return this.request(
-      path,
-      'PATCH' as ExtractMethods<E, P>,
-      body as ExtractRequestType<E, P, ExtractMethods<E, P>>,
-      options
-    );
+    // Build path with parameters if needed
+    const builtPath = this.buildPathWithParams(path, body);
+
+    // Create supertest request
+    let req = request(this.app.getHttpServer()).patch(builtPath);
+
+    // Add headers
+    if (options.headers) {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        req = req.set(key, value);
+      });
+    }
+
+    // Add body
+    if (body !== undefined && body !== null) {
+      req = req.send(body);
+    }
+
+    // Set timeout
+    if (options.timeout) {
+      req = req.timeout(options.timeout);
+    }
+
+    // Set expected status
+    if (options.expectedStatus) {
+      req = req.expect(options.expectedStatus);
+    }
+
+    const response = await req;
+
+    return {
+      status: response.status,
+      body: response.body as ExtractResponseType<E, P, 'PATCH'>,
+      headers: response.headers as Record<string, string>,
+    };
   }
 
   /**

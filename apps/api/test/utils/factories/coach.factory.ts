@@ -1,6 +1,8 @@
 /**
- * Coach mock factory for creating test coach data
+ * Coach mock factory for creating test Account data with COACH role
  */
+
+import { Role } from '@prisma/client';
 
 import { MockCoach } from '../mocks';
 
@@ -16,22 +18,23 @@ export class CoachMockFactory extends BaseMockFactory<MockCoach> {
       email: this.generateEmail('coach'),
       name: `Coach ${id.slice(-8)}`,
       passwordHash: '$2b$10$test.hash.for.testing.purposes.only',
-      isAdmin: true,
       bio: this.randomBio(),
       credentials: this.randomCredentials(),
       philosophy: this.randomPhilosophy(),
       profileImage: this.randomProfileImage(),
+      disability: false,
       createdAt: now,
       updatedAt: now,
       isOnline: true,
       isActive: true,
+      role: Role.COACH,
       ...overrides,
     };
   }
 
   createAdmin(overrides?: Partial<MockCoach>): MockCoach {
     return this.create({
-      isAdmin: true,
+      role: Role.ADMIN,
       name: `Admin Coach ${this.generateId().slice(-8)}`,
       ...overrides,
     });
@@ -39,7 +42,7 @@ export class CoachMockFactory extends BaseMockFactory<MockCoach> {
 
   createRegularCoach(overrides?: Partial<MockCoach>): MockCoach {
     return this.create({
-      isAdmin: false,
+      role: Role.COACH,
       name: `Regular Coach ${this.generateId().slice(-8)}`,
       ...overrides,
     });

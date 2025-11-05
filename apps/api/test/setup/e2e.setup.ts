@@ -32,8 +32,7 @@ export class NestE2ETestContext {
       await this.prisma.session.deleteMany();
       await this.prisma.timeSlot.deleteMany();
       await this.prisma.bookingType.deleteMany();
-      await this.prisma.coach.deleteMany();
-      await this.prisma.user.deleteMany();
+      await this.prisma.account.deleteMany();
       await this.prisma.discount.deleteMany();
       await this.prisma.message.deleteMany();
     }

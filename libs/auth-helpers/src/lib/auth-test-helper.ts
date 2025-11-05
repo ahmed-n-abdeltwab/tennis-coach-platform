@@ -127,16 +127,15 @@ export class AuthTestHelper {
    * @example
    * ```typescript
    * const authHelper = new AuthTestHelper();
-   * const client =reateAuthenticatedClient(app);
+   * const client = authHelper.createAuthenticatedClient(app);
    *
    * // All requests automatically include authentication
    * const profile = await client.get('/api/users/profile');
    * ```
    */
-  createAuthenticatedClient<E = Record<string, Record<string, unknown>>>(
-    app: INestApplication,
-    token?: string
-  ): AuthenticatedHttpClient<E> {
+  createAuthenticatedClient<
+    E extends Record<string, unknown> = Record<string, Record<string, unknown>>,
+  >(app: INestApplication, token?: string): AuthenticatedHttpClient<E> {
     const authToken = token || this.createUserToken();
     return new AuthenticatedHttpClient<E>(app, authToken);
   }
@@ -146,7 +145,7 @@ export class AuthTestHelper {
  * Helper type to filter paths by HTTP method
  * Used internally for method-specific type constraints
  */
-type PathsWithMethod<E, M extends string> = Extract<
+type PathsWithMethod<E extends Record<string, unknown>, M extends string> = Extract<
   {
     [P in ExtractPaths<E>]: M extends keyof E[P] ? P : never;
   }[ExtractPaths<E>],
@@ -174,7 +173,9 @@ type PathsWithMethod<E, M extends string> = Extract<
  * });
  * ```
  */
-export class AuthenticatedHttpClient<E = Record<string, Record<string, unknown>>> {
+export class AuthenticatedHttpClient<
+  E extends Record<string, unknown> = Record<string, Record<string, unknown>>,
+> {
   private client: TypeSafeHttpClient<E>;
 
   constructor(

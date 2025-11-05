@@ -4,7 +4,7 @@
  */
 
 import { Test } from '@nestjs/testing';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from './../../src/app/prisma/prisma.service';
 
 export class NestIntegrationTestContext {
   public prismaService: PrismaService;

@@ -50,7 +50,6 @@ export interface ApiContract {
   response: ResponseData;
 }
 
-
 /**
  * Enhanced HTTP Testing Helper with error handling
  */

@@ -21,7 +21,7 @@ export class UserRoleTestHelper {
 
   createRoleAuthHeaders(role: Role, overrides?: Partial<TestUser>): AuthHeaders {
     const userData = this.createUserTestData(role, overrides);
-    if (role in UserRole) {
+    if (role === Role.USER || role === Role.PREMIUM_USER) {
       return this.authHelper.createUserAuthHeaders(userData);
     } else {
       return this.authHelper.createCoachAuthHeaders(userData);

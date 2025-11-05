@@ -7,7 +7,6 @@
 
     // Library output
     "outDir": "../../dist/libs/routes-helpers",
-    "rootDir": "src",
 
     // Composite project
     "composite": true,

@@ -97,7 +97,7 @@ export class ProtectedRouteTestHelper {
     const roles = [Role.USER, Role.COACH] as const;
     for (const role of roles) {
       const headers =
-        role in UserRole
+        role === Role.USER
           ? this.authHelper.createUserAuthHeaders()
           : this.authHelper.createCoachAuthHeaders();
       const expectedStatus = allowedRoles.includes(role) ? (method === 'POST' ? 201 : 200) : 403;
