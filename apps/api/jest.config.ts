@@ -29,6 +29,11 @@ const config: Config = {
     '^@test-utils/(.*)$': '<rootDir>/test/utils/$1',
 
     '^@test/(.*)$': '<rootDir>/test/$1',
+
+    // Workspace libraries
+    '^@auth-helpers$': '<rootDir>/../../libs/auth-helpers/src/index.ts',
+    '^@routes-helpers$': '<rootDir>/../../libs/routes-helpers/src/index.ts',
+    '^@utils$': '<rootDir>/../../libs/utils/src/index.ts',
   },
 
   // File extensions to consider

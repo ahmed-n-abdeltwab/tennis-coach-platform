@@ -8,17 +8,14 @@ import { INestApplication, Provider } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
-  AdminRole,
+  Account,
   BookingType,
-  Coach,
   Discount,
   Message,
   Prisma,
   RefreshToken,
   Session,
   TimeSlot,
-  User,
-  UserRole,
 } from '@prisma/client';
 import request from 'supertest';
 import { PrismaService } from '../prisma/prisma.service';
@@ -30,17 +27,17 @@ export abstract class BaseIntegrationTest {
   protected prisma: PrismaService;
   protected module: TestingModule;
   protected testData: any;
-  private cachedCoach?: Coach;
-  private cachedUser?: User;
+  private cachedCoach?: Account;
+  private cachedUser?: Account;
 
-  protected async getCachedCoach(): Promise<Coach> {
+  protected async getCachedCoach(): Promise<Account> {
     if (!this.cachedCoach) {
       this.cachedCoach = await this.createTestCoach();
     }
     return this.cachedCoach;
   }
 
-  protected async getCachedUser(): Promise<User> {
+  protected async getCachedUser(): Promise<Account> {
     if (!this.cachedUser) {
       this.cachedUser = await this.createTestUser();
     }
@@ -221,7 +218,7 @@ export abstract class BaseIntegrationTest {
    * Creates test user data in the database with sensible defaults.
    * Allows overriding any field via partial parameter.
    */
-  protected async createTestUser(overrides: Partial<User> = {}): Promise<User> {
+  protected async createTestUser(overrides: Partial<Account> = {}): Promise<Account> {
     const userData = {
       email: `test-user-${Date.now()}@example.com`,
       name: 'Test User',
@@ -235,12 +232,13 @@ export abstract class BaseIntegrationTest {
       address: '123 Test St, Test City',
       isActive: true,
       isOnline: true,
+      role: PrismaRole.USER,
       createdAt: new Date(),
       updatedAt: new Date(),
       ...overrides,
     };
 
-    return this.prisma.user.create({
+    return this.prisma.account.create({
       data: userData,
     });
   }
@@ -249,14 +247,13 @@ export abstract class BaseIntegrationTest {
    * Creates test coach data in the database with sensible defaults.
    * Allows overriding any field via partial parameter.
    */
-  protected async createTestCoach(overrides: Partial<Coach> = {}): Promise<Coach> {
+  protected async createTestCoach(overrides: Partial<Account> = {}): Promise<Account> {
     const coachData = {
       email: `test-coach-${Date.now()}@example.com`,
       name: 'Test Coach',
       bio: 'Test coach bio',
       passwordHash: 'hashed-password',
-      role: Role.COACH,
-      isAdmin: true,
+      role: PrismaRole.COACH,
       credentials: 'Certified Coach',
       philosophy: 'Coaching Philosophy',
       profileImage: 'http://example.com/profile.jpg',
@@ -267,7 +264,7 @@ export abstract class BaseIntegrationTest {
       ...overrides,
     };
 
-    return this.prisma.coach.create({
+    return this.prisma.account.create({
       data: coachData,
     });
   }

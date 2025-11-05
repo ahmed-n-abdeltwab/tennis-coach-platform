@@ -2,17 +2,14 @@
  * Example test file demonstrating authentication and HTTP testing helpers
  * This file shows how to use all the authentication and HTTP testing utilities
  */
-import { AuthModule } from '@app/auth/auth.module';
 import {
   AuthTestHelper,
   HttpTestHelper,
   ProtectedRouteTestHelper,
-  Role,
   UserRoleTestHelper,
 } from '@auth-helpers';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaModule } from '../prisma/prisma.module';
 
 import { ApiContract, ApiContractTestHelper, EnhancedHttpTestHelper } from '../http-test-helpers';
 
@@ -118,7 +115,7 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
       // Test authenticated requests
       const userHeaders = authHelper.createUserAuthHeaders();
 
-      const authResponse = await httpHelper.authenticatedGet('/api/auth/profile', userHeaders, {
+      const authResponse = await httpHelper.authenticatedGet('/api/users/profile', userHeaders, {
         expectedStatus: 200,
       });
       expect(authResponse.status).toBe(200);
@@ -285,7 +282,7 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
       ];
 
       await enhancedHttpHelper.testRequestValidation(
-        '/api/auth/user/signup',
+        '/api/authentication/user/signup',
         'POST',
         validationCases
       );
@@ -317,7 +314,7 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
         },
       };
 
-      await apiContractHelper.testApiContract('/api/auth/user/signup', 'POST', contract);
+      await apiContractHelper.testApiContract('/api/authentication/user/signup', 'POST', contract);
     });
 
     it('should test multiple API contracts', async () => {
@@ -342,8 +339,8 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
         },
         {
           name: 'User Profile',
-          endpoint: '/api/auth/refresh',
-          method: 'GET' as const,
+          endpoint: '/api/authentication/refresh',
+          method: 'POST' as const,
           contract: {
             request: {
               headers: authHelper.createUserAuthHeaders(),
@@ -380,9 +377,13 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
         name: 'Integration Test User',
       };
 
-      const registerResponse = await httpHelper.post('/api/auth/user/signup', registerData, {
-        expectedStatus: 201,
-      });
+      const registerResponse = await httpHelper.post(
+        '/api/authentication/user/signup',
+        registerData,
+        {
+          expectedStatus: 201,
+        }
+      );
 
       expect(registerResponse.body).toHaveProperty('accessToken');
       expect(registerResponse.body).toHaveProperty('user');
@@ -393,7 +394,7 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
         password: registerData.password,
       };
 
-      const loginResponse = await httpHelper.post('/api/auth/user/login', loginData, {
+      const loginResponse = await httpHelper.post('/api/authentication/user/login', loginData, {
         expectedStatus: 200,
       });
 

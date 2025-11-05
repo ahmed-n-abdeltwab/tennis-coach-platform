@@ -9,6 +9,7 @@
  */
 
 export interface Endpoints {
+  [path: string]: Record<string, unknown>;
   "/api/accounts": {
     GET: (params: undefined | never) => { id: string; createdAt: string; updatedAt: string; email: string; name: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH"; gen?: "male" | "female" | "other"; age?: number; height?: number; weight?: number; bio?: string; credentials?: string; philosophy?: string; profileImage?: string; disability?: boolean; disabilityCause?: string; country?: string; address?: string; notes?: string; isActive: boolean; isOnline: boolean };
   };

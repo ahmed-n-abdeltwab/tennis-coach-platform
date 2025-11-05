@@ -6,15 +6,15 @@
 import {
   AuthTestHelper,
   HttpTestHelper,
-  parseJwtTime,
   ProtectedRouteTestHelper,
-  Role,
   UserRoleTestHelper,
 } from '@auth-helpers';
 import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
+import { parseJwtTime } from '../../../../../libs/utils/src';
+import { Role } from '@prisma/client';
 
 describe('Auth Helpers Integration Tests', () => {
   let app: INestApplication;
