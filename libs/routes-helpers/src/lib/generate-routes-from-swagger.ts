@@ -7,6 +7,7 @@ import {
   ParameterObject,
   PathItemObject,
   ReferenceObject,
+  ResponseObject,
   SchemaObject,
 } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
 import { ExtractedRoute } from '../interfaces/IRoutes';
@@ -87,7 +88,7 @@ export function generateEndpointsObject(
 
   // Build the endpoints object
   routesByPath.forEach((pathRoutes, path) => {
-    const methods: Record<string, any> = {};
+    const methods: Record<string, Record<string, unknown>> = {};
 
     pathRoutes.forEach(route => {
       const { method, operation } = route;
@@ -103,7 +104,7 @@ export function generateEndpointsObject(
       methods[method] = {
         [paramName]: paramType,
         responseType: response,
-      } as Record<string, unknown>;
+      };
     });
 
     endpoints[path] = methods;
@@ -284,12 +285,12 @@ function generateCode(
   return code;
 }
 
-function isReferenceObject(obj: any): obj is ReferenceObject {
-  return obj && typeof obj === 'object' && '$ref' in obj;
+function isReferenceObject(obj: SchemaObject | ReferenceObject | unknown): obj is ReferenceObject {
+  return obj !== null && typeof obj === 'object' && obj !== undefined && '$ref' in obj;
 }
 
-function isSchemaObject(obj: any): obj is SchemaObject {
-  return obj && typeof obj === 'object' && !('$ref' in obj);
+function isSchemaObject(obj: SchemaObject | ReferenceObject | unknown): obj is SchemaObject {
+  return obj !== null && typeof obj === 'object' && obj !== undefined && !('$ref' in obj);
 }
 
 function isParameterObject(obj: ParameterObject | ReferenceObject): obj is ParameterObject {
@@ -342,12 +343,15 @@ function extractParams(
  * Extracts body for POST/PUT/PATCH/DELETE requests
  * Returns undefined if no body exists
  */
-function extractBody(requestBody: any, document: OpenAPIObject): string {
-  if (!requestBody) {
+function extractBody(requestBody: unknown, document: OpenAPIObject): string {
+  if (!requestBody || typeof requestBody !== 'object') {
     return 'undefined';
   }
 
-  const schema = requestBody.content?.['application/json']?.schema;
+  const body = requestBody as {
+    content?: { 'application/json'?: { schema?: SchemaObject | ReferenceObject } };
+  };
+  const schema = body.content?.['application/json']?.schema;
   if (!schema) {
     return 'undefined';
   }
@@ -360,7 +364,7 @@ function extractBody(requestBody: any, document: OpenAPIObject): string {
  * Extract response type from Swagger responses
  * Returns 'void' for 204 No Content responses, 'unknown' for missing schemas
  */
-function extractResponseType(operation: any, document: OpenAPIObject): string {
+function extractResponseType(operation: OperationObject, document: OpenAPIObject): string {
   if (!operation.responses) return 'unknown';
 
   // Check for 204 No Content first
@@ -374,7 +378,12 @@ function extractResponseType(operation: any, document: OpenAPIObject): string {
 
   if (!successResponse) return 'unknown';
 
-  const schema = successResponse.content?.['application/json']?.schema;
+  // Resolve reference if needed
+  const response = isReferenceObject(successResponse)
+    ? resolveRef<ResponseObject>(successResponse, document)
+    : successResponse;
+
+  const schema = response.content?.['application/json']?.schema;
   if (!schema) {
     // If there's a successful response but no schema, it's likely void
     return 'void';
@@ -398,16 +407,17 @@ function resolveRef<T>(refObj: ReferenceObject | T, document: OpenAPIObject): T 
   }
 
   const path = ref.slice(2).split('/');
-  let current: any = document;
+  let current: unknown = document;
 
   for (const key of path) {
-    current = current?.[key];
-    if (current === undefined) {
+    if (current && typeof current === 'object' && key in current) {
+      current = (current as Record<string, unknown>)[key];
+    } else {
       throw new Error(`Invalid reference: ${ref}`);
     }
   }
 
-  return resolveRef(current, document);
+  return resolveRef(current as ReferenceObject | T, document) as T;
 }
 
 /**
@@ -446,9 +456,9 @@ function schemaToTypeScript(
   // Handle allOf - merge all schemas and combine their properties
   if (isSchemaObject(schema) && schema.allOf && Array.isArray(schema.allOf)) {
     // Resolve all schemas in allOf
-    const resolvedSchemas = schema.allOf.map((s: any) => {
-      if (s.$ref) {
-        const resolved = resolveRef(s.$ref, document);
+    const resolvedSchemas = schema.allOf.map((s: SchemaObject | ReferenceObject) => {
+      if (isReferenceObject(s)) {
+        const resolved = resolveRef(s, document);
         return resolved || s;
       }
       return s;
@@ -456,20 +466,26 @@ function schemaToTypeScript(
 
     // Merge all properties from allOf schemas
     // Use a Map to deduplicate, keeping properties from later schemas (last occurrence)
-    const mergedProperties = new Map<string, { schema: any; required: boolean }>();
+    const mergedProperties = new Map<
+      string,
+      { schema: SchemaObject | ReferenceObject; required: boolean }
+    >();
     const mergedRequired: string[] = [];
 
-    resolvedSchemas.forEach((s: any) => {
-      if (s.properties) {
-        Object.entries(s.properties).forEach(([key, propSchema]: [string, any]) => {
-          const required =
-            (s.required && s.required.includes(key)) ||
-            (schema.required && schema.required.includes(key));
-          // Set will overwrite previous occurrences, keeping the last one
-          mergedProperties.set(key, { schema: propSchema, required });
-        });
+    resolvedSchemas.forEach((s: SchemaObject | ReferenceObject) => {
+      if (isSchemaObject(s) && s.properties) {
+        Object.entries(s.properties).forEach(
+          ([key, propSchema]: [string, SchemaObject | ReferenceObject]) => {
+            const required =
+              ((s.required && s.required.includes(key)) ||
+                (schema.required && schema.required.includes(key))) ??
+              false;
+            // Set will overwrite previous occurrences, keeping the last one
+            mergedProperties.set(key, { schema: propSchema, required });
+          }
+        );
       }
-      if (s.required && Array.isArray(s.required)) {
+      if (isSchemaObject(s) && s.required && Array.isArray(s.required)) {
         mergedRequired.push(...s.required);
       }
     });
@@ -487,7 +503,9 @@ function schemaToTypeScript(
     }
 
     // Fallback to intersection type if no properties to merge
-    const types = resolvedSchemas.map((s: any) => schemaToTypeScript(s, document, visited));
+    const types = resolvedSchemas.map((s: SchemaObject | ReferenceObject) =>
+      schemaToTypeScript(s, document, visited)
+    );
     return types.length === 1 ? (types[0] ?? 'unknown') : types.join(' & ');
   }
 
@@ -495,7 +513,9 @@ function schemaToTypeScript(
   if (isSchemaObject(schema)) {
     const unionSchemas = schema.oneOf || schema.anyOf;
     if (unionSchemas && Array.isArray(unionSchemas)) {
-      const types = unionSchemas.map((s: any) => schemaToTypeScript(s, document, visited));
+      const types = unionSchemas.map((s: SchemaObject | ReferenceObject) =>
+        schemaToTypeScript(s, document, visited)
+      );
       return types.join(' | ');
     }
 
@@ -514,13 +534,15 @@ function schemaToTypeScript(
         // Use a Map to deduplicate properties, keeping the last occurrence
         const propertyMap = new Map<string, string>();
 
-        Object.entries(schema.properties).forEach(([key, propSchema]: [string, any]) => {
-          const propType = schemaToTypeScript(propSchema, document, visited);
-          const required = schema.required && schema.required.includes(key);
-          const optional = required ? '' : '?';
-          // Set will overwrite previous occurrences, keeping the last one
-          propertyMap.set(key, `${key}${optional}: ${propType}`);
-        });
+        Object.entries(schema.properties).forEach(
+          ([key, propSchema]: [string, SchemaObject | ReferenceObject]) => {
+            const propType = schemaToTypeScript(propSchema, document, visited);
+            const required = schema.required && schema.required.includes(key);
+            const optional = required ? '' : '?';
+            // Set will overwrite previous occurrences, keeping the last one
+            propertyMap.set(key, `${key}${optional}: ${propType}`);
+          }
+        );
 
         const properties = Array.from(propertyMap.values());
         return `{ ${properties.join('; ')} }`;
@@ -538,7 +560,7 @@ function schemaToTypeScript(
     switch (schema.type) {
       case 'string':
         if (schema.enum) {
-          return schema.enum.map((v: any) => `"${v}"`).join(' | ');
+          return schema.enum.map((v: string | number | boolean) => `"${v}"`).join(' | ');
         }
         // Handle date/datetime formats as ISO string
         if (schema.format === 'date' || schema.format === 'date-time') {
