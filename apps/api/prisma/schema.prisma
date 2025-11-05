@@ -16,12 +16,9 @@ datasource db {
 // ENUMS
 // ========================= //
 
-enum UserRole {
+enum Role {
   USER
   PREMIUM_USER
-}
-
-enum AdminRole {
   ADMIN
   COACH
 }
@@ -29,8 +26,7 @@ enum AdminRole {
 // ========================= //
 // MODELS
 // ========================= //
-
-model User {
+model Account {
   id           String @id @default(cuid())
   email        String @unique
   name         String
@@ -41,60 +37,35 @@ model User {
   age             Int?
   height          Float?
   weight          Float?
+  bio             String?
+  credentials     String?
+  philosophy      String?
+  profileImage    String?
   disability      Boolean @default(false)
-  disabilityCause String? // Required only if disability = true
+  disabilityCause String?
   country         String?
   address         String?
   notes           String?
 
   // State
-  role      UserRole @default(USER)
+  role      Role     @default(USER)
   isActive  Boolean  @default(true)
   isOnline  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  sessions         Session[]
-  sentMessages     Message[]      @relation("MessageSender")
-  receivedMessages Message[]      @relation("MessageReceiver")
-  refreshTokens    RefreshToken[]
-
-  @@index([email])
-  @@map("users")
-}
-
-model Coach {
-  id           String  @id @default(cuid())
-  email        String  @unique
-  name         String
-  passwordHash String
-  isAdmin      Boolean @default(true)
-
-  // Profile details
-  bio          String?
-  credentials  String?
-  philosophy   String?
-  profileImage String?
-
-  // State
-  role      AdminRole @default(COACH)
-  isActive  Boolean   @default(true)
-  isOnline  Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  // Relations
   bookingTypes     BookingType[]
   timeSlots        TimeSlot[]
-  sessions         Session[]
+  sessionsAsUser   Session[]      @relation("UserSessions")
+  sessionsAsCoach  Session[]      @relation("CoachSessions")
   discounts        Discount[]
-  sentMessages     Message[]      @relation("CoachMessageSender")
-  receivedMessages Message[]      @relation("CoachMessageReceiver")
+  sentMessages     Message[]      @relation("AccountMessageSender")
+  receivedMessages Message[]      @relation("AccountMessageReceiver")
   refreshTokens    RefreshToken[]
 
   @@index([email])
-  @@map("coaches")
+  @@map("accounts")
 }
 
 model BookingType {
@@ -106,9 +77,9 @@ model BookingType {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relations
-  coach    Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  coachId  String
+  coach   Account @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId String
+
   sessions Session[]
 
   @@index([coachId])
@@ -123,9 +94,9 @@ model TimeSlot {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relations
-  coach    Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  coachId  String
+  coach   Account @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId String
+
   sessions Session[]
 
   @@index([coachId])
@@ -143,22 +114,22 @@ model Session {
   paymentId       String?
   discountCode    String?
   calendarEventId String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
-  user          User        @relation(fields: [userId], references: [id])
   userId        String
-  coach         Coach       @relation(fields: [coachId], references: [id])
   coachId       String
-  bookingType   BookingType @relation(fields: [bookingTypeId], references: [id])
   bookingTypeId String
-  timeSlot      TimeSlot    @relation(fields: [timeSlotId], references: [id])
   timeSlotId    String
-  discount      Discount?   @relation(fields: [discountId], references: [id])
   discountId    String?
-  messages      Message[]
+
+  user        Account     @relation("UserSessions", fields: [userId], references: [id])
+  coach       Account     @relation("CoachSessions", fields: [coachId], references: [id])
+  bookingType BookingType @relation(fields: [bookingTypeId], references: [id])
+  timeSlot    TimeSlot    @relation(fields: [timeSlotId], references: [id])
+  discount    Discount?   @relation(fields: [discountId], references: [id])
+  messages    Message[]
 
   @@index([userId])
   @@index([coachId])
@@ -176,9 +147,9 @@ model Discount {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
-  coach    Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  coachId  String
+  coach   Account @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId String
+
   sessions Session[]
 
   @@index([coachId])
@@ -189,23 +160,15 @@ model Message {
   id           String   @id @default(cuid())
   content      String
   sentAt       DateTime @default(now())
+  senderId     String
+  receiverId   String
+  sessionId    String?
   senderType   String
   receiverType String
 
-  // Polymorphic foreign keys
-  senderUserId    String?
-  senderCoachId   String?
-  receiverUserId  String?
-  receiverCoachId String?
-
-  sessionId String?
-
-  // Relations
-  senderUser    User?    @relation("MessageSender", fields: [senderUserId], references: [id])
-  senderCoach   Coach?   @relation("CoachMessageSender", fields: [senderCoachId], references: [id])
-  receiverUser  User?    @relation("MessageReceiver", fields: [receiverUserId], references: [id])
-  receiverCoach Coach?   @relation("CoachMessageReceiver", fields: [receiverCoachId], references: [id])
-  session       Session? @relation(fields: [sessionId], references: [id])
+  sender   Account  @relation("AccountMessageSender", fields: [senderId], references: [id])
+  receiver Account  @relation("AccountMessageReceiver", fields: [receiverId], references: [id])
+  session  Session? @relation(fields: [sessionId], references: [id])
 
   @@index([sessionId])
   @@map("messages")
@@ -214,15 +177,12 @@ model Message {
 model RefreshToken {
   id        String   @id @default(cuid())
   token     String   @unique
-  userId    String?
-  coachId   String?
+  accountId String
   expiresAt DateTime
   createdAt DateTime @default(now())
 
-  user  User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  coach Coach? @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
-  @@index([coachId])
+  @@index([accountId])
   @@map("refresh_tokens")
 }

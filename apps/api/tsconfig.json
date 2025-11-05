@@ -1,22 +1,38 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc/apps/api",
+    // NestJS requires CommonJS
+    "module": "CommonJS",
+    "moduleResolution": "Node10",
+
+    // Node.js environment
+    "lib": ["ES2023"],
     "types": ["node"],
+
+    // NestJS decorators
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "target": "es2022",
-    "moduleResolution": "Node",
-    "esModuleInterop": true,
-    "strict": true,
-    "noImplicitOverride": true,
-    "strictPropertyInitialization": false,
-    "forceConsistentCasingInFileNames": true
+
+    // API-specific paths
+    "baseUrl": ".",
+    "paths": {
+      "@auth-helpers": ["../../libs/auth-helpers/src/index.ts"],
+      "@routes-helpers": ["../../libs/routes-helpers/src/index.ts"],
+      "@utils": ["../../libs/utils/src/index.ts"],
+      "@api/*": ["src/app/*"],
+      "@common": ["src/common/index.ts"],
+      "@common/*": ["src/common/*"],
+      "@config": ["src/config/index.ts"],
+      "@config/*": ["src/config/*"],
+      "@test-utils/*": ["test/utils/*"],
+      "@test/*": ["test/*"]
+    }
   },
   "references": [
-    { "path": "../../libs/auth-helpers/tsconfig.lib.json" },
-    { "path": "../../libs/routes-helpers/tsconfig.lib.json" },
-    { "path": "../../libs/utils/tsconfig.lib.json" }
-  ],
-  "include": ["src/**/*.ts", "prisma/**/*.ts"]
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.spec.json" },
+    { "path": "../../libs/auth-helpers" },
+    { "path": "../../libs/routes-helpers" },
+    { "path": "../../libs/utils" }
+  ]
 }

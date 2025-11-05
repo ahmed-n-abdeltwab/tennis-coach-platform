@@ -1,5 +1,6 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Account, Prisma, PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { Role } from './../../../libs/auth-helpers/src/lib/common/types/auth.types';
 
 const prisma = new PrismaClient({
   log: [
@@ -14,14 +15,15 @@ async function seed() {
   // Use a transaction to ensure atomic execution
   await prisma.$transaction(async tx => {
     // --- Create test Coach ---
-    const coach = await tx.coach.upsert({
+    const coach: Account = await tx.account.upsert({
       where: { email: 'jane@tennis.pro' },
       update: {},
       create: {
         email: 'jane@tennis.pro',
         name: 'Jane Tennis',
-        passwordHash: await bcrypt.hash('coachpass123', 10),
-        bio: 'ITF Certified tennis coach with 10+ years of experience coaching players of all levels.',
+        role: Role.COACH,
+        passwordHash: await bcrypt.hash('accountpass123', 10),
+        bio: 'ITF Certified tennis account with 10+ years of experience accounting players of all levels.',
         credentials: 'ITF Level 2, PTR Certified, First Aid Certified',
         philosophy:
           'Focus on fundamentals: Form, Footwork, and Focus. Every player can improve with dedication and proper technique.',
@@ -36,7 +38,7 @@ async function seed() {
           id: 'bt-private-1',
           name: 'Private Training',
           description:
-            'One-on-one personalized coaching session focused on your specific needs and goals.',
+            'One-on-one personalized accounting session focused on your specific needs and goals.',
           basePrice: new Prisma.Decimal(120.0).toNumber(),
           coachId: coach.id,
           isActive: true,
@@ -105,7 +107,7 @@ async function seed() {
     });
 
     // --- Test User ---
-    await tx.user.upsert({
+    await tx.account.upsert({
       where: { email: 'elena@example.com' },
       update: {},
       create: {
@@ -125,7 +127,7 @@ async function seed() {
   });
 
   console.info('✅ Database seeded successfully!');
-  console.info('👩‍🏫 Coach: jane@tennis.pro / coachpass123');
+  console.info('👩‍🏫 Coach: jane@tennis.pro / accountpass123');
   console.info('🎾 User : elena@example.com / userpass123');
 }
 
