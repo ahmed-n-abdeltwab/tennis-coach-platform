@@ -1,42 +1,51 @@
 {
-  "compileOnSave": false,
   "compilerOptions": {
-    "baseUrl": ".",
-    "target": "es2022",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
-    "lib": ["es2023", "dom"],
+    // Language & Environment
+    "target": "ES2023",
+    "lib": [],
+
+    // Emit
     "declaration": false,
     "sourceMap": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "strict": true,
-    "noImplicitAny": false,
-    "noImplicitThis": true,
-    "strictNullChecks": true,
-    "noImplicitOverride": true,
+    "removeComments": true,
     "importHelpers": true,
+
+    // Interop Constraints
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+
+    // Type Checking - FULL STRICT MODE
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+
+    // Completeness
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+
+    // Performance
+    "incremental": true,
+
+    // Paths (workspace libraries only)
+    "baseUrl": ".",
     "paths": {
-      // Shared workspace paths (available to all projects)
-      "@apps": ["apps/*"],
-      "@auth-helpers": ["libs/auth-helpers/src/index"],
-      "@docs": ["docs/*"],
-      "@k8s": ["k8s/*"],
-      "@libs": ["libs/*"],
-      "@routes-helpers": ["libs/routes-helpers/src/index"],
-      "@scripts": ["scripts/*"],
-      "@utils": ["libs/utils/src/index"],
-      "@workspace": ["*"],
-      // API-specific paths (used by apps/api only, but defined in base for inheritance)
-      "@api/*": ["apps/api/src/app/*"],
-      "@common": ["apps/api/src/common/index"],
-      "@common/*": ["apps/api/src/common/*"],
-      "@config": ["apps/api/src/config/index"],
-      "@config/*": ["apps/api/src/config/*"],
-      "@test-utils/*": ["apps/api/test/utils/*"],
-      "@test/*": ["apps/api/test/*"]
+      "@auth-helpers": ["libs/auth-helpers/src/index.ts"],
+      "@routes-helpers": ["libs/routes-helpers/src/index.ts"],
+      "@utils": ["libs/utils/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp", "test-reports"]

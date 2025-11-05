@@ -1,14 +1,24 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "outDir": "../../dist/out-tsc/libs/utils",
-    "tsBuildInfoFile": "../../dist/out-tsc/libs/utils/.tsbuildinfo",
-    "declaration": true,
-    "types": ["node"],
+    // CommonJS for maximum compatibility
+    "module": "CommonJS",
+    "moduleResolution": "Node10",
+
+    // Library output
+    "outDir": "../../dist/libs/utils",
+    "rootDir": "src",
+
+    // Composite project
     "composite": true,
+    "declaration": true,
     "declarationMap": true,
-    "rootDir": "."
+    "tsBuildInfoFile": "../../dist/libs/utils/.tsbuildinfo",
+
+    // Node environment
+    "lib": ["ES2023"],
+    "types": ["node"]
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__tests__/**"]
 }

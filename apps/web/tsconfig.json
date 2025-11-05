@@ -1,35 +1,33 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    // React & Vite
     "jsx": "react-jsx",
     "module": "ESNext",
-    "moduleResolution": "bundler",
-    "baseUrl": "./src",
-    "rootDir": "src",
-    "outDir": "../../dist/out-tsc/apps/web",
-    "types": ["vite/client"],
-    "paths": {
-      // Aliases
-      "@workspace/*": ["../../*"],
-      "@docs/*": ["../../docs/*"],
-      "@scripts/*": ["../../scripts/*"],
-      "@k8s/*": ["../../k8s/*"],
-      "@auth-helpers": ["../../libs/auth-helpers/index"],
-      "@auth-helpers/*": ["../../libs/auth-helpers/*"],
-      "@routes-helpers": ["../../libs/routes-helpers/index"],
-      "@routes-helpers/*": ["../../libs/routes-helpers/*"],
-      "@utils": ["../../libs/utils/index"],
-      "@utils/*": ["../../libs/utils/*"],
-      "@apps/*": ["../../apps/*"],
+    "moduleResolution": "Bundler",
 
-      // web
-      "@web/*": ["src/*"],
-      "@components/*": ["src/app/components/*"],
-      "@contexts/*": ["src/app/contexts/*"],
-      "@pages/*": ["src/app/pages/*"],
-      "@services/*": ["src/app/services/*"]
+    // Browser environment
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+
+    // Bundler optimizations
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "isolatedModules": true,
+
+    // Web-specific paths
+    "baseUrl": "./src",
+    "paths": {
+      "@auth-helpers": ["../../libs/auth-helpers/src/index.ts"],
+      "@routes-helpers": ["../../libs/routes-helpers/src/index.ts"],
+      "@utils": ["../../libs/utils/src/index.ts"],
+      "@/*": ["./*"],
+      "@components/*": ["app/components/*"],
+      "@contexts/*": ["app/contexts/*"],
+      "@pages/*": ["app/pages/*"],
+      "@services/*": ["app/services/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist"]
 }

@@ -1,21 +1,25 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc/libs/auth-helpers",
-    "tsBuildInfoFile": "../../dist/out-tsc/libs/auth-helpers/.tsbuildinfo",
+    // CommonJS for maximum compatibility
+    "module": "CommonJS",
+    "moduleResolution": "Node10",
+
+    // Library output
+    "outDir": "../../dist/libs/auth-helpers",
+    "rootDir": "src",
+
+    // Composite project
     "composite": true,
     "declaration": true,
     "declarationMap": true,
-    "module": "CommonJS",
-    "moduleResolution": "Node",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "paths": {
-      "@utils": ["dist/libs/utils/src/index"]
-    }
+    "tsBuildInfoFile": "../../dist/libs/auth-helpers/.tsbuildinfo",
+
+    // Node environment
+    "lib": ["ES2023"],
+    "types": ["node"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["**/*.spec.ts", "**/*.test.ts"],
-  "references": [{ "path": "../utils/tsconfig.lib.json" }]
+  "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__tests__/**"],
+  "references": [{ "path": "../utils" }]
 }
