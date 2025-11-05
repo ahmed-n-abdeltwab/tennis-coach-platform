@@ -1,7 +1,6 @@
-import { UserRole } from '@prisma/client';
+import { Role } from '@prisma/client';
 
 import { AuthHeaders, AuthTestHelper, TestUser } from './auth-test-helper';
-import { Role } from './common';
 
 export class UserRoleTestHelper {
   private authHelper: AuthTestHelper;

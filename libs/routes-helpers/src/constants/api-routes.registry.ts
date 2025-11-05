@@ -3,7 +3,7 @@
  * Generated from Swagger metadata: scripts/generate-routes-from-swagger.ts
  * Run: npm run generate:routes
  */
-
+// "/api/auth/coach/logn"
 export interface Endpoints {
   "/api/auth/coach/login": {
     POST: (body: { email: string; password: string }) => { accessToken: string; refreshToken: string; user: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" } };

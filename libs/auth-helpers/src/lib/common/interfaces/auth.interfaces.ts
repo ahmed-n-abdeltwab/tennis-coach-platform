@@ -1,4 +1,4 @@
-import { Role } from '../types/auth.types';
+import { Role } from '@prisma/client';
 
 export interface JwtPayload {
   sub: string;

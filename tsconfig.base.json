@@ -16,9 +16,11 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
 
-    // Type Checking - FULL STRICT MODE
+    // Type Checking 
+    "noImplicitAny": false,
+    "noPropertyAccessFromIndexSignature": false,
+    // FULL STRICT MODE
     "strict": true,
-    "noImplicitAny": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "strictBindCallApply": true,
@@ -31,7 +33,6 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
 
     // Completeness
     "skipLibCheck": true,

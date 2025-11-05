@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { AdminRole, UserRole } from '@prisma/client';
+import { Role } from '@prisma/client';
 
 import { AuthTestHelper } from './auth-test-helper';
 import { HttpTestHelper } from './http-test-helper';
@@ -90,11 +90,11 @@ export class ProtectedRouteTestHelper {
 
   async testRoleBasedAccess(
     endpoint: string,
-    allowedRoles: (UserRole | AdminRole)[],
+    allowedRoles: Role[],
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
     data?: any
   ): Promise<void> {
-    const roles = [UserRole.USER, AdminRole.COACH] as const;
+    const roles = [Role.USER, Role.COACH] as const;
     for (const role of roles) {
       const headers =
         role in UserRole

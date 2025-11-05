@@ -1,7 +1,45 @@
 import fs from 'fs';
 import path from 'path';
 
-import { OpenAPIObject } from '@nestjs/swagger';
+import {
+  OpenAPIObject,
+  OperationObject,
+  ParameterObject,
+  PathItemObject,
+  ReferenceObject,
+  SchemaObject,
+} from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
+import { ExtractedRoute } from '../interfaces/IRoutes';
+import { getWorkspaceRoot } from '../utils/routes.util';
+
+/**
+ * Configuration options for route generation
+ */
+export interface GenerationOptions {
+  /**
+   * Whether to inline DTO properties instead of using type names
+   * @default true
+   */
+  inlineDTOs?: boolean;
+
+  /**
+   * Whether to generate utility types alongside the Endpoints interface
+   * @default true
+   */
+  generateUtilityTypes?: boolean;
+
+  /**
+   * Whether to generate JSON schemas for runtime validation
+   * @default false
+   */
+  generateSchemas?: boolean;
+
+  /**
+   * Custom output path for the generated file
+   * If not provided, uses default location in routes-helpers library
+   */
+  outputPath?: string;
+}
 
 /**
  * Generates the Endpoints interface from Swagger document
@@ -18,9 +56,9 @@ export function generateEndpointsInterface(document: OpenAPIObject): string {
  */
 export function generateEndpointsObject(
   document: OpenAPIObject
-): Record<string, Record<string, any>> {
+): Record<string, Record<string, unknown>> {
   const routes = extractRoutesFromSwaggerDoc(document);
-  const endpoints: Record<string, Record<string, any>> = {};
+  const endpoints: Record<string, Record<string, unknown>> = {};
 
   // Group routes by path
   const routesByPath = new Map<string, ExtractedRoute[]>();
@@ -41,7 +79,7 @@ export function generateEndpointsObject(
       const isGet = method === 'GET';
 
       const paramType = isGet
-        ? extractParams(operation.parameters, document)
+        ? extractParams(document, operation.parameters)
         : extractBody(operation.requestBody, document);
 
       const paramName = isGet ? 'params' : 'body';
@@ -50,7 +88,7 @@ export function generateEndpointsObject(
       methods[method] = {
         [paramName]: paramType,
         responseType: response,
-      };
+      } as Record<string, unknown>;
     });
 
     endpoints[path] = methods;
@@ -60,73 +98,73 @@ export function generateEndpointsObject(
 }
 
 /**
- * Gets the workspace root path regardless of whether we're in src or dist
+ * Generates API routes from Swagger document with configurable options
+ *
+ * @param document - The OpenAPI/Swagger document
+ * @param options - Configuration options for generation behavior
+ *
+ * @example
+ * // Use default options
+ * await generateApiRoutes(document);
+ *
+ * @example
+ * // Custom configuration
+ * await generateApiRoutes(document, {
+ *   inlineDTOs: true,
+ *   generateUtilityTypes: true,
+ *   generateSchemas: false,
+ *   outputPath: './custom/path/routes.ts'
+ * });
  */
-function getWorkspaceRoot(): string {
-  // If running from dist, go up to the project root
-  if (__dirname.includes('/dist/')) {
-    const distIndex = __dirname.indexOf('/dist/');
-    return __dirname.substring(0, distIndex);
-  }
-  // If already in src, go up to find workspace root (typically 3-4 levels up from apps/api/src)
-  // __dirname might be: /workspace/apps/api/src/common/scripts
-  // We want: /workspace
-  let current = __dirname;
-  while (current !== path.dirname(current)) {
-    // Check if we're at the workspace root (has node_modules or nx.json)
-    if (
-      fs.existsSync(path.join(current, 'nx.json')) ||
-      fs.existsSync(path.join(current, 'node_modules'))
-    ) {
-      return current;
-    }
-    current = path.dirname(current);
-  }
-  // Fallback: assume we're 4 levels up from the script
-  return path.join(__dirname, '..', '..', '..', '..');
-}
+export async function generateApiRoutes(
+  document: OpenAPIObject,
+  options: GenerationOptions = {}
+): Promise<void> {
+  // Apply default options
+  const config: Required<GenerationOptions> = {
+    inlineDTOs: options.inlineDTOs ?? true,
+    generateUtilityTypes: options.generateUtilityTypes ?? true,
+    generateSchemas: options.generateSchemas ?? false,
+    outputPath:
+      options.outputPath ??
+      path.join(getWorkspaceRoot(), 'libs/routes-helpers/src/constants/api-routes.registry.ts'),
+  };
 
-export async function generateApiRoutes(document: OpenAPIObject): Promise<void> {
-  console.log('🚀 Generating API routes from Swagger metadata...\n');
+  console.log('🚀 Generating API routes from Swagger metadata...');
+  console.log(`   - Inline DTOs: ${config.inlineDTOs}`);
+  console.log(`   - Generate Utility Types: ${config.generateUtilityTypes}`);
+  console.log(`   - Generate Schemas: ${config.generateSchemas}\n`);
 
   // Extract routes from Swagger paths
   const routes = extractRoutesFromSwaggerDoc(document);
 
   // Generate TypeScript code (in memory)
-  const code = generateCode(routes, document);
+  const code = generateCode(routes, document, config);
 
-  // Write to routes-helpers library so it can be shared across projects
-  const workspaceRoot = getWorkspaceRoot();
-  const outputPath = path.join(
-    workspaceRoot,
-    'libs/routes-helpers/src/constants/api-routes.registry.ts'
-  );
   // Ensure the directory exists
-  const outputDir = path.dirname(outputPath);
+  const outputDir = path.dirname(config.outputPath);
   fs.mkdirSync(outputDir, { recursive: true });
 
-  fs.writeFileSync(outputPath, code);
+  // Write to file
+  fs.writeFileSync(config.outputPath, code);
 
   console.log(`✅ Generated ${routes.length} routes`);
-  console.log(`📝 Written to: ${outputPath}\n`);
+  console.log(`📝 Written to: ${config.outputPath}\n`);
 }
 
 /**
  * Extracts route information from Swagger document
  */
-interface ExtractedRoute {
-  method: string;
-  path: string;
-  operation: any;
-}
 
-function extractRoutesFromSwaggerDoc(document: any): ExtractedRoute[] {
+function extractRoutesFromSwaggerDoc(document: OpenAPIObject): ExtractedRoute[] {
   const routes: ExtractedRoute[] = [];
 
   // Iterate through all paths in Swagger document
-  Object.entries(document.paths || {}).forEach(([pathKey, pathObject]: [string, any]) => {
+  Object.entries(document.paths).forEach(([pathKey, pathObject]: [string, PathItemObject]) => {
     // Iterate through all HTTP methods
-    Object.entries(pathObject).forEach(([method, operation]: [string, any]) => {
+    console.log(pathKey);
+    console.log(pathObject);
+    Object.entries(pathObject).forEach(([method, operation]: [string, OperationObject]) => {
       // Skip non-HTTP method keys like 'parameters'
       if (!['get', 'post', 'put', 'delete', 'patch', 'options', 'head'].includes(method)) {
         return;
@@ -166,14 +204,11 @@ function generateCode(routes: ExtractedRoute[], document: OpenAPIObject): string
     pathRoutes.sort((a, b) => a.method.localeCompare(b.method));
 
     const methodEntries: string[] = [];
-
     pathRoutes.forEach(route => {
       const { method, operation } = route;
-      const isGet = method === 'GET';
 
-      if (isGet) {
-        // For GET: extract params (path + query), return undefined if none
-        const paramType = extractParams(operation.parameters, document);
+      if (method === 'GET') {
+        const paramType = extractParams(document, operation.parameters);
         const response = extractResponseType(operation, document);
         methodEntries.push(`    ${method}: (params: ${paramType}) => ${response};`);
       } else {
@@ -202,35 +237,51 @@ function generateCode(routes: ExtractedRoute[], document: OpenAPIObject): string
   );
 }
 
+function isReferenceObject(obj: any): obj is ReferenceObject {
+  return obj && typeof obj === 'object' && '$ref' in obj;
+}
+
+function isSchemaObject(obj: any): obj is SchemaObject {
+  return obj && typeof obj === 'object' && !('$ref' in obj);
+}
+
+function isParameterObject(obj: ParameterObject | ReferenceObject): obj is ParameterObject {
+  return 'in' in obj && 'name' in obj;
+}
 /**
  * Extracts path and query parameters for GET requests
  * Returns undefined if no parameters exist
  * Deduplicates properties by keeping the last occurrence
  */
-function extractParams(parameters: any[], document: OpenAPIObject): string {
+function extractParams(
+  document: OpenAPIObject,
+  parameters?: (ParameterObject | ReferenceObject)[]
+): string {
   // Use a Map to track properties, keeping the last occurrence
   const propertyMap = new Map<string, string>();
-
+  if (!parameters) throw Error('the extractParams requires parameters');
   // Extract path parameters first
-  if (parameters) {
-    const pathParams = parameters.filter(p => p.in === 'path');
-    pathParams.forEach(p => {
-      propertyMap.set(p.name, `${p.name}: string`);
-    });
-  }
+
+  const pathParams: ParameterObject[] = parameters
+    .filter(isParameterObject)
+    .filter(p => p.in === 'path');
+
+  pathParams.forEach((p: ParameterObject) => {
+    propertyMap.set(p.name, `${p.name}: string`);
+  });
 
   // Extract query parameters second (will override path params if duplicate)
-  if (parameters) {
-    const queryParams = parameters.filter(p => p.in === 'query');
-    queryParams.forEach(p => {
+  const queryParams = parameters.filter(isParameterObject).filter(p => p.in === 'query');
+  queryParams.forEach((p: ParameterObject): void => {
+    if ('schema' in p && p.schema) {
       const type = schemaToTypeScript(p.schema, document);
       const optional = !p.required ? '?' : '';
       propertyMap.set(p.name, `${p.name}${optional}: ${type}`);
-    });
-  }
+    }
+  });
 
   if (propertyMap.size === 0) {
-    return 'undefined';
+    return 'undefined | never';
   }
 
   // Combine all parts into a single object type
@@ -258,21 +309,27 @@ function extractBody(requestBody: any, document: OpenAPIObject): string {
 
 /**
  * Extract response type from Swagger responses
+ * Returns 'void' for 204 No Content responses, 'unknown' for missing schemas
  */
 function extractResponseType(operation: any, document: OpenAPIObject): string {
-  if (!operation.responses) return 'any';
+  if (!operation.responses) return 'unknown';
 
-  // Try 200 response first, then 201, 204, etc.
+  // Check for 204 No Content first
+  if (operation.responses['204']) {
+    return 'void';
+  }
+
+  // Try 200 response first, then 201, 202, etc.
   const successResponse =
-    operation.responses['200'] ||
-    operation.responses['201'] ||
-    operation.responses['204'] ||
-    operation.responses['202'];
+    operation.responses['200'] || operation.responses['201'] || operation.responses['202'];
 
-  if (!successResponse) return 'any';
+  if (!successResponse) return 'unknown';
 
   const schema = successResponse.content?.['application/json']?.schema;
-  if (!schema) return 'any';
+  if (!schema) {
+    // If there's a successful response but no schema, it's likely void
+    return 'void';
+  }
 
   return schemaToTypeScript(schema, document);
 }
@@ -280,21 +337,28 @@ function extractResponseType(operation: any, document: OpenAPIObject): string {
 /**
  * Resolves a $ref reference to the actual schema from the document
  */
-function resolveRef(ref: string, document: OpenAPIObject): any {
-  if (!ref || !ref.startsWith('#/')) return null;
+function resolveRef<T>(refObj: ReferenceObject | T, document: OpenAPIObject): T {
+  if (!isReferenceObject(refObj)) {
+    return refObj;
+  }
 
-  const parts = ref.split('/').slice(1); // Remove the '#'
+  const ref = refObj.$ref;
+
+  if (!ref.startsWith('#/')) {
+    throw new Error(`External references not supported: ${ref}`);
+  }
+
+  const path = ref.slice(2).split('/');
   let current: any = document;
 
-  for (const part of parts) {
-    if (current && typeof current === 'object' && part in current) {
-      current = current[part];
-    } else {
-      return null;
+  for (const key of path) {
+    current = current?.[key];
+    if (current === undefined) {
+      throw new Error(`Invalid reference: ${ref}`);
     }
   }
 
-  return current;
+  return resolveRef(current, document);
 }
 
 /**
@@ -303,35 +367,35 @@ function resolveRef(ref: string, document: OpenAPIObject): any {
  * Inlines DTO properties instead of using type names
  */
 function schemaToTypeScript(
-  schema: any,
+  schema: SchemaObject | ReferenceObject,
   document: OpenAPIObject,
   visited: Set<string> = new Set()
 ): string {
-  if (!schema) return 'any';
+  if (!schema) return 'unknown';
 
   // Handle $ref - resolve the reference and inline its properties
-  if (schema.$ref) {
+  if (isReferenceObject(schema) && schema.$ref) {
     const refPath = schema.$ref;
     // Prevent infinite recursion
     if (visited.has(refPath)) {
-      return schema.$ref.split('/').pop() || 'any';
+      return schema.$ref.split('/').pop() || 'unknown';
     }
 
     visited.add(refPath);
-    const resolved = resolveRef(refPath, document);
+    const resolved = resolveRef(schema, document);
 
     if (resolved) {
       // Recursively convert the resolved schema to inline its properties
-      return schemaToTypeScript(resolved, document, visited);
+      return schemaToTypeScript(resolved as SchemaObject, document, visited);
     }
 
     // Fallback to just the type name from ref if we can't resolve
     visited.delete(refPath);
-    return refPath.split('/').pop() || 'any';
+    return refPath.split('/').pop() || 'unknown';
   }
 
   // Handle allOf - merge all schemas and combine their properties
-  if (schema.allOf && Array.isArray(schema.allOf)) {
+  if (isSchemaObject(schema) && schema.allOf && Array.isArray(schema.allOf)) {
     // Resolve all schemas in allOf
     const resolvedSchemas = schema.allOf.map((s: any) => {
       if (s.$ref) {
@@ -375,65 +439,73 @@ function schemaToTypeScript(
 
     // Fallback to intersection type if no properties to merge
     const types = resolvedSchemas.map((s: any) => schemaToTypeScript(s, document, visited));
-    return types.length === 1 ? types[0] : types.join(' & ');
+    return types.length === 1 ? (types[0] ?? 'unknown') : types.join(' & ');
   }
 
   // Handle oneOf/anyOf - union types
-  const unionSchemas = schema.oneOf || schema.anyOf;
-  if (unionSchemas && Array.isArray(unionSchemas)) {
-    const types = unionSchemas.map((s: any) => schemaToTypeScript(s, document, visited));
-    return types.join(' | ');
-  }
-
-  // Handle arrays
-  if (schema.type === 'array') {
-    if (schema.items) {
-      const itemType = schemaToTypeScript(schema.items, document, visited);
-      return `${itemType}[]`;
+  if (isSchemaObject(schema)) {
+    const unionSchemas = schema.oneOf || schema.anyOf;
+    if (unionSchemas && Array.isArray(unionSchemas)) {
+      const types = unionSchemas.map((s: any) => schemaToTypeScript(s, document, visited));
+      return types.join(' | ');
     }
-    return 'any[]';
-  }
 
-  // Handle objects with properties - this is where we inline DTO properties
-  if (schema.type === 'object' || schema.properties) {
-    if (schema.properties && Object.keys(schema.properties).length > 0) {
-      // Use a Map to deduplicate properties, keeping the last occurrence
-      const propertyMap = new Map<string, string>();
-
-      Object.entries(schema.properties).forEach(([key, propSchema]: [string, any]) => {
-        const propType = schemaToTypeScript(propSchema, document, visited);
-        const required = schema.required && schema.required.includes(key);
-        const optional = required ? '' : '?';
-        // Set will overwrite previous occurrences, keeping the last one
-        propertyMap.set(key, `${key}${optional}: ${propType}`);
-      });
-
-      const properties = Array.from(propertyMap.values());
-      return `{ ${properties.join('; ')} }`;
+    // Handle arrays
+    if (schema.type === 'array') {
+      if (schema.items) {
+        const itemType = schemaToTypeScript(schema.items, document, visited);
+        return `${itemType}[]`;
+      }
+      return 'unknown[]';
     }
-    // Empty object or object without properties
-    return 'Record<string, any>';
+
+    // Handle objects with properties - this is where we inline DTO properties
+    if (schema.type === 'object' || schema.properties) {
+      if (schema.properties && Object.keys(schema.properties).length > 0) {
+        // Use a Map to deduplicate properties, keeping the last occurrence
+        const propertyMap = new Map<string, string>();
+
+        Object.entries(schema.properties).forEach(([key, propSchema]: [string, any]) => {
+          const propType = schemaToTypeScript(propSchema, document, visited);
+          const required = schema.required && schema.required.includes(key);
+          const optional = required ? '' : '?';
+          // Set will overwrite previous occurrences, keeping the last one
+          propertyMap.set(key, `${key}${optional}: ${propType}`);
+        });
+
+        const properties = Array.from(propertyMap.values());
+        return `{ ${properties.join('; ')} }`;
+      }
+      // Empty object or object without properties
+      return 'Record<string, unknown>';
+    }
+
+    // Handle primitives
+    switch (schema.type) {
+      case 'string':
+        if (schema.enum) {
+          return schema.enum.map((v: any) => `"${v}"`).join(' | ');
+        }
+        // Handle date/datetime formats as ISO string
+        if (schema.format === 'date' || schema.format === 'date-time') {
+          return 'string';
+        }
+        return 'string';
+      case 'number':
+      case 'integer':
+        return 'number';
+      case 'boolean':
+        return 'boolean';
+      case 'null':
+        return 'null';
+      default:
+        // If schema has a title, use it
+        if (schema.title) {
+          return schema.title;
+        }
+        return 'unknown';
+    }
   }
 
-  // Handle primitives
-  switch (schema.type) {
-    case 'string':
-      if (schema.enum) {
-        return schema.enum.map((v: any) => `"${v}"`).join(' | ');
-      }
-      return 'string';
-    case 'number':
-    case 'integer':
-      return 'number';
-    case 'boolean':
-      return 'boolean';
-    case 'null':
-      return 'null';
-    default:
-      // If schema has a title, use it
-      if (schema.title) {
-        return schema.title;
-      }
-      return 'any';
-  }
+  return 'unknown';
 }
