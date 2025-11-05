@@ -70,7 +70,7 @@ export class PaymentsService {
       body: JSON.stringify(orderData),
     });
 
-    const order = await response.json();
+    const order = (await response.json()) as any;
 
     if (!response.ok) {
       throw new BadRequestException('Failed to create PayPal order');
@@ -106,7 +106,7 @@ export class PaymentsService {
       },
     });
 
-    const captureResult = await response.json();
+    const captureResult = (await response.json()) as any;
 
     if (!response.ok || captureResult.status !== 'COMPLETED') {
       throw new BadRequestException('Payment capture failed');
@@ -148,7 +148,7 @@ export class PaymentsService {
       body: 'grant_type=client_credentials',
     });
 
-    const data = await response.json();
+    const data = (await response.json()) as any;
     return data.accessToken;
   }
 }

@@ -7,6 +7,7 @@
 
     // Library output
     "outDir": "../../dist/libs/auth-helpers",
+    "rootDir": ".",
 
     // Composite project
     "composite": true,

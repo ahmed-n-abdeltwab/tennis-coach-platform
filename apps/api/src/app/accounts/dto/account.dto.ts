@@ -64,16 +64,10 @@ export class AccountResponseDto extends BaseResponseDto {
   notes?: string;
 
   @ApiProperty()
-  isActive: boolean;
+  isActive!: boolean;
 
   @ApiProperty()
-  isOnline: boolean;
-
-  @ApiProperty()
-  createdAt: Date;
-
-  @ApiProperty()
-  updatedAt: Date;
+  isOnline!: boolean;
 }
 
 export class CreateAccountDto {

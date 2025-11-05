@@ -2,7 +2,7 @@ import { JwtPayload } from '@auth-helpers';
 import { CurrentUser, Roles } from '@common';
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { UserRole } from '@prisma/client';
+import { Role } from '@prisma/client';
 
 import { CapturePaymentDto, CreatePaymentDto } from './dto/payment.dto';
 import { PaymentsService } from './payments.service';
@@ -13,7 +13,7 @@ export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Post('create-order')
-  @Roles(UserRole.USER)
+  @Roles(Role.USER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create PayPal payment order' })
   async createOrder(@Body() createDto: CreatePaymentDto, @CurrentUser() user: JwtPayload) {
@@ -21,7 +21,7 @@ export class PaymentsController {
   }
 
   @Post('capture-order')
-  @Roles(UserRole.USER)
+  @Roles(Role.USER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Capture PayPal payment order' })
   async captureOrder(@Body() captureDto: CapturePaymentDto, @CurrentUser() user: JwtPayload) {

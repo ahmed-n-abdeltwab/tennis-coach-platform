@@ -1,6 +1,5 @@
 import { Role } from '@auth-helpers';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { CreateCalendarEventDto } from './dto/calendar.dto';
@@ -27,7 +26,10 @@ export class CalendarService {
     }
 
     // Check authorization
-    const isAuthorized = role in UserRole ? session.userId === userId : session.coachId === userId;
+    const isAuthorized =
+      role === Role.USER || role === Role.PREMIUM_USER
+        ? session.userId === userId
+        : session.coachId === userId;
 
     if (!isAuthorized) {
       throw new BadRequestException('Not authorized');
@@ -63,7 +65,10 @@ export class CalendarService {
     }
 
     // Check authorization
-    const isAuthorized = role in UserRole ? session.userId === userId : session.coachId === userId;
+    const isAuthorized =
+      role === Role.USER || role === Role.PREMIUM_USER
+        ? session.userId === userId
+        : session.coachId === userId;
 
     if (!isAuthorized) {
       throw new BadRequestException('Not authorized');

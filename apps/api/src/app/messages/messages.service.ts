@@ -1,6 +1,5 @@
 import { Role } from '@auth-helpers';
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { GetMessagesQuery, SendMessageDto } from './dto/message.dto';
@@ -19,7 +18,10 @@ export class MessagesService {
       throw new NotFoundException('Session not found');
     }
 
-    const hasAccess = role in UserRole ? session.userId === userId : session.coachId === userId;
+    const hasAccess =
+      role === Role.USER || role === Role.PREMIUM_USER
+        ? session.userId === userId
+        : session.coachId === userId;
 
     if (!hasAccess) {
       throw new ForbiddenException('Not authorized to view messages for this session');
@@ -64,7 +66,10 @@ export class MessagesService {
       throw new NotFoundException('Session not found');
     }
 
-    const hasAccess = role in UserRole ? session.userId === userId : session.coachId === userId;
+    const hasAccess =
+      role === Role.USER || role === Role.PREMIUM_USER
+        ? session.userId === userId
+        : session.coachId === userId;
 
     if (!hasAccess) {
       throw new ForbiddenException('Not authorized to send messages for this session');

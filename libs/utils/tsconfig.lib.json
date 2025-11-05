@@ -7,7 +7,6 @@
 
     // Library output
     "outDir": "../../dist/libs/utils",
-    "rootDir": "src",
 
     // Composite project
     "composite": true,

@@ -1,11 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/apps/api",
-    "composite": true,
-    "declaration": true,
-    "declarationMap": true,
-    "tsBuildInfoFile": "../../dist/apps/api/.tsbuildinfo"
+    "outDir": "../../dist/apps/api"
   },
   "include": ["src/**/*.ts", "prisma/**/*.ts"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__tests__/**", "test/**"]

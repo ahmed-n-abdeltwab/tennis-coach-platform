@@ -2,7 +2,7 @@ import { JwtPayload } from '@auth-helpers';
 import { CurrentUser, Roles } from '@common';
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { AdminRole, UserRole } from '@prisma/client';
+import { Role } from '@prisma/client';
 
 import { SendEmailDto } from './dto/notification.dto';
 import { NotificationsService } from './notifications.service';
@@ -13,7 +13,7 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Post('email')
-  @Roles(UserRole.USER, AdminRole.COACH) // Both users and coaches can send email notifications
+  @Roles(Role.USER, Role.COACH) // Both users and coaches can send email notifications
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Send email notification' })
   async sendEmail(@Body() emailDto: SendEmailDto, @CurrentUser() user: JwtPayload) {

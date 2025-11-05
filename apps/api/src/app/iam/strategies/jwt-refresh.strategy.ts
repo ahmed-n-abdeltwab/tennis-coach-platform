@@ -4,19 +4,19 @@ import { ConfigType } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PrismaService } from '../../prisma/prisma.service';
-import jwtConfig from '../config/jwt.config';
+import iamConfig from '../config/iam.config';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(
-    @Inject(jwtConfig.KEY)
-    private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
+    @Inject(iamConfig.KEY)
+    private readonly iamConfiguration: ConfigType<typeof iamConfig>,
     private prisma: PrismaService
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: jwtConfiguration.signOptions.refreshSecret,
+      secretOrKey: iamConfiguration.jwt.signOptions.refreshSecret as string,
     });
   }
 

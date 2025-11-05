@@ -2,7 +2,7 @@
  * Message mock factory for creating test message data
  */
 
-import { AdminRole, UserRole } from '@prisma/client';
+import { Role } from '@prisma/client';
 
 import { MockMessage } from '../mocks';
 
@@ -16,9 +16,9 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
       id,
       content: this.randomContent(),
       sentAt: new Date(),
-      senderType: UserRole.USER,
+      senderType: Role.USER,
       senderUserId: this.generateId(),
-      receiverType: AdminRole.COACH,
+      receiverType: Role.COACH,
       receiverCoachId: this.generateId(),
       ...overrides,
     };
@@ -30,9 +30,9 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
     overrides?: Partial<MockMessage>
   ): MockMessage {
     return this.create({
-      senderType: UserRole.USER,
+      senderType: Role.USER,
       senderUserId: userId,
-      receiverType: AdminRole.COACH,
+      receiverType: Role.COACH,
       receiverCoachId: coachId,
       ...overrides,
     });
@@ -44,9 +44,9 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
     overrides?: Partial<MockMessage>
   ): MockMessage {
     return this.create({
-      senderType: AdminRole.COACH,
+      senderType: Role.COACH,
       senderCoachId: coachId,
-      receiverType: UserRole.USER,
+      receiverType: Role.USER,
       receiverUserId: userId,
       ...overrides,
     });

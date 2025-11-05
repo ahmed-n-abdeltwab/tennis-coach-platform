@@ -52,7 +52,7 @@ export class AccountsService {
   /**
    * Find all coaches with optional filters
    */
-  async findCoaches(filters?: { isActive?: boolean; country?: string }): Promise<Account[]> {
+  async findCoaches(filters?: { isActive?: boolean; country?: string }): Promise<any[]> {
     return this.prisma.account.findMany({
       where: {
         role: Role.COACH,

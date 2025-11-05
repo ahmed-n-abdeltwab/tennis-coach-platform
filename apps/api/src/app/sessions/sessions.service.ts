@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Discount, UserRole } from '@prisma/client';
+import { Discount } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { CreateSessionDto, GetSessionsQuery, UpdateSessionDto } from './dto/session.dto';
@@ -17,7 +17,8 @@ export class SessionsService {
   async findByUser(userId: string, role: Role, query: GetSessionsQuery) {
     const { status, startDate, endDate } = query;
 
-    const where = role in UserRole ? { userId } : { coachId: userId };
+    const where =
+      role === Role.USER || role === Role.PREMIUM_USER ? { userId } : { coachId: userId };
 
     return this.prisma.session.findMany({
       where: {
@@ -79,7 +80,10 @@ export class SessionsService {
     }
 
     // Check authorization
-    const isAuthorized = role in UserRole ? session.userId === userId : session.coachId === userId;
+    const isAuthorized =
+      role === Role.USER || role === Role.PREMIUM_USER
+        ? session.userId === userId
+        : session.coachId === userId;
 
     if (!isAuthorized) {
       throw new ForbiddenException('Not authorized to view this session');

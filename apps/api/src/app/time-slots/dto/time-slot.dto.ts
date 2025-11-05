@@ -5,7 +5,7 @@ import { IsBoolean, IsDateString, IsNumber, IsOptional, IsString, Min } from 'cl
 export class CreateTimeSlotDto {
   @ApiProperty()
   @IsDateString()
-  dateTime: string;
+  dateTime!: string;
 
   @ApiProperty({ default: 60 })
   @IsOptional()
@@ -38,27 +38,27 @@ export class GetTimeSlotsQuery {
 
 export class CoachSummaryDto {
   @ApiProperty()
-  id: string;
+  id!: string;
 
   @ApiProperty()
-  name: string;
+  name!: string;
 
   @ApiProperty()
-  email: string;
+  email!: string;
 }
 
 export class TimeSlotResponseDto extends BaseResponseDto {
   @ApiProperty()
-  coachId: string;
+  coachId!: string;
 
   @ApiProperty({ example: '2024-12-25T10:00:00Z' })
-  dateTime: string;
+  dateTime!: string;
 
   @ApiProperty({ example: 60, minimum: 15 })
-  durationMin: number;
+  durationMin!: number;
 
   @ApiProperty({ example: true })
-  isAvailable: boolean;
+  isAvailable!: boolean;
 
   @ApiProperty({ required: false, type: CoachSummaryDto })
   coach?: CoachSummaryDto;

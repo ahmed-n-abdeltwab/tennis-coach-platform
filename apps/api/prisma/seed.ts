@@ -1,6 +1,5 @@
-import { Account, Prisma, PrismaClient } from '@prisma/client';
+import { Account, Prisma, PrismaClient, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { Role } from './../../../libs/auth-helpers/src/lib/common/types/auth.types';
 
 const prisma = new PrismaClient({
   log: [

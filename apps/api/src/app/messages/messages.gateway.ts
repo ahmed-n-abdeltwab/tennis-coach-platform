@@ -9,7 +9,6 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { AdminRole, UserRole } from '@prisma/client';
 import { Server, Socket } from 'socket.io';
 
 import { SendMessageDto } from './dto/message.dto';
@@ -49,7 +48,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   @SubscribeMessage('send-message')
-  @Roles(UserRole.USER, AdminRole.COACH)
+  @Roles(Role.USER, Role.COACH)
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: SendMessageDto,
