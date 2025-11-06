@@ -1,30 +1,30 @@
 /**
  * Example test file demonstrating authentication and HTTP testing helpers
  * This file shows how to use all the authentication and HTTP testing utilities
+ *
+ * MIGRATION NOTE: This file demonstrates the new import pattern.
+ * Test helpers have been moved from @auth-helpers to local test/utils directories.
  */
-import {
-  AuthTestHelper,
-  HttpTestHelper,
-  ProtectedRouteTestHelper,
-  UserRoleTestHelper,
-} from '@auth-helpers';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { PrismaModule } from '../../../src/app/prisma/prisma.module';
+import { AuthTestHelper } from '../auth';
 import { ApiContract, ApiContractTestHelper, EnhancedHttpTestHelper } from '../http-test-helpers';
+import { TypeSafeHttpClient as HttpTestHelper } from '../http/type-safe-http-client';
 
 describe('Authentication and HTTP Testing Helpers Examples', () => {
   let app: INestApplication;
   let authHelper: AuthTestHelper;
   let httpHelper: HttpTestHelper;
-  let protectedRouteHelper: ProtectedRouteTestHelper;
-  let userRoleHelper: UserRoleTestHelper;
+  let protectedRouteHelper: ProtectedRouteTester;
+  let userRoleHelper: UserRoleHelper;
   let enhancedHttpHelper: EnhancedHttpTestHelper;
   let apiContractHelper: ApiContractTestHelper;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AuthModule, PrismaModule],
+      imports: [IamModule, PrismaModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -34,8 +34,8 @@ describe('Authentication and HTTP Testing Helpers Examples', () => {
     // Initialize all helpers
     authHelper = new AuthTestHelper();
     httpHelper = new HttpTestHelper(app);
-    protectedRouteHelper = new ProtectedRouteTestHelper(app);
-    userRoleHelper = new UserRoleTestHelper();
+    protectedRouteHelper = new ProtectedRouteTester(app);
+    userRoleHelper = new UserRoleHelper();
     enhancedHttpHelper = new EnhancedHttpTestHelper(app);
     apiContractHelper = new ApiContractTestHelper(app);
   });

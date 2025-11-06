@@ -1,9 +1,9 @@
-import { JwtPayload } from '@auth-helpers';
 import {
   ApiConflictResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   CurrentUser,
+  JwtPayload,
   Public,
   Roles,
 } from '@common';

@@ -1,14 +1,46 @@
-import { AuthTestHelper, TypeSafeHttpClient } from '@auth-helpers';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Endpoints } from '@routes-helpers';
 import { AppModule } from '../../../src/app/app.module';
+
+// ============================================================================
+// MIGRATION GUIDE: New Import Locations
+// ============================================================================
+// The test helpers have been reorganized for better architecture:
+//
+// OLD (deprecated):
+//   import { AuthTestHelper } from '@auth-helpers';
+//
+// NEW (recommended):
+//   import { AuthTestHelper } from '../auth';
+//
+// Core functionality remains in @auth-helpers:
+//   - TypeSafeHttpClient (HTTP client with type safety)
+//   - Endpoints (generated route types)
+//   - Common types (Role, etc.)
+//
+// Test utilities moved to apps/api/test/utils:
+//   - AuthTestHelper (JWT token creation and management)
+//   - ProtectedRouteTester (testing protected routes)
+//   - RoleBasedAccessTester (testing role-based access)
+//   - UserRoleHelper (user/role test data creation)
+// ============================================================================
+
+import { Endpoints } from '@routes-helpers';
+import { AuthTestHelper } from '../auth';
+import { TypeSafeHttpClient } from '../http/type-safe-http-client';
 
 /**
  * TypeSafeHttpClient Examples
  *
  * This demonstrates how to use the TypeSafeHttpClient for making
  * type-safe HTTP requests to your API endpoints.
+ *
+ * MIGRATION NOTE: This file serves as an example of the new import pattern.
+ * When migrating your tests:
+ * 1. Import AuthTestHelper from '../auth' (or appropriate relative path)
+ * 2. Keep TypeSafeHttpClient and Endpoints from '@auth-helpers'
+ * 3. Update any ProtectedRouteTestHelper to ProtectedRouteTester from '../security'
+ * 4. Update any UserRoleTestHelper to UserRoleHelper from '../roles'
  */
 describe('TypeSafeHttpClient Examples', () => {
   let app: INestApplication;

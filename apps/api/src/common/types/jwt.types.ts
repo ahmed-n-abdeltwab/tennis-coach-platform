@@ -1,5 +1,8 @@
 import { Role } from '@prisma/client';
 
+/**
+ * JWT payload structure used throughout the application
+ */
 export interface JwtPayload {
   sub: string;
   email: string;
@@ -7,6 +10,3 @@ export interface JwtPayload {
   iat?: number;
   exp?: number;
 }
-
-// retrieve the Endpoints routes from all the nest Application
-// type Endpoints =

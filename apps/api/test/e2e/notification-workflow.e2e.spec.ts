@@ -3,9 +3,10 @@
  * Tests notification flow including email, SMS, and in-app notifications
  */
 
-import { AuthTestHelper, HttpTestHelper } from '@auth-helpers';
 import { coachFactory, sessionFactory, userFactory } from '@test-utils/factories';
 import { ApiContractTestHelper } from '@test-utils/http-test-helpers';
+import { TypeSafeHttpClient as HttpTestHelper } from '@test-utils/http/type-safe-http-client';
+import { AuthTestHelper } from '../utils/auth';
 
 describe('Notification Workflow (E2E)', () => {
   let authHelper: AuthTestHelper;
@@ -989,4 +990,3 @@ describe('Notification Workflow (E2E)', () => {
     });
   });
 });
-

@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthenticationService } from './authentication.service';
-import { JwtPayload, Role } from '@auth-helpers';
 
 describe('AuthenticationService', () => {
   let service: AuthenticationService;

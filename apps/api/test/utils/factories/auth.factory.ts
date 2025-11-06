@@ -2,8 +2,8 @@
  * Authentication mock factory for creating test auth data
  */
 
-import { Role } from '@auth-helpers';
 import { JwtService } from '@nestjs/jwt';
+import { Role } from '@prisma/client';
 
 import { MockAuthHeaders, MockAuthPayload, MockAuthResponse } from '../mocks';
 

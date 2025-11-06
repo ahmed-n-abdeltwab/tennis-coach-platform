@@ -3,9 +3,10 @@
  * Tests API contracts, error responses, and validation across all endpoints
  */
 
-import { AuthTestHelper, HttpTestHelper } from '@auth-helpers';
 import { coachFactory, userFactory } from '@test-utils/factories';
 import { ApiContractTestHelper, EnhancedHttpTestHelper } from '@test-utils/http-test-helpers';
+import { TypeSafeHttpClient as HttpTestHelper } from '@test-utils/http/type-safe-http-client';
+import { AuthTestHelper } from '../utils/auth';
 
 describe('API Contract Validation and Error Handling (E2E)', () => {
   let authHelper: AuthTestHelper;

@@ -1,11 +1,10 @@
-import { Role } from '@auth-helpers';
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Discount } from '@prisma/client';
+import { Discount, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { CreateSessionDto, GetSessionsQuery, UpdateSessionDto } from './dto/session.dto';

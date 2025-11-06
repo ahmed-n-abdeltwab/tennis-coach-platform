@@ -3,7 +3,6 @@
  * Tests complete booking workflow including coach selection, time slot booking, and payment
  */
 
-import { AuthTestHelper, HttpTestHelper } from '@auth-helpers';
 import {
   bookingTypeFactory,
   coachFactory,
@@ -12,6 +11,8 @@ import {
   userFactory,
 } from '@test-utils/factories';
 import { ApiContractTestHelper } from '@test-utils/http-test-helpers';
+import { TypeSafeHttpClient as HttpTestHelper } from '@test-utils/http/type-safe-http-client';
+import { AuthTestHelper } from '../utils/auth';
 
 describe('Booking Workflow (E2E)', () => {
   let authHelper: AuthTestHelper;

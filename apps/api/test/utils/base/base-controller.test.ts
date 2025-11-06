@@ -3,11 +3,13 @@
  * Provides common patterns and utilities for testing NestJS controllers
  */
 
-import { JwtPayload, Role } from '@auth-helpers';
 import { INestApplication, Provider } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Role } from '@prisma/client';
+
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
+import { JwtPayload } from '../auth/auth-test-helper';
 
 export abstract class BaseControllerTest<TController, TService> {
   protected controller: TController;

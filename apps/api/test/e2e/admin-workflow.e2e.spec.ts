@@ -3,14 +3,15 @@
  * Tests admin functionality including user management and system configuration
  */
 
-import { AuthTestHelper, HttpTestHelper, TypeSafeHttpClient } from '@auth-helpers';
 import {
   bookingTypeFactory,
   coachFactory,
   sessionFactory,
-  userFactory
+  userFactory,
 } from '@test-utils/factories';
 import { ApiContractTestHelper } from '@test-utils/http-test-helpers';
+import { TypeSafeHttpClient } from '@test-utils/http/type-safe-http-client';
+import { AuthTestHelper } from '../utils/auth';
 
 describe('Admin Workflow (E2E)', () => {
   let authHelper: AuthTestHelper;
@@ -29,7 +30,7 @@ describe('Admin Workflow (E2E)', () => {
     contractHelper = new ApiContractTestHelper(global.testApp);
   });
 
-  beforeEach(async () =>{
+  beforeEach(async () => {
     // Create admin coach
     adminCoach = coachFactory.createAdmin({
       email: 'admin@example.com',
@@ -54,7 +55,7 @@ describe('Admin Workflow (E2E)', () => {
       name: adminCoach.name,
       password: 'AdminPassword123!',
     });
-    
+
     adminToken = adminRegisterResponse.body.accessToken;
     adminCoach.id = adminRegisterResponse.body.user.id;
 
@@ -138,25 +139,37 @@ describe('Admin Workflow (E2E)', () => {
 
     it('should allow admin to deactivate/activate users', async () => {
       // Deactivate user
-      const deactivateResponse = await httpHelper.put(`/api/admin/users/${testUser.id}/deactivate`, {}, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
+      const deactivateResponse = await httpHelper.put(
+        `/api/admin/users/${testUser.id}/deactivate`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }
+      );
 
       expect(deactivateResponse.status).toBe(200);
       expect(deactivateResponse.body.isActive).toBe(false);
 
       // Verify deactivated user cannot login
-      const loginResponse = await httpHelper.post('/api/authentication/user/login', {
-        email: testUser.email,
-        password: 'UserPassword123!',
-      }, { expectedStatus: 401 });
+      const loginResponse = await httpHelper.post(
+        '/api/authentication/user/login',
+        {
+          email: testUser.email,
+          password: 'UserPassword123!',
+        },
+        { expectedStatus: 401 }
+      );
 
       expect(loginResponse.status).toBe(401);
 
       // Reactivate user
-      const activateResponse = await httpHelper.put(`/api/admin/users/${testUser.id}/activate`, {}, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
+      const activateResponse = await httpHelper.put(
+        `/api/admin/users/${testUser.id}/activate`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }
+      );
 
       expect(activateResponse.status).toBe(200);
       expect(activateResponse.body.isActive).toBe(true);
@@ -219,7 +232,9 @@ describe('Admin Workflow (E2E)', () => {
 
       // Should include both admin and regular coach
       const foundAdminCoach = coachesResponse.body.find(coach => coach.email === adminCoach.email);
-      const foundRegularCoach = coachesResponse.body.find(coach => coach.email === regularCoach.email);
+      const foundRegularCoach = coachesResponse.body.find(
+        coach => coach.email === regularCoach.email
+      );
 
       expect(foundAdminCoach).toBeDefined();
       expect(foundRegularCoach).toBeDefined();
@@ -229,9 +244,13 @@ describe('Admin Workflow (E2E)', () => {
 
     it('should allow admin to update coach permissions', async () => {
       // Promote regular coach to admin
-      const promoteResponse = await httpHelper.put(`/api/admin/coaches/${regularCoach.id}/promote`, {}, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
+      const promoteResponse = await httpHelper.put(
+        `/api/admin/coaches/${regularCoach.id}/promote`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }
+      );
 
       expect(promoteResponse.status).toBe(200);
       expect(promoteResponse.body.isAdmin).toBe(true);
@@ -244,9 +263,13 @@ describe('Admin Workflow (E2E)', () => {
       expect(coachResponse.body.isAdmin).toBe(true);
 
       // Demote back to regular coach
-      const demoteResponse = await httpHelper.put(`/api/admin/coaches/${regularCoach.id}/demote`, {}, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
+      const demoteResponse = await httpHelper.put(
+        `/api/admin/coaches/${regularCoach.id}/demote`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }
+      );
 
       expect(demoteResponse.status).toBe(200);
       expect(demoteResponse.body.isAdmin).toBe(false);
@@ -260,9 +283,13 @@ describe('Admin Workflow (E2E)', () => {
         isActive: true,
       };
 
-      const updateResponse = await httpHelper.put(`/api/admin/coaches/${regularCoach.id}`, updateData, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
+      const updateResponse = await httpHelper.put(
+        `/api/admin/coaches/${regularCoach.id}`,
+        updateData,
+        {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }
+      );
 
       expect(updateResponse.status).toBe(200);
       expect(updateResponse.body.bio).toBe(updateData.bio);
@@ -331,9 +358,13 @@ describe('Admin Workflow (E2E)', () => {
         notes: 'Admin marked session as completed',
       };
 
-      const updateResponse = await httpHelper.put(`/api/admin/sessions/${testSession.id}`, updateData, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
+      const updateResponse = await httpHelper.put(
+        `/api/admin/sessions/${testSession.id}`,
+        updateData,
+        {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }
+      );
 
       expect(updateResponse.status).toBe(200);
       expect(updateResponse.body.status).toBe(updateData.status);
@@ -341,11 +372,15 @@ describe('Admin Workflow (E2E)', () => {
     });
 
     it('should allow admin to cancel sessions', async () => {
-      const cancelResponse = await httpHelper.put(`/api/admin/sessions/${testSession.id}/cancel`, {
-        reason: 'Admin cancelled due to coach unavailability',
-      }, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
+      const cancelResponse = await httpHelper.put(
+        `/api/admin/sessions/${testSession.id}/cancel`,
+        {
+          reason: 'Admin cancelled due to coach unavailability',
+        },
+        {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }
+      );
 
       expect(cancelResponse.status).toBe(200);
       expect(cancelResponse.body.status).toBe('cancelled');
@@ -396,18 +431,26 @@ describe('Admin Workflow (E2E)', () => {
         description: 'Updated description by admin',
       };
 
-      const updateResponse = await httpHelper.put(`/api/admin/booking-types/${bookingTypeId}`, updateData, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
+      const updateResponse = await httpHelper.put(
+        `/api/admin/booking-types/${bookingTypeId}`,
+        updateData,
+        {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }
+      );
 
       expect(updateResponse.status).toBe(200);
       expect(updateResponse.body.price).toBe(updateData.price);
       expect(updateResponse.body.description).toBe(updateData.description);
 
       // Deactivate booking type
-      const deactivateResponse = await httpHelper.put(`/api/admin/booking-types/${bookingTypeId}/deactivate`, {}, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
+      const deactivateResponse = await httpHelper.put(
+        `/api/admin/booking-types/${bookingTypeId}/deactivate`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }
+      );
 
       expect(deactivateResponse.status).toBe(200);
       expect(deactivateResponse.body.isActive).toBe(false);
@@ -441,9 +484,13 @@ describe('Admin Workflow (E2E)', () => {
         isActive: false,
       };
 
-      const updateDiscountResponse = await httpHelper.put(`/api/admin/discounts/${discountId}`, updateDiscountData, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
+      const updateDiscountResponse = await httpHelper.put(
+        `/api/admin/discounts/${discountId}`,
+        updateDiscountData,
+        {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }
+      );
 
       expect(updateDiscountResponse.status).toBe(200);
       expect(updateDiscountResponse.body.value).toBe(updateDiscountData.value);
@@ -504,11 +551,15 @@ describe('Admin Workflow (E2E)', () => {
   describe('Audit and Logging', () => {
     it('should allow admin to view audit logs', async () => {
       // Perform some actions to generate audit logs
-      await httpHelper.put(`/api/admin/users/${testUser.id}`, {
-        name: 'Audit Test Update',
-      }, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
+      await httpHelper.put(
+        `/api/admin/users/${testUser.id}`,
+        {
+          name: 'Audit Test Update',
+        },
+        {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }
+      );
 
       // View audit logs
       const auditResponse = await httpHelper.get('/api/admin/audit-logs', {
@@ -582,10 +633,14 @@ describe('Admin Workflow (E2E)', () => {
 
     it('should validate admin permissions on sensitive operations', async () => {
       // Attempt to promote user to admin with regular coach token
-      const promoteResponse = await httpHelper.put(`/api/admin/coaches/${regularCoach.id}/promote`, {}, {
-        headers: { Authorization: `Bearer ${regularCoachToken}` },
-        expectedStatus: 403,
-      });
+      const promoteResponse = await httpHelper.put(
+        `/api/admin/coaches/${regularCoach.id}/promote`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${regularCoachToken}` },
+          expectedStatus: 403,
+        }
+      );
 
       expect(promoteResponse.status).toBe(403);
 

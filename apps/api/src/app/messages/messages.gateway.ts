@@ -1,5 +1,4 @@
-import { JwtPayload, Role } from '@auth-helpers';
-import { CurrentUser, Roles } from '@common';
+import { CurrentUser, JwtPayload, Roles } from '@common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -9,6 +8,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+import { Role } from '@prisma/client';
 import { Server, Socket } from 'socket.io';
 
 import { SendMessageDto } from './dto/message.dto';

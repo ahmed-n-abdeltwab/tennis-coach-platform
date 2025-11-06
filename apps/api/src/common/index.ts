@@ -18,5 +18,8 @@ export * from './guards/roles.guard';
 // DTOs
 export * from './dto/base-response.dto';
 
+// Types
+export * from './types/jwt.types';
+
 // Endpoints (dynamically generated from Swagger, shared from routes-helpers)
 export type { Endpoints } from '@routes-helpers';

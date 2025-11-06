@@ -1,4 +1,4 @@
-import { JwtPayload } from '@auth-helpers';
+import { JwtPayload } from '@common';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';

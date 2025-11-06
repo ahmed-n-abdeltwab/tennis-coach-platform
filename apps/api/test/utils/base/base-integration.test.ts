@@ -3,9 +3,10 @@
  * Provides database setup, cleanup, and common integration testing patterns
  */
 
-import { JwtPayload, Role } from '@auth-helpers';
 import { INestApplication, Provider } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Role } from '@prisma/client';
+
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   Account,
@@ -18,6 +19,7 @@ import {
   TimeSlot,
 } from '@prisma/client';
 import request from 'supertest';
+import { JwtPayload } from '../auth/auth-test-helper';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { cleanDatabase, seedTestDatabase } from '../database-helpers';

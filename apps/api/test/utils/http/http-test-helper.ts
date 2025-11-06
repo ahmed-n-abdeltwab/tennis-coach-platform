@@ -1,7 +1,16 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 
-import { AuthHeaders, HttpTestOptions } from './auth-test-helper';
+import { AuthHeaders } from '../auth/auth-test-helper';
+
+/**
+ * HTTP test options
+ */
+export interface HttpTestOptions {
+  headers?: Record<string, string>;
+  expectedStatus?: number;
+  timeout?: number;
+}
 
 /**
  * @deprecated Use TypeSafeHttpClient instead for compile-time type safety
@@ -14,7 +23,7 @@ import { AuthHeaders, HttpTestOptions } from './auth-test-helper';
  * const response = await httpHelper.post('/api/auth/login', { email, password });
  *
  * // New way:
- * import { TypeSafeHttpClient } from '@auth-helpers';
+ * import { TypeSafeHttpClient } from '@test-utils';
  * import { Endpoints } from '@routes-helpers';
  *
  * const httpClient = new TypeSafeHttpClient<Endpoints>(app);
@@ -85,6 +94,7 @@ export class HttpTestHelper {
   ): Promise<request.Response> {
     return this.get(endpoint, { ...options, headers: { ...authHeaders } });
   }
+
   async authenticatedPost(
     endpoint: string,
     data: any,
@@ -93,6 +103,7 @@ export class HttpTestHelper {
   ): Promise<request.Response> {
     return this.post(endpoint, data, { ...options, headers: { ...authHeaders } });
   }
+
   async authenticatedPut(
     endpoint: string,
     data: any,
@@ -101,6 +112,7 @@ export class HttpTestHelper {
   ): Promise<request.Response> {
     return this.put(endpoint, data, { ...options, headers: { ...authHeaders } });
   }
+
   async authenticatedDelete(
     endpoint: string,
     authHeaders: AuthHeaders,

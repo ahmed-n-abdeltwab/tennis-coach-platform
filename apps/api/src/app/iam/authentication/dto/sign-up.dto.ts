@@ -1,6 +1,6 @@
-import { Role } from '@auth-helpers';
 import { BaseResponseDto } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,

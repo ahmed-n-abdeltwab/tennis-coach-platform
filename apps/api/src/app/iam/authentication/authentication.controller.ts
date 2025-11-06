@@ -1,4 +1,4 @@
-import { JwtPayload } from '@auth-helpers';
+import { JwtPayload } from '@common';
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,

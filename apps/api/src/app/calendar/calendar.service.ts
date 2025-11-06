@@ -1,5 +1,5 @@
-import { Role } from '@auth-helpers';
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { CreateCalendarEventDto } from './dto/calendar.dto';

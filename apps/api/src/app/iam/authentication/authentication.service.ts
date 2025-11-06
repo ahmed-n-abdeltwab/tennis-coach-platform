@@ -1,8 +1,8 @@
-import { JwtPayload, Role } from '@auth-helpers';
+import { JwtPayload } from '@common';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Account } from '@prisma/client';
+import { Account, Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import iamConfig from '../config/iam.config';
 import { HashingService } from '../hashing/hashing.service';

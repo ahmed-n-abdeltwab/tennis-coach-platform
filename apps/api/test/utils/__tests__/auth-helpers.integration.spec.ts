@@ -3,25 +3,24 @@
  * Verifies that helpers work correctly with the actual authentication system
  */
 
-import {
-  AuthTestHelper,
-  HttpTestHelper,
-  ProtectedRouteTestHelper,
-  UserRoleTestHelper,
-} from '@auth-helpers';
 import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { parseJwtTime } from '../../../../../libs/utils/src';
 import { Role } from '@prisma/client';
+import { parseJwtTime } from '../../../../../libs/utils/src';
+
+import { AuthTestHelper } from '../auth';
+import { HttpTestHelper } from '../http';
+import { UserRoleHelper } from '../roles';
+import { ProtectedRouteTester } from '../security';
 
 describe('Auth Helpers Integration Tests', () => {
   let app: INestApplication;
   let authHelper: AuthTestHelper;
   let httpHelper: HttpTestHelper;
-  let protectedRouteHelper: ProtectedRouteTestHelper;
-  let userRoleHelper: UserRoleTestHelper;
+  let protectedRouteHelper: ProtectedRouteTester;
+  let userRoleHelper: UserRoleHelper;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -42,8 +41,8 @@ describe('Auth Helpers Integration Tests', () => {
     // Initialize helpers
     authHelper = new AuthTestHelper();
     httpHelper = new HttpTestHelper(app);
-    protectedRouteHelper = new ProtectedRouteTestHelper(app);
-    userRoleHelper = new UserRoleTestHelper();
+    protectedRouteHelper = new ProtectedRouteTester(app);
+    userRoleHelper = new UserRoleHelper();
   });
 
   afterAll(async () => {

@@ -1,5 +1,5 @@
 import { CalendarModule } from '@app/calendar/calendar.module';
-import { Role } from '@auth-helpers';
+import { Role } from '@prisma/client';
 import { PrismaModule, PrismaService } from '../prisma/prisma.service';
 /**
  * Integration tests for Calendar module

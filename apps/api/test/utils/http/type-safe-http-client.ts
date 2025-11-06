@@ -4,6 +4,7 @@ import {
   ExtractPaths,
   ExtractRequestType,
   ExtractResponseType,
+  PathsWithMethod,
   buildPath,
 } from '@routes-helpers';
 import request from 'supertest';
@@ -21,7 +22,7 @@ export interface ErrorResponse {
 
 /**
  * Validation error response structure from NestJS
- */
+/
 export interface ValidationErrorResponse {
   statusCode: number;
   message: string[];
@@ -58,32 +59,6 @@ export interface TypedResponse<T> {
   /** Response headers */
   headers: Record<string, string>;
 }
-
-/**
- * Conditional response type based on expected status code
- * When expectedStatus is not provided, returns the success type
- * When expectedStatus is provided, returns a union of success and error types
- *
- * Note: This is intentionally simplified to ensure proper type inference.
- * The complex conditional logic was breaking TypeScript's ability to infer types.
- */
-type ConditionalResponse<
-  TSuccess,
-  TExpectedStatus extends number | undefined,
-> = TExpectedStatus extends undefined
-  ? TypedResponse<TSuccess>
-  : TypedResponse<TSuccess | ErrorResponse | ValidationErrorResponse>;
-
-/**
- * Helper type to filter paths by HTTP method
- * Used internally to constrain method-specific request methods
- */
-type PathsWithMethod<E extends Record<string, unknown>, M extends string> = Extract<
-  {
-    [P in ExtractPaths<E>]: M extends keyof E[P] ? P : never;
-  }[ExtractPaths<E>],
-  string
->;
 
 /**
  * Type-safe HTTP client for testing API endpoints

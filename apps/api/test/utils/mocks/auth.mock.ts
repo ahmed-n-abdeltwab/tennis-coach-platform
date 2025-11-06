@@ -1,4 +1,4 @@
-import { Role } from '@auth-helpers';
+import { Role } from '@prisma/client';
 
 export interface MockAuthPayload {
   sub: string;
