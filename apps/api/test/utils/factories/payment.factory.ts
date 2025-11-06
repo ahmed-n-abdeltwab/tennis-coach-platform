@@ -93,7 +93,7 @@ export class PaymentMockFactory extends BaseMockFactory<MockPayment> {
 
   private randomAmount(): number {
     const amounts = [25.0, 50.0, 75.0, 100.0, 125.0, 150.0];
-    return amounts[Math.floor(Math.random() * amounts.length)];
+    return amounts[Math.floor(Math.random() * amounts.length)] ?? 25.0;
   }
 
   private generatePayPalOrderId(): string {

@@ -2,8 +2,8 @@
  * Database helper functions for testing
  */
 
-import { BookingType, Prisma } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
+import { Account, BookingType, Prisma, Role } from '@prisma/client';
+import { PrismaService } from '../../src/app/prisma/prisma.service';
 
 /**
  * Cleans all data from the test database

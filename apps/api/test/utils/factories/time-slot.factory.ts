@@ -69,6 +69,6 @@ export class TimeSlotMockFactory extends BaseMockFactory<MockTimeSlot> {
 
   private randomDuration(): number {
     const durations = [30, 45, 60, 90, 120]; // minutes
-    return durations[Math.floor(Math.random() * durations.length)];
+    return durations[Math.floor(Math.random() * durations.length)] ?? 30;
   }
 }

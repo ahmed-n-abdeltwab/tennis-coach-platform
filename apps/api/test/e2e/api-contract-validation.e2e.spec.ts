@@ -13,7 +13,6 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
   let enhancedHttpHelper: EnhancedHttpTestHelper;
   let contractHelper: ApiContractTestHelper;
   let userToken: string;
-  let coachToken: string;
   let testUser: any;
   let testCoach: any;
 

@@ -56,7 +56,7 @@ export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
       'Advanced Training',
       'Beginner Lesson',
     ];
-    return names[Math.floor(Math.random() * names.length)];
+    return names[Math.floor(Math.random() * names.length)] ?? 'default Booking Type Name';
   }
 
   private randomDescription(): string {
@@ -70,11 +70,11 @@ export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
       'High-intensity training for competitive players',
       'Introduction to tennis fundamentals',
     ];
-    return descriptions[Math.floor(Math.random() * descriptions.length)];
+    return descriptions[Math.floor(Math.random() * descriptions.length)] ?? 'default descriptions';
   }
 
   private randomPrice(): number {
     const prices = [50, 75, 100, 125, 150, 200];
-    return prices[Math.floor(Math.random() * prices.length)];
+    return prices[Math.floor(Math.random() * prices.length)] ?? 50;
   }
 }

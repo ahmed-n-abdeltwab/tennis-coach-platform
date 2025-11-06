@@ -55,7 +55,7 @@ export class CoachMockFactory extends BaseMockFactory<MockCoach> {
       'Specialized in junior development and competitive training.',
       'Expert in technique refinement and mental game coaching.',
     ];
-    return bios[Math.floor(Math.random() * bios.length)];
+    return bios[Math.floor(Math.random() * bios.length)] ?? 'default bio';
   }
 
   private randomCredentials(): string {
@@ -65,7 +65,7 @@ export class CoachMockFactory extends BaseMockFactory<MockCoach> {
       'ITF Level 3 Coach',
       'USTA High Performance Coach',
     ];
-    return credentials[Math.floor(Math.random() * credentials.length)];
+    return credentials[Math.floor(Math.random() * credentials.length)] ?? 'default credentials';
   }
 
   private randomPhilosophy(): string {
@@ -75,7 +75,7 @@ export class CoachMockFactory extends BaseMockFactory<MockCoach> {
       'Developing both technical skills and mental toughness.',
       "Customized approach for each player's unique needs.",
     ];
-    return philosophies[Math.floor(Math.random() * philosophies.length)];
+    return philosophies[Math.floor(Math.random() * philosophies.length)] ?? 'default philosophy';
   }
 
   private randomProfileImage(): string {

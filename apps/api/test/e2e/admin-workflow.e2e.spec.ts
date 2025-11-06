@@ -3,7 +3,7 @@
  * Tests admin functionality including user management and system configuration
  */
 
-import { AuthTestHelper, HttpTestHelper } from '@auth-helpers';
+import { AuthTestHelper, HttpTestHelper, TypeSafeHttpClient } from '@auth-helpers';
 import {
   bookingTypeFactory,
   coachFactory,
@@ -14,7 +14,7 @@ import { ApiContractTestHelper } from '@test-utils/http-test-helpers';
 
 describe('Admin Workflow (E2E)', () => {
   let authHelper: AuthTestHelper;
-  let httpHelper: HttpTestHelper;
+  let httpHelper: TypeSafeHttpClient;
   let contractHelper: ApiContractTestHelper;
   let adminToken: string;
   let regularCoachToken: string;
@@ -25,23 +25,21 @@ describe('Admin Workflow (E2E)', () => {
 
   beforeAll(() => {
     authHelper = new AuthTestHelper();
-    httpHelper = new HttpTestHelper(global.testApp);
+    httpHelper = new TypeSafeHttpClient(global.testApp);
     contractHelper = new ApiContractTestHelper(global.testApp);
   });
 
-  beforeEach(async ({
+  beforeEach(async () =>{
     // Create admin coach
     adminCoach = coachFactory.createAdmin({
       email: 'admin@example.com',
       name: 'Admin Coach',
-      isAdmin: true,
     });
 
     // Create regular coach
     regularCoach = coachFactory.createRegularCoach({
       email: 'regularcoach@example.com',
       name: 'Regular Coach',
-      isAdmin: false,
     });
 
     // Create regular user
@@ -56,6 +54,7 @@ describe('Admin Workflow (E2E)', () => {
       name: adminCoach.name,
       password: 'AdminPassword123!',
     });
+    
     adminToken = adminRegisterResponse.body.accessToken;
     adminCoach.id = adminRegisterResponse.body.user.id;
 

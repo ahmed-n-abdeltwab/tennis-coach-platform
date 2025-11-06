@@ -23,10 +23,7 @@ export class NotificationMockFactory extends BaseMockFactory<MockNotification> {
     };
   }
 
-  createEmailResult(
-    success = true,
-    overrides?: Partial<MockEmailResult>
-  ): MockEmailResult {
+  createEmailResult(success = true, overrides?: Partial<MockEmailResult>): MockEmailResult {
     if (success) {
       return {
         success: true,
@@ -114,7 +111,7 @@ export class NotificationMockFactory extends BaseMockFactory<MockNotification> {
       'Payment Confirmation',
       'Schedule Update',
     ];
-    return subjects[Math.floor(Math.random() * subjects.length)];
+    return subjects[Math.floor(Math.random() * subjects.length)] ?? 'Welcome to Tennis Coaching';
   }
 
   private randomText(): string {

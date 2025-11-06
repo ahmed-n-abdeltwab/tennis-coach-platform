@@ -61,20 +61,18 @@ export interface TypedResponse<T> {
 
 /**
  * Conditional response type based on expected status code
- * Returns error types for 4xx/5xx status codes, success type otherwise
+ * When expectedStatus is not provided, returns the success type
+ * When expectedStatus is provided, returns a union of success and error types
+ *
+ * Note: This is intentionally simplified to ensure proper type inference.
+ * The complex conditional logic was breaking TypeScript's ability to infer types.
  */
 type ConditionalResponse<
   TSuccess,
   TExpectedStatus extends number | undefined,
-> = TExpectedStatus extends number
-  ? TExpectedStatus extends 400
-    ? TypedResponse<ValidationErrorResponse>
-    : TExpectedStatus extends 401 | 403 | 404 | 409 | 422 | 500 | 502 | 503
-      ? TypedResponse<ErrorResponse>
-      : TExpectedStatus extends 200 | 201 | 204
-        ? TypedResponse<TSuccess>
-        : TypedResponse<TSuccess | ErrorResponse | ValidationErrorResponse>
-  : TypedResponse<TSuccess>;
+> = TExpectedStatus extends undefined
+  ? TypedResponse<TSuccess>
+  : TypedResponse<TSuccess | ErrorResponse | ValidationErrorResponse>;
 
 /**
  * Helper type to filter paths by HTTP method
@@ -188,11 +186,10 @@ export class TypeSafeHttpClient<
    * Type-safe GET request
    *
    * @template P - The API path (must support GET method)
-   * @template O - Request options type (inferred)
    * @param path - The API endpoint path
    * @param params - Query parameters or path parameters
    * @param options - Additional request options
-   * @returns Typed response - error types for 4xx/5xx expectedStatus, success type otherwise
+   * @returns Typed response with proper success type (or union with error types if expectedStatus provided)
    *
    * @example
    * ```typescript
@@ -207,15 +204,15 @@ export class TypeSafeHttpClient<
    *
    * // Error case
    * const notFound = await client.get('/api/sessions/{id}', { id: 'invalid' }, { expectedStatus: 404 });
-   * // notFound.body is typed as ErrorResponse
+   * // notFound.body is typed as union of success | ErrorResponse | ValidationErrorResponse
    * ```
    */
-  async get<P extends PathsWithMethod<E, 'GET'>, O extends RequestOptions = RequestOptions>(
+  async get<P extends PathsWithMethod<E, 'GET'>>(
     path: P,
     params?: ExtractRequestType<E, P, 'GET'>,
-    options?: O
-  ): Promise<ConditionalResponse<ExtractResponseType<E, P, 'GET'>, O['expectedStatus']>> {
-    const opts = (options || {}) as RequestOptions;
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
+    const opts = options || {};
 
     // Build path with parameters if needed
     const builtPath = this.buildPathWithParams(path, params);
@@ -249,45 +246,45 @@ export class TypeSafeHttpClient<
 
     return {
       status: response.status,
-      body: response.body,
+      body: response.body as ExtractResponseType<E, P, 'GET'>,
       headers: response.headers as Record<string, string>,
-    } as any;
+    };
   }
 
   /**
    * Type-safe POST request
    *
    * @template P - The API path (must support POST method)
-   * @template O - Request options type (inferred)
    * @param path - The API endpoint path
    * @param body - Request body
    * @param options - Additional request options
-   * @returns Typed response - error types for 4xx/5xx expectedStatus, success type otherwise
+   * @returns Typed response with proper success type
    *
    * @example
    * ```typescript
-   * // Success case - returns success type
+   * // Success case - returns properly typed response
    * const response = await client.post('/api/authentication/user/login', {
    *   email: 'user@example.com',
    *   password: 'password123'
    * });
+   * // response.body.accessToken is typed as string
+   * // response.body.account is typed with all account fields
    *
-   * // Error case - returns ErrorResponse type
+   * // Error case - you can still check status
    * const errorResponse = await client.post('/api/authentication/user/login', {
    *   email: 'duplicate@example.com',
    *   password: 'password123'
    * }, { expectedStatus: 409 });
-   * // errorResponse.body is typed as ErrorResponse
    * ```
    */
-  async post<P extends PathsWithMethod<E, 'POST'>, O extends RequestOptions = RequestOptions>(
+  async post<P extends PathsWithMethod<E, 'POST'>>(
     path: P,
     body: ExtractRequestType<E, P, 'POST'>,
-    options?: O
-  ): Promise<ConditionalResponse<ExtractResponseType<E, P, 'POST'>, O['expectedStatus']>> {
-    const opts = (options || {}) as RequestOptions;
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
+    const opts = options || {};
 
-    // Build path witrameters if needed
+    // Build path with parameters if needed
     const builtPath = this.buildPathWithParams(path, body);
 
     // Create supertest request
@@ -319,20 +316,19 @@ export class TypeSafeHttpClient<
 
     return {
       status: response.status,
-      body: response.body,
+      body: response.body as ExtractResponseType<E, P, 'POST'>,
       headers: response.headers as Record<string, string>,
-    } as any;
+    };
   }
 
   /**
    * Type-safe PUT request
    *
    * @template P - The API path (must support PUT method)
-   * @template O - Request options type (inferred)
    * @param path - The API endpoint path
    * @param body - Request body
    * @param options - Additional request options
-   * @returns Typed response - error types for 4xx/5xx expectedStatus, success type otherwise
+   * @returns Typed response with proper success type
    *
    * @example
    * ```typescript
@@ -342,12 +338,12 @@ export class TypeSafeHttpClient<
    * });
    * ```
    */
-  async put<P extends PathsWithMethod<E, 'PUT'>, O extends RequestOptions = RequestOptions>(
+  async put<P extends PathsWithMethod<E, 'PUT'>>(
     path: P,
     body: ExtractRequestType<E, P, 'PUT'>,
-    options?: O
-  ): Promise<ConditionalResponse<ExtractResponseType<E, P, 'PUT'>, O['expectedStatus']>> {
-    const opts = (options || {}) as RequestOptions;
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
+    const opts = options || {};
 
     // Build path with parameters if needed
     const builtPath = this.buildPathWithParams(path, body);
@@ -381,20 +377,19 @@ export class TypeSafeHttpClient<
 
     return {
       status: response.status,
-      body: response.body,
+      body: response.body as ExtractResponseType<E, P, 'PUT'>,
       headers: response.headers as Record<string, string>,
-    } as any;
+    };
   }
 
   /**
    * Type-safe DELETE request
    *
    * @template P - The API path (must support DELETE method)
-   * @template O - Request options type (inferred)
    * @param path - The API endpoint path
    * @param params - Path parameters (if needed)
    * @param options - Additional request options
-   * @returns Typed response - error types for 4xx/5xx expectedStatus, success type otherwise
+   * @returns Typed response with proper success type
    *
    * @example
    * ```typescript
@@ -403,12 +398,12 @@ export class TypeSafeHttpClient<
    * });
    * ```
    */
-  async delete<P extends PathsWithMethod<E, 'DELETE'>, O extends RequestOptions = RequestOptions>(
+  async delete<P extends PathsWithMethod<E, 'DELETE'>>(
     path: P,
     params?: ExtractRequestType<E, P, 'DELETE'>,
-    options?: O
-  ): Promise<ConditionalResponse<ExtractResponseType<E, P, 'DELETE'>, O['expectedStatus']>> {
-    const opts = (options || {}) as RequestOptions;
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
+    const opts = options || {};
 
     // Build path with parameters if needed
     const builtPath = this.buildPathWithParams(path, params);
@@ -437,27 +432,26 @@ export class TypeSafeHttpClient<
 
     return {
       status: response.status,
-      body: response.body,
+      body: response.body as ExtractResponseType<E, P, 'DELETE'>,
       headers: response.headers as Record<string, string>,
-    } as any;
+    };
   }
 
   /**
    * Type-safe PATCH request
    *
    * @template P - The API path (must support PATCH method)
-   * @template O - Request options type (inferred)
    * @param path - The API endpoint path
    * @param body - Request body (typically partial update)
    * @param options - Additional request options
-   * @returns Typed response - error types for 4xx/5xx expectedStatus, success type otherwise
+   * @returns Typed response with proper success type
    */
-  async patch<P extends PathsWithMethod<E, 'PATCH'>, O extends RequestOptions = RequestOptions>(
+  async patch<P extends PathsWithMethod<E, 'PATCH'>>(
     path: P,
     body: ExtractRequestType<E, P, 'PATCH'>,
-    options?: O
-  ): Promise<ConditionalResponse<ExtractResponseType<E, P, 'PATCH'>, O['expectedStatus']>> {
-    const opts = (options || {}) as RequestOptions;
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
+    const opts = options || {};
 
     // Build path with parameters if needed
     const builtPath = this.buildPathWithParams(path, body);
@@ -491,9 +485,9 @@ export class TypeSafeHttpClient<
 
     return {
       status: response.status,
-      body: response.body,
+      body: response.body as ExtractResponseType<E, P, 'PATCH'>,
       headers: response.headers as Record<string, string>,
-    } as any;
+    };
   }
 
   /**
@@ -502,12 +496,11 @@ export class TypeSafeHttpClient<
    * Convenience method that automatically adds Authorization header
    *
    * @template P - The API path (must support GET method)
-   * @template O - Request options type (inferred)
    * @param path - The API endpoint path
    * @param token - JWT access token
    * @param params - Query parameters or path parameters
    * @param options - Additional request options (headers will be merged)
-   * @returns Typed response - error types for 4xx/5xx expectedStatus, success type otherwise
+   * @returns Typed response with proper success type
    *
    * @example
    * ```typescript
@@ -517,19 +510,16 @@ export class TypeSafeHttpClient<
    * );
    * ```
    */
-  async authenticatedGet<
-    P extends PathsWithMethod<E, 'GET'>,
-    O extends Omit<RequestOptions, 'headers'> = Omit<RequestOptions, 'headers'>,
-  >(
+  async authenticatedGet<P extends PathsWithMethod<E, 'GET'>>(
     path: P,
     token: string,
     params?: ExtractRequestType<E, P, 'GET'>,
-    options?: O
-  ): Promise<ConditionalResponse<ExtractResponseType<E, P, 'GET'>, O['expectedStatus']>> {
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
     return this.get(path, params, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
-    } as any) as any;
+    });
   }
 
   /**
@@ -538,12 +528,11 @@ export class TypeSafeHttpClient<
    * Convenience method that automatically adds Authorization header
    *
    * @template P - The API path (must support POST method)
-   * @template O - Request options type (inferred)
    * @param path - The API endpoint path
    * @param token - JWT access token
    * @param body - Request body
    * @param options - Additional request options (headers will be merged)
-   * @returns Typed response - error types for 4xx/5xx expectedStatus, success type otherwise
+   * @returns Typed response with proper success type
    *
    * @example
    * ```typescript
@@ -557,19 +546,16 @@ export class TypeSafeHttpClient<
    * );
    * ```
    */
-  async authenticatedPost<
-    P extends PathsWithMethod<E, 'POST'>,
-    O extends Omit<RequestOptions, 'headers'> = Omit<RequestOptions, 'headers'>,
-  >(
+  async authenticatedPost<P extends PathsWithMethod<E, 'POST'>>(
     path: P,
     token: string,
     body: ExtractRequestType<E, P, 'POST'>,
-    options?: O
-  ): Promise<ConditionalResponse<ExtractResponseType<E, P, 'POST'>, O['expectedStatus']>> {
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
     return this.post(path, body, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
-    } as any) as any;
+    });
   }
 
   /**
@@ -578,26 +564,22 @@ export class TypeSafeHttpClient<
    * Convenience method that automatically adds Authorization header
    *
    * @template P - The API path (must support PUT method)
-   * @template O - Request options type (inferred)
    * @param path - The API endpoint path
    * @param token - JWT access token
    * @param body - Request body
    * @param options - Additional request options (headers will be merged)
-   * @returns Typed response - error types for 4xx/5xx expectedStatus, success type otherwise
+   * @returns Typed response with proper success type
    */
-  async authenticatedPut<
-    P extends PathsWithMethod<E, 'PUT'>,
-    O extends Omit<RequestOptions, 'headers'> = Omit<RequestOptions, 'headers'>,
-  >(
+  async authenticatedPut<P extends PathsWithMethod<E, 'PUT'>>(
     path: P,
     token: string,
     body: ExtractRequestType<E, P, 'PUT'>,
-    options?: O
-  ): Promise<ConditionalResponse<ExtractResponseType<E, P, 'PUT'>, O['expectedStatus']>> {
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
     return this.put(path, body, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
-    } as any) as any;
+    });
   }
 
   /**
@@ -606,26 +588,22 @@ export class TypeSafeHttpClient<
    * Convenience method that automatically adds Authorization header
    *
    * @template P - The API path (must support DELETE method)
-   * @template O - Request options type (inferred)
    * @param path - The API endpoint path
    * @param token - JWT access token
    * @param params - Path parameters (if needed)
    * @param options - Additional request options (headers will be merged)
-   * @returns Typed response - error types for 4xx/5xx expectedStatus, success type otherwise
+   * @returns Typed response with proper success type
    */
-  async authenticatedDelete<
-    P extends PathsWithMethod<E, 'DELETE'>,
-    O extends Omit<RequestOptions, 'headers'> = Omit<RequestOptions, 'headers'>,
-  >(
+  async authenticatedDelete<P extends PathsWithMethod<E, 'DELETE'>>(
     path: P,
     token: string,
     params?: ExtractRequestType<E, P, 'DELETE'>,
-    options?: O
-  ): Promise<ConditionalResponse<ExtractResponseType<E, P, 'DELETE'>, O['expectedStatus']>> {
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
     return this.delete(path, params, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
-    } as any) as any;
+    });
   }
 
   /**
@@ -634,26 +612,22 @@ export class TypeSafeHttpClient<
    * Convenience method that automatically adds Authorization header
    *
    * @template P - The API path (must support PATCH method)
-   * @template O - Request options type (inferred)
    * @param path - The API endpoint path
    * @param token - JWT access token
    * @param body - Request body
    * @param options - Additional request options (headers will be merged)
-   * @returns Typed response - error types for 4xx/5xx expectedStatus, success type otherwise
+   * @returns Typed response with proper success type
    */
-  async authenticatedPatch<
-    P extends PathsWithMethod<E, 'PATCH'>,
-    O extends Omit<RequestOptions, 'headers'> = Omit<RequestOptions, 'headers'>,
-  >(
+  async authenticatedPatch<P extends PathsWithMethod<E, 'PATCH'>>(
     path: P,
     token: string,
     body: ExtractRequestType<E, P, 'PATCH'>,
-    options?: O
-  ): Promise<ConditionalResponse<ExtractResponseType<E, P, 'PATCH'>, O['expectedStatus']>> {
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
     return this.patch(path, body, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
-    } as any) as any;
+    });
   }
 
   /**

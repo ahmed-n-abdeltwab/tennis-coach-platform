@@ -90,7 +90,7 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
 
   private randomDuration(): number {
     const durations = [30, 45, 60, 90, 120]; // minutes
-    return durations[Math.floor(Math.random() * durations.length)];
+    return durations[Math.floor(Math.random() * durations.length)] ?? 30;
   }
 
   private randomPrice(): number {
@@ -106,6 +106,6 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
       'Mental game coaching session',
       'Match strategy discussion',
     ];
-    return notes[Math.floor(Math.random() * notes.length)];
+    return notes[Math.floor(Math.random() * notes.length)] ?? 'default notes';
   }
 }

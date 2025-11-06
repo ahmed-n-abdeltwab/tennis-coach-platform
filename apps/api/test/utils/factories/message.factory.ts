@@ -88,7 +88,7 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
       'Could you recommend some exercises for footwork?',
       'I really appreciate your coaching style.',
     ];
-    return contents[Math.floor(Math.random() * contents.length)];
+    return contents[Math.floor(Math.random() * contents.length)] ?? 'default content';
   }
 
   private randomSessionContent(): string {
@@ -100,6 +100,6 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
       'Remember to practice the drills we covered.',
       'Your serve is improving significantly.',
     ];
-    return contents[Math.floor(Math.random() * contents.length)];
+    return contents[Math.floor(Math.random() * contents.length)] ?? 'default session content';
   }
 }

@@ -65,8 +65,8 @@ export function relatedDataExample() {
   // Create a session linking user, coach, booking type, and time slot
   const user = userFactory.create();
   const session = sessionFactory.createForUserAndCoach(user.id, coach.id, {
-    bookingTypeId: bookingTypes[0].id,
-    timeSlotId: timeSlots[0].id,
+    bookingTypeId: bookingTypes[0]!.id,
+    timeSlotId: timeSlots[0]!.id,
   });
 
   return { coach, user, bookingTypes, timeSlots, session };

@@ -55,8 +55,8 @@ export class UserMockFactory extends BaseMockFactory<MockAccount> {
   }
 
   private randomGender(): string {
-    const genders = ['male', 'female', 'other'];
-    return genders[Math.floor(Math.random() * genders.length)];
+    const genders: string[] = ['male', 'female', 'other'];
+    return genders[Math.floor(Math.random() * genders.length)] ?? 'other';
   }
 
   private randomAge(): number {
@@ -72,8 +72,8 @@ export class UserMockFactory extends BaseMockFactory<MockAccount> {
   }
 
   private randomCountry(): string {
-    const countries = ['USA', 'UK', 'Canada', 'Australia', 'Germany', 'France'];
-    return countries[Math.floor(Math.random() * countries.length)];
+    const countries = ['USA', 'UK', 'Canada', 'Australia', 'Germany', 'France', 'Egypt'];
+    return countries[Math.floor(Math.random() * countries.length)] ?? 'default country';
   }
 
   private randomAddress(): string {
@@ -82,6 +82,6 @@ export class UserMockFactory extends BaseMockFactory<MockAccount> {
       '456 Oak Ave, Town, Province A1B 2C3',
       '789 Pine Rd, Village, County AB12 3CD',
     ];
-    return addresses[Math.floor(Math.random() * addresses.length)];
+    return addresses[Math.floor(Math.random() * addresses.length)] ?? 'default address';
   }
 }

@@ -82,11 +82,11 @@ export class DiscountMockFactory extends BaseMockFactory<MockDiscount> {
 
   private randomAmount(): number {
     const amounts = [10, 15, 20, 25, 30, 50]; // Dollar amounts
-    return amounts[Math.floor(Math.random() * amounts.length)];
+    return amounts[Math.floor(Math.random() * amounts.length)] ?? 10;
   }
 
   private randomMaxUsage(): number {
     const usages = [1, 5, 10, 25, 50, 100];
-    return usages[Math.floor(Math.random() * usages.length)];
+    return usages[Math.floor(Math.random() * usages.length)] ?? 1;
   }
 }

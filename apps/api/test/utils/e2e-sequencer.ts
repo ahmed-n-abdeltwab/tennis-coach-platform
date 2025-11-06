@@ -11,9 +11,8 @@ class E2ESequencer extends Sequencer {
     // Define test priority order
     const testPriority = [
       'health', // Health checks first
-      'auth', // Authentication second
-      'users', // User management
-      'coaches', // Coach management
+      'iam', // Authentication second
+      'accounts', // Account management
       'booking-types', // Booking types
       'time-slots', // Time slots
       'sessions', // Sessions
