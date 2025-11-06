@@ -22,7 +22,7 @@ import request from 'supertest';
 import { JwtPayload } from '../auth/auth-test-helper';
 import { PrismaService } from '../prisma/prisma.service';
 
-import { cleanDatabase, seedTestDatabase } from '../database-helpers';
+import { cleanDatabase, seedTestDatabase } from '../database/database-helpers';
 
 export abstract class BaseIntegrationTest {
   protected app: INestApplication;
@@ -468,7 +468,9 @@ export abstract class BaseIntegrationTest {
   ): void {
     expect(response.status).toBe(expectedStatus);
     expect(response.body).toBeDefined();
-    if (expectedMessage) {
+
+    // For error responses, check the message
+    if (expectedMessage && !response.ok) {
       expect(response.body.message).toContain(expectedMessage);
     }
   }

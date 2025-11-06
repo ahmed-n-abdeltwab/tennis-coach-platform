@@ -1,11 +1,11 @@
- import { PrismaModule } from '../prisma/prisma.module';
-import { PrismaService } from '../prisma/prisma.service';
 import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import healthConfig from '../../src/app/health/config/health.config';
 import { HealthModule } from '../../src/app/health/health.module';
+import { PrismaModule } from '../prisma/prisma.module';
+import { PrismaService } from '../prisma/prisma.service';
 
 describe('Health Endpoints Integration', () => {
   let app: INestApplication;
@@ -13,12 +13,8 @@ describe('Health Endpoints Integration', () => {
   let module: TestingModule;
 
   beforeAll(async () => {
-= await Test.createTestingModule({
-      imports: [
-        HealthModule,
-        PrismaModule,
-        ConfigModule.forFeature(healthConfig),
-      ],
+    module = await Test.createTestingModule({
+      imports: [HealthModule, PrismaModule, ConfigModule.forFeature(healthConfig)],
     }).compile();
 
     app = module.createNestApplication();
@@ -43,9 +39,7 @@ describe('Health Endpoints Integration', () => {
   describe('GET /api/health', () => {
     it('should return health check with 200 status', async () => {
       // Act
-      const response = await request(app.getHttpServer())
-        .get('/api/health')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/health').expect(200);
 
       // Assert
       expect(response.body).toEqual({
@@ -67,9 +61,7 @@ describe('Health Endpoints Integration', () => {
 
     it('should return valid timestamp in ISO format', async () => {
       // Act
-      const response = await request(app.getHttpServer())
-        .get('/api/health')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/health').expect(200);
 
       // Assert
       const timestamp = response.body.timestamp;
@@ -82,9 +74,7 @@ describe('Health Endpoints Integration', () => {
 
     it('should return positive uptime', async () => {
       // Act
-      const response = await request(app.getHttpServer())
-        .get('/api/health')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/health').expect(200);
 
       // Assert
       expect(response.body.uptime).toBeGreaterThan(0);
@@ -93,9 +83,7 @@ describe('Health Endpoints Integration', () => {
 
     it('should return valid memory usage information', async () => {
       // Act
-      const response = await request(app.getHttpServer())
-        .get('/api/health')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/health').expect(200);
 
       // Assert
       const memory = response.body.memory;
@@ -109,9 +97,7 @@ describe('Health Endpoints Integration', () => {
 
     it('should return configuration information', async () => {
       // Act
-      const response = await request(app.getHttpServer())
-        .get('/api/health')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/health').expect(200);
 
       // Assert
       expect(response.body.version).toBeDefined();
@@ -122,9 +108,7 @@ describe('Health Endpoints Integration', () => {
 
     it('should return database connection status', async () => {
       // Act
-      const response = await request(app.getHttpServer())
-        .get('/api/health')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/health').expect(200);
 
       // Assert
       expect(response.body.database).toBe('connected');
@@ -150,16 +134,20 @@ describe('Health Endpoints Integration', () => {
 
     it('should return consistent structure across multiple calls', async () => {
       // Act
-      const response1 = await request(app.getHttpServer())
-        .get('/api/health')
-        .expect(200);
+      const response1 = await request(app.getHttpServer()).get('/api/health').expect(200);
 
-      const response2 = await request(app.getHttpServer())
-        .get('/api/health')
-        .expect(200);
+      const response2 = await request(app.getHttpServer()).get('/api/health').expect(200);
 
       // Assert
-      const expectedKeys = ['status', 'timestamp', 'uptime', 'memory', 'version', 'environment', 'database'];
+      const expectedKeys = [
+        'status',
+        'timestamp',
+        'uptime',
+        'memory',
+        'version',
+        'environment',
+        'database',
+      ];
       expectedKeys.forEach(key => {
         expect(response1.body).toHaveProperty(key);
         expect(response2.body).toHaveProperty(key);
@@ -178,9 +166,7 @@ describe('Health Endpoints Integration', () => {
       const startTime = Date.now();
 
       // Act
-      await request(app.getHttpServer())
-        .get('/api/health')
-        .expect(200);
+      await request(app.getHttpServer()).get('/api/health').expect(200);
 
       // Assert
       const endTime = Date.now();
@@ -192,9 +178,7 @@ describe('Health Endpoints Integration', () => {
   describe('GET /api/health/liveness', () => {
     it('should return alive status with 200', async () => {
       // Act
-      const response = await request(app.getHttpServer())
-        .get('/api/health/liveness')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/health/liveness').expect(200);
 
       // Assert
       expect(response.body).toEqual({
@@ -205,9 +189,7 @@ describe('Health Endpoints Integration', () => {
 
     it('should return valid timestamp', async () => {
       // Act
-      const response = await request(app.getHttpServer())
-        .get('/api/health/liveness')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/health/liveness').expect(200);
 
       // Assert
       const timestamp = response.body.timestamp;
@@ -239,9 +221,7 @@ describe('Health Endpoints Integration', () => {
       const startTime = Date.now();
 
       // Act
-      await request(app.getHttpServer())
-        .get('/api/health/liveness')
-        .expect(200);
+      await request(app.getHttpServer()).get('/api/health/liveness').expect(200);
 
       // Assert
       const endTime = Date.now();
@@ -267,16 +247,12 @@ describe('Health Endpoints Integration', () => {
 
     it('should return different timestamps for consecutive calls', async () => {
       // Act
-      const response1 = await request(app.getHttpServer())
-        .get('/api/health/liveness')
-        .expect(200);
+      const response1 = await request(app.getHttpServer()).get('/api/health/liveness').expect(200);
 
       // Small delay to ensure different timestamps
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      const response2 = await request(app.getHttpServer())
-        .get('/api/health/liveness')
-        .expect(200);
+      const response2 = await request(app.getHttpServer()).get('/api/health/liveness').expect(200);
 
       // Assert
       expect(response1.body.timestamp).not.toBe(response2.body.timestamp);
@@ -286,9 +262,7 @@ describe('Health Endpoints Integration', () => {
   describe('GET /api/health/readiness', () => {
     it('should return ready status with 200 when database is available', async () => {
       // Act
-      const response = await request(app.getHttpServer())
-        .get('/api/health/readiness')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/health/readiness').expect(200);
 
       // Assert
       expect(response.body).toEqual({
@@ -299,9 +273,7 @@ describe('Health Endpoints Integration', () => {
 
     it('should return valid timestamp', async () => {
       // Act
-      const response = await request(app.getHttpServer())
-        .get('/api/health/readiness')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/health/readiness').expect(200);
 
       // Assert
       const timestamp = response.body.timestamp;
@@ -314,9 +286,7 @@ describe('Health Endpoints Integration', () => {
 
     it('should verify database connectivity', async () => {
       // Act
-      const response = await request(app.getHttpServer())
-        .get('/api/health/readiness')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/health/readiness').expect(200);
 
       // Assert
       expect(response.body.status).toBe('ready');
@@ -346,9 +316,7 @@ describe('Health Endpoints Integration', () => {
       const startTime = Date.now();
 
       // Act
-      await request(app.getHttpServer())
-        .get('/api/health/readiness')
-        .expect(200);
+      await request(app.getHttpServer()).get('/api/health/readiness').expect(200);
 
       // Assert
       const endTime = Date.now();
@@ -358,13 +326,9 @@ describe('Health Endpoints Integration', () => {
 
     it('should return consistent results', async () => {
       // Act
-      const response1 = await request(app.getHttpServer())
-        .get('/api/health/readiness')
-        .expect(200);
+      const response1 = await request(app.getHttpServer()).get('/api/health/readiness').expect(200);
 
-      const response2 = await request(app.getHttpServer())
-        .get('/api/health/readiness')
-        .expect(200);
+      const response2 = await request(app.getHttpServer()).get('/api/health/readiness').expect(200);
 
       // Assert
       expect(response1.body.status).toBe(response2.body.status);
@@ -375,23 +339,17 @@ describe('Health Endpoints Integration', () => {
   describe('Error handling scenarios', () => {
     it('should handle invalid endpoints gracefully', async () => {
       // Act & Assert
-      await request(app.getHttpServer())
-        .get('/api/health/invalid')
-        .expect(404);
+      await request(app.getHttpServer()).get('/api/health/invalid').expect(404);
     });
 
     it('should handle malformed requests', async () => {
       // Act & Assert
-      await request(app.getHttpServer())
-        .post('/api/health')
-        .expect(405); // Method not allowed
+      await request(app.getHttpServer()).post('/api/health').expect(405); // Method not allowed
     });
 
     it('should return proper content-type headers', async () => {
       // Act
-      const response = await request(app.getHttpServer())
-        .get('/api/health')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/health').expect(200);
 
       // Assert
       expect(response.headers['content-type']).toMatch(/application\/json/);
@@ -425,9 +383,7 @@ describe('Health Endpoints Integration', () => {
       // Act
       for (let i = 0; i < iterations; i++) {
         const startTime = Date.now();
-        await request(app.getHttpServer())
-          .get('/api/health')
-          .expect(200);
+        await request(app.getHttpServer()).get('/api/health').expect(200);
         const endTime = Date.now();
         times.push(endTime - startTime);
       }
@@ -475,4 +431,3 @@ describe('Health Endpoints Integration', () => {
     });
   });
 });
-

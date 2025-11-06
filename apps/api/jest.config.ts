@@ -31,7 +31,6 @@ const config: Config = {
     '^@test/(.*)$': '<rootDir>/test/$1',
 
     // Workspace libraries
-    '^@auth-helpers$': '<rootDir>/../../libs/auth-helpers/src/index.ts',
     '^@routes-helpers$': '<rootDir>/../../libs/routes-helpers/src/index.ts',
     '^@utils$': '<rootDir>/../../libs/utils/src/index.ts',
   },

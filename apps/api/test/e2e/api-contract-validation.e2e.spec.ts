@@ -4,24 +4,20 @@
  */
 
 import { coachFactory, userFactory } from '@test-utils/factories';
-import { ApiContractTestHelper, EnhancedHttpTestHelper } from '@test-utils/http-test-helpers';
-import { TypeSafeHttpClient as HttpTestHelper } from '@test-utils/http/type-safe-http-client';
 import { AuthTestHelper } from '../utils/auth';
 
 describe('API Contract Validation and Error Handling (E2E)', () => {
   let authHelper: AuthTestHelper;
-  let httpHelper: HttpTestHelper;
-  let enhancedHttpHelper: EnhancedHttpTestHelper;
-  let contractHelper: ApiContractTestHelper;
+  let httpClient: TypeSafeHttpClient;
+  let contractTester: ApiContractTester;
   let userToken: string;
   let testUser: any;
   let testCoach: any;
 
   beforeAll(() => {
     authHelper = new AuthTestHelper();
-    httpHelper = new HttpTestHelper(global.testApp);
-    enhancedHttpHelper = new EnhancedHttpTestHelper(global.testApp);
-    contractHelper = new ApiContractTestHelper(global.testApp);
+    httpClient = new TypeSafeHttpClient(global.testApp);
+    contractTester = new ApiContractTester(global.testApp);
   });
 
   beforeEach(async () => {
@@ -37,7 +33,7 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
     });
 
     // Register user
-    const userRegisterResponse = await httpHelper.post('/api/authentication/user/signup', {
+    const userRegisterResponse = await httpClient.post('/api/authentication/user/signup', {
       email: testUser.email,
       name: testUser.name,
       password: 'UserPassword123!',
@@ -46,7 +42,7 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
     testUser.id = userRegisterResponse.body.user.id;
 
     // Register coach
-    const coachRegisterResponse = await httpHelper.post('/api/authentication/coach/signup', {
+    const coachRegisterResponse = await httpClient.post('/api/authentication/coach/signup', {
       email: testCoach.email,
       name: testCoach.name,
       password: 'CoachPassword123!',
@@ -57,7 +53,7 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
 
   describe('Authentication API Contracts', () => {
     it('should validate user registration contract', async () => {
-      await contractHelper.testApiContract('/api/authentication/user/signup', 'POST', {
+      await contractTester.testApiContract('/api/authentication/user/signup', 'POST', {
         request: {
           body: {
             email: 'newcontractuser@example.com',
@@ -81,7 +77,7 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
     });
 
     it('should validate login contract', async () => {
-      await contractHelper.testApiContract('/api/authentication/user/login', 'POST', {
+      await contractTester.testApiContract('/api/authentication/user/login', 'POST', {
         request: {
           body: {
             email: testUser.email,

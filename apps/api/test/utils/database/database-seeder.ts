@@ -9,16 +9,14 @@
  */
 
 import {
-  AdminRole,
+  Account,
   BookingType,
-  Coach,
   Discount,
   Message,
   PrismaClient,
+  Role,
   Session,
   TimeSlot,
-  User,
-  UserRole,
 } from '@prisma/client';
 import { hash } from 'bcryptjs';
 
@@ -33,8 +31,8 @@ export interface SeedDataOptions {
 }
 
 export interface SeededData {
-  users: User[];
-  coaches: Coach[];
+  users: Account[];
+  coaches: Account[];
   bookingTypes: BookingType[];
   timeSlots: TimeSlot[];
   sessions: Session[];
@@ -96,12 +94,12 @@ export class DatabaseSeeder {
   /**
    * Seed users with varied profiles
    */
-  async seedUsers(count = 3): Promise<User[]> {
-    const users: User[] = [];
+  async seedUsers(count = 3): Promise<Account[]> {
+    const users: Account[] = [];
     const passwordHash = await hash('testpassword123', this.saltRounds);
 
     for (let i = 1; i <= count; i++) {
-      const user: User = await this.client.user.create({
+      const user: Account = await this.client.account.create({
         data: {
           email: `testuser${i}@example.com`,
           name: `Test User ${i}`,
@@ -130,17 +128,17 @@ export class DatabaseSeeder {
   /**
    * Seed coaches with different specialties
    */
-  async seedCoaches(count = 2): Promise<Coach[]> {
-    const coaches: Coach[] = [];
+  async seedCoaches(count = 2): Promise<Account[]> {
+    const coaches: Account[] = [];
     const passwordHash = await hash('coachpassword123', this.saltRounds);
 
     for (let i = 1; i <= count; i++) {
-      const coach: Coach = await this.client.coach.create({
+      const coach: Account = await this.client.account.create({
         data: {
           email: `testcoach${i}@example.com`,
           name: `Test Coach ${i}`,
           passwordHash,
-          isAdmin: i === 1, // First coach is admin
+          role: Role.COACH, // First coach is admin
           bio:
             i === 1
               ? 'Professional tennis coach with 15+ years of experience. Specializes in technique development and mental game.'
@@ -163,7 +161,7 @@ export class DatabaseSeeder {
   /**
    * Seed booking types for each coach
    */
-  async seedBookingTypes(count = 3, coaches: Coach[]): Promise<BookingType[]> {
+  async seedBookingTypes(count = 3, coaches: Account[]): Promise<BookingType[]> {
     const bookingTypes: BookingType[] = [];
     const types = [
       {
@@ -213,7 +211,7 @@ export class DatabaseSeeder {
   /**
    * Seed time slots for coaches
    */
-  async seedTimeSlots(count = 10, coaches: Coach[]): Promise<TimeSlot[]> {
+  async seedTimeSlots(count = 10, coaches: Account[]): Promise<TimeSlot[]> {
     const timeSlots: TimeSlot[] = [];
     const now = new Date();
 
@@ -247,7 +245,7 @@ export class DatabaseSeeder {
   /**
    * Seed discounts for coaches
    */
-  async seedDiscounts(coaches: Coach[]): Promise<Discount[]> {
+  async seedDiscounts(coaches: Account[]): Promise<Discount[]> {
     const discounts: Discount[] = [];
     const discountData = [
       {
@@ -298,8 +296,8 @@ export class DatabaseSeeder {
   async seedSessions(
     count = 5,
     data: {
-      users: User[];
-      coaches: Coach[];
+      users: Account[];
+      coaches: Account[];
       bookingTypes: BookingType[];
       timeSlots: TimeSlot[];
       discounts: Discount[];
@@ -354,7 +352,7 @@ export class DatabaseSeeder {
   /**
    * Seed messages between users and coaches
    */
-  async seedMessages(sessions: Session[], users: User[], coaches: Coach[]): Promise<Message[]> {
+  async seedMessages(sessions: Session[], users: Account[], coaches: Account[]): Promise<Message[]> {
     const messages: Message[] = [];
 
     // Create messages for each session
@@ -367,10 +365,10 @@ export class DatabaseSeeder {
       const userMessage: Message = await this.client.message.create({
         data: {
           content: `Hi ${coach?.name}, I'm looking forward to our session on ${session.dateTime.toDateString()}. Any specific things I should prepare?`,
-          senderType: UserRole.USER,
-          senderUserId: user?.id,
-          receiverType: AdminRole.COACH,
-          receiverCoachId: coach?.id,
+          senderType: Role.USER,
+          senderId: user?.id,
+          receiverType: Role.COACH,
+          receiverId: coach?.id,
           sessionId: session.id,
         },
       });
@@ -380,10 +378,10 @@ export class DatabaseSeeder {
       const coachMessage: Message = await this.client.message.create({
         data: {
           content: `Hi ${user?.name}! Great to hear from you. Please bring comfortable athletic wear and a water bottle. We'll focus on your serve technique as discussed.`,
-          senderType: AdminRole.COACH,
-          senderCoachId: coach?.id,
-          receiverType: UserRole.USER,
-          receiverUserId: user?.id,
+          senderType: Role.COACH,
+          senderId: coach?.id,
+          receiverType: Role.USER,
+          receiverId: user?.id,
           sessionId: session.id,
         },
       });
@@ -403,8 +401,7 @@ export class DatabaseSeeder {
     await this.client.discount.deleteMany();
     await this.client.timeSlot.deleteMany();
     await this.client.bookingType.deleteMany();
-    await this.client.coach.deleteMany();
-    await this.client.user.deleteMany();
+    await this.client.account.deleteMany();
     await this.client.refreshToken.deleteMany();
   }
 

@@ -8,6 +8,7 @@
  * Uncomment them to verify that TypeScript catches the errors.
  */
 
+import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Endpoints } from '@routes-helpers';
 import { AuthTestHelper } from '../auth/auth-test-helper';
@@ -17,7 +18,7 @@ import { ProtectedRouteTester } from '../security/protected-route-tester';
 import { RoleBasedAccessTester } from '../security/role-based-access-tester';
 
 describe('Type Safety Verification', () => {
-  let app: INestication;
+  let app: INestApplication;
   let authHelper: AuthTestHelper;
 
   beforeAll(async () => {

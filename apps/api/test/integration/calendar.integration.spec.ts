@@ -11,7 +11,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
-import { cleanDatabase, seedTestDatabase } from '../utils/database-helpers';
+import { cleanDatabase, seedTestDatabase } from '../utils/database/database-helpers';
 
 describe('Calendar Integration Tests', () => {
   let app: INestApplication;

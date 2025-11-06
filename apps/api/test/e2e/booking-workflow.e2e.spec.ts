@@ -10,7 +10,6 @@ import {
   timeSlotFactory,
   userFactory,
 } from '@test-utils/factories';
-import { ApiContractTestHelper } from '@test-utils/http-test-helpers';
 import { TypeSafeHttpClient as HttpTestHelper } from '@test-utils/http/type-safe-http-client';
 import { AuthTestHelper } from '../utils/auth';
 

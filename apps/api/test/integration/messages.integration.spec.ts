@@ -3,12 +3,12 @@
  * Tests message sending workflows and database interactions
  */
 
-import { MessagesModule } from '@app/messages/messages.modu';
-import { PrismaModule } from '../prisma/prisma.module';
-import { PrismaService } from '../prisma/prisma.service';
+import { MessagesModule } from '@app/messages/messages.module';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
+import { PrismaModule } from '../prisma/prisma.module';
+import { PrismaService } from '../prisma/prisma.service';
 import { BaseIntegrationTest } from '../utils/base/base-integration.test';
 import { CoachMockFactory } from '../utils/factories/coach.factory';
 import { MessageMockFactory } from '../utils/factories/message.factory';
@@ -320,4 +320,3 @@ describe('Messages Integration', () => {
     });
   });
 });
-

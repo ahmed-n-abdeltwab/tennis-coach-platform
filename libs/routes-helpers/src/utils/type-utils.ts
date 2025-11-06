@@ -52,7 +52,7 @@ export type ExtractRequestType<
  * // Result: { accessToken: string; refreshToken: string; user: {...} }
  */
 export type ExtractResponseType<
-  E extends Record<string, unknown>,
+  E extends Record<string, any>,
   P extends ExtractPaths<E>,
   M extends string,
 > =
@@ -100,6 +100,63 @@ export type ExtractPathParams<P extends string> =
   P extends `${infer _Start}{${infer Param}}${infer Rest}`
     ? Param | ExtractPathParams<Rest>
     : never;
+
+/**
+ * Convert a path template to a pattern that matches template literals
+ *
+ * This recursively converts {param} to ${string} to match TypeScript template literals
+ *
+ * @example
+ * type Pattern = PathPattern<"/api/users/{id}/posts/{postId}">
+ * // Result: `/api/users/${string}/posts/${string}`
+ */
+export type PathPattern<P extends string> =
+  P extends `${infer Before}{${infer _Param}}${infer After}`
+    ? `${Before}${string}${PathPattern<After>}`
+    : P;
+
+/**
+ * Convert a path template to accept both template and actual values
+ *
+ * This allows paths like "/api/users/{id}" to also accept "/api/users/123"
+ *
+ * @example
+ * type UserPath = PathWithValues<"/api/users/{id}">
+ * // Result: "/api/users/{id}" | `/api/users/${string}`
+ */
+export type PathWithValues<P extends string> =
+  P extends `${infer Before}{${infer _Param}}${infer After}` ? P | PathPattern<P> : P;
+
+/**
+ * Extract paths that can accept either template or actual values
+ *
+ * @example
+ * type FlexiblePaths = FlexiblePath<Endpoints>
+ * // Accepts both "/api/users/{id}" and "/api/users/123"
+ */
+export type FlexiblePath<E extends Record<string, unknown>> = {
+  [P in ExtractPaths<E>]: PathWithValues<P>;
+}[ExtractPaths<E>];
+
+/**
+ * Match a runtime path string to its template path
+ *
+ * This type takes a string like `/api/users/${string}` and matches it to `/api/users/{id}`
+ *
+ * @example
+ * type Matched = MatchPathTemplate<Endpoints, `/api/users/${string}`>
+ * // Result: "/api/users/{id}"
+ */
+export type MatchPathTemplate<E extends Record<string, unknown>, RuntimePath extends string> = {
+  [P in ExtractPaths<E>]: RuntimePath extends PathWithValues<P> ? P : never;
+}[ExtractPaths<E>];
+
+/**
+ * Accept either a template path or a runtime path with values
+ *
+ * This is the main type to use in function signatures to accept both forms
+ */
+export type AcceptPath<E extends Record<string, unknown>> = ExtractPaths<E> | FlexiblePath<E>;
 
 /**
  * Build a path with parameters replaced

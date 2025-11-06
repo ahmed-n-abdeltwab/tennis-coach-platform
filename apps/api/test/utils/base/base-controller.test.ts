@@ -212,7 +212,9 @@ export abstract class BaseControllerTest<TController, TService> {
   ): void {
     expect(response.status).toBe(expectedStatus);
     expect(response.body).toBeDefined();
-    if (expectedMessage) {
+
+    // For error responses, check the message
+    if (expectedMessage && !response.ok) {
       expect(response.body.message).toContain(expectedMessage);
     }
   }

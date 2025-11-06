@@ -3,16 +3,13 @@
  * Exports all test utility functions and classes
  */
 
-// Existing test utilities
-export * from './base';
-export * from './database';
-export * from './database-helpers';
+// Base test utilities
+export * from './base'; // Includes test app helpers
+export * from './database'; // Includes database helpers
 export * from './factories';
-export * from './http-test-helpers';
-export * from './test-helpers';
 
 // ============================================================================
-// NEW: Organized test utilities (recommended)
+// Type-Safe Test Utilities (Recommended)
 // ============================================================================
 
 /**
@@ -22,7 +19,7 @@ export * from './test-helpers';
  *
  * @example
  * ```typescript
- * import { AuthTestHelper, AuthenticatedHttpClient } from './utils';
+ * import { AuthTestHelper, AuthenticatedHttpClient } from '@test-utils';
  *
  * const authHelper = new AuthTestHelper();
  * const token = authHelper.createUserToken();
@@ -32,16 +29,56 @@ export * from './test-helpers';
 export * from './auth';
 
 /**
+ * HTTP test utilities
+ *
+ * Provides type-safe HTTP client with compile-time validation of:
+ * - Endpoint paths (must exist in Endpoints interface)
+ * - HTTP methods (must be supported by the endpoint)
+ * - Request data structure (must match endpoint's expected input)
+ * - Response data structure (automatically typed based on endpoint)
+ *
+ * Also includes API contract testing utilities for validating:
+ * - Response status codes
+ * - Response headers
+ * - Response body structure
+ * - Error scenarios
+ * - Validation errors
+ *
+ * @example
+ * ```typescript
+ * import { TypeSafeHttpClient, ApiContractTester } from '@test-utils';
+ *
+ * // Type-safe HTTP requests
+ * const client = new TypeSafeHttpClient(app);
+ * const response = await client.get('/api/sessions');
+ * // response.body is automatically typed based on the endpoint
+ *
+ * // API contract testing
+ * const tester = new ApiContractTester(app);
+ * await tester.testApiContract('/api/sessions', 'GET', {
+ *   response: {
+ *     status: 200,
+ *     body: {
+ *       required: ['data', 'meta']
+ *     }
+ *   }
+ * });
+ * ```
+ */
+export * from './http';
+
+/**
  * Security testing utilities
  *
  * Provides helpers for testing protected routes and role-based access control.
  *
  * @example
  * ```typescript
- * import { ProtectedRouteTester, RoleBasedAccessTester } from './utils';
+ * import { ProtectedRouteTester, RoleBasedAccessTester } from '@test-utils';
  *
  * const tester = new ProtectedRouteTester(app);
  * await tester.testRequiresAuth('/api/sessions', 'GET');
+ * await tester.testRoleBasedAccess('/api/admin/users', [Role.ADMIN], 'GET');
  * ```
  */
 export * from './security';
@@ -53,7 +90,7 @@ export * from './security';
  *
  * @example
  * ```typescript
- * import { UserRoleHelper } from './utils';
+ * import { UserRoleHelper } from '@test-utils';
  *
  * const roleHelper = new UserRoleHelper();
  * const userHeaders = roleHelper.createStandardUserHeaders();
@@ -61,41 +98,9 @@ export * from './security';
  */
 export * from './roles';
 
-/**
- * HTTP test utilities
- *
- * @deprecated HttpTestHelper is deprecated. Use TypeSafeHttpClient from @auth-helpers instead.
- *
- * @example
- * ```typescript
- * // Old (deprecated):
- * import { HttpTestHelper } from './utils';
- *
- * // New (recommended):
- * import { TypeSafeHttpClient } from '@auth-helpers';
- * ```
- */
-export * from './http';
-
 // ============================================================================
 // Re-exports from libraries for convenience
 // ============================================================================
-
-/**
- * Type-safe HTTP client (re-exported from @auth-helpers)
- *
- * Use this for making type-safe HTTP requests in tests.
- *
- * @example
- * ```typescript
- * import { TypeSafeHttpClient } from './utils';
- *
- * const client = new TypeSafeHttpClient(app);
- * const response = await client.get('/api/sessions');
- * ```
- */
-export { TypeSafeHttpClient } from './http/type-safe-http-client';
-export type { RequestOptions, TypedResponse } from './http/type-safe-http-client';
 
 /**
  * Endpoints interface and utility types (re-exported from @routes-helpers)
@@ -104,7 +109,7 @@ export type { RequestOptions, TypedResponse } from './http/type-safe-http-client
  *
  * @example
  * ```typescript
- * import { Endpoints, ExtractPaths, ExtractResponseType } from './utils';
+ * import { Endpoints, ExtractPaths, ExtractResponseType } from '@test-utils';
  *
  * type AllPaths = ExtractPaths<Endpoints>;
  * type SessionsResponse = ExtractResponseType<Endpoints, '/api/sessions', 'GET'>;
@@ -116,31 +121,5 @@ export type {
   ExtractPaths,
   ExtractRequestType,
   ExtractResponseType,
+  PathsWithMethod,
 } from '@routes-helpers';
-
-// ============================================================================
-// Deprecation notices
-// ============================================================================
-
-/**
- * @deprecated The following imports from @auth-helpers are deprecated:
- *
- * - AuthTestHelper: Import from './utils/auth' instead
- * - ProtectedRouteTestHelper: Use ProtectedRouteTester from './utils/security' instead
- * - UserRoleTestHelper: Use UserRoleHelper from './utils/roles' instead
- * - AuthenticatedHttpClient: Import from './utils/auth' instead
- *
- * These helpers have been moved to apps/api/test/utils for better organization
- * and to fix TypeScript build configuration issues.
- *
- * Migration example:
- * ```typescript
- * // Old (deprecated):
- * import { AuthTestHelper } from '@auth-helpers';
- *
- * // New (recommended):
- * import { AuthTestHelper } from './utils/auth';
- * // or
- * import { AuthTestHelper } from './utils';
- * ```
- */

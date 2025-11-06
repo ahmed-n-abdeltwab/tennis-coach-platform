@@ -100,8 +100,8 @@ describe('TypeSafeHttpClient - Type Inference (Compile-Time Tests)', () => {
       accessToken: string;
       refreshToken: string;
     } = response => ({
-      accessToken: response.body.accessToken,
-      refreshToken: response.body.refreshToken,
+      accessToken: response.ok ? response.body.accessToken : 'not-ok',
+      refreshToken: response.ok ? response.body.refreshToken : 'not-ok',
     });
 
     expect(assertTypedResponse).toBeDefined();

@@ -5,9 +5,8 @@
 
 import { AuthModule } from '@app/auth/auth.module';
 import { BookingTypesModule } from '@app/booking-types/booking-types.module';
+import { CoachesModule } from '@app/coaches/coaches.module';
 import { MessagesModule } from '@app/messages/messages.module';
-import { PrismaModule } from '../prisma/prisma.module';
-import { PrismaService } from '../prisma/prisma.service';
 import { SessionsModule } from '@app/sessions/sessions.module';
 import { UsersModule } from '@app/users/users.module';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
@@ -16,7 +15,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BaseIntegrationTest } from '@test-utils/base/base-integration.test';
 import * as request from 'supertest';
-impohesModule } from '@app/coaches/coaches.module';
+import { PrismaModule } from '../prisma/prisma.module';
+import { PrismaService } from '../prisma/prisma.service';
 
 describe('Middleware Pipeline Integration Tests', () => {
   let app: INestApplication;
@@ -33,11 +33,13 @@ describe('Middleware Pipeline Integration Tests', () => {
 
       // Setup global middleware and pipes
       this.app.setGlobalPrefix('api');
-      this.app.useGlobalPipes(new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }));
+      this.app.useGlobalPipes(
+        new ValidationPipe({
+          whitelist: true,
+          forbidNonWhitelisted: true,
+          transform: true,
+        })
+      );
 
       await this.app.init();
 
@@ -480,9 +482,7 @@ describe('Middleware Pipeline Integration Tests', () => {
 
       // Act - Send multiple concurrent requests
       const requests = Array.from({ length: 20 }, () =>
-        request(app.getHttpServer())
-          .get('/api/sessions')
-          .set('Authorization', token)
+        request(app.getHttpServer()).get('/api/sessions').set('Authorization', token)
       );
 
       const startTime = Date.now();
@@ -509,15 +509,10 @@ describe('Middleware Pipeline Integration Tests', () => {
       const mixedRequests = [
         // Valid requests
         ...Array.from({ length: 5 }, () =>
-          request(app.getHttpServer())
-            .get('/api/sessions')
-            .set('Authorization', validToken)
+          request(app.getHttpServer()).get('/api/sessions').set('Authorization', validToken)
         ),
         // Invalid requests (no auth)
-        ...Array.from({ length: 5 }, () =>
-          request(app.getHttpServer())
-            .get('/api/sessions')
-        ),
+        ...Array.from({ length: 5 }, () => request(app.getHttpServer()).get('/api/sessions')),
         // Invalid requests (bad token)
         ...Array.from({ length: 5 }, () =>
           request(app.getHttpServer())
@@ -537,4 +532,3 @@ describe('Middleware Pipeline Integration Tests', () => {
     });
   });
 });
-

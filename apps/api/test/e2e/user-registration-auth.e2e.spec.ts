@@ -6,7 +6,6 @@ import { Role } from '@prisma/client';
 
 import { Endpoints } from '@routes-helpers';
 import { coachFactory, userFactory } from '@test-utils/factories';
-import { ApiContractTestHelper } from '@test-utils/http-test-helpers';
 import { TypeSafeHttpClient } from '@test-utils/http/type-safe-http-client';
 import { AuthTestHelper } from '../utils/auth';
 

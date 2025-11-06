@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import {
+import type {
   Endpoints,
   ExtractRequestType,
   ExtractResponseType,
@@ -45,58 +45,45 @@ export class AuthenticatedHttpClient<E extends Record<string, any> = Endpoints> 
   }
 
   /**
-   * Type-safe authenticated GET request
-   *
-   * @template P - The API path (must support GET method)
-   * @param path - The API endpoint path
-   * @param params - Query parameters or path parameters
-   * @param options - Additional request options
-   * @returns Typed response
-   *
-   * @example
-   * ```typescript
-   * // GET with no params
-   * const sessions = await client.get('/api/sessions');
-   *
-   * // GET with query params
-   * const filtered = await client.get('/api/sessions', {
-   *   status: 'CONFIRMED'
-   * });
-   *
-   * // GET with path params
-   * const session = await client.get('/api/sessions/{id}', {
-   *   id: 'session-123'
-   * });
-   * ```
+   * Type-safe authenticated GET request (with known path type)
    */
   async get<P extends PathsWithMethod<E, 'GET'>>(
     path: P,
     params?: ExtractRequestType<E, P, 'GET'>,
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>>;
+
+  /**
+   * Type-safe authenticated GET request (with string path - for template literals)
+   */
+  async get(path: string, params?: any, options?: RequestOptions): Promise<TypedResponse<any>>;
+
+  // Implementation
+  async get<P extends PathsWithMethod<E, 'GET'>>(
+    path: P | string,
+    params?: ExtractRequestType<E, P, 'GET'>,
     options: RequestOptions = {}
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
-    return this.client.authenticatedGet(path, this.token, params, options);
+    return this.client.authenticatedGet(path as P, this.token, params, options);
   }
 
   /**
-   * Type-safe authenticated POST request
-   *
-   * @template P - The API path (must support POST method)
-   * @param path - The API endpoint path
-   * @param body - Request body
-   * @param options - Additional request options
-   * @returns Typed response
-   *
-   * @example
-   * ```typescript
-   * const newSession = await client.post('/api/sessions', {
-   *   bookingTypeId: 'booking-123',
-   *   timeSlotId: 'slot-456',
-   *   notes: 'First session'
-   * });
-   * ```
+   * Type-safe authenticated POST request (with known path type)
    */
   async post<P extends PathsWithMethod<E, 'POST'>>(
     path: P,
+    body: ExtractRequestType<E, P, 'POST'>,
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>>;
+
+  /**
+   * Type-safe authenticated POST request (with string path - for template literals)
+   */
+  async post(path: string, body: any, options?: RequestOptions): Promise<TypedResponse<any>>;
+
+  // Implementation
+  async post<P extends PathsWithMethod<E, 'POST'>>(
+    path: P | string,
     body: ExtractRequestType<E, P, 'POST'>,
     options: RequestOptions = {}
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
@@ -104,24 +91,22 @@ export class AuthenticatedHttpClient<E extends Record<string, any> = Endpoints> 
   }
 
   /**
-   * Type-safe authenticated PUT request
-   *
-   * @template P - The API path (must support PUT method)
-   * @param path - The API endpoint path
-   * @param body - Request body
-   * @param options - Additional request options
-   * @returns Typed response
-   *
-   * @example
-   * ```typescript
-   * const updated = await client.put('/api/sessions/{id}', {
-   *   notes: 'Updated notes',
-   *   status: 'COMPLETED'
-   * });
-   * ```
+   * Type-safe authenticated PUT request (with known path type)
    */
   async put<P extends PathsWithMethod<E, 'PUT'>>(
     path: P,
+    body: ExtractRequestType<E, P, 'PUT'>,
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>>;
+
+  /**
+   * Type-safe authenticated PUT request (with string path - for template literals)
+   */
+  async put(path: string, body: any, options?: RequestOptions): Promise<TypedResponse<any>>;
+
+  // Implementation
+  async put<P extends PathsWithMethod<E, 'PUT'>>(
+    path: P | string,
     body: ExtractRequestType<E, P, 'PUT'>,
     options: RequestOptions = {}
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
@@ -129,23 +114,22 @@ export class AuthenticatedHttpClient<E extends Record<string, any> = Endpoints> 
   }
 
   /**
-   * Type-safe authenticated DELETE request
-   *
-   * @template P - The API path (must support DELETE method)
-   * @param path - The API endpoint path
-   * @param params - Path parameters (if needed)
-   * @param options - Additional request options
-   * @returns Typed response
-   *
-   * @example
-   * ```typescript
-   * await client.delete('/api/sessions/{id}', undefined, {
-   *   expectedStatus: 204
-   * });
-   * ```
+   * Type-safe authenticated DELETE request (with known path type)
    */
   async delete<P extends PathsWithMethod<E, 'DELETE'>>(
     path: P,
+    params?: ExtractRequestType<E, P, 'DELETE'>,
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>>;
+
+  /**
+   * Type-safe authenticated DELETE request (with string path - for template literals)
+   */
+  async delete(path: string, params?: any, options?: RequestOptions): Promise<TypedResponse<any>>;
+
+  // Implementation
+  async delete<P extends PathsWithMethod<E, 'DELETE'>>(
+    path: P | string,
     params?: ExtractRequestType<E, P, 'DELETE'>,
     options: RequestOptions = {}
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
@@ -153,23 +137,22 @@ export class AuthenticatedHttpClient<E extends Record<string, any> = Endpoints> 
   }
 
   /**
-   * Type-safe authenticated PATCH request
-   *
-   * @template P - The API path (must support PATCH method)
-   * @param path - The API endpoint path
-   * @param body - Request body
-   * @param options - Additional request options
-   * @returns Typed response
-   *
-   * @example
-   * ```typescript
-   * const patched = await client.patch('/api/sessions/{id}', {
-   *   notes: 'Partial update'
-   * });
-   * ```
+   * Type-safe authenticated PATCH request (with known path type)
    */
   async patch<P extends PathsWithMethod<E, 'PATCH'>>(
     path: P,
+    body: ExtractRequestType<E, P, 'PATCH'>,
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>>;
+
+  /**
+   * Type-safe authenticated PATCH request (with string path - for template literals)
+   */
+  async patch(path: string, body: any, options?: RequestOptions): Promise<TypedResponse<any>>;
+
+  // Implementation
+  async patch<P extends PathsWithMethod<E, 'PATCH'>>(
+    path: P | string,
     body: ExtractRequestType<E, P, 'PATCH'>,
     options: RequestOptions = {}
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {

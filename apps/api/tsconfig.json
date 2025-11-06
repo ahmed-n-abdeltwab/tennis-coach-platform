@@ -16,7 +16,6 @@
     // API-specific paths
     "baseUrl": ".",
     "paths": {
-      "@auth-helpers": ["../../libs/auth-helpers/src/index.ts"],
       "@routes-helpers": ["../../libs/routes-helpers/src/index.ts"],
       "@utils": ["../../libs/utils/src/index.ts"],
       "@api/*": ["src/app/*"],
@@ -31,7 +30,6 @@
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.spec.json" },
-    { "path": "../../libs/auth-helpers" },
     { "path": "../../libs/routes-helpers" },
     { "path": "../../libs/utils" }
   ]

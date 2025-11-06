@@ -85,7 +85,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
     method: M,
     data?: ExtractRequestType<E, P, M>
   ): Promise<void> {
-    await this.httpClient.request(path, method, data as ExtractRequestType<E, P, M>, {
+    await this.httpClient.request(path, method, data, {
       expectedStatus: 401,
     });
   }
@@ -113,7 +113,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
   ): Promise<void> {
     const expiredToken = this.authHelper.createExpiredToken();
 
-    await this.httpClient.request(path, method, data as ExtractRequestType<E, P, M>, {
+    await this.httpClient.request(path, method, data, {
       headers: { Authorization: `Bearer ${expiredToken}` },
       expectedStatus: 401,
     });
@@ -147,7 +147,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
     const userToken = this.authHelper.createUserToken();
     const defaultStatus = method === 'POST' ? 201 : 200;
 
-    return this.httpClient.request(path, method, data as ExtractRequestType<E, P, M>, {
+    return this.httpClient.request(path, method, data, {
       headers: { Authorization: `Bearer ${userToken}` },
       expectedStatus: expectedStatus || defaultStatus,
     });
@@ -181,7 +181,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
     const coachToken = this.authHelper.createCoachToken();
     const defaultStatus = method === 'POST' ? 201 : 200;
 
-    return this.httpClient.request(path, method, data as ExtractRequestType<E, P, M>, {
+    return this.httpClient.request(path, method, data, {
       headers: { Authorization: `Bearer ${coachToken}` },
       expectedStatus: expectedStatus || defaultStatus,
     });
@@ -215,7 +215,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
     const adminToken = this.authHelper.createAdminToken();
     const defaultStatus = method === 'POST' ? 201 : 200;
 
-    return this.httpClient.request(path, method, data as ExtractRequestType<E, P, M>, {
+    return this.httpClient.request(path, method, data, {
       headers: { Authorization: `Bearer ${adminToken}` },
       expectedStatus: expectedStatus || defaultStatus,
     });
@@ -283,7 +283,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
       const isAllowed = allowedRoles.includes(role);
       const expectedStatus = isAllowed ? (method === 'POST' ? 201 : 200) : 403;
 
-      await this.httpClient.request(path, method, data as ExtractRequestType<E, P, M>, {
+      await this.httpClient.request(path, method, data, {
         headers: { Authorization: `Bearer ${token}` },
         expectedStatus,
       });

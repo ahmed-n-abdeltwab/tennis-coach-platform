@@ -34,11 +34,16 @@ export type { Endpoints } from './constants/api-routes.registry';
  * type LoginRequest = ExtractRequestType<Endpoints, "/api/auth/login", "POST">;
  */
 export type {
+  AcceptPath,
   ExtractMethods,
   ExtractPathParams,
   ExtractPaths,
   ExtractRequestType,
   ExtractResponseType,
+  FlexiblePath,
+  MatchPathTemplate,
+  PathPattern,
+  PathWithValues,
   PathsWithMethod,
   RequiresParams,
 } from './utils/type-utils';

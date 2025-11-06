@@ -10,7 +10,7 @@ import {
   sessionFactory,
   timeSlotFactory,
   userFactory,
-} from '@test/utils/facto';
+} from '@test/utils/factories';
 import { PrismaModule, PrismaService } from '../prisma/prisma.service';
 
 import paymentsConfig from '../../src/app/payments/config/payments.config';

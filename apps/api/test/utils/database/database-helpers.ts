@@ -1,12 +1,29 @@
 /**
  * Database helper functions for testing
+ *
+ * Simple utility functions for common database operations in tests.
+ * For more advanced database testing utilities, see:
+ * - TestDatabaseManager for database lifecycle management
+ * - DatabaseSeeder for consistent test data creation
+ * - TransactionManager for transaction-based test isolation
  */
 
 import { Account, BookingType, Prisma, Role } from '@prisma/client';
-import { PrismaService } from '../../src/app/prisma/prisma.service';
+import { PrismaService } from '../../../src/app/prisma/prisma.service';
 
 /**
  * Cleans all data from the test database
+ *
+ * Deletes data in reverse order of dependencies to avoid foreign key constraints.
+ *
+ * @param prisma - PrismaService instance
+ *
+ * @example
+ * ```typescript
+ * beforeEach(async () => {
+ *   await cleanDatabase(prisma);
+ * });
+ * ```
  */
 export async function cleanDatabase(prisma: PrismaService): Promise<void> {
   // Delete in reverse order of dependencies to avoid foreign key constraints
@@ -20,6 +37,21 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
 
 /**
  * Seeds the database with basic test data
+ *
+ * Creates a minimal set of test data including users, coaches, and booking types.
+ * For more advanced seeding options, use DatabaseSeeder.
+ *
+ * @param prisma - PrismaService instance
+ * @returns Object containing created test data
+ *
+ * @example
+ * ```typescript
+ * beforeEach(async () => {
+ *   const { users, coaches, bookingTypes } = await seedTestDatabase(prisma);
+ *   testUser = users[0];
+ *   testCoach = coaches[0];
+ * });
+ * ```
  */
 export async function seedTestDatabase(prisma: PrismaService): Promise<{
   users: Account[];
@@ -86,6 +118,22 @@ export async function seedTestDatabase(prisma: PrismaService): Promise<{
 
 /**
  * Creates a test database transaction
+ *
+ * Wraps a callback in a Prisma transaction for test isolation.
+ * For more advanced transaction management, use TransactionManager.
+ *
+ * @param prisma - PrismaService instance
+ * @param callback - Function to execute within the transaction
+ * @returns Result of the callback
+ *
+ * @example
+ * ```typescript
+ * const result = await withTransaction(prisma, async (tx) => {
+ *   const user = await tx.account.create({ data: { ... } });
+ *   const session = await tx.session.create({ data: { ... } });
+ *   return { user, session };
+ * });
+ * ```
  */
 export async function withTransaction<T>(
   prisma: PrismaService,

@@ -1,6 +1,8 @@
 /**
  * HTTP test utilities
  *
- * @deprecated HttpTestHelper is deprecated. Use TypeSafeHttpClient from @auth-helpers instead.
+ * Provides type-safe HTTP client for testing API endpoints with compile-time validation.
  */
-export * from './http-test-helper';
+
+export * from './api-contract-tester';
+export * from './type-safe-http-client';

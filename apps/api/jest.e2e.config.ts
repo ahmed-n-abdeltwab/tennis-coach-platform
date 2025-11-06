@@ -35,7 +35,7 @@ const config: Config = {
   detectOpenHandles: true,
 
   // Additional e2e specific configurations
-  testSequencer: '<rootDir>/test/utils/e2e-sequencer.ts',
+  testSequencer: '<rootDir>/test/setup/e2e-sequencer.ts',
   ...baseConfig,
 };
 

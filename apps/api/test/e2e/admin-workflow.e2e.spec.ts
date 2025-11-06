@@ -9,7 +9,6 @@ import {
   sessionFactory,
   userFactory,
 } from '@test-utils/factories';
-import { ApiContractTestHelper } from '@test-utils/http-test-helpers';
 import { TypeSafeHttpClient } from '@test-utils/http/type-safe-http-client';
 import { AuthTestHelper } from '../utils/auth';
 

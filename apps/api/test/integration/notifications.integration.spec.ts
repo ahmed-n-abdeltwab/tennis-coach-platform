@@ -3,14 +3,14 @@
  * Tests notification delivery workflows and email service integration
  */
 
-import notificationsConfig from '@app/notifications/config/notifications.config';
-import { NotificationsModule } from '@app/notifications/notifications.module';
 import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { BaseIntegrationTest } from '../utils/base/base-integration.test';
 import { NotificationMockFactory } from '../utils/factories/notification.factory';
+import notificationsConfig from '../../src/app/notifications/config/notifications.config';
+import { NotificationsModule } from '../../src/app/notifications/notifications.module';
 
 // Mock nodemailer
 const mockSendMail = jest.fn();
@@ -95,7 +95,7 @@ describe('Notifications Integration', () => {
         messageId: mockMessageId,
       });
 
-ockSendMail).toHaveBeenCall({
+      expect(mockSendMail).toHaveBeenCalledWith({
         from: {
           address: process.env.SMTP_SENDER_EMAIL || 'test@example.com',
           name: 'Mailtrap Test',
@@ -350,3 +350,4 @@ ockSendMail).toHaveBeenCall({
       });
     });
   });
+});

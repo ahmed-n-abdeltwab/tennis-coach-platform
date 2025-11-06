@@ -1,17 +1,24 @@
 /**
  * Database Testing Utilities
  *
- * This module exports all database-related testing utiluding:
+ * This module exports all database-related testing utilities including:
  * - TestDatabaseManager for managing test database lifecycle
  * - DatabaseSeeder for creating consistent test data
  * - TransactionManager for transaction-based test isolation
  * - MigrationManager for handling database migrations in tests
+ * - Simple database helpers for common operations
  */
 
 import { createDatabaseSeeder, DatabaseSeeder, SeedDataOptions } from './database-seeder';
 import { MigrationOptions } from './migration-manager';
 import { DatabaseConnection, testDatabaseManager } from './test-database-manager';
 import { createTransactionManager, TransactionManager } from './transaction-manager';
+
+/**
+ * Simple database helper functions
+ * For quick database operations in tests
+ */
+export * from './database-helpers';
 
 /**
  * Convenience function to setup a complete test database environment
