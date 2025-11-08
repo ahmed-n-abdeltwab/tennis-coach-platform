@@ -6,7 +6,7 @@ import {
   ExtractPaths,
   ExtractRequestType,
   ExtractResponseType,
-} from '@routes-helpers';
+} from '@test-utils';
 import { TypeSafeHttpClient, TypedResponse } from '../http/type-safe-http-client';
 
 import { AuthTestHelper } from '../auth/auth-test-helper';
@@ -261,24 +261,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
     const roles = [Role.USER, Role.COACH, Role.ADMIN, Role.PREMIUM_USER] as const;
 
     for (const role of roles) {
-      let token: string;
-
-      switch (role) {
-        case Role.USER:
-          token = this.authHelper.createUserToken();
-          break;
-        case Role.COACH:
-          token = this.authHelper.createCoachToken();
-          break;
-        case Role.ADMIN:
-          token = this.authHelper.createAdminToken();
-          break;
-        case Role.PREMIUM_USER:
-          token = this.authHelper.createPremiumUserToken();
-          break;
-        default:
-          continue;
-      }
+      const token = this.createTokenForRole(role);
 
       const isAllowed = allowedRoles.includes(role);
       const expectedStatus = isAllowed ? (method === 'POST' ? 201 : 200) : 403;
@@ -287,6 +270,25 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
         headers: { Authorization: `Bearer ${token}` },
         expectedStatus,
       });
+    }
+  }
+
+  /**
+   * Create a token for a specific role
+   * @private
+   */
+  private createTokenForRole(role: Role): string {
+    switch (role) {
+      case Role.USER:
+        return this.authHelper.createUserToken();
+      case Role.COACH:
+        return this.authHelper.createCoachToken();
+      case Role.ADMIN:
+        return this.authHelper.createAdminToken();
+      case Role.PREMIUM_USER:
+        return this.authHelper.createPremiumUserToken();
+      default:
+        throw new Error(`Unknown role: ${role}`);
     }
   }
 
