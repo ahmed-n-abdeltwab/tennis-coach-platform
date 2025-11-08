@@ -4,9 +4,15 @@
  * Provides utilities for testing API contracts, validation, and error scenarios.
  * Built on top of TypeSafeHttpClient for type safety.
  */
-
 import { INestApplication } from '@nestjs/common';
-import { Endpoints, ExtractMethods, ExtractPaths, ExtractRequestType } from '@routes-helpers';
+import type {
+  ExtractMethods,
+  ExtractPaths,
+  ExtractRequestType,
+  ExtractResponseType,
+  TypedResponse,
+} from '@test-utils';
+import { Endpoints } from '@test-utils';
 import { RequestOptions, TypeSafeHttpClient } from './type-safe-http-client';
 
 /**
@@ -17,36 +23,6 @@ export interface HttpErrorTestCase {
   statusCode: number;
   errorMessage?: string;
   errorCode?: string;
-}
-
-/**
- * Request data structure for contract testing
- */
-interface RequestData {
-  headers?: Record<string, any>;
-  body?: any;
-  query?: Record<string, any>;
-}
-
-/**
- * Response data structure for contract testing
- */
-interface ResponseData {
-  status: number;
-  headers?: Record<string, any>;
-  body?: {
-    required?: string[];
-    optional?: string[];
-    types?: Record<string, any>;
-  };
-}
-
-/**
- * API contract definition
- */
-export interface ApiContract {
-  request?: RequestData;
-  response: ResponseData;
 }
 
 /**
@@ -72,7 +48,7 @@ export interface ApiContract {
  *   response: {
  *     status: 201,
  *     headers: {
- *       'content-type': /application\/json/
+ *       'content-type': 'application json'
  *     },
  *     body: {
  *       required: ['accessToken', 'user'],
@@ -112,10 +88,8 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
    *   response: {
    *     status: 200,
    *     body: {
-   *       required: ['data', 'meta'],
-   *       types: {
-   *         data: 'object'
-   *       }
+   *       data: 'string',
+   *       meta: 10
    *     }
    *   }
    * });
@@ -124,9 +98,19 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
   async testApiContract<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
-    contract: ApiContract,
+    contract: {
+      request?: {
+        headers?: Record<string, string>;
+        payload?: ExtractRequestType<E, P, M>;
+      };
+      response: {
+        status: number;
+        headers?: Record<string, string>;
+        body?: Partial<ExtractResponseType<E, P, M>>;
+      };
+    },
     options: RequestOptions = {}
-  ): Promise<void> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
     // Prepare request options
     const requestOptions: RequestOptions = {
       ...options,
@@ -135,7 +119,7 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
     };
 
     // Prepare request data
-    const requestData = contract.request?.body as ExtractRequestType<E, P, M>;
+    const requestData = contract.request?.payload;
 
     // Make request
     const response = await this.httpClient.request(path, method, requestData, requestOptions);
@@ -145,35 +129,15 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
 
     // Validate response headers
     if (contract.response.headers) {
-      Object.entries(contract.response.headers).forEach(([headerName, expectedValue]) => {
-        const actualValue = response.headers[headerName.toLowerCase()];
-
-        if (expectedValue instanceof RegExp) {
-          expect(actualValue).toMatch(expectedValue);
-        } else {
-          expect(actualValue).toBe(expectedValue);
-        }
-      });
+      expect(response.headers).toMatchObject(contract.response.headers);
     }
 
     // Validate response body structure
     if (contract.response.body) {
-      const { required = [], optional = [], types = {} } = contract.response.body;
-
-      // Check required fields
-      required.forEach(field => {
-        expect(response.body).toHaveProperty(field);
-      });
-
-      // Check field types
-      Object.entries(types).forEach(([field, expectedType]) => {
-        if (response.body[field] !== undefined) {
-          expect(typeof response.body[field]).toBe(expectedType);
-        }
-      });
-
-      // Optional fields are not strictly checked for presence
+      expect(response.body).toStrictEqual(contract.response.body);
     }
+
+    return response;
   }
 
   /**
@@ -199,21 +163,31 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
    * ]);
    * ```
    */
-  async testMultipleContracts(
+  async testMultipleContracts<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     contracts: Array<{
       name: string;
-      endpoint: ExtractPaths<E>;
-      method: ExtractMethods<E, ExtractPaths<E>>;
-      contract: ApiContract;
+      endpoint: P;
+      method: M;
+      contract: {
+        request?: {
+          headers?: Record<string, string>;
+          payload?: ExtractRequestType<E, P, M>;
+        };
+        response: {
+          status: number;
+          headers?: Record<string, string>;
+          body?: Partial<ExtractResponseType<E, P, M>>;
+        };
+      };
       options?: RequestOptions;
     }>
   ): Promise<void> {
     for (const contractTest of contracts) {
       await this.testApiContract(
         contractTest.endpoint,
-        contractTest.method as any,
+        contractTest.method,
         contractTest.contract,
-        contractTest.options || {}
+        contractTest.options
       );
     }
   }
@@ -302,124 +276,26 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
    * ]);
    * ```
    */
-  async testRequestValidation<
-    P extends ExtractPaths<E>,
-    M extends ExtractMethods<E, P> & ('POST' | 'PUT' | 'PATCH'),
-  >(
+  async testRequestValidation<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
     validationCases: Array<{
       name: string;
-      data: any;
+      data: ExtractRequestType<E, P, M>;
       expectedErrors: string[];
     }>,
     options: RequestOptions = {}
   ): Promise<void> {
     for (const testCase of validationCases) {
-      const response = await this.httpClient.request(path, method, testCase.data, {
-        ...options,
-        expectedStatus: 400,
-      });
+      // Create a corresponding HttpErrorTestCase that matches testErrorScenarios signature
+      const errorCase: HttpErrorTestCase = {
+        name: testCase.name,
+        statusCode: 400,
+        errorMessage: testCase.expectedErrors.join(' '), // Join multiple errors for contains check
+      };
 
-      expect(response.status).toBe(400);
-      expect(response.ok).toBe(false);
-
-      if (!response.ok) {
-        expect(response.body.message).toBeDefined();
-
-        // Check that expected validation errors are present
-        testCase.expectedErrors.forEach(expectedError => {
-          const message = Array.isArray(response.body.message)
-            ? response.body.message.join(' ')
-            : response.body.message;
-          expect(message).toContain(expectedError);
-        });
-      }
-    }
-  }
-
-  /**
-   * Test response body structure
-   *
-   * @template P - The API path
-   * @template M - The HTTP method
-   * @param path - The API endpoint path
-   * @param method - The HTTP method
-   * @param expectedStructure - Expected response body structure
-   * @param data - Request data
-   * @param options - Additional request options
-   * @returns The response for further assertions
-   *
-   * @example
-   * ```typescript
-   * const response = await tester.testResponseStructure(
-   *   '/api/sessions',
-   *   'GET',
-   *   { data: 'array', meta: 'object' }
-   * );
-   * expect(response.body.data).toHaveLength(5);
-   * ```
-   */
-  async testResponseStructure<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
-    path: P,
-    method: M,
-    expectedStructure: Record<string, any>,
-    data?: ExtractRequestType<E, P, M>,
-    options: RequestOptions = {}
-  ): Promise<any> {
-    const response = await this.httpClient.request(
-      path,
-      method,
-      data as ExtractRequestType<E, P, M>,
-      options
-    );
-
-    // Check if response body has expected structure
-    Object.keys(expectedStructure).forEach(key => {
-      expect(response.body).toHaveProperty(key);
-    });
-
-    return response;
-  }
-
-  /**
-   * Test pagination endpoints
-   *
-   * @template P - The API path (must support GET)
-   * @param path - The API endpoint path
-   * @param paginationParams - Pagination parameters
-   * @param options - Additional request options
-   *
-   * @example
-   * ```typescript
-   * await tester.testPagination('/api/sessions', {
-   *   page: 1,
-   *   limit: 10
-   * });
-   * ```
-   */
-  async testPagination<P extends ExtractPaths<E> & PathsWithMethod<E, 'GET'>>(
-    path: P,
-    paginationParams: {
-      page?: number;
-      limit?: number;
-      offset?: number;
-    } = {},
-    options: RequestOptions = {}
-  ): Promise<void> {
-    const response = await this.httpClient.get(path, paginationParams as any, options);
-
-    expect(response.ok).toBe(true);
-    if (response.ok) {
-      // Check pagination structure
-      expect(response.body).toHaveProperty('data');
-      expect(response.body).toHaveProperty('meta');
-      expect((response.body as any).meta).toHaveProperty('total');
-      expect((response.body as any).meta).toHaveProperty('page');
-      expect((response.body as any).meta).toHaveProperty('limit');
-
-      // Validate data is an array
-      expect(Array.isArray((response.body as any).data)).toBe(true);
+      // Call testErrorScenarios with this single error case and pass the data per case
+      await this.testErrorScenarios(path, method, [errorCase], testCase.data, options);
     }
   }
 
@@ -432,8 +308,3 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
     return this.httpClient;
   }
 }
-
-// Type helper for paths that support a specific method
-type PathsWithMethod<E extends Record<string, any>, M extends string> = {
-  [P in ExtractPaths<E>]: M extends ExtractMethods<E, P> ? P : never;
-}[ExtractPaths<E>];

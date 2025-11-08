@@ -50,7 +50,7 @@ export interface RequestOptions {
  * Success response (2xx status codes)
  * @template T - The success response body type
  */
-type SuccessStatus = 200 | 201 | 202 | 203 | 204 | 205 | 206;
+export type SuccessStatus = 200 | 201 | 202 | 203 | 204 | 205 | 206;
 export interface SuccessResponse<T> {
   /** HTTP status code (2xx) */
   status: SuccessStatus;
