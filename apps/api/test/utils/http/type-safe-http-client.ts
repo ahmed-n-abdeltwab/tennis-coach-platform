@@ -1,12 +1,13 @@
 import { INestApplication } from '@nestjs/common';
+import { buildPath } from '@routes-helpers';
 import type {
   ExtractMethods,
   ExtractPaths,
   ExtractRequestType,
   ExtractResponseType,
   PathsWithMethod,
-} from '@routes-helpers';
-import { buildPath } from '@routes-helpers';
+} from '@test-utils';
+import { Endpoints } from '@test-utils';
 import request from 'supertest';
 
 /**
@@ -49,9 +50,10 @@ export interface RequestOptions {
  * Success response (2xx status codes)
  * @template T - The success response body type
  */
+type SuccessStatus = 200 | 201 | 202 | 203 | 204 | 205 | 206;
 export interface SuccessResponse<T> {
   /** HTTP status code (2xx) */
-  status: 200 | 201 | 202 | 203 | 204 | 205 | 206;
+  status: SuccessStatus;
   /** Response body with success type */
   body: T;
   /** Response headers */
@@ -110,9 +112,7 @@ export type TypedResponse<T> = SuccessResponse<T> | FailureResponse;
  * await client.post('/api/auth/user/login', { invalidField: 'test' });
  * ```
  */
-export class TypeSafeHttpClient<
-  E extends Record<string, any> = Record<string, Record<string, any>>,
-> {
+export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   constructor(private app: INestApplication) {}
 
   /**
@@ -139,9 +139,8 @@ export class TypeSafeHttpClient<
     const builtPath = this.buildPathWithParams(path, data);
 
     // Create supertest request
-    let req = request(this.app.getHttpServer())[
-      method.toLowerCase() as 'get' | 'post' | 'put' | 'delete' | 'patch'
-    ](builtPath);
+    const normalizedMethod = method.toLowerCase() as Lowercase<M>;
+    let req = request(this.app.getHttpServer())[normalizedMethod](builtPath);
 
     // Add headers
     if (options.headers) {
@@ -150,14 +149,10 @@ export class TypeSafeHttpClient<
       });
     }
 
-    // Add body for non-GET requests
-    if (method !== 'GET' && data !== undefined && data !== null) {
-      req = req.send(data);
-    }
-
-    // Add query params for GET requests
-    if (method === 'GET' && data !== undefined && data !== null) {
-      req = req.query(data as Record<string, unknown>);
+    // Add data for requests
+    if (data != null) {
+      if (method === 'GET') req = req.query(data);
+      else req = req.send(data);
     }
 
     // Set timeout
@@ -177,7 +172,7 @@ export class TypeSafeHttpClient<
 
     if (isSuccess) {
       return {
-        status: response.status as 200 | 201 | 202 | 203 | 204 | 205 | 206,
+        status: response.status as SuccessStatus,
         body: response.body as ExtractResponseType<E, P, M>,
         headers: response.headers as Record<string, string>,
         ok: true,
@@ -222,56 +217,7 @@ export class TypeSafeHttpClient<
     params?: ExtractRequestType<E, P, 'GET'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
-    const opts = options || {};
-
-    // Build path with parameters if needed
-    const builtPath = this.buildPathWithParams(path, params);
-
-    // Create supertest request
-    let req = request(this.app.getHttpServer()).get(builtPath);
-
-    // Add headers
-    if (opts.headers) {
-      Object.entries(opts.headers).forEach(([key, value]) => {
-        req = req.set(key, value);
-      });
-    }
-
-    // Add query params for GET requests
-    if (params !== undefined && params !== null) {
-      req = req.query(params as Record<string, unknown>);
-    }
-
-    // Set timeout
-    if (opts.timeout) {
-      req = req.timeout(opts.timeout);
-    }
-
-    // Set expected status
-    if (opts.expectedStatus) {
-      req = req.expect(opts.expectedStatus);
-    }
-
-    const response = await req;
-
-    // Determine if response is success (2xx) or error (4xx/5xx)
-    const isSuccess = response.status >= 200 && response.status < 300;
-
-    if (isSuccess) {
-      return {
-        status: response.status as 200 | 201 | 202 | 203 | 204 | 205 | 206,
-        body: response.body,
-        headers: response.headers as Record<string, string>,
-        ok: true,
-      } as SuccessResponse<ExtractResponseType<E, P, 'GET'>>;
-    } else {
-      return {
-        status: response.status,
-        body: response.body,
-        headers: response.headers as Record<string, string>,
-        ok: false,
-      } as FailureResponse;
-    }
+    return this.request(path, 'GET', params, options);
   }
 
   /**
@@ -303,56 +249,7 @@ export class TypeSafeHttpClient<
     body?: ExtractRequestType<E, P, 'POST'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
-    const opts = options || {};
-
-    // Build path with parameters if needed
-    const builtPath = this.buildPathWithParams(path, body);
-
-    // Create supertest request
-    let req = request(this.app.getHttpServer()).post(builtPath);
-
-    // Add headers
-    if (opts.headers) {
-      Object.entries(opts.headers).forEach(([key, value]) => {
-        req = req.set(key, value);
-      });
-    }
-
-    // Add body
-    if (body !== undefined && body !== null) {
-      req = req.send(body);
-    }
-
-    // Set timeout
-    if (opts.timeout) {
-      req = req.timeout(opts.timeout);
-    }
-
-    // Set expected status
-    if (opts.expectedStatus) {
-      req = req.expect(opts.expectedStatus);
-    }
-
-    const response = await req;
-
-    // Determine if response is success (2xx) or error (4xx/5xx)
-    const isSuccess = response.status >= 200 && response.status < 300;
-
-    if (isSuccess) {
-      return {
-        status: response.status as 200 | 201 | 202 | 203 | 204 | 205 | 206,
-        body: response.body,
-        headers: response.headers as Record<string, string>,
-        ok: true,
-      } as SuccessResponse<ExtractResponseType<E, P, 'POST'>>;
-    } else {
-      return {
-        status: response.status,
-        body: response.body,
-        headers: response.headers as Record<string, string>,
-        ok: false,
-      } as FailureResponse;
-    }
+    return this.request(path, 'POST', body, options);
   }
 
   /**
@@ -363,56 +260,7 @@ export class TypeSafeHttpClient<
     body?: ExtractRequestType<E, P, 'PUT'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
-    const opts = options || {};
-
-    // Build path with parameters if needed
-    const builtPath = this.buildPathWithParams(path, body);
-
-    // Create supertest request
-    let req = request(this.app.getHttpServer()).put(builtPath);
-
-    // Add headers
-    if (opts.headers) {
-      Object.entries(opts.headers).forEach(([key, value]) => {
-        req = req.set(key, value);
-      });
-    }
-
-    // Add body
-    if (body !== undefined && body !== null) {
-      req = req.send(body);
-    }
-
-    // Set timeout
-    if (opts.timeout) {
-      req = req.timeout(opts.timeout);
-    }
-
-    // Set expected status
-    if (opts.expectedStatus) {
-      req = req.expect(opts.expectedStatus);
-    }
-
-    const response = await req;
-
-    // Determine if response is success (2xx) or error (4xx/5xx)
-    const isSuccess = response.status >= 200 && response.status < 300;
-
-    if (isSuccess) {
-      return {
-        status: response.status as 200 | 201 | 202 | 203 | 204 | 205 | 206,
-        body: response.body,
-        headers: response.headers as Record<string, string>,
-        ok: true,
-      } as SuccessResponse<ExtractResponseType<E, P, 'PUT'>>;
-    } else {
-      return {
-        status: response.status,
-        body: response.body,
-        headers: response.headers as Record<string, string>,
-        ok: false,
-      } as FailureResponse;
-    }
+    return this.request(path, 'PUT', body, options);
   }
 
   /**
@@ -423,51 +271,7 @@ export class TypeSafeHttpClient<
     params?: ExtractRequestType<E, P, 'DELETE'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
-    const opts = options || {};
-
-    // Build path with parameters if needed
-    const builtPath = this.buildPathWithParams(path, params);
-
-    // Create supertest request
-    let req = request(this.app.getHttpServer()).delete(builtPath);
-
-    // Add headers
-    if (opts.headers) {
-      Object.entries(opts.headers).forEach(([key, value]) => {
-        req = req.set(key, value);
-      });
-    }
-
-    // Set timeout
-    if (opts.timeout) {
-      req = req.timeout(opts.timeout);
-    }
-
-    // Set expected status
-    if (opts.expectedStatus) {
-      req = req.expect(opts.expectedStatus);
-    }
-
-    const response = await req;
-
-    // Determine if response is success (2xx) or error (4xx/5xx)
-    const isSuccess = response.status >= 200 && response.status < 300;
-
-    if (isSuccess) {
-      return {
-        status: response.status as 200 | 201 | 202 | 203 | 204 | 205 | 206,
-        body: response.body as ExtractResponseType<E, P, 'DELETE'>,
-        headers: response.headers as Record<string, string>,
-        ok: true,
-      } as SuccessResponse<ExtractResponseType<E, P, 'DELETE'>>;
-    } else {
-      return {
-        status: response.status,
-        body: response.body as ErrorResponse | ValidationErrorResponse,
-        headers: response.headers as Record<string, string>,
-        ok: false,
-      } as FailureResponse;
-    }
+    return this.request(path, 'DELETE', params, options);
   }
 
   /**
@@ -478,56 +282,7 @@ export class TypeSafeHttpClient<
     body?: ExtractRequestType<E, P, 'PATCH'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
-    const opts = options || {};
-
-    // Build path with parameters if needed
-    const builtPath = this.buildPathWithParams(path, body);
-
-    // Create supertest request
-    let req = request(this.app.getHttpServer()).patch(builtPath);
-
-    // Add headers
-    if (opts.headers) {
-      Object.entries(opts.headers).forEach(([key, value]) => {
-        req = req.set(key, value);
-      });
-    }
-
-    // Add body
-    if (body !== undefined && body !== null) {
-      req = req.send(body);
-    }
-
-    // Set timeout
-    if (opts.timeout) {
-      req = req.timeout(opts.timeout);
-    }
-
-    // Set expected status
-    if (opts.expectedStatus) {
-      req = req.expect(opts.expectedStatus);
-    }
-
-    const response = await req;
-
-    // Determine if response is success (2xx) or error (4xx/5xx)
-    const isSuccess = response.status >= 200 && response.status < 300;
-
-    if (isSuccess) {
-      return {
-        status: response.status as 200 | 201 | 202 | 203 | 204 | 205 | 206,
-        body: response.body as ExtractResponseType<E, P, 'PATCH'>,
-        headers: response.headers as Record<string, string>,
-        ok: true,
-      } as SuccessResponse<ExtractResponseType<E, P, 'PATCH'>>;
-    } else {
-      return {
-        status: response.status,
-        body: response.body as ErrorResponse | ValidationErrorResponse,
-        headers: response.headers as Record<string, string>,
-        ok: false,
-      } as FailureResponse;
-    }
+    return this.request(path, 'PATCH', body, options);
   }
 
   async authenticatedGet<P extends PathsWithMethod<E, 'GET'>>(
@@ -597,9 +352,9 @@ export class TypeSafeHttpClient<
    * Build path with parameters (replace {id} with actual values)
    * @private
    */
-  private buildPathWithParams(path: string, data: unknown): string {
+  private buildPathWithParams(path: string, data?: Record<string, any>): string {
     if (!data || typeof data !== 'object') return path;
 
-    return buildPath(path, data as Record<string, string | number>);
+    return buildPath(path, data);
   }
 }

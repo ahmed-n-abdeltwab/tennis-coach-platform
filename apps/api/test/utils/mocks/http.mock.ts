@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 
 export interface MockRequest extends Partial<Request> {
-  body?: any;
+  body?: Record<string, any>;
   params?: any;
   query?: any;
   headers?: any;
@@ -19,7 +19,7 @@ export interface MockResponse extends Partial<Response> {
 
 export interface MockHttpResponse {
   statusCode: number;
-  data?: any;
+  data?: Record<string, any>;
   message?: string[] | string;
   error?: string;
   timestamp?: string;

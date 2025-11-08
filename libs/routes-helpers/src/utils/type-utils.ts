@@ -38,11 +38,15 @@ export type ExtractRequestType<
   E[P] extends Record<string, any>
     ? M extends keyof E[P]
       ? E[P][M] extends (...args: infer A) => any
-        ? A[0]
+        ? A extends [infer First]
+          ? First extends Record<string, string | number>
+            ? First
+            : never
+          : never
         : never
       : never
     : never;
-
+type LoginRequest = ExtractRequestType<Endpoints, '/api/authentication/login', 'POST'>;
 /**
  * Extract response type for a specific path and method
  *
@@ -207,13 +211,10 @@ export type AcceptPath<E extends Record<string, any>> = ExtractPaths<E> | Flexib
  * @param params - Object containing parameter values
  * @returns The path with parameters replaced
  */
-export function buildPath<P extends string>(
-  path: P,
-  params?: Record<string, string | number>
-): string {
-  if (!params) return path;
+export function buildPath(path: string, params?: Record<string, string | number>): string {
+  if (!params || typeof params !== 'object') return path;
 
-  let result = path as string;
+  let result = path;
   Object.entries(params).forEach(([key, value]) => {
     result = result.replace(`{${key}}`, String(value));
   });
