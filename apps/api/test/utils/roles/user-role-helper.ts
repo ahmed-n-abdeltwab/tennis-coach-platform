@@ -23,7 +23,7 @@ import { AuthHeaders, AuthTestHelper, TestUser } from '../auth/auth-test-helper'
  * const coachHeaders = roleHelper.createRoleAuthHeaders(Role.COACH);
  *
  * // Create multiple users
-st { users, coaches } = roleHelper.createMultipleRoleUsers(3);
+ * const { users, coaches } = roleHelper.createMultipleRoleUsers(3);
  * ```
  */
 export class UserRoleHelper {
@@ -82,18 +82,7 @@ export class UserRoleHelper {
    */
   createRoleAuthHeaders(role: Role, overrides?: Partial<TestUser>): AuthHeaders {
     const userData = this.createUserTestData(role, overrides);
-
-    switch (role) {
-      case Role.USER:
-      case Role.PREMIUM_USER:
-        return this.authHelper.createUserAuthHeaders(userData);
-      case Role.COACH:
-        return this.authHelper.createCoachAuthHeaders(userData);
-      case Role.ADMIN:
-        return this.authHelper.createAdminAuthHeaders(userData);
-      default:
-        throw new Error(`Unknown role: ${role}`);
-    }
+    return this.createAuthHeadersForTestUser(userData);
   }
 
   /**
@@ -104,10 +93,11 @@ export class UserRoleHelper {
    *
    * @example
    * ```typescript
-   * const { users, coaches, admins } = roleHelper.createMultipleRoleUsers(3);
+   * const { users, coaches, admins, premiumUsers } = roleHelper.createMultipleRoleUsers(3);
    * // users: [user0, user1, user2]
    * // coaches: [coach0, coach1, coach2]
    * // admins: [admin0, admin1, admin2]
+   * // premiumUsers: [premiumUsers0, premiumUsers1, premiumUsers2]
    * ```
    */
   createMultipleRoleUsers(count = 2): {
@@ -162,7 +152,7 @@ export class UserRoleHelper {
    *
    * @example
    * ```typescript
-   * const { userHeaders, coachHeaders } = roleHelper.createMultipleRoleAuthHeaders(2);
+   * const { userHeaders, coachHeaders, adminHeaders, premiumUserHeaders } = roleHelper.createMultipleRoleAuthHeaders(2);
    * // Use different user tokens for testing
    * await client.get('/api/sessions', undefined, { headers: userHeaders[0] });
    * await client.get('/api/sessions', undefined, { headers: userHeaders[1] });
@@ -184,6 +174,25 @@ export class UserRoleHelper {
     );
 
     return { userHeaders, coachHeaders, adminHeaders, premiumUserHeaders };
+  }
+
+  /**
+   * Create an Auth Headers for a specific Test User
+   * @private
+   */
+  private createAuthHeadersForTestUser(userData: TestUser): AuthHeaders {
+    switch (userData.role) {
+      case Role.USER:
+        return this.authHelper.createUserAuthHeaders(userData);
+      case Role.PREMIUM_USER:
+        return this.authHelper.createPremiumUserAuthHeaders(userData);
+      case Role.COACH:
+        return this.authHelper.createCoachAuthHeaders(userData);
+      case Role.ADMIN:
+        return this.authHelper.createAdminAuthHeaders(userData);
+      default:
+        throw new Error(`Unknown role: ${userData.role}`);
+    }
   }
 
   /**
