@@ -116,7 +116,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
    * });
    * ```
    */
-  async testAccess<P extends ExtractPaths<E>, M extends ExtractMethods<E, P> & HttpMethod>(
+  async testAccess<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
     config: RoleAccessConfig,
@@ -130,25 +130,13 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
 
     // Test allowed roles
     for (const role of allowedRoles) {
-      const result = await this.testRoleAccess(
-        path,
-        method,
-        role,
-        data as ExtractRequestType<E, P, M>,
-        expectedSuccessStatus
-      );
+      const result = await this.testRoleAccess(path, method, role, expectedSuccessStatus, data);
       results.push(result);
     }
 
     // Test denied roles
     for (const role of deniedRoles) {
-      const result = await this.testRoleAccess(
-        path,
-        method,
-        role,
-        data as ExtractRequestType<E, P, M>,
-        deniedStatus
-      );
+      const result = await this.testRoleAccess(path, method, role, deniedStatus, data);
       results.push(result);
     }
 
@@ -179,7 +167,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
    * );
    * ```
    */
-  async testAllRoles<P extends ExtractPaths<E>, M extends ExtractMethods<E, P> & HttpMethod>(
+  async testAllRoles<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
     allowedRoles: Role[],
@@ -214,10 +202,12 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
    * );
    * ```
    */
-  async testOnlyRolesCanAccess<
-    P extends ExtractPaths<E>,
-    M extends ExtractMethods<E, P> & HttpMethod,
-  >(path: P, method: M, allowedRoles: Role[], data?: ExtractRequestType<E, P, M>): Promise<void> {
+  async testOnlyRolesCanAccess<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
+    path: P,
+    method: M,
+    allowedRoles: Role[],
+    data?: ExtractRequestType<E, P, M>
+  ): Promise<void> {
     const results = await this.testAllRoles(path, method, allowedRoles, data);
 
     // Verify all tests passed
@@ -251,7 +241,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
    * expect(response.status).toBe(200);
    * ```
    */
-  async testRoleCanAccess<P extends ExtractPaths<E>, M extends ExtractMethods<E, P> & HttpMethod>(
+  async testRoleCanAccess<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
     role: Role,
@@ -260,7 +250,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     const token = this.createTokenForRole(role);
     const expectedStatus = method === 'POST' ? 201 : 200;
 
-    return this.httpClient.request(path, method, data as ExtractRequestType<E, P, M>, {
+    return this.httpClient.request(path, method, data, {
       headers: { Authorization: `Bearer ${token}` },
       expectedStatus,
     });
@@ -286,10 +276,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
    * );
    * ```
    */
-  async testRoleCannotAccess<
-    P extends ExtractPaths<E>,
-    M extends ExtractMethods<E, P> & HttpMethod,
-  >(
+  async testRoleCannotAccess<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
     role: Role,
@@ -298,7 +285,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
   ): Promise<void> {
     const token = this.createTokenForRole(role);
 
-    await this.httpClient.request(path, method, data as ExtractRequestType<E, P, M>, {
+    await this.httpClient.request(path, method, data, {
       headers: { Authorization: `Bearer ${token}` },
       expectedStatus,
     });
@@ -308,15 +295,12 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
    * Test a single role's access to an endpoint
    * @private
    */
-  private async testRoleAccess<
-    P extends ExtractPaths<E>,
-    M extends ExtractMethods<E, P> & HttpMethod,
-  >(
+  private async testRoleAccess<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
     role: Role,
-    data: ExtractRequestType<E, P, M>,
-    expectedStatus: number
+    expectedStatus: number,
+    data?: ExtractRequestType<E, P, M>
   ): Promise<RoleAccessTestResult> {
     const token = this.createTokenForRole(role);
 

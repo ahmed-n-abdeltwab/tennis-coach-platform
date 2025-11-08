@@ -22,7 +22,7 @@ export type ExtractPaths<E extends Record<string, any>> = Extract<keyof E, strin
  * // Result: "POST"
  */
 export type ExtractMethods<E extends Record<string, any>, P extends ExtractPaths<E>> = keyof E[P] &
-  string;
+  HttpMethod;
 /**
  * Extract request type for a specific path and method
  *
@@ -42,7 +42,7 @@ export type ExtractRequestType<
         : never
       : never
     : never;
-type LoginRequest = ExtractRequestType<Endpoints, '/api/authentication/login', ExtractMethods<Endpoints, "/api/authentication/login">>;
+
 /**
  * Extract response type for a specific path and method
  *
