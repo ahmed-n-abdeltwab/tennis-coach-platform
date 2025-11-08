@@ -123,10 +123,14 @@ async function testAuthenticatedRequests() {
  * Test 5: PATCH request with discriminated union
  */
 async function testPatchRequest() {
-  const response = await client.authenticatedPatch('/api/accounts/123', 'test-token', {
-    name: 'Updated Name',
-    bio: 'Updated bio',
-  });
+  const response = await client.authenticatedPatch(
+    '/api/accounts/123' as '/api/accounts/{id}',
+    'test-token',
+    {
+      name: 'Updated Name',
+      bio: 'Updated bio',
+    }
+  );
 
   if (response.ok) {
     // Response should be properly typed
@@ -166,15 +170,12 @@ async function testEarlyReturnPattern() {
  * Test 7: Validation error handling
  */
 async function testValidationErrorHandling() {
-  const response = await client.post(
-    '/api/authentication/signup' as any,
-    {
-      email: 'invalid-email',
-      password: '123',
-      name: '',
-      role: 'USER',
-    } as any
-  );
+  const response = await client.post('/api/authentication/signup', {
+    email: 'invalid-email',
+    password: '123',
+    name: '',
+    role: 'USER',
+  });
 
   if (!response.ok) {
     // Check if it's a validation error (message is array)

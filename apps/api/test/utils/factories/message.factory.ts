@@ -17,9 +17,9 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
       content: this.randomContent(),
       sentAt: new Date(),
       senderType: Role.USER,
-      senderUserId: this.generateId(),
+      senderId: this.generateId(),
       receiverType: Role.COACH,
-      receiverCoachId: this.generateId(),
+      receiverId: this.generateId(),
       ...overrides,
     };
   }
@@ -31,9 +31,9 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
   ): MockMessage {
     return this.create({
       senderType: Role.USER,
-      senderUserId: userId,
+      senderId: userId,
       receiverType: Role.COACH,
-      receiverCoachId: coachId,
+      receiverId: coachId,
       ...overrides,
     });
   }
@@ -45,9 +45,9 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
   ): MockMessage {
     return this.create({
       senderType: Role.COACH,
-      senderCoachId: coachId,
+      senderId: coachId,
       receiverType: Role.USER,
-      receiverUserId: userId,
+      receiverId: userId,
       ...overrides,
     });
   }

@@ -39,14 +39,14 @@ export type ExtractRequestType<
     ? M extends keyof E[P]
       ? E[P][M] extends (...args: infer A) => any
         ? A extends [infer First]
-          ? First extends Record<string, string | number>
+          ? First extends Record<string, any>
             ? First
             : never
           : never
         : never
       : never
     : never;
-type LoginRequest = ExtractRequestType<Endpoints, '/api/authentication/login', 'POST'>;
+
 /**
  * Extract response type for a specific path and method
  *

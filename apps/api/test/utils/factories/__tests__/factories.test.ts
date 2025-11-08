@@ -171,7 +171,7 @@ describe('Mock Factory System', () => {
 
     it('should create a POST request', () => {
       const body = { name: 'Test' };
-      const request = httpFactory.createPostRequest(body);
+      const request = httpFactory.createJsonRequest(body, { method: 'POST' });
 
       expect(request.method).toBe('POST');
       expect(request.body).toEqual(body);
@@ -247,12 +247,12 @@ describe('Mock Factory System', () => {
       scenario.messages.forEach((message, index) => {
         if (index % 2 === 0) {
           // User messages
-          expect(message.senderUserId).toBe(scenario.user.id);
-          expect(message.receiverCoachId).toBe(scenario.coach.id);
+          expect(message.senderId).toBe(scenario.user.id);
+          expect(message.receiverId).toBe(scenario.coach.id);
         } else {
           // Coach messages
-          expect(message.senderCoachId).toBe(scenario.coach.id);
-          expect(message.receiverUserId).toBe(scenario.user.id);
+          expect(message.senderId).toBe(scenario.coach.id);
+          expect(message.receiverId).toBe(scenario.user.id);
         }
       });
     });
@@ -284,9 +284,9 @@ describe('Mock Factory System', () => {
       const message = messageFactory.createUserToCoach('user123', 'coach456');
 
       expect(message.senderType).toBe(Role.USER);
-      expect(message.senderUserId).toBe('user123');
+      expect(message.senderId).toBe('user123');
       expect(message.receiverType).toBe(Role.COACH);
-      expect(message.receiverCoachId).toBe('coach456');
+      expect(message.receiverId).toBe('coach456');
     });
 
     it('should create a conversation', () => {

@@ -9,11 +9,13 @@ export interface MockSession {
   paymentId?: string;
   discountCode?: string;
   calendarEventId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+
+  // Relations
   userId: string;
   coachId: string;
   bookingTypeId: string;
   timeSlotId: string;
   discountId?: string;
-  createdAt: Date;
-  updatedAt: Date;
 }

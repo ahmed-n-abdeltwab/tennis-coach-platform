@@ -4,11 +4,9 @@ export interface MockMessage {
   id: string;
   content: string;
   sentAt: Date;
-  senderType: Role;
-  senderUserId?: string;
-  senderCoachId?: string;
-  receiverType: Role;
-  receiverUserId?: string;
-  receiverCoachId?: string;
+  senderId?: string;
+  receiverId?: string;
   sessionId?: string;
+  senderType: Role;
+  receiverType: Role;
 }

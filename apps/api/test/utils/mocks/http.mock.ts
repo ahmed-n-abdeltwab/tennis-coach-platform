@@ -1,28 +1,25 @@
-import { Request, Response } from 'express';
+import { getMockRes } from '@jest-mock/express';
+import { Request } from 'express';
 
-export interface MockRequest extends Partial<Request> {
-  body?: Record<string, any>;
-  params?: any;
-  query?: any;
-  headers?: any;
-  user?: any;
-  files?: any;
+export interface MockRequest<
+  Body = Record<string, any>,
+  Query = Record<string, any>,
+  Params = Record<string, string>,
+> extends Partial<Request<Params, any, Body, Query>> {
+  body?: Body;
+  query?: Query;
+  params?: Params;
+  headers?: Record<string, string>;
+  user?: Record<string, any>;
+  files?: any[];
 }
 
-export interface MockResponse extends Partial<Response> {
-  status: jest.Mock;
-  json: jest.Mock;
-  send: jest.Mock;
-  cookie: jest.Mock;
-  clearCookie: jest.Mock;
-}
-
-export interface MockHttpResponse {
+export interface MockHttpResponse<T = any> {
   statusCode: number;
-  data?: Record<string, any>;
-  message?: string[] | string;
+  data?: T;
+  message?: string | string[];
   error?: string;
-  timestamp?: string;
+  timestamp: string;
   path?: string;
   meta?: {
     page: number;
@@ -33,3 +30,16 @@ export interface MockHttpResponse {
     hasPrevPage: boolean;
   };
 }
+
+export interface MockRequestOverrides {
+  body?: Record<string, unknown>;
+  query?: Record<string, unknown>;
+  params?: Record<string, string>;
+  headers?: Record<string, string>;
+  user?: Record<string, unknown>;
+  files?: unknown[];
+  method?: string;
+  url?: string;
+  path?: string;
+}
+export type MockResponse = ReturnType<typeof getMockRes>['res'];

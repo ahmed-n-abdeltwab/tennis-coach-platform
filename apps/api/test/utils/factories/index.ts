@@ -8,7 +8,7 @@ import { AuthMockFactory } from './auth.factory';
 import { BookingTypeMockFactory } from './booking-type.factory';
 import { CoachMockFactory } from './coach.factory';
 import { DiscountMockFactory } from './discount.factory';
-import { HttpMockFactory } from './http.factory';
+import { HttpMockFactory } from './http/http.factory';
 import { MessageMockFactory } from './message.factory';
 import { PaymentMockFactory } from './payment.factory';
 import { SessionMockFactory } from './session.factory';

@@ -1,3 +1,4 @@
+export * from './account.mock';
 export * from './auth.mock';
 export * from './booking-type.mock';
 export * from './coach.mock';

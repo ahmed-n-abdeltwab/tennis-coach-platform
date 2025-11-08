@@ -48,7 +48,7 @@ export interface HttpErrorTestCase {
  *   response: {
  *     status: 201,
  *     headers: {
- *       'content-type': 'application json'
+ *       'content-type': 'application/json'
  *     },
  *     body: {
  *       required: ['accessToken', 'user'],

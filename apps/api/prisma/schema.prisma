@@ -163,8 +163,8 @@ model Message {
   senderId     String
   receiverId   String
   sessionId    String?
-  senderType   String
-  receiverType String
+  senderType   Role
+  receiverType Role
 
   sender   Account  @relation("AccountMessageSender", fields: [senderId], references: [id])
   receiver Account  @relation("AccountMessageReceiver", fields: [receiverId], references: [id])
