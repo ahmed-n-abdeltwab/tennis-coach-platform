@@ -22,7 +22,7 @@ describe('Discriminated Union Pattern Examples', () => {
    * Example 1: Basic success/error handling
    */
   it('should handle success and error responses with type narrowing', async () => {
-    const response = await client.post('/api/authentication/user/login', {
+    const response = await client.post('/api/authentication/login', {
       email: 'user@example.com',
       password: 'password123',
     });

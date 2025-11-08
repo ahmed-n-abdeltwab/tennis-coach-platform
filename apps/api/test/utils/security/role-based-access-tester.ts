@@ -6,10 +6,15 @@ import {
   ExtractPaths,
   ExtractRequestType,
   ExtractResponseType,
-} from '@routes-helpers';
+} from '@test-utils';
 import { TypeSafeHttpClient, TypedResponse } from '../http/type-safe-http-client';
 
 import { AuthTestHelper } from '../auth/auth-test-helper';
+
+/**
+ * HTTP methods supported by the API
+ */
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 /**
  * Configuration for role-based access testing
@@ -111,7 +116,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
    * });
    * ```
    */
-  async testAccess<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
+  async testAccess<P extends ExtractPaths<E>, M extends ExtractMethods<E, P> & HttpMethod>(
     path: P,
     method: M,
     config: RoleAccessConfig,
@@ -174,7 +179,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
    * );
    * ```
    */
-  async testAllRoles<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
+  async testAllRoles<P extends ExtractPaths<E>, M extends ExtractMethods<E, P> & HttpMethod>(
     path: P,
     method: M,
     allowedRoles: Role[],
@@ -209,12 +214,10 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
    * );
    * ```
    */
-  async testOnlyRolesCanAccess<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
-    path: P,
-    method: M,
-    allowedRoles: Role[],
-    data?: ExtractRequestType<E, P, M>
-  ): Promise<void> {
+  async testOnlyRolesCanAccess<
+    P extends ExtractPaths<E>,
+    M extends ExtractMethods<E, P> & HttpMethod,
+  >(path: P, method: M, allowedRoles: Role[], data?: ExtractRequestType<E, P, M>): Promise<void> {
     const results = await this.testAllRoles(path, method, allowedRoles, data);
 
     // Verify all tests passed
@@ -248,7 +251,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
    * expect(response.status).toBe(200);
    * ```
    */
-  async testRoleCanAccess<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
+  async testRoleCanAccess<P extends ExtractPaths<E>, M extends ExtractMethods<E, P> & HttpMethod>(
     path: P,
     method: M,
     role: Role,
@@ -283,7 +286,10 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
    * );
    * ```
    */
-  async testRoleCannotAccess<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
+  async testRoleCannotAccess<
+    P extends ExtractPaths<E>,
+    M extends ExtractMethods<E, P> & HttpMethod,
+  >(
     path: P,
     method: M,
     role: Role,
@@ -302,7 +308,10 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
    * Test a single role's access to an endpoint
    * @private
    */
-  private async testRoleAccess<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
+  private async testRoleAccess<
+    P extends ExtractPaths<E>,
+    M extends ExtractMethods<E, P> & HttpMethod,
+  >(
     path: P,
     method: M,
     role: Role,

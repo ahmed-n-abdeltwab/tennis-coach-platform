@@ -3,6 +3,9 @@
  * These types provide compile-time type safety for API route operations
  */
 
+import { Endpoints } from '../constants/api-routes.registry';
+import { HttpMethod } from '../interfaces/IRoutes';
+
 /**
  * Extract all valid API paths from Endpoints interface
  *
@@ -10,60 +13,55 @@
  * type AllPaths = ExtractPaths<Endpoints>
  * // Result: "/api/auth/login" | "/api/booking-types" | ...
  */
-export type ExtractPaths<E extends Record<string, unknown>> = keyof E & string;
-
+export type ExtractPaths<E extends Record<string, any>> = Extract<keyof E, string>;
 /**
  * Extract all HTTP methods for a given path
  *
  * @example
- * type LoginMethods = ExtractMethods<Endpoints, "/api/auth/login">
+ * type LoginMethods = ExtractMethods<Endpoints, "/api/authentication/login">
  * // Result: "POST"
  */
-export type ExtractMethods<
-  E extends Record<string, unknown>,
-  P extends ExtractPaths<E>,
-> = keyof E[P] & string;
-
+export type ExtractMethods<E extends Record<string, any>, P extends ExtractPaths<E>> = keyof E[P] &
+  string;
 /**
  * Extract request type for a specific path and method
  *
  * @example
- * type LoginRequest = ExtractRequestType<Endpoints, "/api/auth/login", "POST">
+ * type LoginRequest = ExtractRequestType<Endpoints, "/api/authentication/login", "POST">
  * // Result: { email: string; password: string }
  */
 export type ExtractRequestType<
-  E extends Record<string, unknown>,
-  P extends ExtractPaths<E>,
-  M extends string,
+  E extends Record<string, any>,
+  P extends keyof E,
+  M extends HttpMethod,
 > =
-  E[P] extends Record<string, unknown>
+  E[P] extends Record<string, any>
     ? M extends keyof E[P]
-      ? E[P][M] extends (arg: infer R) => unknown
-        ? R
+      ? E[P][M] extends (...args: infer A) => any
+        ? A[0]
         : never
       : never
     : never;
-
+type LoginRequest = ExtractRequestType<Endpoints, '/api/authentication/login', ExtractMethods<Endpoints, "/api/authentication/login">>;
 /**
  * Extract response type for a specific path and method
  *
  * @example
- * type LoginResponse = ExtractResponseType<Endpoints, "/api/auth/login", "POST">
+ * type LoginResponse = ExtractResponseType<Endpoints, "/api/authentication/login", "POST">
  * // Result: { accessToken: string; refreshToken: string; user: {...} }
  */
 export type ExtractResponseType<
   E extends Record<string, any>,
   P extends ExtractPaths<E>,
-  M extends string,
+  M extends HttpMethod,
 > =
-  E[P] extends Record<string, unknown>
+  E[P] extends Record<string, any>
     ? M extends keyof E[P]
-      ? E[P][M] extends (arg: any) => infer R
+      ? E[P][M] extends (...args: any) => infer R
         ? R
         : never
       : never
     : never;
-
 /**
  * Extract all paths that support a specific HTTP method
  *
@@ -71,13 +69,12 @@ export type ExtractResponseType<
  * type PostPaths = PathsWithMethod<Endpoints, "POST">
  * // Result: "/api/auth/login" | "/api/booking-types" | ...
  */
-export type PathsWithMethod<E extends Record<string, unknown>, M extends string> = Extract<
+export type PathsWithMethod<E extends Record<string, any>, M extends HttpMethod> = Extract<
   {
     [P in ExtractPaths<E>]: M extends keyof E[P] ? P : never;
   }[ExtractPaths<E>],
   string
 >;
-
 /**
  * Check if a path requires parameters (contains path parameters like {id})
  *
@@ -110,11 +107,28 @@ export type ExtractPathParams<P extends string> =
  * type Pattern = PathPattern<"/api/users/{id}/posts/{postId}">
  * // Result: `/api/users/${string}/posts/${string}`
  */
+type ExtractParams<P extends string> = P extends `${infer _Before}{${infer Param}}${infer After}`
+  ? Param | ExtractParams<After>
+  : never;
+
+type PathBuilder<P extends string> = <
+  Params extends Record<string, string> &
+    Record<ExtractParams<P>, string> & {
+      // ✅ all required params
+      [K in keyof Params]: K extends ExtractParams<P> ? string : never;
+    }, // ❌ forbid extras
+>(
+  params: Params
+) => PathPattern<P>;
+
+type Segment = Exclude<string, `${string}/${string}`> & { __noSlash?: true };
+
 export type PathPattern<P extends string> =
   P extends `${infer Before}{${infer _Param}}${infer After}`
-    ? `${Before}${string}${PathPattern<After>}`
+    ? `${Before}${Segment}${PathPattern<After>}`
     : P;
 
+type Pattern = PathPattern<'/api/users/{id}/posts/{postId}'>;
 /**
  * Convert a path template to accept both template and actual values
  *
@@ -124,9 +138,23 @@ export type PathPattern<P extends string> =
  * type UserPath = PathWithValues<"/api/users/{id}">
  * // Result: "/api/users/{id}" | `/api/users/${string}`
  */
+// 1. Create a literal lock helper
+type AsLiteral<T extends string> = T & { __locked?: true };
+type Literal<T extends string> = T extends `${infer P}` ? P : never;
+// 2. Path builder
 export type PathWithValues<P extends string> =
-  P extends `${infer Before}{${infer _Param}}${infer After}` ? P | PathPattern<P> : P;
+  P extends `${infer Before}{${infer _Param}}${infer After}`
+    ? {
+        readonly template: AsLiteral<P>;
+        readonly runtime: AsLiteral<PathPattern<P>>;
+      }
+    : {
+        readonly static: AsLiteral<P>;
+      };
 
+// 3. Extract both literals safely
+export type UnwrappedPath<P extends string> = PathWithValues<P>[keyof PathWithValues<P>];
+type t = UnwrappedPath<'/api/users/{id}/posts/{postId}'>;
 /**
  * Extract paths that can accept either template or actual values
  *
@@ -134,10 +162,11 @@ export type PathWithValues<P extends string> =
  * type FlexiblePaths = FlexiblePath<Endpoints>
  * // Accepts both "/api/users/{id}" and "/api/users/123"
  */
-export type FlexiblePath<E extends Record<string, unknown>> = {
-  [P in ExtractPaths<E>]: PathWithValues<P>;
-}[ExtractPaths<E>];
 
+export type FlexiblePath<E extends Record<string, any>> = {
+  [P in ExtractPaths<E>]: UnwrappedPath<P>;
+}[ExtractPaths<E>];
+type FlexiblePaths = FlexiblePath<Endpoints>;
 /**
  * Match a runtime path string to its template path
  *
@@ -147,16 +176,24 @@ export type FlexiblePath<E extends Record<string, unknown>> = {
  * type Matched = MatchPathTemplate<Endpoints, `/api/users/${string}`>
  * // Result: "/api/users/{id}"
  */
-export type MatchPathTemplate<E extends Record<string, unknown>, RuntimePath extends string> = {
-  [P in ExtractPaths<E>]: RuntimePath extends PathWithValues<P> ? P : never;
+export type MatchPathTemplate<E extends Record<string, any>, RuntimePath extends string> = {
+  [P in ExtractPaths<E>]: P extends `${infer _Before}{${infer _Param}}${infer _After}`
+    ? RuntimePath extends PathPattern<P>
+      ? P
+      : never
+    : RuntimePath extends P
+      ? P
+      : never;
 }[ExtractPaths<E>];
 
+type Matched = MatchPathTemplate<Endpoints, `/api/users/${string}`>;
+type MatchPost = MatchPathTemplate<Endpoints, `/api/accounts/${string}`>;
 /**
  * Accept either a template path or a runtime path with values
  *
  * This is the main type to use in function signatures to accept both forms
  */
-export type AcceptPath<E extends Record<string, unknown>> = ExtractPaths<E> | FlexiblePath<E>;
+export type AcceptPath<E extends Record<string, any>> = ExtractPaths<E> | FlexiblePath<E>;
 
 /**
  * Build a path with parameters replaced

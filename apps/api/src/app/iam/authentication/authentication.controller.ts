@@ -1,4 +1,4 @@
-import { JwtPayload } from '@common';
+import { JwtPayload, Roles } from '@common';
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -8,13 +8,8 @@ import {
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import {
-  CurrentUser,
-  ErrorResponseDto,
-  JwtRefreshGuard,
-  LocalUserAuthGuard,
-  Public,
-} from '../../../common';
+import { Role } from '@prisma/client';
+import { CurrentUser, ErrorResponseDto, JwtRefreshGuard, Public } from '../../../common';
 import { AuthenticationService } from './authentication.service';
 import { AuthResponseDto, LoginDto, SignUpDto } from './dto';
 
@@ -39,8 +34,8 @@ export class AuthenticationController {
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  @UseGuards(LocalUserAuthGuard)
   @Post('user/login')
+  @Roles(Role.USER, Role.PREMIUM_USER)
   @ApiOperation({ summary: 'User login' })
   @ApiOkResponse({
     description: 'Login successful',

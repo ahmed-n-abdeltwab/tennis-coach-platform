@@ -43,9 +43,10 @@ export type {
   FlexiblePath,
   MatchPathTemplate,
   PathPattern,
-  PathWithValues,
   PathsWithMethod,
+  PathWithValues,
   RequiresParams,
+  UnwrappedPath,
 } from './utils/type-utils';
 
 // Export runtime helper function

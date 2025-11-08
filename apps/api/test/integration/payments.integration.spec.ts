@@ -11,12 +11,13 @@ import {
   timeSlotFactory,
   userFactory,
 } from '@test/utils/factories';
-import { PrismaModule, PrismaService } from '../prisma/prisma.service';
 
 import paymentsConfig from '../../src/app/payments/config/payments.config';
 import { CapturePaymentDto, CreatePaymentDto } from '../../src/app/payments/dto/payment.dto';
 import { PaymentsModule } from '../../src/app/payments/payments.module';
 import { PaymentsService } from '../../src/app/payments/payments.service';
+import { PrismaService } from '../../src/app/prisma/prisma.service';
+import { PrismaModule } from '../../src/app/prisma/prisma.module';
 
 // Mock fetch globally
 global.fetch = jest.fn();

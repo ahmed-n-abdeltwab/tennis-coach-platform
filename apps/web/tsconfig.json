@@ -18,7 +18,6 @@
     // Web-specific paths
     "baseUrl": "./src",
     "paths": {
-      "@auth-helpers": ["../../libs/auth-helpers/src/index.ts"],
       "@routes-helpers": ["../../libs/routes-helpers/src/index.ts"],
       "@utils": ["../../libs/utils/src/index.ts"],
       "@/*": ["./*"],

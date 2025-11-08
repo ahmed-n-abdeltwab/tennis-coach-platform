@@ -237,7 +237,9 @@ describe.skip('TypeSafeHttpClient Examples', () => {
       // GET request with path parameter using template literal
       // The client supports template literals, but TypeScript can't infer the exact response type
       // For full type safety with template literals, use type assertion on the path
-      const response = await authenticatedClient.get(`/api/accounts/${accountId}`);
+      const response = await authenticatedClient.get(
+        `/api/accounts/${accountId}` as '/api/accounts/{id}'
+      );
 
       if (response.ok) {
         expect(response.status).toBe(200);

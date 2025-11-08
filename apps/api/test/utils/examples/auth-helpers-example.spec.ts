@@ -383,13 +383,9 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
         password: registerData.password,
       };
 
-      const loginResponse = await httpClient.post(
-        '/api/authentication/user/login' as '/api/authentication/user/login',
-        loginData,
-        {
-          expectedStatus: 200,
-        }
-      );
+      const loginResponse = await httpClient.post('/api/authentication/login', loginData, {
+        expectedStatus: 200,
+      });
 
       if (loginResponse.ok) {
         expect(loginResponse.body).toHaveProperty('accessToken');

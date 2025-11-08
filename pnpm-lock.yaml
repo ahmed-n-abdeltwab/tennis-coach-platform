@@ -300,12 +300,6 @@ importers:
 
   apps/api: {}
 
-  libs/auth-helpers:
-    dependencies:
-      tslib:
-        specifier: ^2.3.0
-        version: 2.8.1
-
   libs/routes-helpers:
     dependencies:
       tslib:

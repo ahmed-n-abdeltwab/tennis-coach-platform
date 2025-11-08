@@ -193,48 +193,32 @@ export class TypeSafeHttpClient<
   }
 
   /**
-   * Type-safe GET request (with known path type)
+   * Type-safe GET request
    *
    * @template P - The API path (must support GET method)
-   * @param path - The API endpoint path
-   * @param params - Query parameters or path parameters
-   * @param options - Additional request options
-   * @returns Typed response with discriminated union (check response.ok to narrow type)
-   */
-  async get<P extends PathsWithMethod<E, 'GET'>>(
-    path: P,
-    params?: ExtractRequestType<E, P, 'GET'>,
-    options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>>;
-
-  /**
-   * Type-safe GET request (with string path - for template literals)
-   *
-   * @param path - The API endpoint path (template literal like `/api/users/${id}`)
+   * @param path - The API endpoint path (literal or template string with type assertion)
    * @param params - Query parameters or path parameters
    * @param options - Additional request options
    * @returns Typed response with discriminated union (check response.ok to narrow type)
    *
    * @example
    * ```typescript
-   * // GET with template literal
-   * const response = await client.get(`/api/accounts/${accountId}`);
+   * // With literal path
+   * const response = await client.get('/api/accounts/me');
+   *
+   * // With template literal (use type assertion)
+   * const response = await client.get(`/api/accounts/${id}` as '/api/accounts/{id}');
    *
    * // Use discriminated union to narrow type
    * if (response.ok) {
-   *   // response.body is typed as success type
    *   console.log(response.body.id);
    * } else {
-   *   // response.body is typed as ErrorResponse | ValidationErrorResponse
-   *   console.log(response.body.message);
+   *   console.error(response.body.message);
    * }
    * ```
    */
-  async get(path: string, params?: any, options?: RequestOptions): Promise<TypedResponse<any>>;
-
-  // Implementation
   async get<P extends PathsWithMethod<E, 'GET'>>(
-    path: P | string,
+    path: P,
     params?: ExtractRequestType<E, P, 'GET'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
@@ -291,23 +275,32 @@ export class TypeSafeHttpClient<
   }
 
   /**
-   * Type-safe POST request (with known path type)
+   * Type-safe POST request
+   *
+   * @template P - The API path (must support POST method)
+   * @param path - The API endpoint path (can be literal or template string)
+   * @param body - Request body
+   * @param options - Additional request options
+   * @returns Typed response with discriminated union
+   *
+   * @example
+   * ```typescript
+   * // With literal path (full type safety)
+   * const response = await client.post('/api/authentication/user/login', { email, password });
+   *
+   * // With template literal (use type assertion for full type safety)
+   * const response = await client.post(`/api/users/${id}` as '/api/users/{id}', data);
+   *
+   * if (response.ok) {
+   *   console.log(response.body.accessToken);
+   * } else {
+   *   console.error(response.body.message);
+   * }
+   * ```
    */
   async post<P extends PathsWithMethod<E, 'POST'>>(
     path: P,
-    body: ExtractRequestType<E, P, 'POST'>,
-    options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>>;
-
-  /**
-   * Type-safe POST request (with string path - for template literals)
-   */
-  async post(path: string, body: any, options?: RequestOptions): Promise<TypedResponse<any>>;
-
-  // Implementation
-  async post<P extends PathsWithMethod<E, 'POST'>>(
-    path: P | string,
-    body: ExtractRequestType<E, P, 'POST'>,
+    body?: ExtractRequestType<E, P, 'POST'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
     const opts = options || {};
@@ -363,23 +356,11 @@ export class TypeSafeHttpClient<
   }
 
   /**
-   * Type-safe PUT request (with known path type)
+   * Type-safe PUT request
    */
   async put<P extends PathsWithMethod<E, 'PUT'>>(
     path: P,
-    body: ExtractRequestType<E, P, 'PUT'>,
-    options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>>;
-
-  /**
-   * Type-safe PUT request (with string path - for template literals)
-   */
-  async put(path: string, body: any, options?: RequestOptions): Promise<TypedResponse<any>>;
-
-  // Implementation
-  async put<P extends PathsWithMethod<E, 'PUT'>>(
-    path: P | string,
-    body: ExtractRequestType<E, P, 'PUT'>,
+    body?: ExtractRequestType<E, P, 'PUT'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
     const opts = options || {};
@@ -435,22 +416,10 @@ export class TypeSafeHttpClient<
   }
 
   /**
-   * Type-safe DELETE request (with known path type)
+   * Type-safe DELETE request
    */
   async delete<P extends PathsWithMethod<E, 'DELETE'>>(
     path: P,
-    params?: ExtractRequestType<E, P, 'DELETE'>,
-    options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>>;
-
-  /**
-   * Type-safe DELETE request (with string path - for template literals)
-   */
-  async delete(path: string, params?: any, options?: RequestOptions): Promise<TypedResponse<any>>;
-
-  // Implementation
-  async delete<P extends PathsWithMethod<E, 'DELETE'>>(
-    path: P | string,
     params?: ExtractRequestType<E, P, 'DELETE'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
@@ -490,35 +459,23 @@ export class TypeSafeHttpClient<
         body: response.body as ExtractResponseType<E, P, 'DELETE'>,
         headers: response.headers as Record<string, string>,
         ok: true,
-      };
+      } as SuccessResponse<ExtractResponseType<E, P, 'DELETE'>>;
     } else {
       return {
         status: response.status,
         body: response.body as ErrorResponse | ValidationErrorResponse,
         headers: response.headers as Record<string, string>,
         ok: false,
-      };
+      } as FailureResponse;
     }
   }
 
   /**
-   * Type-safe PATCH request (with known path type)
+   * Type-safe PATCH request
    */
   async patch<P extends PathsWithMethod<E, 'PATCH'>>(
     path: P,
-    body: ExtractRequestType<E, P, 'PATCH'>,
-    options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>>;
-
-  /**
-   * Type-safe PATCH request (with string path - for template literals)
-   */
-  async patch(path: string, body: any, options?: RequestOptions): Promise<TypedResponse<any>>;
-
-  // Implementation
-  async patch<P extends PathsWithMethod<E, 'PATCH'>>(
-    path: P | string,
-    body: ExtractRequestType<E, P, 'PATCH'>,
+    body?: ExtractRequestType<E, P, 'PATCH'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
     const opts = options || {};
@@ -562,40 +519,19 @@ export class TypeSafeHttpClient<
         body: response.body as ExtractResponseType<E, P, 'PATCH'>,
         headers: response.headers as Record<string, string>,
         ok: true,
-      };
+      } as SuccessResponse<ExtractResponseType<E, P, 'PATCH'>>;
     } else {
       return {
         status: response.status,
         body: response.body as ErrorResponse | ValidationErrorResponse,
         headers: response.headers as Record<string, string>,
         ok: false,
-      };
+      } as FailureResponse;
     }
   }
 
-  /**
-   * Authenticated GET request (with known path type)
-   */
   async authenticatedGet<P extends PathsWithMethod<E, 'GET'>>(
     path: P,
-    token: string,
-    params?: ExtractRequestType<E, P, 'GET'>,
-    options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>>;
-
-  /**
-   * Authenticated GET request (with string path - for template literals)
-   */
-  async authenticatedGet(
-    path: string,
-    token: string,
-    params?: any,
-    options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<any>>;
-
-  // Implementation
-  async authenticatedGet<P extends PathsWithMethod<E, 'GET'>>(
-    path: P | string,
     token: string,
     params?: ExtractRequestType<E, P, 'GET'>,
     options?: Omit<RequestOptions, 'headers'>
@@ -606,31 +542,10 @@ export class TypeSafeHttpClient<
     });
   }
 
-  /**
-   * Authenticated POST request (with known path type)
-   */
   async authenticatedPost<P extends PathsWithMethod<E, 'POST'>>(
     path: P,
     token: string,
-    body: ExtractRequestType<E, P, 'POST'>,
-    options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>>;
-
-  /**
-   * Authenticated POST request (with string path - for template literals)
-   */
-  async authenticatedPost(
-    path: string,
-    token: string,
-    body: any,
-    options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<any>>;
-
-  // Implementation
-  async authenticatedPost<P extends PathsWithMethod<E, 'POST'>>(
-    path: P | string,
-    token: string,
-    body: ExtractRequestType<E, P, 'POST'>,
+    body?: ExtractRequestType<E, P, 'POST'>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
     return this.post(path, body, {
@@ -639,31 +554,10 @@ export class TypeSafeHttpClient<
     });
   }
 
-  /**
-   * Authenticated PUT request (with known path type)
-   */
   async authenticatedPut<P extends PathsWithMethod<E, 'PUT'>>(
     path: P,
     token: string,
-    body: ExtractRequestType<E, P, 'PUT'>,
-    options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>>;
-
-  /**
-   * Authenticated PUT request (with string path - for template literals)
-   */
-  async authenticatedPut(
-    path: string,
-    token: string,
-    body: any,
-    options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<any>>;
-
-  // Implementation
-  async authenticatedPut<P extends PathsWithMethod<E, 'PUT'>>(
-    path: P | string,
-    token: string,
-    body: ExtractRequestType<E, P, 'PUT'>,
+    body?: ExtractRequestType<E, P, 'PUT'>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
     return this.put(path, body, {
@@ -672,29 +566,8 @@ export class TypeSafeHttpClient<
     });
   }
 
-  /**
-   * Authenticated DELETE request (with known path type)
-   */
   async authenticatedDelete<P extends PathsWithMethod<E, 'DELETE'>>(
     path: P,
-    token: string,
-    params?: ExtractRequestType<E, P, 'DELETE'>,
-    options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>>;
-
-  /**
-   * Authenticated DELETE request (with string path - for template literals)
-   */
-  async authenticatedDelete(
-    path: string,
-    token: string,
-    params?: any,
-    options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<any>>;
-
-  // Implementation
-  async authenticatedDelete<P extends PathsWithMethod<E, 'DELETE'>>(
-    path: P | string,
     token: string,
     params?: ExtractRequestType<E, P, 'DELETE'>,
     options?: Omit<RequestOptions, 'headers'>
@@ -711,25 +584,7 @@ export class TypeSafeHttpClient<
   async authenticatedPatch<P extends PathsWithMethod<E, 'PATCH'>>(
     path: P,
     token: string,
-    body: ExtractRequestType<E, P, 'PATCH'>,
-    options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>>;
-
-  /**
-   * Authenticated PATCH request (with string path - for template literals)
-   */
-  async authenticatedPatch(
-    path: string,
-    token: string,
-    body: any,
-    options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<any>>;
-
-  // Implementation
-  async authenticatedPatch<P extends PathsWithMethod<E, 'PATCH'>>(
-    path: P | string,
-    token: string,
-    body: ExtractRequestType<E, P, 'PATCH'>,
+    body?: ExtractRequestType<E, P, 'PATCH'>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
     return this.patch(path, body, {

@@ -11,14 +11,15 @@ import { Role } from '@prisma/client';
 import { parseJwtTime } from '../../../../../libs/utils/src';
 
 import { AuthTestHelper } from '../auth';
-import { HttpTestHelper } from '../http';
 import { UserRoleHelper } from '../roles';
 import { ProtectedRouteTester } from '../security';
+import { TypeSafeHttpClient } from '../http';
+import { Endpoints } from '../../../src/common';
 
 describe('Auth Helpers Integration Tests', () => {
   let app: INestApplication;
   let authHelper: AuthTestHelper;
-  let httpHelper: HttpTestHelper;
+  let httpHelper: TypeSafeHttpClient;
   let protectedRouteHelper: ProtectedRouteTester;
   let userRoleHelper: UserRoleHelper;
 
@@ -40,7 +41,7 @@ describe('Auth Helpers Integration Tests', () => {
 
     // Initialize helpers
     authHelper = new AuthTestHelper();
-    httpHelper = new HttpTestHelper(app);
+    httpHelper = new TypeSafeHttpClient(app);
     protectedRouteHelper = new ProtectedRouteTester(app);
     userRoleHelper = new UserRoleHelper();
   });

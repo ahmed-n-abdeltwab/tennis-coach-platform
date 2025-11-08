@@ -1,3 +1,4 @@
+import { ApiContractTester } from './../utils/http/api-contract-tester';
 /**
  * E2E Tests: Booking Workflow
  * Tests complete booking workflow including coach selection, time slot booking, and payment
@@ -16,7 +17,7 @@ import { AuthTestHelper } from '../utils/auth';
 describe('Booking Workflow (E2E)', () => {
   let authHelper: AuthTestHelper;
   let httpHelper: HttpTestHelper;
-  let contractHelper: ApiContractTestHelper;
+  let contractHelper: ApiContractTester;
   let userToken: string;
   let coachToken: string;
   let testUser: any;
@@ -25,7 +26,7 @@ describe('Booking Workflow (E2E)', () => {
   beforeAll(() => {
     authHelper = new AuthTestHelper();
     httpHelper = new HttpTestHelper(global.testApp);
-    contractHelper = new ApiContractTestHelper(global.testApp);
+    contractHelper = new ApiContractTester(global.testApp);
   });
 
   beforeEach(async () => {
@@ -46,6 +47,7 @@ describe('Booking Workflow (E2E)', () => {
       name: testUser.name,
       password: 'UserPassword123!',
     });
+    
     userToken = userRegisterResponse.body.accessToken;
     testUser.id = userRegisterResponse.body.user.id;
 

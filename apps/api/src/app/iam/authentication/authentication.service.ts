@@ -90,8 +90,6 @@ export class AuthenticationService {
       sub: user.sub,
       email: user.email,
       role: user.role,
-      iat: user?.iat,
-      exp: user?.exp,
     };
     const accessToken = this.jwtService.sign(payload, {
       secret: this.iamConfiguration.jwt.secret,
@@ -110,8 +108,6 @@ export class AuthenticationService {
       sub: accountId,
       email,
       role,
-      iat: Math.floor(Date.now()),
-      exp: Math.floor(Date.now() + 60 * 60 * 1000), // 1hr
     };
 
     const accessToken = this.jwtService.sign(payload, {
