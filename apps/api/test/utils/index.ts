@@ -115,11 +115,16 @@ export * from './roles';
  * type SessionsResponse = ExtractResponseType<Endpoints, '/api/sessions', 'GET'>;
  * ```
  */
+export { buildPath } from '@routes-helpers';
 export type {
+  AcceptPath,
   Endpoints,
   ExtractMethods,
+  ExtractPathParams,
   ExtractPaths,
   ExtractRequestType,
   ExtractResponseType,
   PathsWithMethod,
+  PathWithValues,
+  RequiresParams,
 } from '@routes-helpers';

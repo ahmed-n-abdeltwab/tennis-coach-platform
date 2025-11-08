@@ -23,7 +23,7 @@
       "@common/*": ["src/common/*"],
       "@config": ["src/config/index.ts"],
       "@config/*": ["src/config/*"],
-      "@test-utils/*": ["test/utils/*"],
+      "@test-utils": ["./test/utils/index"],
       "@test/*": ["test/*"]
     }
   },
