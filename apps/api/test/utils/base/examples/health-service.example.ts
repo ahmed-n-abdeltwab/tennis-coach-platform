@@ -3,9 +3,10 @@
  * Demonstrates how to use the base class for testing services
  */
 
-import { HealthService } from '@app/health/health.service';
-import { PrismaService } from '../prisma/prisma.service';
 
+
+import { HealthService } from '../../../../src/app/health/health.service';
+import { PrismaService } from '../../../../src/app/prisma/prisma.service';
 import { BaseServiceTest } from '../base-service.test';
 
 export class HealthServiceTest extends BaseServiceTest<HealthService, PrismaService> {

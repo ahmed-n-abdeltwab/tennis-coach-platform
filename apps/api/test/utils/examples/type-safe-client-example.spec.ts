@@ -129,10 +129,13 @@ describe.skip('TypeSafeHttpClient Examples', () => {
       // Update account with type-safe request
       // For endpoints with path parameters, include the parameter in the body
       // The client will extract it and build the correct path
-      const response = await authenticatedClient.patch(`/api/accounts/${accountId}`, {
-        name: 'Updated Name',
-        bio: 'This is my bio',
-      });
+      const response = await authenticatedClient.patch(
+        `/api/accounts/${accountId}` as '/api/accounts/{id}',
+        {
+          name: 'Updated Name',
+          bio: 'This is my bio',
+        }
+      );
 
       expect(response.ok).toBe(true);
       if (response.ok) {
@@ -164,25 +167,6 @@ describe.skip('TypeSafeHttpClient Examples', () => {
         expect(validRequest.status).toBe(201);
         expect(validRequest.body.accessToken).toBeDefined();
       }
-
-      // ❌ These would cause TypeScript errors at compile time:
-
-      // Missing required fields:
-      // await client.post('/api/authentication/signup', {
-      //   email: 'test@example.com',
-      //   // Missing password, name, role - TypeScript error!
-      // });
-
-      // Invalid role value:
-      // await client.post('/api/authentication/signup', {
-      //   email: 'test@example.com',
-      //   password: 'pass',
-      //   name: 'Test',
-      //   role: 'INVALID_ROLE', // TypeScript error - not a valid role!
-      // });
-
-      // Wrong endpoint path:
-      // await client.post('/api/invalid/endpoint', {}); // TypeScript error!
     });
 
     it('demonstrates compile-time type checking for response types', async () => {
@@ -191,16 +175,11 @@ describe.skip('TypeSafeHttpClient Examples', () => {
         password: 'password123',
       });
       if (response.ok) {
-        // TypeScript knows the exact shape of the response
-        const token: string = response.body.accessToken; // ✅ Typed as string
-        const account = response.body.account; // ✅ Typed with all account fields
-        expect(token).toBeDefined();
+        const account = response.body.account;
+        expect(response.body.accessToken).toBeDefined();
         expect(account.email).toBe('test@example.com');
         expect(account.role).toBe('USER');
       }
-
-      // ❌ This would cause a TypeScript error:
-      // const invalid = response.body.nonExistentField; // TypeScript error!
     });
   });
 

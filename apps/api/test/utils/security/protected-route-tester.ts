@@ -114,7 +114,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
     const expiredToken = this.authHelper.createExpiredToken();
 
     await this.httpClient.request(path, method, data, {
-      headers: { Authorization: `Bearer ${expiredToken}` },
+      headers: { authorization: `Bearer ${expiredToken}` },
       expectedStatus: 401,
     });
   }
@@ -148,7 +148,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
     const defaultStatus = method === 'POST' ? 201 : 200;
 
     return this.httpClient.request(path, method, data, {
-      headers: { Authorization: `Bearer ${userToken}` },
+      headers: { authorization: `Bearer ${userToken}` },
       expectedStatus: expectedStatus || defaultStatus,
     });
   }
@@ -182,7 +182,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
     const defaultStatus = method === 'POST' ? 201 : 200;
 
     return this.httpClient.request(path, method, data, {
-      headers: { Authorization: `Bearer ${coachToken}` },
+      headers: { authorization: `Bearer ${coachToken}` },
       expectedStatus: expectedStatus || defaultStatus,
     });
   }
@@ -216,7 +216,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
     const defaultStatus = method === 'POST' ? 201 : 200;
 
     return this.httpClient.request(path, method, data, {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { authorization: `Bearer ${adminToken}` },
       expectedStatus: expectedStatus || defaultStatus,
     });
   }
@@ -267,7 +267,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
       const expectedStatus = isAllowed ? (method === 'POST' ? 201 : 200) : 403;
 
       await this.httpClient.request(path, method, data, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { authorization: `Bearer ${token}` },
         expectedStatus,
       });
     }

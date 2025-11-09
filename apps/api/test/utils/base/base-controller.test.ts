@@ -6,12 +6,27 @@
 import { INestApplication, Provider } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
+import {
+  buildPath,
+  DeepPartial,
+  Endpoints,
+  ExtractMethods,
+  ExtractPaths,
+  ExtractRequestType,
+  MockRequest,
+  PathsWithMethod,
+} from '@test-utils';
 
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { JwtPayload } from '../auth/auth-test-helper';
+import { RequestOptions } from '../http';
 
-export abstract class BaseControllerTest<TController, TService> {
+export abstract class BaseControllerTest<
+  TController,
+  TService,
+  E extends Record<string, any> = Endpoints,
+> {
   protected controller: TController;
   protected service: TService;
   protected app: INestApplication;
@@ -77,7 +92,7 @@ export abstract class BaseControllerTest<TController, TService> {
   /**
    * Creates a mock HTTP request object
    */
-  protected createMockRequest(data?: any, user?: any): any {
+  protected createMockRequest(data?: any, user?: any): MockRequest {
     return {
       body: data || {},
       user: user || { id: 'test-user-id', email: 'test@example.com' },
@@ -109,8 +124,6 @@ export abstract class BaseControllerTest<TController, TService> {
       sub: 'test-user-id',
       email: 'test@example.com',
       role: Role.USER,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 3600,
     }
   ): string {
     const jwtService = new JwtService({
@@ -123,65 +136,134 @@ export abstract class BaseControllerTest<TController, TService> {
   /**
    * Creates authorization headers for HTTP requests
    */
-  protected createAuthHeaders(token?: string): { Authorization: string } {
+  protected createAuthHeaders(token?: string): { authorization: string } {
     const authToken = token || this.createTestJwtToken();
     return {
-      Authorization: `Bearer ${authToken}`,
+      authorization: `Bearer ${authToken}`,
     };
+  }
+  /**
+   * Makes an request
+   */
+  protected async request<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
+    endpoint: P,
+    method: M,
+    data?: DeepPartial<ExtractRequestType<E, P, M>>,
+    options: RequestOptions = {}
+  ): Promise<request.Test> {
+    const builtPath = this.buildPathWithParams(endpoint, data);
+    const normalizedMethod = method.toLowerCase() as Lowercase<M>;
+    let req = request(this.app.getHttpServer())[normalizedMethod](builtPath);
+
+    // Add headers
+    if (options.headers) {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        req = req.set(key, value);
+      });
+    }
+
+    // Add data for requests
+    if (data != null) {
+      if (method === 'GET') req = req.query(data);
+      else req = req.send(data);
+    }
+
+    // Set timeout
+    if (options.timeout) {
+      req = req.timeout(options.timeout);
+    }
+
+    // Set expected status
+    if (options.expectedStatus) {
+      req = req.expect(options.expectedStatus);
+    }
+    return req;
+  }
+
+  /**
+   * Makes an authenticated request
+   */
+  protected async authenticatedRequest<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
+    endpoint: P,
+    method: M,
+    token: string,
+    data?: DeepPartial<ExtractRequestType<E, P, M>>,
+    options: RequestOptions = {}
+  ): Promise<request.Test> {
+    return this.request(endpoint, method, data, {
+      ...options,
+      headers: this.createAuthHeaders(token),
+    });
   }
 
   /**
    * Makes an authenticated GET request
    */
-  protected authenticatedGet(endpoint: string, token?: string): request.Test {
-    return request(this.app.getHttpServer())
-      .get(`/api${endpoint}`)
-      .set(this.createAuthHeaders(token));
+  protected async authenticatedGet<P extends PathsWithMethod<E, 'GET'>>(
+    endpoint: P,
+    token: string,
+    params?: DeepPartial<ExtractRequestType<E, P, 'GET'>>,
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<request.Test> {
+    return this.authenticatedRequest(endpoint, 'GET', token, params, options);
   }
 
   /**
    * Makes an authenticated POST request
    */
-  protected authenticatedPost(endpoint: string, data?: any, token?: string): request.Test {
-    return request(this.app.getHttpServer())
-      .post(`/api${endpoint}`)
-      .set(this.createAuthHeaders(token))
-      .send(data || {});
+  protected async authenticatedPost<P extends PathsWithMethod<E, 'POST'>>(
+    endpoint: P,
+    token: string,
+    data?: DeepPartial<ExtractRequestType<E, P, 'POST'>>,
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<request.Test> {
+    return this.authenticatedRequest(endpoint, 'POST', token, data, options);
   }
 
   /**
    * Makes an authenticated PUT request
    */
-  protected authenticatedPut(endpoint: string, data?: any, token?: string): request.Test {
-    return request(this.app.getHttpServer())
-      .put(`/api${endpoint}`)
-      .set(this.createAuthHeaders(token))
-      .send(data || {});
+  protected async authenticatedPut<P extends PathsWithMethod<E, 'PUT'>>(
+    endpoint: P,
+    token: string,
+    data?: DeepPartial<ExtractRequestType<E, P, 'PUT'>>,
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<request.Test> {
+    return this.authenticatedRequest(endpoint, 'PUT', token, data, options);
   }
 
   /**
    * Makes an authenticated DELETE request
    */
-  protected authenticatedDelete(endpoint: string, token?: string): request.Test {
-    return request(this.app.getHttpServer())
-      .delete(`/api${endpoint}`)
-      .set(this.createAuthHeaders(token));
+  protected authenticatedDelete<P extends PathsWithMethod<E, 'DELETE'>>(
+    endpoint: P,
+    token: string,
+    params?: DeepPartial<ExtractRequestType<E, P, 'DELETE'>>,
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<request.Test> {
+    return this.authenticatedRequest(endpoint, 'DELETE', token, params, options);
   }
 
   /**
    * Makes an unauthenticated GET request
    */
-  protected get(endpoint: string): request.Test {
-    return request(this.app.getHttpServer()).get(`/api${endpoint}`);
+  protected async get<P extends PathsWithMethod<E, 'GET'>>(
+    endpoint: P,
+    params?: DeepPartial<ExtractRequestType<E, P, 'GET'>>,
+    options?: RequestOptions
+  ): Promise<request.Test> {
+    return this.request(endpoint, 'GET', params, options);
   }
 
   /**
    * Makes an unauthenticated POST request
    */
-  protected post(endpoint: string, data?: any): request.Test {
-    return request(this.app.getHttpServer())
-      .post(`/api${endpoint}`)
-      .send(data || {});
+  protected post<P extends PathsWithMethod<E, 'POST'>>(
+    endpoint: P,
+    data?: DeepPartial<ExtractRequestType<E, P, 'POST'>>,
+    options?: RequestOptions
+  ): Promise<request.Test> {
+    return this.request(endpoint, 'POST', data, options);
   }
 
   /**
@@ -227,5 +309,15 @@ export abstract class BaseControllerTest<TController, TService> {
     expectedKeys.forEach(key => {
       expect(response.body).toHaveProperty(key);
     });
+  }
+
+  /**
+   * Build path with parameters (replace {id} with actual values)
+   * @private
+   */
+  private buildPathWithParams(path: string, data?: Record<string, any>): string {
+    if (!data || typeof data !== 'object') return path;
+
+    return buildPath(path, data);
   }
 }

@@ -3,9 +3,8 @@
  * Demonstrates how to use the base class for testing controllers
  */
 
-import { HealthController } from '@app/health/health.controller';
-import { HealthService } from '@app/health/health.service';
-
+import { HealthController } from '../../../../src/app/health/health.controller';
+import { HealthService } from '../../../../src/app/health/health.service';
 import { BaseControllerTest } from '../base-controller.test';
 
 export class HealthControllerTest extends BaseControllerTest<HealthController, HealthService> {
@@ -53,7 +52,7 @@ export class HealthControllerTest extends BaseControllerTest<HealthController, H
     });
 
     // Use the base class HTTP methods
-    const response = await this.get('/health');
+    const response = await this.get('/api/health');
 
     // Use the base class assertion methods
     this.assertSuccessResponse(response, 200);

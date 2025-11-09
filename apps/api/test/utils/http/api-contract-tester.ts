@@ -6,6 +6,7 @@
  */
 import { INestApplication } from '@nestjs/common';
 import type {
+  DeepPartial,
   ExtractMethods,
   ExtractPaths,
   ExtractRequestType,
@@ -106,7 +107,7 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
       response: {
         status: number;
         headers?: Record<string, string>;
-        body?: Partial<ExtractResponseType<E, P, M>>;
+        body?: DeepPartial<ExtractResponseType<E, P, M>>;
       };
     },
     options: RequestOptions = {}
@@ -176,7 +177,7 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
         response: {
           status: number;
           headers?: Record<string, string>;
-          body?: Partial<ExtractResponseType<E, P, M>>;
+          body?: DeepPartial<ExtractResponseType<E, P, M>>;
         };
       };
       options?: RequestOptions;
@@ -223,7 +224,7 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
     path: P,
     method: M,
     errorCases: HttpErrorTestCase[],
-    data?: ExtractRequestType<E, P, M>,
+    data?: DeepPartial<ExtractRequestType<E, P, M>>,
     options: RequestOptions = {}
   ): Promise<void> {
     for (const errorCase of errorCases) {
@@ -281,7 +282,7 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
     method: M,
     validationCases: Array<{
       name: string;
-      data: ExtractRequestType<E, P, M>;
+      data: DeepPartial<ExtractRequestType<E, P, M>>;
       expectedErrors: string[];
     }>,
     options: RequestOptions = {}

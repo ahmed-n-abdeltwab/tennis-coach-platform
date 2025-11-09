@@ -290,6 +290,7 @@ export function WithTransaction(options: TransactionOptions = {}) {
         client,
         async tx => {
           // Replace the client with the transaction client for the duration of the test
+          // TODO: fix this error.
           const originalClient = this.prisma || this.client;
           if (this.prisma) this.prisma = tx;
           if (this.client) this.client = tx;

@@ -11,10 +11,9 @@ import { Role } from '@prisma/client';
 import { parseJwtTime } from '../../../../../libs/utils/src';
 
 import { AuthTestHelper } from '../auth';
+import { TypeSafeHttpClient } from '../http';
 import { UserRoleHelper } from '../roles';
 import { ProtectedRouteTester } from '../security';
-import { TypeSafeHttpClient } from '../http';
-import { Endpoints } from '../../../src/common';
 
 describe('Auth Helpers Integration Tests', () => {
   let app: INestApplication;
@@ -93,12 +92,12 @@ describe('Auth Helpers Integration Tests', () => {
       const userHeaders = authHelper.createUserAuthHeaders();
       const coachHeaders = authHelper.createCoachAuthHeaders();
 
-      expect(userHeaders.Authorization).toMatch(/^Bearer .+/);
-      expect(coachHeaders.Authorization).toMatch(/^Bearer .+/);
+      expect(userHeaders.authorization).toMatch(/^Bearer .+/);
+      expect(coachHeaders.authorization).toMatch(/^Bearer .+/);
 
       // Extract tokens from headers
-      const userToken = userHeaders.Authorization.replace('Bearer ', '');
-      const coachToken = coachHeaders.Authorization.replace('Bearer ', '');
+      const userToken = userHeaders.authorization.replace('Bearer ', '');
+      const coachToken = coachHeaders.authorization.replace('Bearer ', '');
 
       const userPayload = authHelper.decodeToken(userToken);
       const coachPayload = authHelper.decodeToken(coachToken);
@@ -147,15 +146,15 @@ describe('Auth Helpers Integration Tests', () => {
 
       // Verify all headers are valid
       userHeaders.forEach(header => {
-        expect(header.Authorization).toMatch(/^Bearer .+/);
-        const token = header.Authorization.replace('Bearer ', '');
+        expect(header.authorization).toMatch(/^Bearer .+/);
+        const token = header.authorization.replace('Bearer ', '');
         const payload = authHelper.decodeToken(token);
         expect(payload?.role).toBe(Role.USER);
       });
 
       coachHeaders.forEach(header => {
-        expect(header.Authorization).toMatch(/^Bearer .+/);
-        const token = header.Authorization.replace('Bearer ', '');
+        expect(header.authorization).toMatch(/^Bearer .+/);
+        const token = header.authorization.replace('Bearer ', '');
         const payload = authHelper.decodeToken(token);
         expect(payload?.role).toBe(Role.COACH);
       });
@@ -221,14 +220,14 @@ describe('Auth Helpers Integration Tests', () => {
       const coachHeaders = authHelper.createCoachAuthHeaders();
 
       // Headers should have the correct format for HTTP requests
-      expect(userHeaders).toHaveProperty('Authorization');
-      expect(coachHeaders).toHaveProperty('Authorization');
-      expect(userHeaders.Authorization).toMatch(/^Bearer .+/);
-      expect(coachHeaders.Authorization).toMatch(/^Bearer .+/);
+      expect(userHeaders).toHaveProperty('authorization');
+      expect(coachHeaders).toHaveProperty('authorization');
+      expect(userHeaders.authorization).toMatch(/^Bearer .+/);
+      expect(coachHeaders.authorization).toMatch(/^Bearer .+/);
 
       // Extract and verify tokens
-      const userToken = userHeaders.Authorization.replace('Bearer ', '');
-      const coachToken = coachHeaders.Authorization.replace('Bearer ', '');
+      const userToken = userHeaders.authorization.replace('Bearer ', '');
+      const coachToken = coachHeaders.authorization.replace('Bearer ', '');
 
       const userPayload = authHelper.decodeToken(userToken);
       const coachPayload = authHelper.decodeToken(coachToken);

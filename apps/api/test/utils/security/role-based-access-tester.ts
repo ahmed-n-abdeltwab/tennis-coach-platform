@@ -251,7 +251,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     const expectedStatus = method === 'POST' ? 201 : 200;
 
     return this.httpClient.request(path, method, data, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { authorization: `Bearer ${token}` },
       expectedStatus,
     });
   }
@@ -286,7 +286,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     const token = this.createTokenForRole(role);
 
     await this.httpClient.request(path, method, data, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { authorization: `Bearer ${token}` },
       expectedStatus,
     });
   }
@@ -306,7 +306,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
 
     try {
       const response = await this.httpClient.request(path, method, data, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { authorization: `Bearer ${token}` },
         expectedStatus,
       });
 

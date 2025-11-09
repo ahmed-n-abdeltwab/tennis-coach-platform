@@ -189,14 +189,13 @@ export class DatabaseSeeder {
         description: 'Detailed video analysis of technique and strategy',
         basePrice: 50.0,
       },
-    ];
+    ] as const;
 
     for (const coach of coaches) {
       for (let i = 0; i < Math.min(count, types.length); i++) {
-        const type = types[i];
         const bookingType: BookingType = await this.client.bookingType.create({
           data: {
-            ...type,
+            ...types[i],
             coachId: coach.id,
             isActive: true,
           },
@@ -352,7 +351,11 @@ export class DatabaseSeeder {
   /**
    * Seed messages between users and coaches
    */
-  async seedMessages(sessions: Session[], users: Account[], coaches: Account[]): Promise<Message[]> {
+  async seedMessages(
+    sessions: Session[],
+    users: Account[],
+    coaches: Account[]
+  ): Promise<Message[]> {
     const messages: Message[] = [];
 
     // Create messages for each session

@@ -65,7 +65,7 @@ export class PaymentsService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
+        authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify(orderData),
     });
@@ -102,7 +102,7 @@ export class PaymentsService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
+        authorization: `Bearer ${accessToken}`,
       },
     });
 
@@ -143,7 +143,7 @@ export class PaymentsService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: `Basic ${auth}`,
+        authorization: `Basic ${auth}`,
       },
       body: 'grant_type=client_credentials',
     });

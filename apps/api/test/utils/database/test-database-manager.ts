@@ -11,7 +11,7 @@
 import { execSync } from 'child_process';
 import { randomUUID } from 'crypto';
 
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient, Role } from '@prisma/client';
 
 export interface TestDatabaseConfig {
   type: 'unit' | 'integration' | 'e2e';
@@ -263,7 +263,7 @@ export class TestDatabaseManager {
     );
 
     for (const key of transactionKeys) {
-      const transactionId = key.split(':')[1];
+      const transactionId = key.split(':')[1] ?? 'no-key';
       await this.rollbackTransaction(testSuite, transactionId);
     }
   }
@@ -409,8 +409,7 @@ export class TestDatabaseManager {
     await client.discount.deleteMany();
     await client.timeSlot.deleteMany();
     await client.bookingType.deleteMany();
-    await client.coach.deleteMany();
-    await client.user.deleteMany();
+    await client.account.deleteMany();
   }
 
   private async insertSeedData(client: PrismaClient, seedData: any[]): Promise<void> {
@@ -425,7 +424,7 @@ export class TestDatabaseManager {
   private async insertDefaultSeedData(client: PrismaClient): Promise<void> {
     // Create default test users
     const users = await Promise.all([
-      client.user.create({
+      client.account.create({
         data: {
           email: 'testuser1@example.com',
           name: 'Test User 1',
@@ -433,9 +432,10 @@ export class TestDatabaseManager {
           gender: 'male',
           age: 25,
           country: 'US',
+          role: Role.USER,
         },
       }),
-      client.user.create({
+      client.account.create({
         data: {
           email: 'testuser2@example.com',
           name: 'Test User 2',
@@ -443,30 +443,31 @@ export class TestDatabaseManager {
           gender: 'female',
           age: 30,
           country: 'US',
+          role: Role.USER,
         },
       }),
     ]);
 
     // Create default test coaches
     const coaches = await Promise.all([
-      client.coach.create({
+      client.account.create({
         data: {
           email: 'testcoach1@example.com',
           name: 'Test Coach 1',
           passwordHash: '$2b$10$test.hash.for.coach1',
           bio: 'Experienced tennis coach with 10+ years',
           credentials: 'USPTA Certified',
-          isAdmin: false,
+          role: Role.COACH,
         },
       }),
-      client.coach.create({
+      client.account.create({
         data: {
           email: 'testcoach2@example.com',
           name: 'Test Coach 2',
           passwordHash: '$2b$10$test.hash.for.coach2',
           bio: 'Professional tennis instructor',
           credentials: 'PTR Certified',
-          isAdmin: true,
+          role: Role.COACH,
         },
       }),
     ]);

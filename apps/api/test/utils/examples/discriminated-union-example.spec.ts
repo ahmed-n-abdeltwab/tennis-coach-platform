@@ -1,11 +1,15 @@
 /**
- * Exampnstrating the discriminated union pattern in TypeSafeHttpClient
+ * Example demonstrating the discriminated union pattern in TypeSafeHttpClient
  *
  * The client returns a discriminated union type that distinguishes between
  * success (2xx) and error (4xx/5xx) responses using the `ok` property.
  */
 
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { Role } from '@prisma/client';
+import { IamModule } from '../../../src/app/iam/iam.module';
+import { PrismaModule } from '../../../src/app/prisma/prisma.module';
 import { TypeSafeHttpClient } from '../http/type-safe-http-client';
 
 describe('Discriminated Union Pattern Examples', () => {
@@ -15,7 +19,14 @@ describe('Discriminated Union Pattern Examples', () => {
   beforeAll(async () => {
     // Setup app (simplified for example)
     // app = await createTestApp();
-    // client = new TypeSafeHttpClient(app);
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [IamModule, PrismaModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+    client = new TypeSafeHttpClient(app);
   });
 
   /**
@@ -50,10 +61,11 @@ describe('Discriminated Union Pattern Examples', () => {
    * Example 2: Handling validation errors specifically
    */
   it('should distinguish between error types', async () => {
-    const response = await client.post('/api/authentication/user/signup', {
+    const response = await client.post('/api/authentication/signup', {
       email: 'invalid-email',
-      password: '123', // too short
+      password: '123',
       name: '',
+      role: Role.USER,
     });
 
     if (!response.ok) {
@@ -122,12 +134,12 @@ describe('Discriminated Union Pattern Examples', () => {
       // response.body is Array<BookingType>
       const bookingTypes = response.body;
 
-      bookingTypes.forEach(type => {
-        console.log(type.id); // string
-        console.log(type.name); // string
-        console.log(type.basePrice); // number
-        console.log(type.isActive); // boolean
-      });
+      // bookingTypes.forEach(type => {
+      //   console.log(type.id); // string
+      //   console.log(type.name); // string
+      //   console.log(type.basePrice); // number
+      //   console.log(type.isActive); // boolean
+      // });
     }
   });
 
@@ -198,10 +210,11 @@ describe('Discriminated Union Pattern Examples', () => {
     }
 
     // Test validation error
-    const validationResponse = await client.post('/api/authentication/user/signup', {
+    const validationResponse = await client.post('/api/authentication/signup', {
       email: 'invalid',
       password: '',
       name: '',
+      role: Role.USER,
     });
 
     expect(validationResponse.ok).toBe(false);

@@ -8,7 +8,7 @@
  * - MigrationManager
  */
 
-import { Prisma, PrismaClient, User } from '@prisma/client';
+import { Account, Prisma, PrismaClient } from '@prisma/client';
 
 import { setupMinimalTestDatabase, setupTestDatabaseEnvironment } from '..';
 import { createDatabaseSeeder, DatabaseSeeder, SeedDataOptions } from '../database-seeder';
@@ -74,11 +74,9 @@ describe('Database Utilities', () => {
       });
 
       // Verify seeded data exists
-      const users = await connection.client.user.findMany();
-      const coaches = await connection.client.coach.findMany();
+      const users = await connection.client.account.findMany();
 
       expect(users.length).toBeGreaterThan(0);
-      expect(coaches.length).toBeGreaterThan(0);
 
       await testDatabaseManager.cleanupTestDatabase(testName);
     });
@@ -119,13 +117,10 @@ describe('Database Utilities', () => {
       expect(seededData.discounts).toHaveLength(0);
 
       // Verify data in database
-      const users = await testClient.user.findMany();
-      const coaches = await testClient.coach.findMany();
+      const users = await testClient.account.findMany();
 
       expect(users).toHaveLength(1);
-      expect(coaches).toHaveLength(1);
-      expect(users[0].email).toContain('@example.com');
-      expect(coaches[0].email).toContain('@example.com');
+      expect(users[0]?.email).toContain('@example.com');
     });
 
     it('should seed comprehensive data correctly', async () => {
@@ -171,19 +166,17 @@ describe('Database Utilities', () => {
       await seeder.seedMinimal();
 
       // Verify data exists
-      let users = await testClient.user.findMany();
+      let users = await testClient.account.findMany();
       expect(users.length).toBeGreaterThan(0);
 
       // Clear all data
       await seeder.clearAll();
 
       // Verify data is cleared
-      users = await testClient.user.findMany();
-      const coaches = await testClient.coach.findMany();
+      users = await testClient.account.findMany();
       const sessions = await testClient.session.findMany();
 
       expect(users).toHaveLength(0);
-      expect(coaches).toHaveLength(0);
       expect(sessions).toHaveLength(0);
     });
   });
@@ -206,7 +199,7 @@ describe('Database Utilities', () => {
 
       // Execute operation in transaction
       await transactionManager.withTransaction(testClient, async tx => {
-        const user = await tx.user.create({
+        const user = await tx.account.create({
           data: {
             email: 'transaction-test@example.com',
             name: 'Transaction Test User',
@@ -216,14 +209,14 @@ describe('Database Utilities', () => {
         createdUserId = user.id;
 
         // Verify user exists within transaction
-        const foundUser = await tx.user.findUnique({
+        const foundUser = await tx.account.findUnique({
           where: { id: createdUserId },
         });
         expect(foundUser).toBeDefined();
       });
 
       // Verify user was rolled back
-      const users = await testClient.user.findMany();
+      const users = await testClient.account.findMany();
       expect(users).toHaveLength(0);
     });
 
@@ -232,7 +225,7 @@ describe('Database Utilities', () => {
 
       // Execute operation in committed transaction
       await transactionManager.withCommittedTransaction(testClient, async tx => {
-        const user: User = await tx.user.create({
+        const user: Account = await tx.account.create({
           data: {
             email: 'committed-test@example.com',
             name: 'Committed Test User',
@@ -243,7 +236,7 @@ describe('Database Utilities', () => {
       });
 
       // Verify user was committed
-      const user: User | null = await testClient.user.findUnique({
+      const user = await testClient.account.findUnique({
         where: { id: createdUserId },
       });
       expect(user).toBeDefined();
@@ -253,7 +246,7 @@ describe('Database Utilities', () => {
     it('should handle multiple transactions independently', async () => {
       const callbacks = [
         async (tx: Prisma.TransactionClient) => {
-          return tx.user.create({
+          return tx.account.create({
             data: {
               email: 'user1@example.com',
               name: 'User 1',
@@ -262,7 +255,7 @@ describe('Database Utilities', () => {
           });
         },
         async (tx: Prisma.TransactionClient) => {
-          return tx.user.create({
+          return tx.account.create({
             data: {
               email: 'user2@example.com',
               name: 'User 2',
@@ -275,11 +268,11 @@ describe('Database Utilities', () => {
       const results = await transactionManager.withMultipleTransactions(testClient, callbacks);
 
       expect(results).toHaveLength(2);
-      expect(results[0].email).toBe('user1@example.com');
-      expect(results[1].email).toBe('user2@example.com');
+      expect(results[0]?.email).toBe('user1@example.com');
+      expect(results[1]?.email).toBe('user2@example.com');
 
       // Verify users were rolled back
-      const users = await testClient.user.findMany();
+      const users = await testClient.account.findMany();
       expect(users).toHaveLength(0);
     });
 
@@ -287,7 +280,7 @@ describe('Database Utilities', () => {
       const helper = transactionManager.createTransactionTestHelper(testClient);
 
       const setupResult = await helper.setup(async tx => {
-        return tx.user.create({
+        return tx.account.create({
           data: {
             email: 'helper-test@example.com',
             name: 'Helper Test User',
@@ -299,7 +292,7 @@ describe('Database Utilities', () => {
       expect(setupResult.email).toBe('helper-test@example.com');
 
       // Verify rollback
-      const users = await testClient.user.findMany();
+      const users = await testClient.account.findMany();
       expect(users).toHaveLength(0);
     });
   });
@@ -325,17 +318,15 @@ describe('Database Utilities', () => {
       expect(environment.cleanup).toBeInstanceOf(Function);
 
       // Verify seeded data
-      const users = await environment.connection.client.user.findMany();
-      const coaches = await environment.connection.client.coach.findMany();
+      const users = await environment.connection.client.account.findMany();
 
-      expect(users).toHaveLength(2);
-      expect(coaches).toHaveLength(1);
+      expect(users).toHaveLength(3);
 
       // Test transaction functionality
       await environment.transactionManager.withTransaction(
         environment.connection.client,
         async tx => {
-          const newUser = await tx.user.create({
+          const newUser = await tx.account.create({
             data: {
               email: 'tx-test@example.com',
               name: 'Transaction Test',
@@ -347,7 +338,7 @@ describe('Database Utilities', () => {
       );
 
       // Verify transaction was rolled back
-      const usersAfterTx = await environment.connection.client.user.findMany();
+      const usersAfterTx = await environment.connection.client.account.findMany();
       expect(usersAfterTx).toHaveLength(2); // Same as before
 
       // Cleanup
@@ -363,12 +354,10 @@ describe('Database Utilities', () => {
       expect(environment.seeder).toBeInstanceOf(DatabaseSeeder);
 
       // Verify minimal data
-      const users = await environment.connection.client.user.findMany();
-      const coaches = await environment.connection.client.coach.findMany();
+      const users = await environment.connection.client.account.findMany();
       const sessions = await environment.connection.client.session.findMany();
 
       expect(users).toHaveLength(1);
-      expect(coaches).toHaveLength(1);
       expect(sessions).toHaveLength(1);
 
       await environment.cleanup();

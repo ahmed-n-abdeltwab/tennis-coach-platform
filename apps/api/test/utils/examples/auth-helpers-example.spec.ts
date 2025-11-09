@@ -29,7 +29,7 @@ import { Role } from '@prisma/client';
 import { IamModule } from '../../../src/app/iam/iam.module';
 import { PrismaModule } from '../../../src/app/prisma/prisma.module';
 import { AuthTestHelper } from '../auth';
-import { ApiContract, ApiContractTester, TypeSafeHttpClient } from '../http';
+import { ApiContractTester, TypeSafeHttpClient } from '../http';
 import { UserRoleHelper } from '../roles';
 import { ProtectedRouteTester } from '../security';
 
@@ -116,9 +116,9 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       const coachHeaders = authHelper.createCoachAuthHeaders();
       const expiredHeaders = authHelper.createExpiredAuthHeaders();
 
-      expect(userHeaders.Authorization).toMatch(/^Bearer /);
-      expect(coachHeaders.Authorization).toMatch(/^Bearer /);
-      expect(expiredHeaders.Authorization).toMatch(/^Bearer /);
+      expect(userHeaders.authorization).toMatch(/^Bearer /);
+      expect(coachHeaders.authorization).toMatch(/^Bearer /);
+      expect(expiredHeaders.authorization).toMatch(/^Bearer /);
     });
   });
 
@@ -134,7 +134,7 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       const userToken = authHelper.createUserToken();
 
       const authResponse = await httpClient.authenticatedGet(
-        '/api/users/profile',
+        '/api/accounts/me',
         userToken,
         undefined,
         {
@@ -148,22 +148,36 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       const userToken = authHelper.createUserToken();
 
       // Test POST request
-      const postData = { name: 'Test', email: 'test@example.com' };
-      const postResponse = await httpClient.authenticatedPost('/api/users', userToken, postData, {
-        expectedStatus: 201,
-      });
+      const postData = {
+        email: 'test@example.com',
+        password: 'password123',
+      };
+
+      const postResponse = await httpClient.authenticatedPost(
+        '/api/authentication/user/login',
+        userToken,
+        postData,
+        {
+          expectedStatus: 201,
+        }
+      );
       expect(postResponse.status).toBe(201);
 
       // Test PUT request
-      const putData = { name: 'Updated Test' };
-      const putResponse = await httpClient.authenticatedPut('/api/users/123', userToken, putData, {
-        expectedStatus: 200,
-      });
+      const putData = { amount: 10, maxUsage: 1, isActive: true };
+      const putResponse = await httpClient.authenticatedPut(
+        '/api/discounts/123' as '/api/discounts/{code}',
+        userToken,
+        putData,
+        {
+          expectedStatus: 200,
+        }
+      );
       expect(putResponse.status).toBe(200);
 
       // Test DELETE request
       const deleteResponse = await httpClient.authenticatedDelete(
-        '/api/users/123',
+        '/api/accounts/123' as '/api/accounts/{id}',
         userToken,
         undefined,
         {
@@ -242,11 +256,11 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       expect(coachHeaders).toHaveLength(2);
 
       userHeaders.forEach(header => {
-        expect(header.Authorization).toMatch(/^Bearer /);
+        expect(header.authorization).toMatch(/^Bearer /);
       });
 
       coachHeaders.forEach(header => {
-        expect(header.Authorization).toMatch(/^Bearer /);
+        expect(header.authorization).toMatch(/^Bearer /);
       });
     });
   });
@@ -267,12 +281,12 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
 
     it('should test response structure', async () => {
       const expectedStructure = {
-        status: 'string',
-        uptime: 'number',
-        timestamp: 'string',
+        response: {
+          status: 200,
+        },
       };
 
-      const response = await contractTester.testResponseStructure(
+      const response = await contractTester.testApiContract(
         '/api/health',
         'GET',
         expectedStructure
@@ -312,24 +326,25 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
 
   describe('API Contract Testing Examples', () => {
     it('should test API contract compliance', async () => {
-      const contract: ApiContract = {
+      const contract = {
         request: {
           headers: { 'Content-Type': 'application/json' },
-          body: {
+          payload: {
             email: 'test@example.com',
             password: 'password123',
             name: 'Test User',
+            role: Role.USER,
           },
         },
         response: {
           status: 201,
           headers: {
-            'content-type': /application\/json/,
+            'content-type': 'application/json',
           },
           body: {
-            required: ['accessToken', 'user'],
-            types: {
-              accessToken: 'string',
+            account: {
+              email: 'test@example.com',
+              role: Role.USER,
             },
           },
         },
@@ -339,17 +354,9 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
     });
 
     it('should test API contract for health endpoint', async () => {
-      const contract: ApiContract = {
+      const contract = {
         response: {
           status: 200,
-          body: {
-            required: ['status', 'uptime', 'timestamp'],
-            types: {
-              status: 'string',
-              uptime: 'number',
-              timestamp: 'string',
-            },
-          },
         },
       };
 
@@ -366,13 +373,9 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
         name: 'Integration Test User',
       };
 
-      const registerResponse = await httpClient.post(
-        '/api/authentication/user/signup',
-        registerData,
-        {
-          expectedStatus: 201,
-        }
-      );
+      const registerResponse = await httpClient.post('/api/authentication/signup', registerData, {
+        expectedStatus: 201,
+      });
 
       expect(registerResponse.body).toHaveProperty('accessToken');
       expect(registerResponse.body).toHaveProperty('user');

@@ -26,8 +26,7 @@ export class NestIntegrationTestContext {
       await this.prismaService.session.deleteMany();
       await this.prismaService.timeSlot.deleteMany();
       await this.prismaService.bookingType.deleteMany();
-      await this.prismaService.coach.deleteMany();
-      await this.prismaService.user.deleteMany();
+      await this.prismaService.account.deleteMany();
       await this.prismaService.discount.deleteMany();
       await this.prismaService.message.deleteMany();
     }

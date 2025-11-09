@@ -191,10 +191,17 @@ export function httpScenariosExample() {
   const user = userFactory.create();
 
   // Different request types
-  const getRequest = httpFactory.createGetRequest({ page: 1, limit: 10 });
-  const postRequest = httpFactory.createPostRequest({ name: 'Test', email: 'test@example.com' });
-  const putRequest = httpFactory.createPutRequest({ name: 'Updated' }, { id: '123' });
-  const deleteRequest = httpFactory.createDeleteRequest({ id: '123' });
+  const getRequest = httpFactory.createRequest({ body: { page: 1, limit: 10 }, method: 'GET' });
+  const postRequest = httpFactory.createRequest({
+    body: { name: 'Test', email: 'test@example.com' },
+    method: 'POST',
+  });
+  const putRequest = httpFactory.createRequest({
+    body: { name: 'Updated' },
+    params: { id: '123' },
+    method: 'PUT',
+  });
+  const deleteRequest = httpFactory.createRequest({ params: { id: '123' }, method: 'Delete' });
 
   // Authenticated requests
   const authRequest = httpFactory.createAuthenticatedRequest(user);

@@ -20,8 +20,8 @@ import {
 } from '@prisma/client';
 import request from 'supertest';
 import { JwtPayload } from '../auth/auth-test-helper';
-import { PrismaService } from '../prisma/prisma.service';
 
+import { PrismaService } from '../../../src/app/prisma/prisma.service';
 import { cleanDatabase, seedTestDatabase } from '../database/database-helpers';
 
 export abstract class BaseIntegrationTest {
@@ -146,10 +146,10 @@ export abstract class BaseIntegrationTest {
   /**
    * Creates authorization headers for HTTP requests
    */
-  protected createAuthHeaders(token?: string): { Authorization: string } {
+  protected createAuthHeaders(token?: string): { authorization: string } {
     const authToken = token || this.createTestJwtToken();
     return {
-      Authorization: `Bearer ${authToken}`,
+      authorization: `Bearer ${authToken}`,
     };
   }
 
@@ -234,7 +234,6 @@ export abstract class BaseIntegrationTest {
       address: '123 Test St, Test City',
       isActive: true,
       isOnline: true,
-      role: PrismaRole.USER,
       createdAt: new Date(),
       updatedAt: new Date(),
       ...overrides,
@@ -255,7 +254,7 @@ export abstract class BaseIntegrationTest {
       name: 'Test Coach',
       bio: 'Test coach bio',
       passwordHash: 'hashed-password',
-      role: PrismaRole.COACH,
+      role: Role.COACH,
       credentials: 'Certified Coach',
       philosophy: 'Coaching Philosophy',
       profileImage: 'http://example.com/profile.jpg',
@@ -385,22 +384,18 @@ export abstract class BaseIntegrationTest {
    * Allows overriding any field via partial parameter.
    */
   protected async createTestMessage(overrides: Partial<Message> = {}): Promise<Message> {
-    const senderCoachId = overrides.senderCoachId ?? (await this.getCachedCoach()).id;
-    const senderUserId = overrides.senderUserId ?? (await this.getCachedUser()).id;
-    const receiverUserId = overrides.receiverUserId ?? (await this.getCachedUser()).id;
-    const receiverCoachId = overrides.receiverCoachId ?? (await this.getCachedCoach()).id;
+    const senderId = overrides.senderId ?? (await this.getCachedUser()).id;
+    const receiverId = overrides.receiverId ?? (await this.getCachedCoach()).id;
     const sessionId = overrides.sessionId ?? (await this.createTestSession()).id;
 
     const messageData = {
-      senderCoachId,
-      senderUserId,
-      receiverUserId,
-      receiverCoachId,
+      senderId,
+      receiverId,
       sessionId,
       content: 'Test message content',
       sentAt: overrides.sentAt ?? new Date(),
-      senderType: overrides.senderType ?? UserRole.USER,
-      receiverType: overrides.receiverType ?? AdminRole.COACH,
+      senderType: overrides.senderType ?? Role.USER,
+      receiverType: overrides.receiverType ?? Role.COACH,
       ...overrides,
     };
 
@@ -417,17 +412,15 @@ export abstract class BaseIntegrationTest {
   protected async createTestRefreshToken(
     overrides: Partial<RefreshToken> = {}
   ): Promise<RefreshToken> {
-    const coachId = overrides.coachId ?? (await this.getCachedCoach()).id;
-    const userId = overrides.userId ?? (await this.getCachedUser()).id;
+    const account = await this.getCachedUser();
     const token =
       overrides.token ??
       (await this.createTestJwtToken({
-        sub: userId,
-        email: (await this.getCachedUser()).email,
+        sub: overrides.accountId ?? account.id,
+        email: account.email,
       }));
     const refreshTokenData = {
-      coachId,
-      userId,
+      accountId: overrides.accountId ?? account.id,
       token,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
       createdAt: new Date(),

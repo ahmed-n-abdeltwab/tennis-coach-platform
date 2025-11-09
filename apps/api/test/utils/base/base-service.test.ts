@@ -4,7 +4,7 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../../src/app/prisma/prisma.service';
 
 export abstract class BaseServiceTest<TService, TRepository = any> {
   protected service: TService;
@@ -90,8 +90,7 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
       $transaction: jest.fn() as jest.Mock,
       $executeRaw: jest.fn() as jest.Mock,
       $queryRaw: jest.fn() as jest.Mock,
-      user: this.createMockRepository(),
-      coach: this.createMockRepository(),
+      account: this.createMockRepository(),
       session: this.createMockRepository(),
       bookingType: this.createMockRepository(),
       timeSlot: this.createMockRepository(),

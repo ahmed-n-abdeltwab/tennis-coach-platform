@@ -89,16 +89,10 @@ describe('Type Safety Verification', () => {
       const token = authHelper.createUserToken();
       const client = new AuthenticatedHttpClient<Endpoints>(app, token);
 
-      // ✅ These should compile - valid endpoints
-      // Note: We're not actually making requests, just verifying types compile
+
       expect(typeof client.get).toBe('function');
 
-      // Uncomment to verify compile-time errors:
-      // ❌ This should NOT compile - invalid path
-      // await client.get('/api/invalid-endpoint');
 
-      // ❌ This should NOT compile - wrong method for endpoint
-      // await client.post('/api/health', {});
     });
   });
 
@@ -192,35 +186,9 @@ describe('Type Safety Verification', () => {
     it('demonstrates proper type inference', () => {
       const token = authHelper.createUserToken();
       const client = new AuthenticatedHttpClient<Endpoints>(app, token);
-
-      // ✅ TypeScript infers the correct types
-      // When you call client.get('/api/accounts/me'), TypeScript knows:
-      // - The path must be a valid endpoint
-      // - The return type is TypedResponse<AccountResponseDto>
-      // - The params type is undefined | never (no params needed)
-
       expect(client).toBeDefined();
     });
 
-    it('demonstrates type safety prevents errors', () => {
-      // Uncomment these to verify TypeScript catches errors:
 
-      // ❌ Invalid path - should not compile
-      // const client = authHelper.createAuthenticatedClient<Endpoints>(app);
-      // await client.get('/api/does-not-exist');
-
-      // ❌ Wrong request body type - should not compile
-      // await client.post('/api/authentication/user/login', {
-      //   invalidField: 'test'
-      // });
-
-      // ❌ Missing required fields - should not compile
-      // await client.post('/api/authentication/user/login', {
-      //   email: 'test@example.com'
-      //   // missing password field
-      // });
-
-      expect(true).toBe(true);
-    });
   });
 });

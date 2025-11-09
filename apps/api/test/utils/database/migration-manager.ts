@@ -308,7 +308,7 @@ export class MigrationManager {
 
       // Extract migration file path from output
       const migrationMatch = output.match(/Created migration (\d+_[^/\s]+)/);
-      const migrationName = migrationMatch ? migrationMatch[1] : name;
+      const migrationName = migrationMatch ? (migrationMatch[1] ?? 'no-migration') : name;
 
       if (verbose) {
         console.log(`Migration created: ${migrationName}`);
@@ -450,7 +450,7 @@ export class MigrationManager {
           const modelBlock = this.extractModelBlock(schemaContent, modelName);
           const mapMatch = modelBlock.match(/@@map\("([^"]+)"\)/);
 
-          return mapMatch ? mapMatch[1] : this.toSnakeCase(modelName);
+          return mapMatch ? (mapMatch[1] ?? 'no-map') : this.toSnakeCase(modelName);
         })
         .filter(Boolean);
     } catch (error) {

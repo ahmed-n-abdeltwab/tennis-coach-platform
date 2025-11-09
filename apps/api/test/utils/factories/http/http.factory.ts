@@ -30,7 +30,7 @@ export class HttpMockFactory extends BaseHttpMockFactory {
   }
 
   createAuthenticatedRequest(
-    user: Record<string, unknown>,
+    user: Record<string, any>,
     overrides: Partial<CreateRequestOptions> = {}
   ): Request {
     return this.createRequest({

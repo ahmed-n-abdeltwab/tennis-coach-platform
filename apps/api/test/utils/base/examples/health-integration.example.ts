@@ -3,14 +3,15 @@
  * Demonstrates how to use the base class for integration testing
  */
 
-import healthConfig from '@app/health/config/health.config';
-import { HealthModule } from '@app/health/health.module';
-import { HealthService } from '@app/health/health.service';
+
 import { Provider } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from '../prisma/prisma.module';
 
 import { BaseIntegrationTest } from '../base-integration.test';
+import { HealthModule } from '../../../../src/app/health/health.module';
+import { PrismaModule } from '../../../../src/app/prisma/prisma.module';
+import healthConfig from '../../../../src/app/health/config/health.config';
+import { HealthService } from '../../../../src/app/health/health.service';
 
 export class HealthIntegrationTest extends BaseIntegrationTest {
   async setupTestApp(): Promise<void> {

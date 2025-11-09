@@ -23,16 +23,7 @@ jest.mock('@prisma/client', () => ({
     $connect: jest.fn().mockResolvedValue(undefined),
     $disconnect: jest.fn().mockResolvedValue(undefined),
     $transaction: jest.fn().mockImplementation(callback => callback({})),
-    user: {
-      create: jest.fn(),
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      findFirst: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-    },
-    coach: {
+    account: {
       create: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),

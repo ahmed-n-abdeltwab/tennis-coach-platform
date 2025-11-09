@@ -85,35 +85,35 @@ describe('AuthTestHelper', () => {
       const headers = authHelper.createUserAuthHeaders();
 
       expect(headers).toBeDefined();
-      expect(headers.Authorization).toBeDefined();
-      expect(headers.Authorization).toMatch(/^Bearer /);
+      expect(headers.authorization).toBeDefined();
+      expect(headers.authorization).toMatch(/^Bearer /);
     });
 
     it('should create coach auth headers', () => {
       const headers = authHelper.createCoachAuthHeaders();
 
       expect(headers).toBeDefined();
-      expect(headers.Authorization).toBeDefined();
-      expect(headers.Authorization).toMatch(/^Bearer /);
+      expect(headers.authorization).toBeDefined();
+      expect(headers.authorization).toMatch(/^Bearer /);
     });
 
     it('should create admin auth headers', () => {
       const headers = authHelper.createAdminAuthHeaders();
 
       expect(headers).toBeDefined();
-      expect(headers.Authorization).toBeDefined();
-      expect(headers.Authorization).toMatch(/^Bearer /);
+      expect(headers.authorization).toBeDefined();
+      expect(headers.authorization).toMatch(/^Bearer /);
     });
 
     it('should create expired auth headers', () => {
       const headers = authHelper.createExpiredAuthHeaders();
 
       expect(headers).toBeDefined();
-      expect(headers.Authorization).toBeDefined();
-      expect(headers.Authorization).toMatch(/^Bearer /);
+      expect(headers.authorization).toBeDefined();
+      expect(headers.authorization).toMatch(/^Bearer /);
 
       // Extract token and verify it's expired
-      const token = headers.Authorization.replace('Bearer ', '');
+      const token = headers.authorization.replace('Bearer ', '');
       const verified = authHelper.verifyToken(token);
       expect(verified).toBeNull();
     });

@@ -98,6 +98,21 @@ export * from './security';
  */
 export * from './roles';
 
+/**
+ * Mocks management utilities
+ *
+ * Provides helpers for creating mocks for the test users.
+ *
+ * @example
+ * ```typescript
+ * import { MockBookingType } from '@test-utils';
+ *
+ * const roleHelper = new UserRoleHelper();
+ * const userHeaders = roleHelper.createStandardUserHeaders();
+ * ```
+ */
+export * from './mocks';
+
 // ============================================================================
 // Re-exports from libraries for convenience
 // ============================================================================
@@ -128,3 +143,9 @@ export type {
   PathWithValues,
   RequiresParams,
 } from '@routes-helpers';
+
+export type DeepPartial<T> = T extends object
+  ? {
+      [P in keyof T]?: DeepPartial<T[P]>;
+    }
+  : T;

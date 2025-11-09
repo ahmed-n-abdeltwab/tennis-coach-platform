@@ -25,7 +25,7 @@ export interface TestUser {
  * Authentication headers structure
  */
 export interface AuthHeaders {
-  Authorization: string;
+  authorization: string;
 }
 
 /**
@@ -266,26 +266,26 @@ export class AuthTestHelper {
    * Create authentication headers with Bearer token
    *
    * @param token - Optional JWT token (if not provided, creates a default user token)
-   * @returns Object with Authorization header
+   * @returns Object with authorization header
    *
    * @example
    * ```typescript
    * const headers = authHelper.createAuthHeaders();
-   * // { Authorization: 'Bearer eyJhbGc...' }
+   * // { authorization: 'Bearer eyJhbGc...' }
    *
    * const customHeaders = authHelper.createAuthHeaders(customToken);
    * ```
    */
   createAuthHeaders(token?: string): AuthHeaders {
     const authToken = token || this.createUserToken();
-    return { Authorization: `Bearer ${authToken}` };
+    return { authorization: `Bearer ${authToken}` };
   }
 
   /**
    * Create USER authentication headers
    *
    * @param overrides - Optional user data overrides
-   * @returns Object with Authorization header for a USER
+   * @returns Object with authorization header for a USER
    *
    * @example
    * ```typescript
@@ -301,7 +301,7 @@ export class AuthTestHelper {
    * Create COACH authentication headers
    *
    * @param overrides - Optional coach data overrides
-   * @returns Object with Authorization header for a COACH
+   * @returns Object with authorization header for a COACH
    *
    * @example
    * ```typescript
@@ -317,7 +317,7 @@ export class AuthTestHelper {
    * Create ADMIN authentication headers
    *
    * @param overrides - Optional admin data overrides
-   * @returns Object with Authorization header for an ADMIN
+   * @returns Object with authorization header for an ADMIN
    *
    * @example
    * ```typescript
@@ -333,7 +333,7 @@ export class AuthTestHelper {
    * Create PREMIUM_USER authentication headers
    *
    * @param overrides - Optional premium user data overrides
-   * @returns Object with Authorization header for a PREMIUM_USER
+   * @returns Object with authorization header for a PREMIUM_USER
    *
    * @example
    * ```typescript
@@ -349,7 +349,7 @@ export class AuthTestHelper {
    * Create expired authentication headers for testing
    *
    * @param payload - Optional payload overrides
-   * @returns Object with Authorization header containing an expired token
+   * @returns Object with authorization header containing an expired token
    *
    * @example
    * ```typescript
