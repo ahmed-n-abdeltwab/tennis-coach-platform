@@ -6,7 +6,6 @@ import { PassportModule } from '@nestjs/passport';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthenticationController } from './authentication/authentication.controller';
 import { AuthenticationService } from './authentication/authentication.service';
-import iamConfig from './config/iam.config';
 import jwtConfig from './config/jwt.config';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
@@ -17,7 +16,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [
-    ConfigModule.forFeature(iamConfig),
     ConfigModule.forFeature(jwtConfig),
     PrismaModule,
     PassportModule,

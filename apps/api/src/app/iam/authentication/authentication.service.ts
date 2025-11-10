@@ -4,7 +4,7 @@ import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Account, Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import iamConfig from '../config/iam.config';
+import jwtConfig from '../config/jwt.config';
 import { HashingService } from '../hashing/hashing.service';
 import { AuthResponseDto, LoginDto, SignUpDto } from './dto';
 
@@ -14,7 +14,7 @@ export class AuthenticationService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private readonly hashingService: HashingService,
-    @Inject(iamConfig.KEY) private readonly iamConfiguration: ConfigType<typeof iamConfig>
+    @Inject(jwtConfig.KEY) private readonly jwtConfiguration: ConfigType<typeof jwtConfig>
   ) {}
 
   async signup(signupDto: SignUpDto): Promise<AuthResponseDto> {
@@ -92,8 +92,10 @@ export class AuthenticationService {
       role: user.role,
     };
     const accessToken = this.jwtService.sign(payload, {
-      secret: this.iamConfiguration.jwt.secret,
-      expiresIn: this.iamConfiguration.jwt.signOptions.expiresIn,
+      secret: this.jwtConfiguration.secret,
+      issuer: this.jwtConfiguration.signOptions.issuer,
+      audience: this.jwtConfiguration.signOptions.audience,
+      expiresIn: this.jwtConfiguration.signOptions.expiresIn,
     });
 
     return { accessToken };
@@ -111,13 +113,17 @@ export class AuthenticationService {
     };
 
     const accessToken = this.jwtService.sign(payload, {
-      secret: this.iamConfiguration.jwt.secret,
-      expiresIn: this.iamConfiguration.jwt.signOptions.expiresIn,
+      secret: this.jwtConfiguration.secret,
+      issuer: this.jwtConfiguration.signOptions.issuer,
+      audience: this.jwtConfiguration.signOptions.audience,
+      expiresIn: this.jwtConfiguration.signOptions.expiresIn,
     });
 
     const refreshToken = this.jwtService.sign(payload, {
-      secret: this.iamConfiguration.jwt.signOptions.refreshSecret,
-      expiresIn: this.iamConfiguration.jwt.signOptions.refreshExpiresIn,
+      secret: this.jwtConfiguration.secret,
+      issuer: this.jwtConfiguration.signOptions.issuer,
+      audience: this.jwtConfiguration.signOptions.audience,
+      expiresIn: this.jwtConfiguration.signOptions.expiresIn,
     });
 
     await this.prisma.refreshToken.create({
