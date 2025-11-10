@@ -18,9 +18,7 @@ import { ErrorResponseDto, ValidationErrorResponseDto } from '../dto/base-respon
  */
 
 // Factory function that creates typed decorators for a specific DTO
-/**
- * @deprecated Use {@link userLogin} instead. This will be removed in a future release.
- */
+
 export function createTypedApiDecorators<T extends Type<any>>(responseType: T) {
   return {
     // Auth endpoints
