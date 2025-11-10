@@ -7,7 +7,6 @@ import { INestApplication, Provider } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
 import {
-  buildPath,
   DeepPartial,
   Endpoints,
   ExtractMethods,
@@ -15,6 +14,7 @@ import {
   ExtractRequestType,
   MockRequest,
   PathsWithMethod,
+  buildPath,
 } from '@test-utils';
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -308,6 +308,118 @@ export abstract class BaseControllerTest<
     expect(response.body).toBeDefined();
     expectedKeys.forEach(key => {
       expect(response.body).toHaveProperty(key);
+    });
+  }
+
+  /**
+   * Asserts that a response body matches expected data
+   */
+  protected assertResponseBody(response: any, expectedData: any): void {
+    expect(response.body).toBeDefined();
+    expect(response.body).toMatchObject(expectedData);
+  }
+
+  /**
+   * Asserts that a response is a validation error
+   */
+  protected assertValidationError(response: any, expectedFields?: string[]): void {
+    expect(response.status).toBe(400);
+    expect(response.body).toBeDefined();
+    expect(response.body.message).toBeDefined();
+
+    if (expectedFields) {
+      const messages = Array.isArray(response.body.message)
+        ? response.body.message
+        : [response.body.message];
+      expectedFields.forEach(field => {
+        expect(messages.some((msg: string) => msg.includes(field))).toBe(true);
+      });
+    }
+  }
+
+  /**
+   * Asserts that a response is unauthorized (401)
+   */
+  protected assertUnauthorized(response: any): void {
+    expect(response.status).toBe(401);
+    expect(response.body).toBeDefined();
+  }
+
+  /**
+   * Asserts that a response is forbidden (403)
+   */
+  protected assertForbidden(response: any): void {
+    expect(response.status).toBe(403);
+    expect(response.body).toBeDefined();
+  }
+
+  /**
+   * Asserts that a response is not found (404)
+   */
+  protected assertNotFound(response: any): void {
+    expect(response.status).toBe(404);
+    expect(response.body).toBeDefined();
+  }
+
+  /**
+   * Asserts that a response array has expected length
+   */
+  protected assertArrayLength(response: any, expectedLength: number): void {
+    expect(response.body).toBeDefined();
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body).toHaveLength(expectedLength);
+  }
+
+  /**
+   * Asserts that a response array contains an item matching criteria
+   */
+  protected assertArrayContains(response: any, matcher: any): void {
+    expect(response.body).toBeDefined();
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(
+      response.body.some((item: any) =>
+        Object.keys(matcher).every(key => item[key] === matcher[key])
+      )
+    ).toBe(true);
+  }
+
+  /**
+   * Extracts a specific field from response body
+   */
+  protected extractField<T = any>(response: any, fieldPath: string): T {
+    const fields = fieldPath.split('.');
+    let value = response.body;
+    for (const field of fields) {
+      value = value?.[field];
+    }
+    return value as T;
+  }
+
+  /**
+   * Creates a token for a specific role
+   */
+  protected createRoleToken(role: Role, overrides?: Partial<JwtPayload>): string {
+    return this.createTestJwtToken({
+      sub: `test-${role.toLowerCase()}-id`,
+      email: `test-${role.toLowerCase()}@example.com`,
+      role,
+      ...overrides,
+    });
+  }
+
+  /**
+   * Creates an expired JWT token for testing authentication failures
+   */
+  protected createExpiredToken(payload?: Partial<JwtPayload>): string {
+    const jwtService = new JwtService({
+      secret: process.env.JWT_SECRET || 'test-secret',
+      signOptions: { expiresIn: '-1h' }, // Expired 1 hour ago
+    });
+    return jwtService.sign({
+      sub: 'test-user-id',
+      email: 'test@example.com',
+      role: Role.USER,
+      ...payload,
     });
   }
 

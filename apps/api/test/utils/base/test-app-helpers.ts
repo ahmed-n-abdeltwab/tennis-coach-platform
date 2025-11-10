@@ -158,3 +158,240 @@ export async function waitFor(
 
   throw new Error(timeoutMessage);
 }
+
+/**
+ * Retries an async operation until it succeeds or max attempts is reached
+ *
+ * @param operation - Async function to retry
+ * @param options - Configuration options
+ * @returns Promise that resolves with the operation result
+ * @throws Error if max attempts is reached
+ *
+ * @example
+ * ```typescript
+ * // Retry a flaky API call
+ * const result = await retry(
+ *   async () => {
+ *     const response = await fetch('/api/data');
+ *     if (!response.ok) throw new Error('Failed');
+ *     return response.json();
+ *   },
+ *   { maxAttempts: 3, delay: 1000 }
+ * );
+ * ```
+ */
+export async function retry<T>(
+  operation: () => Promise<T>,
+  options: {
+    maxAttempts?: number;
+    delay?: number;
+    backoff?: boolean;
+    onRetry?: (attempt: number, error: Error) => void;
+  } = {}
+): Promise<T> {
+  const { maxAttempts = 3, delay = 1000, backoff = false, onRetry } = options;
+
+  let lastError: Error;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+
+      if (attempt < maxAttempts) {
+        if (onRetry) {
+          onRetry(attempt, lastError);
+        }
+
+        const waitTime = backoff ? delay * attempt : delay;
+        await wait(waitTime);
+      }
+    }
+  }
+
+  throw new Error(
+    `Operation failed after ${maxAttempts} attempts. Last error: ${lastError!.message}`
+  );
+}
+
+/**
+ * Executes multiple async operations in parallel with a concurrency limit
+ *
+ * @param items - Array of items to process
+ * @param operation - Async function to execute for each item
+ * @param concurrency - Maximum number of concurrent operations
+ * @returns Promise that resolves with array of results
+ *
+ * @example
+ * ```typescript
+ * // Process 100 items with max 5 concurrent operations
+ * const results = await parallelLimit(
+ *   items,
+ *   async (item) => processItem(item),
+ *   5
+ * );
+ * ```
+ */
+export async function parallelLimit<T, R>(
+  items: T[],
+  operation: (item: T, index: number) => Promise<R>,
+  concurrency = 5
+): Promise<R[]> {
+  const results: R[] = [];
+  const executing: Promise<void>[] = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const promise = operation(item, i).then(result => {
+      results[i] = result;
+    });
+
+    executing.push(promise);
+
+    if (executing.length >= concurrency) {
+      await Promise.race(executing);
+      executing.splice(
+        executing.findIndex(p => p === promise),
+        1
+      );
+    }
+  }
+
+  await Promise.all(executing);
+  return results;
+}
+
+/**
+ * Creates a mock logger for testing
+ *
+ * @returns Mock logger object with common logging methods
+ *
+ * @example
+ * ```typescript
+ * const logger = createMockLogger();
+ * const service = new MyService(logger);
+ *
+ * // Verify logging
+ * expect(logger.info).toHaveBeenCalledWith('Expected message');
+ * ```
+ */
+export function createMockLogger(): any {
+  return {
+    log: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+    verbose: jest.fn(),
+    info: jest.fn(),
+  };
+}
+
+/**
+ * Creates a mock configuration object for testing
+ *
+ * @param overrides - Partial configuration to override defaults
+ * @returns Mock configuration object
+ *
+ * @example
+ * ```typescript
+ * const config = createMockConfig({
+ *   database: { url: 'test-db-url' }
+ * });
+ * ```
+ */
+export function createMockConfig(overrides: Record<string, any> = {}): any {
+  return {
+    port: 3000,
+    database: {
+      url: 'postgresql://test:test@localhost:5432/test',
+    },
+    jwt: {
+      secret: 'test-secret',
+      expiresIn: '1h',
+    },
+    ...overrides,
+  };
+}
+
+/**
+ * Captures console output during test execution
+ *
+ * @param callback - Function to execute while capturing output
+ * @returns Object containing captured stdout and stderr
+ *
+ * @example
+ * ```typescript
+ * const { stdout, stderr } = await captureConsole(async () => {
+ *   console.log('test message');
+ *   console.error('error message');
+ * });
+ *
+ * expect(stdout).toContain('test message');
+ * expect(stderr).toContain('error message');
+ * ```
+ */
+export async function captureConsole(
+  callback: () => Promise<void> | void
+): Promise<{ stdout: string; stderr: string }> {
+  const originalLog = console.log;
+  const originalError = console.error;
+  const originalWarn = console.warn;
+
+  let stdout = '';
+  let stderr = '';
+
+  console.log = (...args: any[]) => {
+    stdout += args.join(' ') + '\n';
+  };
+
+  console.error = (...args: any[]) => {
+    stderr += args.join(' ') + '\n';
+  };
+
+  console.warn = (...args: any[]) => {
+    stderr += args.join(' ') + '\n';
+  };
+
+  try {
+    await callback();
+  } finally {
+    console.log = originalLog;
+    console.error = originalError;
+    console.warn = originalWarn;
+  }
+
+  return { stdout, stderr };
+}
+
+/**
+ * Suppresses console output during test execution
+ *
+ * @param callback - Function to execute with suppressed output
+ * @returns Result of the callback function
+ *
+ * @example
+ * ```typescript
+ * // Run a noisy operation without console spam
+ * const result = await suppressConsole(async () => {
+ *   return noisyOperation();
+ * });
+ * ```
+ */
+export async function suppressConsole<T>(callback: () => Promise<T> | T): Promise<T> {
+  const originalLog = console.log;
+  const originalError = console.error;
+  const originalWarn = console.warn;
+
+  console.log = jest.fn();
+  console.error = jest.fn();
+  console.warn = jest.fn();
+
+  try {
+    return await callback();
+  } finally {
+    console.log = originalLog;
+    console.error = originalError;
+    console.warn = originalWarn;
+  }
+}

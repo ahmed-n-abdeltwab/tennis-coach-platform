@@ -490,4 +490,226 @@ export abstract class BaseIntegrationTest {
   protected async countRecords(model: string, where: any = {}): Promise<number> {
     return this.prisma[model].count({ where });
   }
+
+  /**
+   * Finds a single record in the database
+   */
+  protected async findRecord(model: string, where: any): Promise<any> {
+    return this.prisma[model].findFirst({ where });
+  }
+
+  /**
+   * Finds multiple records in the database
+   */
+  protected async findRecords(model: string, where: any = {}): Promise<any[]> {
+    return this.prisma[model].findMany({ where });
+  }
+
+  /**
+   * Updates a record in the database
+   */
+  protected async updateRecord(model: string, where: any, data: any): Promise<any> {
+    return this.prisma[model].update({ where, data });
+  }
+
+  /**
+   * Deletes a record from the database
+   */
+  protected async deleteRecord(model: string, where: any): Promise<any> {
+    return this.prisma[model].delete({ where });
+  }
+
+  /**
+   * Deletes multiple records from the database
+   */
+  protected async deleteRecords(model: string, where: any = {}): Promise<any> {
+    return this.prisma[model].deleteMany({ where });
+  }
+
+  /**
+   * Asserts that a response contains pagination metadata
+   */
+  protected assertHasPagination(response: any): void {
+    expect(response.body).toBeDefined();
+    expect(response.body).toHaveProperty('data');
+    expect(response.body).toHaveProperty('meta');
+    expect(response.body.meta).toHaveProperty('total');
+    expect(response.body.meta).toHaveProperty('page');
+    expect(response.body.meta).toHaveProperty('limit');
+  }
+
+  /**
+   * Asserts that a response array has expected length
+   */
+  protected assertArrayLength(response: any, expectedLength: number): void {
+    expect(response.body).toBeDefined();
+    const data = Array.isArray(response.body) ? response.body : response.body.data;
+    expect(Array.isArray(data)).toBe(true);
+    expect(data).toHaveLength(expectedLength);
+  }
+
+  /**
+   * Asserts that a response array contains an item matching criteria
+   */
+  protected assertArrayContains(response: any, matcher: any): void {
+    expect(response.body).toBeDefined();
+    const data = Array.isArray(response.body) ? response.body : response.body.data;
+    expect(Array.isArray(data)).toBe(true);
+    expect(
+      data.some((item: any) => Object.keys(matcher).every(key => item[key] === matcher[key]))
+    ).toBe(true);
+  }
+
+  /**
+   * Asserts that a response is a validation error
+   */
+  protected assertValidationError(response: any, expectedFields?: string[]): void {
+    expect(response.status).toBe(400);
+    expect(response.body).toBeDefined();
+    expect(response.body.message).toBeDefined();
+
+    if (expectedFields) {
+      const messages = Array.isArray(response.body.message)
+        ? response.body.message
+        : [response.body.message];
+      expectedFields.forEach(field => {
+        expect(messages.some((msg: string) => msg.includes(field))).toBe(true);
+      });
+    }
+  }
+
+  /**
+   * Asserts that a response is unauthorized (401)
+   */
+  protected assertUnauthorized(response: any): void {
+    expect(response.status).toBe(401);
+    expect(response.body).toBeDefined();
+  }
+
+  /**
+   * Asserts that a response is forbidden (403)
+   */
+  protected assertForbidden(response: any): void {
+    expect(response.status).toBe(403);
+    expect(response.body).toBeDefined();
+  }
+
+  /**
+   * Asserts that a response is not found (404)
+   */
+  protected assertNotFound(response: any): void {
+    expect(response.status).toBe(404);
+    expect(response.body).toBeDefined();
+  }
+
+  /**
+   * Asserts that a response body matches expected data
+   */
+  protected assertResponseBody(response: any, expectedData: any): void {
+    expect(response.body).toBeDefined();
+    expect(response.body).toMatchObject(expectedData);
+  }
+
+  /**
+   * Extracts a specific field from response body
+   */
+  protected extractField<T = any>(response: any, fieldPath: string): T {
+    const fields = fieldPath.split('.');
+    let value = response.body;
+    for (const field of fields) {
+      value = value?.[field];
+    }
+    return value as T;
+  }
+
+  /**
+   * Creates a token for a specific role
+   */
+  protected createRoleToken(role: Role, overrides?: Partial<JwtPayload>): string {
+    return this.createTestJwtToken({
+      sub: `test-${role.toLowerCase()}-id`,
+      email: `test-${role.toLowerCase()}@example.com`,
+      role,
+      ...overrides,
+    });
+  }
+
+  /**
+   * Creates an expired JWT token for testing authentication failures
+   */
+  protected createExpiredToken(payload?: Partial<JwtPayload>): string {
+    const jwtService = new JwtService({
+      secret: process.env.JWT_SECRET || 'test-secret',
+      signOptions: { expiresIn: '-1h' }, // Expired 1 hour ago
+    });
+    return jwtService.sign({
+      sub: 'test-user-id',
+      email: 'test@example.com',
+      role: Role.USER,
+      ...payload,
+    });
+  }
+
+  /**
+   * Creates multiple test users with different roles
+   */
+  protected async createTestUsers(count = 3): Promise<Account[]> {
+    const users: Account[] = [];
+    for (let i = 0; i < count; i++) {
+      users.push(
+        await this.createTestUser({
+          email: `test-user-${Date.now()}-${i}@example.com`,
+        })
+      );
+    }
+    return users;
+  }
+
+  /**
+   * Creates multiple test coaches
+   */
+  protected async createTestCoaches(count = 3): Promise<Account[]> {
+    const coaches: Account[] = [];
+    for (let i = 0; i < count; i++) {
+      coaches.push(
+        await this.createTestCoach({
+          email: `test-coach-${Date.now()}-${i}@example.com`,
+        })
+      );
+    }
+    return coaches;
+  }
+
+  /**
+   * Waits for a condition to become true
+   */
+  protected async waitForCondition(
+    condition: () => boolean | Promise<boolean>,
+    timeout = 5000,
+    interval = 100
+  ): Promise<void> {
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeout) {
+      if (await condition()) {
+        return;
+      }
+      await new Promise(resolve => setTimeout(resolve, interval));
+    }
+    throw new Error('Condition not met within timeout');
+  }
+
+  /**
+   * Waits for a database record to exist
+   */
+  protected async waitForRecord(model: string, where: any, timeout = 5000): Promise<any> {
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeout) {
+      const record = await this.findRecord(model, where);
+      if (record) {
+        return record;
+      }
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    throw new Error(`Record not found in ${model} within timeout`);
+  }
 }

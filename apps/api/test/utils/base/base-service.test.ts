@@ -215,4 +215,137 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
       where: filters,
     };
   }
+
+  /**
+   * Creates sorting parameters for testing
+   */
+  protected createSortParams(field: string, order: 'asc' | 'desc' = 'asc'): any {
+    return {
+      orderBy: {
+        [field]: order,
+      },
+    };
+  }
+
+  /**
+   * Creates include parameters for testing relations
+   */
+  protected createIncludeParams(relations: string[] | Record<string, any>): any {
+    if (Array.isArray(relations)) {
+      return {
+        include: relations.reduce((acc, rel) => ({ ...acc, [rel]: true }), {}),
+      };
+    }
+    return {
+      include: relations,
+    };
+  }
+
+  /**
+   * Asserts that a mock was not called
+   */
+  protected assertMethodNotCalled(mockMethod: jest.Mock | jest.MockInstance<any, any>): void {
+    expect(mockMethod).not.toHaveBeenCalled();
+  }
+
+  /**
+   * Asserts that a service method returns an array
+   */
+  protected assertReturnsArray(result: any, minLength = 0): void {
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBeGreaterThanOrEqual(minLength);
+  }
+
+  /**
+   * Asserts that a service method returns null
+   */
+  protected assertReturnsNull(result: any): void {
+    expect(result).toBeNull();
+  }
+
+  /**
+   * Asserts that a service method returns undefined
+   */
+  protected assertReturnsUndefined(result: any): void {
+    expect(result).toBeUndefined();
+  }
+
+  /**
+   * Asserts that a result has specific properties
+   */
+  protected assertHasProperties(result: any, properties: string[]): void {
+    expect(result).toBeDefined();
+    properties.forEach(prop => {
+      expect(result).toHaveProperty(prop);
+    });
+  }
+
+  /**
+   * Asserts that a result matches a partial object
+   */
+  protected assertMatchesPartial(result: any, partial: any): void {
+    expect(result).toBeDefined();
+    expect(result).toMatchObject(partial);
+  }
+
+  /**
+   * Creates a mock that returns different values on successive calls
+   */
+  protected mockMethodToReturnSequence(
+    mockMethod: jest.Mock | jest.MockInstance<any, any>,
+    values: any[]
+  ): void {
+    values.forEach(value => {
+      mockMethod.mockResolvedValueOnce(value);
+    });
+  }
+
+  /**
+   * Creates a mock that throws on first call then succeeds
+   */
+  protected mockMethodToFailThenSucceed(
+    mockMethod: jest.Mock | jest.MockInstance<any, any>,
+    error: Error | string,
+    successValue: any
+  ): void {
+    const errorToThrow = typeof error === 'string' ? new Error(error) : error;
+    mockMethod.mockRejectedValueOnce(errorToThrow);
+    mockMethod.mockResolvedValueOnce(successValue);
+  }
+
+  /**
+   * Verifies that a mock was called with partial arguments
+   */
+  protected assertMethodCalledWithPartial(
+    mockMethod: jest.Mock | jest.MockInstance<any, any>,
+    partialArgs: any
+  ): void {
+    expect(mockMethod).toHaveBeenCalled();
+    const calls = mockMethod.mock.calls;
+    const matchingCall = calls.find(call =>
+      call.some(arg => {
+        if (typeof arg === 'object' && arg !== null) {
+          return Object.keys(partialArgs).every(key => arg[key] === partialArgs[key]);
+        }
+        return false;
+      })
+    );
+    expect(matchingCall).toBeDefined();
+  }
+
+  /**
+   * Gets the last call arguments of a mock
+   */
+  protected getLastCallArgs(mockMethod: jest.Mock | jest.MockInstance<any, any>): any[] {
+    expect(mockMethod).toHaveBeenCalled();
+    return mockMethod.mock.calls[mockMethod.mock.calls.length - 1];
+  }
+
+  /**
+   * Gets the first call arguments of a mock
+   */
+  protected getFirstCallArgs(mockMethod: jest.Mock | jest.MockInstance<any, any>): any[] {
+    expect(mockMethod).toHaveBeenCalled();
+    return mockMethod.mock.calls[0];
+  }
 }

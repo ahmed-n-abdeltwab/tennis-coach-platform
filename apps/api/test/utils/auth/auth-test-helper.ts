@@ -439,4 +439,186 @@ export class AuthTestHelper {
       authToken
     ) as import('../auth/authenticated-client').AuthenticatedHttpClient<E>;
   }
+
+  /**
+   * Create a token with custom expiration time
+   *
+   * @param payload - JWT payload
+   * @param expiresIn - Expiration time (e.g., '1h', '7d', '30m')
+   * @returns Signed JWT token
+   *
+   * @example
+   * ```typescript
+   * const shortLivedToken = authHelper.createTokenWithExpiry(
+   *   { sub: 'user-id', email: 'user@example.com', role: Role.USER },
+   *   '5m'
+   * );
+   * ```
+   */
+  createTokenWithExpiry(payload: Partial<JwtPayload>, expiresIn: string): string {
+    const customJwtService = new JwtService({
+      secret: process.env.JWT_SECRET || 'test-secret',
+      signOptions: { expiresIn: expiresIn as any },
+    });
+    const fullPayload: JwtPayload = {
+      sub: 'test-user-id',
+      email: 'test@example.com',
+      role: Role.USER,
+      ...payload,
+    };
+    return customJwtService.sign(fullPayload);
+  }
+
+  /**
+   * Create a token that expires soon (useful for testing token refresh)
+   *
+   * @param payload - Optional payload overrides
+   * @param secondsUntilExpiry - Seconds until token expires (default: 5)
+   * @returns JWT token that expires soon
+   *
+   * @example
+   * ```typescript
+   * const soonToExpireToken = authHelper.createSoonToExpireToken();
+   * // Wait a few seconds and test token refresh logic
+   * ```
+   */
+  createSoonToExpireToken(payload?: Partial<JwtPayload>, secondsUntilExpiry = 5): string {
+    return this.createTokenWithExpiry(payload || {}, `${secondsUntilExpiry}s`);
+  }
+
+  /**
+   * Create a token for a specific role
+   *
+   * @param role - Role to create token for
+   * @param overrides - Optional user data overrides
+   * @returns JWT token for the specified role
+   *
+   * @example
+   * ```typescript
+   * const token = authHelper.createRoleToken(Role.COACH);
+   * ```
+   */
+  createRoleToken(role: Role, overrides?: Partial<TestUser>): string {
+    const user: TestUser = {
+      id: `test-${role.toLowerCase()}-id`,
+      email: `${role.toLowerCase()}@example.com`,
+      role,
+      ...overrides,
+    };
+    return this.createToken({ sub: user.id, email: user.email, role: user.role });
+  }
+
+  /**
+   * Create authentication headers for a specific role
+   *
+   * @param role - Role to create headers for
+   * @param overrides - Optional user data overrides
+   * @returns Authentication headers for the specified role
+   *
+   * @example
+   * ```typescript
+   * const headers = authHelper.createRoleAuthHeaders(Role.ADMIN);
+   * ```
+   */
+  createRoleAuthHeaders(role: Role, overrides?: Partial<TestUser>): AuthHeaders {
+    const token = this.createRoleToken(role, overrides);
+    return this.createAuthHeaders(token);
+  }
+
+  /**
+   * Extract token from authorization header
+   *
+   * @param authHeader - Authorization header value
+   * @returns JWT token or null if invalid format
+   *
+   * @example
+   * ```typescript
+   * const token = authHelper.extractTokenFromHeader('Bearer eyJhbGc...');
+   * ```
+   */
+  extractTokenFromHeader(authHeader: string): string | null {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return null;
+    }
+    return authHeader.substring(7);
+  }
+
+  /**
+   * Check if a token is expired
+   *
+   * @param token - JWT token to check
+   * @returns True if token is expired, false otherwise
+   *
+   * @example
+   * ```typescript
+   * const isExpired = authHelper.isTokenExpired(token);
+   * ```
+   */
+  isTokenExpired(token: string): boolean {
+    const payload = this.decodeToken(token);
+    if (!payload || !payload.exp) {
+      return true;
+    }
+    return payload.exp * 1000 < Date.now();
+  }
+
+  /**
+   * Get token expiration time
+   *
+   * @param token - JWT token
+   * @returns Expiration date or null if token is invalid
+   *
+   * @example
+   * ```typescript
+   * const expiresAt = authHelper.getTokenExpiration(token);
+   * console.log(`Token expires at: ${expiresAt}`);
+   * ```
+   */
+  getTokenExpiration(token: string): Date | null {
+    const payload = this.decodeToken(token);
+    if (!payload || !payload.exp) {
+      return null;
+    }
+    return new Date(payload.exp * 1000);
+  }
+
+  /**
+   * Create multiple tokens for different roles
+   *
+   * @param roles - Array of roles to create tokens for
+   * @returns Map of role to token
+   *
+   * @example
+   * ```typescript
+   * const tokens = authHelper.createMultipleRoleTokens([Role.USER, Role.COACH, Role.ADMIN]);
+   * const userToken = tokens.get(Role.USER);
+   * ```
+   */
+  createMultipleRoleTokens(roles: Role[]): Map<Role, string> {
+    const tokens = new Map<Role, string>();
+    roles.forEach(role => {
+      tokens.set(role, this.createRoleToken(role));
+    });
+    return tokens;
+  }
+
+  /**
+   * Create multiple auth headers for different roles
+   *
+   * @param roles - Array of roles to create headers for
+   * @returns Map of role to auth headers
+   *
+   * @example
+   * ```typescript
+   * const headers = authHelper.createMultipleRoleHeaders([Role.USER, Role.COACH]);
+   * const userHeaders = headers.get(Role.USER);
+   * ```
+   */
+  createMultipleRoleHeaders(roles: Role[]): Map<Role, AuthHeaders> {
+    const headers = new Map<Role, AuthHeaders>();
+    roles.forEach(role => {
+      headers.set(role, this.createRoleAuthHeaders(role));
+    });
+    return headers;
+  }
 }
