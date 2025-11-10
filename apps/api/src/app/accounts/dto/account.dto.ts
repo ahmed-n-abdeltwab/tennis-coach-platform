@@ -24,8 +24,8 @@ export class AccountResponseDto extends BaseResponseDto {
   @ApiProperty({ enum: Role, example: Role.USER })
   role: Role;
 
-  @ApiProperty({ required: false, enum: ['male', 'female', 'other'] })
-  gen: string;
+  @ApiProperty({ required: false, enum: ['male', 'female', 'other'], example: 'male' })
+  gender?: string;
 
   @ApiProperty({ required: false, minimum: 5, maximum: 120 })
   age?: number;

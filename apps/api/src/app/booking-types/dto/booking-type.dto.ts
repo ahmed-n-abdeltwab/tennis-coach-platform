@@ -1,5 +1,30 @@
+import { BaseResponseDto, createTypedApiDecorators } from '@common';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional, IsBoolean, Min } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+
+export class BookingTypeResponseDto extends BaseResponseDto {
+  @ApiProperty({ example: 'Personal Training Session' })
+  name: string;
+
+  @ApiProperty({ required: false, example: 'One-on-one coaching session focused on your goals' })
+  description?: string;
+
+  @ApiProperty({ example: 99.99, description: 'Base price in decimal format' })
+  basePrice: string;
+
+  @ApiProperty({ example: true })
+  isActive: boolean;
+
+  @ApiProperty({ example: 'coach-id-123' })
+  coachId: string;
+
+  @ApiProperty({ required: false, description: 'Coach summary information' })
+  coach?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
 
 export class CreateBookingTypeDto {
   @ApiProperty()
@@ -44,3 +69,6 @@ export class UpdateBookingTypeDto {
   @IsBoolean()
   isActive?: boolean;
 }
+
+// Create typed API decorators for booking types
+export const BookingTypeApiResponses = createTypedApiDecorators(BookingTypeResponseDto);
