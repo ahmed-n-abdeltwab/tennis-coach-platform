@@ -1,8 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { ErrorResponseDto } from '../../common';
+import { CheckHealthDto, LivenessHealthDto, ReadinessHealthDto } from './dto/health.dto';
 import { HealthService } from './health.service';
-import { CheckHealthDto } from './dto/health.dto';
 
 @ApiTags('health')
 @Controller('health')
@@ -11,19 +12,43 @@ export class HealthController {
 
   @Get()
   @ApiOperation({ summary: 'Health check endpoint' })
+  @ApiCreatedResponse({
+    description: 'Health successfully checked',
+    type: CheckHealthDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input data',
+    type: ErrorResponseDto,
+  })
   async check(): Promise<CheckHealthDto> {
     return this.healthService.check();
   }
 
   @Get('liveness')
-  @ApiOperation({ summary: 'Kubernetes liveness probe' })
-  liveness() {
+  @ApiOperation({ summary: 'Server liveness probe' })
+  @ApiCreatedResponse({
+    description: 'Server liveness',
+    type: LivenessHealthDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input data',
+    type: ErrorResponseDto,
+  })
+  liveness(): LivenessHealthDto {
     return this.healthService.liveness();
   }
 
   @Get('readiness')
-  @ApiOperation({ summary: 'Kubernetes readiness probe' })
-  async readiness() {
+  @ApiOperation({ summary: 'Database readiness probe' })
+  @ApiCreatedResponse({
+    description: 'Database is ready',
+    type: ReadinessHealthDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input data',
+    type: ErrorResponseDto,
+  })
+  async readiness(): Promise<ReadinessHealthDto> {
     return this.healthService.readiness();
   }
 }

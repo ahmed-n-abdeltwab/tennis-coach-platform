@@ -3,7 +3,7 @@ import { ConfigType } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 
 import healthConfig from './config/health.config';
-import { CheckHealthDto } from './dto/health.dto';
+import { CheckHealthDto, LivenessHealthDto, ReadinessHealthDto } from './dto/health.dto';
 @Injectable()
 export class HealthService {
   constructor(
@@ -35,11 +35,11 @@ export class HealthService {
     return checks;
   }
 
-  liveness() {
+  liveness(): LivenessHealthDto {
     return { status: 'alive', timestamp: new Date().toISOString() };
   }
 
-  async readiness() {
+  async readiness(): Promise<ReadinessHealthDto> {
     try {
       // Check if database is ready
       await this.prisma.$queryRaw`SELECT 1`;

@@ -87,19 +87,19 @@ export interface Endpoints {
   };
 
   "/api/health": {
-    GET: (params: undefined | never) => void;
+    GET: (params: undefined | never) => { status: "ok" | "error"; timestamp: string; uptime: number; memory: Record<string, unknown>; version: string; environment: string; database: string };
   };
 
   "/api/health/liveness": {
-    GET: (params: undefined | never) => void;
+    GET: (params: undefined | never) => { status: "ok" | "error"; timestamp: string };
   };
 
   "/api/health/readiness": {
-    GET: (params: undefined | never) => void;
+    GET: (params: undefined | never) => { status: "ok" | "error"; timestamp: string };
   };
 
   "/api/messages": {
-    POST: (body: { content: string; sessionId: string; receiverType: string }) => void;
+    POST: (body: { content: string; sessionId: string; receiverType: Record<string, unknown> }) => void;
   };
 
   "/api/messages/session/{sessionId}": {

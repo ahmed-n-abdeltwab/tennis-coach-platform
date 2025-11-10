@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, Min } from 'class-validator';
+import { Role } from '@prisma/client';
+import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class SendMessageDto {
   @ApiProperty()
@@ -12,7 +13,7 @@ export class SendMessageDto {
 
   @ApiProperty()
   @IsString()
-  receiverType: string; // 'user' | 'coach'
+  receiverType: Role; 
 }
 
 export class GetMessagesQuery {
