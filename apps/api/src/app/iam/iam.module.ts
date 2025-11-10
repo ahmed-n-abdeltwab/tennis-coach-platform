@@ -9,6 +9,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { AuthenticationController } from './authentication/authentication.controller';
 import { AuthenticationService } from './authentication/authentication.service';
 import { AccessTokenGuard } from './authentication/guards/access-token/access-token.guard';
+import { AuthenticationGuard } from './authentication/guards/authentication/authentication.guard';
 import { JwtAuthGuard } from './authentication/guards/jwt-auth.guard';
 import { RolesGuard } from './authentication/guards/roles.guard';
 import jwtConfig from './config/jwt.config';
@@ -16,7 +17,6 @@ import { BcryptService } from './hashing/bcrypt.service';
 import { HashingService } from './hashing/hashing.service';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { AuthenticationGuard } from './authentication/guards/authentication/authentication.guard';
 
 @Module({
   imports: [
