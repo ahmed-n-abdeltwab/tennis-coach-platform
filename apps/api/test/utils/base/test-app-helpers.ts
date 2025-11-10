@@ -242,7 +242,7 @@ export async function parallelLimit<T, R>(
   const executing: Promise<void>[] = [];
 
   for (let i = 0; i < items.length; i++) {
-    const item = items[i];
+    const item = items[i]!; // Safe because we're iterating within bounds
     const promise = operation(item, i).then(result => {
       results[i] = result;
     });
@@ -251,10 +251,10 @@ export async function parallelLimit<T, R>(
 
     if (executing.length >= concurrency) {
       await Promise.race(executing);
-      executing.splice(
-        executing.findIndex(p => p === promise),
-        1
-      );
+      const index = executing.findIndex(p => p === promise);
+      if (index !== -1) {
+        executing.splice(index, 1);
+      }
     }
   }
 
