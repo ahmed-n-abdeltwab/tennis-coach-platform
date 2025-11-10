@@ -144,7 +144,7 @@ describe('Mock Factory System', () => {
     it('should create auth headers', () => {
       const headers = authFactory.createAuthHeaders();
 
-      expect(headers.authorization).toContain('Bearer ');
+      expect(headers.Authorization).toContain('Bearer ');
     });
 
     it('should decode token', () => {

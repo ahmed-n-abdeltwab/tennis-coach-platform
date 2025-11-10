@@ -1,5 +1,6 @@
-import { PrismaModule } from '../prisma/prisma.module';
 import { Module } from '@nestjs/common';
+
+import { PrismaModule } from '../prisma/prisma.module';
 
 import { SessionsController } from './sessions.controller';
 import { SessionsService } from './sessions.service';

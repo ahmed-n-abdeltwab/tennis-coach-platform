@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppModule } from '../../../src/app/app.module';
-
 import { Endpoints } from '@routes-helpers';
+
+import { AppModule } from '../../../src/app/app.module';
 import { AuthTestHelper } from '../auth';
 import { TypeSafeHttpClient } from '../http/type-safe-http-client';
 

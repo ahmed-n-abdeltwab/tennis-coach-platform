@@ -9,7 +9,9 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
+
 import { CurrentUser, ErrorResponseDto, JwtRefreshGuard, Public } from '../../../common';
+
 import { AuthenticationService } from './authentication.service';
 import { AuthResponseDto, LoginDto, SignUpDto } from './dto';
 

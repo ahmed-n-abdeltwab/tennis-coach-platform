@@ -3,11 +3,13 @@
  * Tests service-to-service interactions, module communication, and dependency injection
  */
 
+import { todo } from 'node:test';
+
 import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { todo } from 'node:test';
+
 import { AccountsModule } from '../../src/app/accounts/accounts.module';
 import { BookingTypesModule } from '../../src/app/booking-types/booking-types.module';
 import { CalendarModule } from '../../src/app/calendar/calendar.module';
@@ -126,7 +128,7 @@ describe('Cross-Module Integration Tests', () => {
   describe('Middleware Integration and Request/Response Pipeline', () => {
     todo('should handle authentication middleware across all modules');
 
-    todo('should handle authorization middleware for role-based access');
+    todo('should handle Authorization middleware for role-based access');
 
     todo('should handle validation middleware across modules');
 

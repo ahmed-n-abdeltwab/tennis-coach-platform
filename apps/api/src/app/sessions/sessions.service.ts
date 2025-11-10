@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Discount, Role } from '@prisma/client';
+
 import { PrismaService } from '../prisma/prisma.service';
 
 import { CreateSessionDto, GetSessionsQuery, UpdateSessionDto } from './dto/session.dto';
@@ -78,7 +79,7 @@ export class SessionsService {
       throw new NotFoundException('Session not found');
     }
 
-    // Check authorization
+    // Check Authorization
     const isAuthorized =
       role === Role.USER || role === Role.PREMIUM_USER
         ? session.userId === userId

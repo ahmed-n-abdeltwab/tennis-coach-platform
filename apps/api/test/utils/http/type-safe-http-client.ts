@@ -96,12 +96,12 @@ export type TypedResponse<T> = SuccessResponse<T> | FailureResponse;
  *
  * @template E - The Endpoints interface type (defaults to auto-imported Endpoints)
  *
- * @example
+ * @example Basic Usage
  * ```typescript
  * const client = new TypeSafeHttpClient(app);
  *
  * // ✅ Valid: TypeScript validates path, method, and request body
- * const response = await client.post('/api/auth/user/login', {
+ * const response = await client.post('/api/authentication/user/login', {
  *   email: 'user@example.com',
  *   password: 'password123'
  * });
@@ -110,7 +110,69 @@ export type TypedResponse<T> = SuccessResponse<T> | FailureResponse;
  * await client.get('/api/invalid-path');
  *
  * // ❌ Compile error: Invalid request body structure
- * await client.post('/api/auth/user/login', { invalidField: 'test' });
+ * await client.post('/api/authentication/user/login', { invalidField: 'test' });
+ * ```
+ *
+ * @example Discriminated Union Response Handling
+ * ```typescript
+ * const response = await client.get('/api/sessions');
+ *
+ * // Use discriminated union to handle success/error
+ * if (response.ok) {
+ *   // TypeScript knows response.body is Session[]
+ *   console.log(response.body[0].coachId);
+ *   expect(response.status).toBe(200);
+ * } else {
+ *   // TypeScript knows response.body is ErrorResponse
+ *   console.error(response.body.message);
+ *   expect(response.status).toBeGreaterThanOrEqual(400);
+ * }
+ * ```
+ *
+ * @example Path Parameters
+ * ```typescript
+ * import { buildPath } from '@routes-helpers';
+ *
+ * const sessionId = 'session-123';
+ *
+ * // Option 1: Use template literal with type assertion
+ * const response1 = await client.get(`/api/sessions/${sessionId}` as '/api/sessions/{id}');
+ *
+ * // Option 2: Use buildPath helper
+ * const path = buildPath('/api/sessions/{id}', { id: sessionId });
+ * const response2 = await client.get(path as '/api/sessions/{id}');
+ * ```
+ *
+ * @example Authenticated Requests
+ * ```typescript
+ * const token = 'jwt-token-here';
+ *
+ * // Authenticated GET
+ * const sessions = await client.authenticatedGet('/api/sessions', token);
+ *
+ * // Authenticated POST
+ * const newSession = await client.authenticatedPost('/api/sessions', token, {
+ *   bookingTypeId: 'booking-123',
+ *   timeSlotId: 'slot-456'
+ * });
+ * ```
+ *
+ * @example Request Options
+ * ```typescript
+ * // With expected status
+ * const response = await client.get('/api/sessions', undefined, {
+ *   expectedStatus: 200
+ * });
+ *
+ * // With custom headers
+ * const response = await client.post('/api/sessions', data, {
+ *   headers: { 'X-Custom-Header': 'value' }
+ * });
+ *
+ * // With timeout
+ * const response = await client.get('/api/sessions', undefined, {
+ *   timeout: 5000
+ * });
  * ```
  */
 export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
@@ -294,7 +356,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
     return this.get(path, params, {
       ...options,
-      headers: { authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
   }
 
@@ -306,7 +368,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
     return this.post(path, body, {
       ...options,
-      headers: { authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
   }
 
@@ -318,7 +380,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
     return this.put(path, body, {
       ...options,
-      headers: { authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
   }
 
@@ -330,7 +392,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
     return this.delete(path, params, {
       ...options,
-      headers: { authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
   }
 
@@ -345,7 +407,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
     return this.patch(path, body, {
       ...options,
-      headers: { authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
   }
 

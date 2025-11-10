@@ -1,10 +1,11 @@
+import { todo } from 'node:test';
+
 import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TestDatabaseManager } from '@test/utils/database/test-database-manager';
 
-import { todo } from 'node:test';
 import paymentsConfig from '../../src/app/payments/config/payments.config';
 import { PaymentsModule } from '../../src/app/payments/payments.module';
 import { PaymentsService } from '../../src/app/payments/payments.service';

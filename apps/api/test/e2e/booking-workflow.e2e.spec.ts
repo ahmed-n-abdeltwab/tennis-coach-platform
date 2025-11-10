@@ -1,8 +1,9 @@
-import { ApiContractTester } from './../utils/http/api-contract-tester';
 /**
  * E2E Tests: Booking Workflow
  * Tests complete booking workflow including coach selection, time slot booking, and payment
  */
+
+import { todo } from 'node:test';
 
 import {
   bookingTypeFactory,
@@ -12,8 +13,10 @@ import {
   TypeSafeHttpClient,
   userFactory,
 } from '@test-utils';
-import { todo } from 'node:test';
+
 import { AuthTestHelper } from '../utils/auth';
+
+import { ApiContractTester } from './../utils/http/api-contract-tester';
 
 describe('Booking Workflow (E2E)', () => {
   let authHelper: AuthTestHelper;
@@ -148,7 +151,7 @@ describe('Booking Workflow (E2E)', () => {
           notes: 'Test session for management',
         },
         {
-          headers: { authorization: `Bearer ${userToken}` },
+          headers: { Authorization: `Bearer ${userToken}` },
         }
       );
 
@@ -199,7 +202,7 @@ describe('Booking Workflow (E2E)', () => {
           timeSlotId: scenario.timeSlot.id,
         },
         {
-          headers: { authorization: `Bearer ${userToken}` },
+          headers: { Authorization: `Bearer ${userToken}` },
         }
       );
 

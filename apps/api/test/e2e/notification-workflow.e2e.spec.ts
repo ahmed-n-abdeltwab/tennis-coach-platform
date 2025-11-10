@@ -3,9 +3,11 @@
  * Tests notification flow including email, SMS, and in-app notifications
  */
 
+import { todo } from 'node:test';
+
 import { Role } from '@prisma/client';
 import { ApiContractTester, coachFactory, TypeSafeHttpClient, userFactory } from '@test-utils';
-import { todo } from 'node:test';
+
 import { AuthTestHelper } from '../utils/auth';
 
 describe('Notification Workflow (E2E)', () => {

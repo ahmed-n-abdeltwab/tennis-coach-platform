@@ -3,16 +3,20 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+
 import { PrismaModule } from '../prisma/prisma.module';
+
 import { AuthenticationController } from './authentication/authentication.controller';
 import { AuthenticationService } from './authentication/authentication.service';
+import { AccessTokenGuard } from './authentication/guards/access-token/access-token.guard';
+import { JwtAuthGuard } from './authentication/guards/jwt-auth.guard';
+import { RolesGuard } from './authentication/guards/roles.guard';
 import jwtConfig from './config/jwt.config';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RolesGuard } from './guards/roles.guard';
 import { BcryptService } from './hashing/bcrypt.service';
 import { HashingService } from './hashing/hashing.service';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { AuthenticationGuard } from './authentication/guards/authentication/authentication.guard';
 
 @Module({
   imports: [
@@ -37,6 +41,11 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
+    {
+      provide: APP_GUARD,
+      useClass: AuthenticationGuard,
+    },
+    AccessTokenGuard,
   ],
   controllers: [AuthenticationController],
   exports: [AuthenticationService, HashingService],

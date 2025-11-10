@@ -24,8 +24,8 @@
  */
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-
 import { Role } from '@prisma/client';
+
 import { IamModule } from '../../../src/app/iam/iam.module';
 import { PrismaModule } from '../../../src/app/prisma/prisma.module';
 import { AuthTestHelper } from '../auth';
@@ -111,14 +111,14 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       expect(payload).toBeNull();
     });
 
-    it('should create authorization headers', () => {
+    it('should create Authorization headers', () => {
       const userHeaders = authHelper.createUserAuthHeaders();
       const coachHeaders = authHelper.createCoachAuthHeaders();
       const expiredHeaders = authHelper.createExpiredAuthHeaders();
 
-      expect(userHeaders.authorization).toMatch(/^Bearer /);
-      expect(coachHeaders.authorization).toMatch(/^Bearer /);
-      expect(expiredHeaders.authorization).toMatch(/^Bearer /);
+      expect(userHeaders.Authorization).toMatch(/^Bearer /);
+      expect(coachHeaders.Authorization).toMatch(/^Bearer /);
+      expect(expiredHeaders.Authorization).toMatch(/^Bearer /);
     });
   });
 
@@ -256,11 +256,11 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       expect(coachHeaders).toHaveLength(2);
 
       userHeaders.forEach(header => {
-        expect(header.authorization).toMatch(/^Bearer /);
+        expect(header.Authorization).toMatch(/^Bearer /);
       });
 
       coachHeaders.forEach(header => {
-        expect(header.authorization).toMatch(/^Bearer /);
+        expect(header.Authorization).toMatch(/^Bearer /);
       });
     });
   });

@@ -19,5 +19,5 @@ export interface MockAuthResponse {
 }
 
 export interface MockAuthHeaders {
-  authorization: string;
+  Authorization: string;
 }

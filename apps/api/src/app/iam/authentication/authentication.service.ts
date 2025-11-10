@@ -3,9 +3,11 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Account, Role } from '@prisma/client';
+
 import { PrismaService } from '../../prisma/prisma.service';
 import jwtConfig from '../config/jwt.config';
 import { HashingService } from '../hashing/hashing.service';
+
 import { AuthResponseDto, LoginDto, SignUpDto } from './dto';
 
 @Injectable()

@@ -3,10 +3,11 @@
  * Tests message sending workflows and database interactions
  */
 
+import { todo } from 'node:test';
+
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { todo } from 'node:test';
 import { MessagesModule } from '../../src/app/messages/messages.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
 import { PrismaService } from '../../src/app/prisma/prisma.service';

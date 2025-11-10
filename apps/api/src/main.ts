@@ -1,8 +1,8 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-
 import { generateApiRoutes } from '@routes-helpers';
+
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
@@ -54,8 +54,6 @@ async function bootstrap() {
   const port = parseInt(process.env.PORT ?? '3333', 10);
 
   await app.listen(port);
-  console.log(`🚀 API is running on: http://localhost:${port}/api`);
-  console.log(`📚 API docs: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();

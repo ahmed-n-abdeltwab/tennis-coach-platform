@@ -7,11 +7,11 @@
 import { Provider } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
-import { BaseIntegrationTest } from '../base-integration.test';
-import { HealthModule } from '../../../../src/app/health/health.module';
-import { PrismaModule } from '../../../../src/app/prisma/prisma.module';
 import healthConfig from '../../../../src/app/health/config/health.config';
+import { HealthModule } from '../../../../src/app/health/health.module';
 import { HealthService } from '../../../../src/app/health/health.service';
+import { PrismaModule } from '../../../../src/app/prisma/prisma.module';
+import { BaseIntegrationTest } from '../base-integration.test';
 
 export class HealthIntegrationTest extends BaseIntegrationTest {
   async setupTestApp(): Promise<void> {

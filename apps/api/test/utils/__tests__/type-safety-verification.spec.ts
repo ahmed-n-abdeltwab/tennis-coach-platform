@@ -11,6 +11,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Endpoints } from '@routes-helpers';
+
 import { AuthTestHelper } from '../auth/auth-test-helper';
 import { AuthenticatedHttpClient } from '../auth/authenticated-client';
 import { TypeSafeHttpClient } from '../http/type-safe-http-client';

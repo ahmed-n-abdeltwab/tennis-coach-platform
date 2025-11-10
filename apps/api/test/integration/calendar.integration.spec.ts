@@ -3,11 +3,12 @@
  * Tests calendar synchronization, management, and database interactions
  */
 
+import { todo } from 'node:test';
+
 import { INestApplication } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { todo } from 'node:test';
 import { CalendarModule } from '../../src/app/calendar/calendar.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
 import { PrismaService } from '../../src/app/prisma/prisma.service';

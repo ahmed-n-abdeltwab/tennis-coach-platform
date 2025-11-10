@@ -342,15 +342,15 @@ export async function captureConsole(
   let stderr = '';
 
   console.log = (...args: any[]) => {
-    stdout += args.join(' ') + '\n';
+    stdout += `${args.join(' ')  }\n`;
   };
 
   console.error = (...args: any[]) => {
-    stderr += args.join(' ') + '\n';
+    stderr += `${args.join(' ')  }\n`;
   };
 
   console.warn = (...args: any[]) => {
-    stderr += args.join(' ') + '\n';
+    stderr += `${args.join(' ')  }\n`;
   };
 
   try {

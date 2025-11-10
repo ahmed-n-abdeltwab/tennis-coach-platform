@@ -4,6 +4,7 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { PrismaService } from '../../../src/app/prisma/prisma.service';
 
 export abstract class BaseServiceTest<TService, TRepository = any> {
@@ -322,8 +323,8 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   ): void {
     expect(mockMethod).toHaveBeenCalled();
     const calls = mockMethod.mock.calls;
-    const matchingCall = calls.find(call =>
-      call.some(arg => {
+    const matchingCall = calls.find((call: any[]) =>
+      call.some((arg: any) => {
         if (typeof arg === 'object' && arg !== null) {
           return Object.keys(partialArgs).every(key => arg[key] === partialArgs[key]);
         }

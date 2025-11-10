@@ -9,6 +9,7 @@
  */
 
 import { Account, BookingType, Prisma, Role } from '@prisma/client';
+
 import { PrismaService } from '../../../src/app/prisma/prisma.service';
 
 /**

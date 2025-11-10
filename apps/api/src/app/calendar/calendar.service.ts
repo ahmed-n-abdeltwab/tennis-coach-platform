@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Role } from '@prisma/client';
+
 import { PrismaService } from '../prisma/prisma.service';
 
 import { CreateCalendarEventDto } from './dto/calendar.dto';
@@ -25,7 +26,7 @@ export class CalendarService {
       throw new BadRequestException('Session not found');
     }
 
-    // Check authorization
+    // Check Authorization
     const isAuthorized =
       role === Role.USER || role === Role.PREMIUM_USER
         ? session.userId === userId
@@ -64,7 +65,7 @@ export class CalendarService {
       throw new BadRequestException('Event not found');
     }
 
-    // Check authorization
+    // Check Authorization
     const isAuthorized =
       role === Role.USER || role === Role.PREMIUM_USER
         ? session.userId === userId

@@ -5,8 +5,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Account, Role } from '@prisma/client';
+
 import { HashingService } from '../iam/hashing/hashing.service';
 import { PrismaService } from '../prisma/prisma.service';
+
 import { CreateAccountDto, UpdateAccountDto } from './dto/account.dto';
 
 @Injectable()

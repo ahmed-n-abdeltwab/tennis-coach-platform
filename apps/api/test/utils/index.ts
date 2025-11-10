@@ -113,6 +113,26 @@ export * from './roles';
  */
 export * from './mocks';
 
+/**
+ * Type utilities for test infrastructure
+ *
+ * Provides comprehensive type utilities for type-safe testing including:
+ * - DeepPartial: Make all properties optional recursively
+ * - MockRequest/MockResponse: Type-safe mock HTTP objects
+ * - Type guards: Runtime type checking utilities
+ * - Utility types: RequireProps, OptionalProps, Merge, etc.
+ *
+ * @example
+ * ```typescript
+ * import { DeepPartial, MockRequest, isDefined } from '@test-utils';
+ *
+ * const partialUser: DeepPartial<User> = { name: 'John' };
+ * const mockReq: MockRequest = createMockRequest();
+ * if (isDefined(value)) { ... }
+ * ```
+ */
+export * from './types';
+
 // ============================================================================
 // Re-exports from libraries for convenience
 // ============================================================================
@@ -139,13 +159,7 @@ export type {
   ExtractPaths,
   ExtractRequestType,
   ExtractResponseType,
-  PathsWithMethod,
   PathWithValues,
+  PathsWithMethod,
   RequiresParams,
 } from '@routes-helpers';
-
-export type DeepPartial<T> = T extends object
-  ? {
-      [P in keyof T]?: DeepPartial<T[P]>;
-    }
-  : T;

@@ -1,6 +1,7 @@
 import { validateEnv } from '@config/env.validation';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+
 import { AccountsModule } from './accounts/accounts.module';
 import { BookingTypesModule } from './booking-types/booking-types.module';
 import { CalendarModule } from './calendar/calendar.module';

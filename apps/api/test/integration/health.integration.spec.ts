@@ -1,45 +1,64 @@
-import { INestApplication } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { Test, TestingModule } from '@nestjs/testing';
 import { todo } from 'node:test';
+
+import { ConfigModule } from '@nestjs/config';
+
 import healthConfig from '../../src/app/health/config/health.config';
 import { HealthModule } from '../../src/app/health/health.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
-import { PrismaService } from '../../src/app/prisma/prisma.service';
+import { BaseIntegrationTest } from '../utils/base/base-integration.test';
+
+/**
+ * Health Endpoints Integration Tests
+ * Demonstrates using BaseIntegrationTest for integration testing
+ */
+class HealthIntegrationTest extends BaseIntegrationTest {
+  async setupTestApp(): Promise<void> {
+    // No additional setup needed for this test
+  }
+
+  getTestModules(): any[] {
+    return [HealthModule, PrismaModule, ConfigModule.forFeature(healthConfig)];
+  }
+
+  // Override seedTestData to skip seeding for health tests
+  async seedTestData(): Promise<void> {
+    // Health endpoints don't need test data
+  }
+}
 
 describe('Health Endpoints Integration', () => {
-  let app: INestApplication;
-  let prisma: PrismaService;
-  let module: TestingModule;
+  let testInstance: HealthIntegrationTest;
 
   beforeAll(async () => {
-    module = await Test.createTestingModule({
-      imports: [HealthModule, PrismaModule, ConfigModule.forFeature(healthConfig)],
-    }).compile();
-
-    app = module.createNestApplication();
-    app.setGlobalPrefix('api');
-    await app.init();
-
-    prisma = module.get<PrismaService>(PrismaService);
+    testInstance = new HealthIntegrationTest();
+    await testInstance.setup();
   });
 
   afterAll(async () => {
-    if (prisma) {
-      await prisma.$disconnect();
-    }
-    if (app) {
-      await app.close();
-    }
-    if (module) {
-      await module.close();
-    }
+    await testInstance.cleanup();
   });
 
   describe('GET /api/health', () => {
-    todo('should return health check with 200 status');
+    it('should return health check with 200 status', async () => {
+      const response = await testInstance.typeSafeGet<Endpoints>('/api/health');
 
-    todo('should return valid timestamp in ISO format');
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(response.status).toBe(200);
+        expect(response.body).toBeDefined();
+        expect(response.body).toHaveProperty('status');
+        expect(response.body).toHaveProperty('timestamp');
+      }
+    });
+
+    it('should return valid timestamp in ISO format', async () => {
+      const response = await testInstance.typeSafeGet<Endpoints>('/api/health');
+
+      if (response.ok) {
+        expect(response.body.timestamp).toBeDefined();
+        expect(new Date(response.body.timestamp).toISOString()).toBe(response.body.timestamp);
+      }
+    });
 
     todo('should return positive uptime');
 
@@ -57,9 +76,26 @@ describe('Health Endpoints Integration', () => {
   });
 
   describe('GET /api/health/liveness', () => {
-    todo('should return alive status with 200');
+    it('should return alive status with 200', async () => {
+      const response = await testInstance.typeSafeGet<Endpoints>('/api/health/liveness');
 
-    todo('should return valid timestamp');
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(response.status).toBe(200);
+        expect(response.body).toBeDefined();
+        expect(response.body).toHaveProperty('status');
+        expect(response.body.status).toBe('alive');
+      }
+    });
+
+    it('should return valid timestamp', async () => {
+      const response = await testInstance.typeSafeGet<Endpoints>('/api/health/liveness');
+
+      if (response.ok) {
+        expect(response.body.timestamp).toBeDefined();
+        expect(new Date(response.body.timestamp).toISOString()).toBe(response.body.timestamp);
+      }
+    });
 
     todo('should always return alive status');
 
@@ -71,9 +107,26 @@ describe('Health Endpoints Integration', () => {
   });
 
   describe('GET /api/health/readiness', () => {
-    todo('should return ready status with 200 when database is available');
+    it('should return ready status with 200 when database is available', async () => {
+      const response = await testInstance.typeSafeGet<Endpoints>('/api/health/readiness');
 
-    todo('should return valid timestamp');
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(response.status).toBe(200);
+        expect(response.body).toBeDefined();
+        expect(response.body).toHaveProperty('status');
+        expect(response.body.status).toBe('ready');
+      }
+    });
+
+    it('should return valid timestamp', async () => {
+      const response = await testInstance.typeSafeGet<Endpoints>('/api/health/readiness');
+
+      if (response.ok) {
+        expect(response.body.timestamp).toBeDefined();
+        expect(new Date(response.body.timestamp).toISOString()).toBe(response.body.timestamp);
+      }
+    });
 
     todo('should verify database connectivity');
 

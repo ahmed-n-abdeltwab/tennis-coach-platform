@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+
 import { PrismaModule } from '../prisma/prisma.module';
 
 import paymentsConfig from './config/payments.config';

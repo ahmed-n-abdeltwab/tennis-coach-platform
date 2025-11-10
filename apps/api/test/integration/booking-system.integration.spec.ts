@@ -1,135 +1,198 @@
 /**
- * Integration tests for booking system work flows
+ * Integration tests for booking system workflows
  * Tests complete booking workflows and cross-module interactions
+ * Demonstrates using BaseIntegrationTest with custom test data setup
  */
 
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-
 import { todo } from 'node:test';
+
+import { Account, BookingType, Session, TimeSlot } from '@prisma/client';
+
 import { AccountsModule } from '../../src/app/accounts/accounts.module';
 import { BookingTypesModule } from '../../src/app/booking-types/booking-types.module';
 import { IamModule } from '../../src/app/iam/iam.module';
-import { PrismaService } from '../../src/app/prisma/prisma.service';
 import { SessionsModule } from '../../src/app/sessions/sessions.module';
 import { TimeSlotsModule } from '../../src/app/time-slots/time-slots.module';
-import { BookingTypeMockFactory } from '../utils/factories/booking-type.factory';
-import { CoachMockFactory } from '../utils/factories/coach.factory';
-import { SessionMockFactory } from '../utils/factories/session.factory';
-import { TimeSlotMockFactory } from '../utils/factories/time-slot.factory';
-import { UserMockFactory } from '../utils/factories/user.factory';
+import { BaseIntegrationTest } from '../utils/base/base-integration.test';
+
+/**
+ * Booking System Integration Test Class
+ * Extends BaseIntegrationTest to leverage type-safe HTTP methods and database helpers
+ */
+class BookingSystemIntegrationTest extends BaseIntegrationTest {
+  // Test data
+  testUser!: Account;
+  testCoach!: Account;
+  testBookingType!: BookingType;
+  testTimeSlot!: TimeSlot;
+  testSession!: Session;
+  userToken!: string;
+  coachToken!: string;
+
+  async setupTestApp(): Promise<void> {
+    // No additional setup needed
+  }
+
+  getTestModules(): any[] {
+    return [SessionsModule, TimeSlotsModule, BookingTypesModule, IamModule, AccountsModule];
+  }
+
+  /**
+   * Custom seed method for booking system tests
+   * Creates user, coach, booking type, and time slot
+   */
+  async seedTestData(): Promise<void> {
+    // Create test user and coach using base class helpers
+    this.testUser = await this.createTestUser({
+      email: 'testuser@example.com',
+    });
+
+    this.testCoach = await this.createTestCoach({
+      email: 'testcoach@example.com',
+    });
+
+    // Create booking type and time slot
+    this.testBookingType = await this.createTestBookingType({
+      coachId: this.testCoach.id,
+      name: 'Individual Lesson',
+      basePrice: 100,
+      isActive: true,
+    });
+
+    this.testTimeSlot = await this.createTestTimeSlot({
+      coachId: this.testCoach.id,
+      dateTime: new Date('2024-12-25T10:00:00Z'),
+      durationMin: 60,
+      isAvailable: true,
+    });
+
+    // Create auth tokens using base class helper
+    this.userToken = this.createTestJwtToken({
+      sub: this.testUser.id,
+      email: this.testUser.email,
+      role: this.testUser.role,
+    });
+
+    this.coachToken = this.createTestJwtToken({
+      sub: this.testCoach.id,
+      email: this.testCoach.email,
+      role: this.testCoach.role,
+    });
+  }
+
+  /**
+   * Helper to create a test session for tests that need one
+   */
+  async createSessionForTest(): Promise<Session> {
+    this.testSession = await this.createTestSession({
+      userId: this.testUser.id,
+      coachId: this.testCoach.id,
+      bookingTypeId: this.testBookingType.id,
+      timeSlotId: this.testTimeSlot.id,
+      status: 'SCHEDULED',
+      dateTime: new Date('2024-12-25T10:00:00Z'),
+    });
+    return this.testSession;
+  }
+}
 
 describe('Booking System Integration', () => {
-  let app: INestApplication;
-  let prisma: PrismaService;
-  let sessionFactory: SessionMockFactory;
-  let bookingTypeFactory: BookingTypeMockFactory;
-  let timeSlotFactory: TimeSlotMockFactory;
-  let userFactory: UserMockFactory;
-  let coachFactory: CoachMockFactory;
-
-  // Test data
-  let testUser: any;
-  let testCoach: any;
-  let testBookingType: any;
-  let testTimeSlot: any;
-  let userToken: string;
-  let coachToken: string;
+  let testInstance: BookingSystemIntegrationTest;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [SessionsModule, TimeSlotsModule, BookingTypesModule, IamModule, AccountsModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    app.setGlobalPrefix('api');
-    await app.init();
-
-    prisma = moduleFixture.get<PrismaService>(PrismaService);
-
-    // Initialize factories
-    sessionFactory = new SessionMockFactory();
-    bookingTypeFactory = new BookingTypeMockFactory();
-    timeSlotFactory = new TimeSlotMockFactory();
-    userFactory = new UserMockFactory();
-    coachFactory = new CoachMockFactory();
-  });
-
-  beforeEach(async () => {
-    // Clean database
-    await prisma.session.deleteMany();
-    await prisma.timeSlot.deleteMany();
-    await prisma.bookingType.deleteMany();
-    await prisma.account.deleteMany();
-
-    // Create test data
-    testUser = await prisma.account.create({
-      data: userFactory.create({
-        email: 'testuser@example.com',
-        passwordHash: 'hashedpassword',
-      }),
-    });
-
-    testCoach = await prisma.account.create({
-      data: coachFactory.create({
-        email: 'testcoach@example.com',
-        passwordHash: 'hashedpassword',
-      }),
-    });
-
-    testBookingType = await prisma.bookingType.create({
-      data: bookingTypeFactory.create({
-        coachId: testCoach.id,
-        name: 'Individual Lesson',
-        basePrice: 100,
-        isActive: true,
-      }),
-    });
-
-    testTimeSlot = await prisma.timeSlot.create({
-      data: timeSlotFactory.create({
-        coachId: testCoach.id,
-        dateTime: new Date('2024-12-25T10:00:00Z'),
-        durationMin: 60,
-        isAvailable: true,
-      }),
-    });
-
-    // Create auth tokens (simplified for testing)
-    userToken = 'Bearer user-token';
-    coachToken = 'Bearer coach-token';
+    testInstance = new BookingSystemIntegrationTest();
+    await testInstance.setup();
   });
 
   afterAll(async () => {
-    await prisma.$disconnect();
-    await app.close();
+    await testInstance.cleanup();
   });
 
   describe('Complete Booking Workflow', () => {
-    todo('should complete full booking workflow from time slot creation to session booking');
+    it('should complete full booking workflow from time slot creation to session booking', async () => {
+      // Step 1: Coach creates a time slot (already created in setup)
+      const timeSlotsResponse = await testInstance.typeSafeAuthenticatedGet<Endpoints>(
+        '/api/time-slots',
+        testInstance.coachToken
+      );
+
+      expect(timeSlotsResponse.ok).toBe(true);
+      if (timeSlotsResponse.ok) {
+        expect(timeSlotsResponse.body).toBeDefined();
+        expect(Array.isArray(timeSlotsResponse.body)).toBe(true);
+      }
+
+      // Step 2: User views available booking types
+      const bookingTypesResponse = await testInstance.typeSafeAuthenticatedGet<Endpoints>(
+        '/api/booking-types',
+        testInstance.userToken
+      );
+
+      expect(bookingTypesResponse.ok).toBe(true);
+      if (bookingTypesResponse.ok) {
+        expect(bookingTypesResponse.body).toBeDefined();
+        expect(Array.isArray(bookingTypesResponse.body)).toBe(true);
+      }
+
+      // Step 3: User creates a session booking
+      const createSessionResponse = await testInstance.typeSafeAuthenticatedPost<Endpoints>(
+        '/api/sessions',
+        testInstance.userToken,
+        {
+          coachId: testInstance.testCoach.id,
+          bookingTypeId: testInstance.testBookingType.id,
+          timeSlotId: testInstance.testTimeSlot.id,
+          dateTime: new Date('2024-12-25T10:00:00Z').toISOString(),
+          durationMin: 60,
+        }
+      );
+
+      expect(createSessionResponse.ok).toBe(true);
+      if (createSessionResponse.ok) {
+        expect(createSessionResponse.status).toBe(201);
+        expect(createSessionResponse.body).toHaveProperty('id');
+        expect(createSessionResponse.body.userId).toBe(testInstance.testUser.id);
+        expect(createSessionResponse.body.coachId).toBe(testInstance.testCoach.id);
+      }
+    });
 
     todo('should handle booking with discount code');
   });
 
   describe('Session Management Workflow', () => {
-    let testSession: any;
-
     beforeEach(async () => {
-      testSession = await prisma.session.create({
-        data: sessionFactory.create({
-          userId: testUser.id,
-          coachId: testCoach.id,
-          bookingTypeId: testBookingType.id,
-          timeSlotId: testTimeSlot.id,
-          status: 'scheduled',
-          dateTime: new Date('2024-12-25T10:00:00Z'),
-        }),
-      });
+      // Create a test session for each test
+      await testInstance.createSessionForTest();
     });
 
-    todo('should allow user to view their sessions');
+    it('should allow user to view their sessions', async () => {
+      const response = await testInstance.typeSafeAuthenticatedGet<Endpoints>(
+        '/api/sessions',
+        testInstance.userToken
+      );
 
-    todo('should allow coach to view their sessions');
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(Array.isArray(response.body)).toBe(true);
+        expect(response.body.length).toBeGreaterThan(0);
+        expect(response.body[0]).toHaveProperty('id');
+        expect(response.body[0].userId).toBe(testInstance.testUser.id);
+      }
+    });
+
+    it('should allow coach to view their sessions', async () => {
+      const response = await testInstance.typeSafeAuthenticatedGet<Endpoints>(
+        '/api/sessions',
+        testInstance.coachToken
+      );
+
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(Array.isArray(response.body)).toBe(true);
+        expect(response.body.length).toBeGreaterThan(0);
+        expect(response.body[0].coachId).toBe(testInstance.testCoach.id);
+      }
+    });
 
     todo('should allow session updates');
 
@@ -153,29 +216,64 @@ describe('Booking System Integration', () => {
   });
 
   describe('Error Handling and Edge Cases', () => {
-    let testSession: any;
-
     beforeEach(async () => {
-      testSession = await prisma.session.create({
-        data: sessionFactory.create({
-          userId: testUser.id,
-          coachId: testCoach.id,
-          bookingTypeId: testBookingType.id,
-          timeSlotId: testTimeSlot.id,
-          status: 'scheduled',
-          dateTime: new Date('2024-12-25T10:00:00Z'),
-        }),
-      });
+      await testInstance.createSessionForTest();
     });
 
-    todo('should handle booking unavailable time slot');
+    it('should handle booking unavailable time slot', async () => {
+      // Mark time slot as unavailable
+      await testInstance.updateRecord(
+        'timeSlot',
+        { id: testInstance.testTimeSlot.id },
+        { isAvailable: false }
+      );
+
+      const response = await testInstance.typeSafeAuthenticatedPost<Endpoints>(
+        '/api/sessions',
+        testInstance.userToken,
+        {
+          coachId: testInstance.testCoach.id,
+          bookingTypeId: testInstance.testBookingType.id,
+          timeSlotId: testInstance.testTimeSlot.id,
+          dateTime: new Date('2024-12-25T10:00:00Z').toISOString(),
+          durationMin: 60,
+        }
+      );
+
+      expect(response.ok).toBe(false);
+      if (!response.ok) {
+        expect(response.status).toBeGreaterThanOrEqual(400);
+      }
+    });
+
+    it('should prevent unauthorized access to other users sessions', async () => {
+      // Create another user
+      const otherUser = await testInstance.createTestUser({
+        email: 'otheruser@example.com',
+      });
+      const otherUserToken = testInstance.createTestJwtToken({
+        sub: otherUser.id,
+        email: otherUser.email,
+        role: otherUser.role,
+      });
+
+      // Try to access the test session with different user token
+      const response = await testInstance.typeSafeAuthenticatedGet<Endpoints>(
+        `/api/sessions/${testInstance.testSession.id}` as any,
+        otherUserToken
+      );
+
+      // Should either return 403 Forbidden or 404 Not Found
+      expect(response.ok).toBe(false);
+      if (!response.ok) {
+        expect([403, 404]).toContain(response.status);
+      }
+    });
 
     todo('should handle booking inactive booking type');
 
     todo('should handle invalid discount code');
 
     todo('should prevent cancelling past sessions');
-
-    todo('should prevent unauthorized access to other users sessions');
   });
 });

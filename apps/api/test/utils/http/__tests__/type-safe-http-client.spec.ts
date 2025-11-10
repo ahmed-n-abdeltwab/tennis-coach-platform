@@ -9,6 +9,7 @@
  */
 
 import { Endpoints, ExtractResponseType } from '@routes-helpers';
+
 import { TypedResponse } from '../type-safe-http-client';
 
 describe('TypeSafeHttpClient - Type Inference (Compile-Time Tests)', () => {

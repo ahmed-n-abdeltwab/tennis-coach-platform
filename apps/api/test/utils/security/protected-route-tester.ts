@@ -7,14 +7,15 @@ import {
   ExtractRequestType,
   ExtractResponseType,
 } from '@test-utils';
-import { TypeSafeHttpClient, TypedResponse } from '../http/type-safe-http-client';
 
 import { AuthTestHelper } from '../auth/auth-test-helper';
+import { TypeSafeHttpClient, TypedResponse } from '../http/type-safe-http-client';
+
 
 /**
  * Helper class for testing protected routes
  *
- * This class provides utilities for testing authentication and authorization:
+ * This class provides utilities for testing authentication and Authorization:
  * - Test that routes require authentication
  * - Test that routes reject expired tokens
  * - Test that routes accept valid tokens
@@ -114,7 +115,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
     const expiredToken = this.authHelper.createExpiredToken();
 
     await this.httpClient.request(path, method, data, {
-      headers: { authorization: `Bearer ${expiredToken}` },
+      headers: { Authorization: `Bearer ${expiredToken}` },
       expectedStatus: 401,
     });
   }
@@ -148,7 +149,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
     const defaultStatus = method === 'POST' ? 201 : 200;
 
     return this.httpClient.request(path, method, data, {
-      headers: { authorization: `Bearer ${userToken}` },
+      headers: { Authorization: `Bearer ${userToken}` },
       expectedStatus: expectedStatus || defaultStatus,
     });
   }
@@ -182,7 +183,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
     const defaultStatus = method === 'POST' ? 201 : 200;
 
     return this.httpClient.request(path, method, data, {
-      headers: { authorization: `Bearer ${coachToken}` },
+      headers: { Authorization: `Bearer ${coachToken}` },
       expectedStatus: expectedStatus || defaultStatus,
     });
   }
@@ -216,7 +217,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
     const defaultStatus = method === 'POST' ? 201 : 200;
 
     return this.httpClient.request(path, method, data, {
-      headers: { authorization: `Bearer ${adminToken}` },
+      headers: { Authorization: `Bearer ${adminToken}` },
       expectedStatus: expectedStatus || defaultStatus,
     });
   }
@@ -267,7 +268,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
       const expectedStatus = isAllowed ? (method === 'POST' ? 201 : 200) : 403;
 
       await this.httpClient.request(path, method, data, {
-        headers: { authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` },
         expectedStatus,
       });
     }

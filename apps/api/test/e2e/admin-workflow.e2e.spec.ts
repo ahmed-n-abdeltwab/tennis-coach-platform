@@ -3,8 +3,10 @@
  * Tests admin functionality including user management and system configuration
  */
 
-import { Role } from '@prisma/client';
 import { todo } from 'node:test';
+
+import { Role } from '@prisma/client';
+
 import {
   ApiContractTester,
   bookingTypeFactory,

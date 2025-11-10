@@ -1,4 +1,5 @@
 import { Request } from 'express';
+
 import { BaseHttpMockFactory } from './base-auth.factory';
 export interface CreateRequestOptions {
   method?: string;
@@ -37,7 +38,7 @@ export class HttpMockFactory extends BaseHttpMockFactory {
       ...overrides,
       user,
       headers: {
-        authorization: 'Bearer mock-token',
+        Authorization: 'Bearer mock-token',
         ...(overrides.headers ?? {}),
       },
     });

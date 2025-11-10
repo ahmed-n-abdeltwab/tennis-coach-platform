@@ -3,11 +3,13 @@
  * Tests middleware integration and request/response pipeline across modules
  */
 
+import { todo } from 'node:test';
+
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { todo } from 'node:test';
+
 import { AccountsModule } from '../../src/app/accounts/accounts.module';
 import { BookingTypesModule } from '../../src/app/booking-types/booking-types.module';
 import { IamModule } from '../../src/app/iam/iam.module';
@@ -92,10 +94,10 @@ describe('Middleware Pipeline Integration Tests', () => {
     todo('should handle valid JWT tokens across modules');
   });
 
-  describe('authorization Middleware Pipeline', () => {
+  describe('Authorization Middleware Pipeline', () => {
     todo('should enforce role-based access control');
 
-    todo('should enforce resource ownership authorization');
+    todo('should enforce resource ownership Authorization');
   });
 
   describe('Validation Middleware Pipeline', () => {

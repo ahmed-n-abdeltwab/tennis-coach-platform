@@ -1,2 +1,2 @@
 // Re-export from IAM module for backward compatibility
-export { JwtAuthGuard } from '../../app/iam/guards/jwt-auth.guard';
+export { JwtAuthGuard } from '../../app/iam/authentication/guards/jwt-auth.guard';

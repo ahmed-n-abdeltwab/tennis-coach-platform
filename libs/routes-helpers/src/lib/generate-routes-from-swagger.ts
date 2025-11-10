@@ -10,6 +10,7 @@ import {
   ResponseObject,
   SchemaObject,
 } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
+
 import { ExtractedRoute } from '../interfaces/IRoutes';
 import { getWorkspaceRoot } from '../utils/routes.util';
 
@@ -477,8 +478,8 @@ function schemaToTypeScript(
         Object.entries(s.properties).forEach(
           ([key, propSchema]: [string, SchemaObject | ReferenceObject]) => {
             const required =
-              ((s.required && s.required.includes(key)) ||
-                (schema.required && schema.required.includes(key))) ??
+              ((s.required?.includes(key)) ||
+                (schema.required?.includes(key))) ??
               false;
             // Set will overwrite previous occurrences, keeping the last one
             mergedProperties.set(key, { schema: propSchema, required });
@@ -537,7 +538,7 @@ function schemaToTypeScript(
         Object.entries(schema.properties).forEach(
           ([key, propSchema]: [string, SchemaObject | ReferenceObject]) => {
             const propType = schemaToTypeScript(propSchema, document, visited);
-            const required = schema.required && schema.required.includes(key);
+            const required = schema.required?.includes(key);
             const optional = required ? '' : '?';
             // Set will overwrite previous occurrences, keeping the last one
             propertyMap.set(key, `${key}${optional}: ${propType}`);

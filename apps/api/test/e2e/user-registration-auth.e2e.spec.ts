@@ -3,10 +3,12 @@
  * Tests complete user registration, login, and profile management workflows
  */
 
+import { todo } from 'node:test';
+
 import { Role } from '@prisma/client';
 import { Endpoints } from '@routes-helpers';
 import { ApiContractTester, TypeSafeHttpClient, userFactory } from '@test-utils';
-import { todo } from 'node:test';
+
 import { AuthTestHelper } from '../utils/auth';
 
 describe('User Registration and Authentication Flow (E2E)', () => {

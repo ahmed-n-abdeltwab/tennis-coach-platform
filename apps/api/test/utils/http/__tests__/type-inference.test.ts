@@ -7,6 +7,7 @@
 
 import { INestApplication } from '@nestjs/common';
 import { Endpoints } from '@routes-helpers';
+
 import { TypeSafeHttpClient } from '../type-safe-http-client';
 
 // Mock app for type testing

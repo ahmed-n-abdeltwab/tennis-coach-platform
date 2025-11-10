@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Role } from '@prisma/client';
+
 import { PrismaService } from '../prisma/prisma.service';
 
 import { GetMessagesQuery, SendMessageDto } from './dto/message.dto';

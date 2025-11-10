@@ -3,10 +3,12 @@
  * Tests notification delivery workflows and email service integration
  */
 
+import { todo } from 'node:test';
+
 import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { todo } from 'node:test';
+
 import notificationsConfig from '../../src/app/notifications/config/notifications.config';
 import { NotificationsModule } from '../../src/app/notifications/notifications.module';
 import { BaseIntegrationTest } from '../utils/base/base-integration.test';

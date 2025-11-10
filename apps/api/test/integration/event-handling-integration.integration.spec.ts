@@ -3,11 +3,13 @@
  * Tests event handling, message passing, and real-time communication across modules
  */
 
+import { todo } from 'node:test';
+
 import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { todo } from 'node:test';
+
 import { MessagesModule } from '../../src/app/messages/messages.module';
 import { NotificationsModule } from '../../src/app/notifications/notifications.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
@@ -105,6 +107,6 @@ describe('Event Handling Integration Tests', () => {
   describe('Error Event Handling', () => {
     todo('should handle and recover from event processing errors');
 
-    todo('should handle authorization errors in event processing');
+    todo('should handle Authorization errors in event processing');
   });
 });

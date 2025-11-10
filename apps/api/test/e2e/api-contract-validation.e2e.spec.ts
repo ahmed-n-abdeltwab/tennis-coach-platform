@@ -1,3 +1,10 @@
+import { todo } from 'node:test';
+
+import { Role } from '@prisma/client';
+import { coachFactory, userFactory } from '@test-utils';
+
+import { AuthTestHelper } from '../utils/auth';
+
 import { ApiContractTester } from './../utils/http/api-contract-tester';
 import { TypeSafeHttpClient } from './../utils/http/type-safe-http-client';
 /**
@@ -5,10 +12,8 @@ import { TypeSafeHttpClient } from './../utils/http/type-safe-http-client';
  * Tests API contracts, error responses, and validation across all endpoints
  */
 
-import { Role } from '@prisma/client';
-import { coachFactory, userFactory } from '@test-utils';
-import { todo } from 'node:test';
-import { AuthTestHelper } from '../utils/auth';
+
+
 
 describe('API Contract Validation and Error Handling (E2E)', () => {
   let authHelper: AuthTestHelper;
@@ -91,7 +96,7 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
 
     todo('should return consistent 401 error format for authentication errors');
 
-    todo('should return consistent 403 error format for authorization errors');
+    todo('should return consistent 403 error format for Authorization errors');
 
     todo('should return consistent 404 error format for not found errors');
 

@@ -29,11 +29,10 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   constructor(private messagesService: MessagesService) {}
 
   handleConnection(client: Socket) {
-    console.log(`Client connected: ${client.id}`);
+    // Client connected
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
     this.connectedClients.delete(client.id);
   }
 
@@ -44,7 +43,6 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   ) {
     client.join(`session-${data.sessionId}`);
     this.connectedClients.set(client.id, client);
-    console.log(`User ${data.userId} joined session ${data.sessionId}`);
   }
 
   @SubscribeMessage('send-message')
@@ -68,6 +66,5 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     @MessageBody() data: { sessionId: string }
   ) {
     client.leave(`session-${data.sessionId}`);
-    console.log(`Client left session ${data.sessionId}`);
   }
 }

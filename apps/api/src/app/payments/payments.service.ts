@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
+
 import { PrismaService } from '../prisma/prisma.service';
 
 import paymentsConfig from './config/payments.config';
@@ -65,7 +66,7 @@ export class PaymentsService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify(orderData),
     });
@@ -102,7 +103,7 @@ export class PaymentsService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
@@ -143,7 +144,7 @@ export class PaymentsService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        authorization: `Basic ${auth}`,
+        Authorization: `Basic ${auth}`,
       },
       body: 'grant_type=client_credentials',
     });

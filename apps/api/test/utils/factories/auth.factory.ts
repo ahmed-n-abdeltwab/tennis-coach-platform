@@ -75,7 +75,7 @@ export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {
   createAuthHeaders(payload?: Partial<MockAuthPayload>): MockAuthHeaders {
     const token = this.generateToken(payload);
     return {
-      authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     };
   }
 

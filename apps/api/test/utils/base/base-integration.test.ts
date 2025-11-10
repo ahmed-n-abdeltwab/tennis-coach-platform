@@ -1,14 +1,13 @@
 /**
- * Abstract base class for in testing
+ * Abstract base class for integration testing
  * Provides database setup, cleanup, and common integration testing patterns
+ * Enhanced with type-safe HTTP methods using routes-helpers type utilities
  */
 
 import { INestApplication, Provider } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Role } from '@prisma/client';
-
 import { Test, TestingModule } from '@nestjs/testing';
-import {
+import { Role ,
   Account,
   BookingType,
   Discount,
@@ -18,11 +17,22 @@ import {
   Session,
   TimeSlot,
 } from '@prisma/client';
+import {
+  buildPath,
+  type DeepPartial,
+  type Endpoints,
+  type ExtractMethods,
+  type ExtractPaths,
+  type ExtractRequestType,
+  type ExtractResponseType,
+  type PathsWithMethod,
+} from '@test-utils';
 import request from 'supertest';
-import { JwtPayload } from '../auth/auth-test-helper';
 
 import { PrismaService } from '../../../src/app/prisma/prisma.service';
+import { JwtPayload } from '../auth/auth-test-helper';
 import { cleanDatabase, seedTestDatabase } from '../database/database-helpers';
+import type { RequestOptions, SuccessResponse, TypedResponse } from '../http/type-safe-http-client';
 
 export abstract class BaseIntegrationTest {
   protected app: INestApplication;
@@ -144,12 +154,12 @@ export abstract class BaseIntegrationTest {
   }
 
   /**
-   * Creates authorization headers for HTTP requests
+   * Creates Authorization headers for HTTP requests
    */
-  protected createAuthHeaders(token?: string): { authorization: string } {
+  protected createAuthHeaders(token?: string): { Authorization: string } {
     const authToken = token || this.createTestJwtToken();
     return {
-      authorization: `Bearer ${authToken}`,
+      Authorization: `Bearer ${authToken}`,
     };
   }
 
@@ -205,6 +215,311 @@ export abstract class BaseIntegrationTest {
     return request(this.app.getHttpServer())
       .post(`/api${endpoint}`)
       .send(data || {});
+  }
+
+  // ============================================================================
+  // Type-Safe HTTP Methods (Enhanced with routes-helpers type utilities)
+  // ============================================================================
+
+  /**
+   * Build path with parameters (replace {id} with actual values)
+   * @private
+   */
+  private buildPathWithParams(path: string, data?: Record<string, any>): string {
+    if (!data || typeof data !== 'object') return path;
+    return buildPath(path, data);
+  }
+
+  /**
+   * Make a type-safe request to any endpoint
+   *
+   * This is the core method that provides full type safety for path, method, request data, and response.
+   *
+   * @template P - The API path (must exist in Endpoints)
+   * @template M - The HTTP method (must be supported by the path)
+   * @param path - The API endpoint path
+   * @param method - The HTTP method
+   * @param data - Request data (body for POST/PUT/PATCH, params for GET/DELETE)
+   * @param options - Additional request options
+   * @returns Typed response with proper response body type
+   *
+   * @example
+   * ```typescript
+   * const response = await this.typeSafeRequest('/api/sessions', 'GET');
+   * if (response.ok) {
+   *   console.log(response.body); // Typed as Session[]
+   * }
+   * ```
+   */
+  protected async typeSafeRequest<
+    E extends Record<string, any> = Endpoints,
+    P extends ExtractPaths<E> = ExtractPaths<E>,
+    M extends ExtractMethods<E, P> = ExtractMethods<E, P>,
+  >(
+    path: P,
+    method: M,
+    data?: DeepPartial<ExtractRequestType<E, P, M>>,
+    options: RequestOptions = {}
+  ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
+    // Build path with parameters if needed
+    const builtPath = this.buildPathWithParams(path as string, data as Record<string, any>);
+
+    // Create supertest request
+    const normalizedMethod = method.toLowerCase() as Lowercase<M>;
+    let req = request(this.app.getHttpServer())[normalizedMethod](builtPath);
+
+    // Add headers
+    if (options.headers) {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        req = req.set(key, value);
+      });
+    }
+
+    // Add data for requests
+    if (data != null) {
+      if (method === 'GET') req = req.query(data);
+      else req = req.send(data);
+    }
+
+    // Set timeout
+    if (options.timeout) {
+      req = req.timeout(options.timeout);
+    }
+
+    // Set expected status
+    if (options.expectedStatus) {
+      req = req.expect(options.expectedStatus);
+    }
+
+    const response = await req;
+
+    // Determine if response is success (2xx) or error (4xx/5xx)
+    const isSuccess = response.status >= 200 && response.status < 300;
+
+    if (isSuccess) {
+      return {
+        status: response.status as SuccessResponse<any>['status'],
+        body: response.body as ExtractResponseType<E, P, M>,
+        headers: response.headers as Record<string, string>,
+        ok: true,
+      } as TypedResponse<ExtractResponseType<E, P, M>>;
+    } else {
+      return {
+        status: response.status,
+        body: response.body,
+        headers: response.headers as Record<string, string>,
+        ok: false,
+      } as TypedResponse<ExtractResponseType<E, P, M>>;
+    }
+  }
+
+  /**
+   * Type-safe GET request
+   *
+   * @template P - The API path (must support GET method)
+   * @param path - The API endpoint path
+   * @param params - Query parameters or path parameters
+   * @param options - Additional request options
+   * @returns Typed response with discriminated union
+   *
+   * @example
+   * ```typescript
+   * const response = await this.typeSafeGet('/api/accounts/me');
+   * if (response.ok) {
+   *   console.log(response.body.id); // Fully typed
+   * } else {
+   *   console.error(response.body.message); // Error response
+   * }
+   * ```
+   */
+  protected async typeSafeGet<
+    E extends Record<string, any> = Endpoints,
+    P extends PathsWithMethod<E, 'GET'> = PathsWithMethod<E, 'GET'>,
+  >(
+    path: P,
+    params?: DeepPartial<ExtractRequestType<E, P, 'GET'>>,
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
+    return this.typeSafeRequest(path, 'GET' as ExtractMethods<E, P>, params, options);
+  }
+
+  /**
+   * Type-safe POST request
+   *
+   * @template P - The API path (must support POST method)
+   * @param path - The API endpoint path
+   * @param body - Request body
+   * @param options - Additional request options
+   * @returns Typed response with discriminated union
+   *
+   * @example
+   * ```typescript
+   * const response = await this.typeSafePost('/api/authentication/user/login', {
+   *   email: 'user@example.com',
+   *   password: 'password123'
+   * });
+   * if (response.ok) {
+   *   console.log(response.body.accessToken);
+   * }
+   * ```
+   */
+  protected async typeSafePost<
+    E extends Record<string, any> = Endpoints,
+    P extends PathsWithMethod<E, 'POST'> = PathsWithMethod<E, 'POST'>,
+  >(
+    path: P,
+    body?: DeepPartial<ExtractRequestType<E, P, 'POST'>>,
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
+    return this.typeSafeRequest(path, 'POST' as ExtractMethods<E, P>, body, options);
+  }
+
+  /**
+   * Type-safe PUT request
+   */
+  protected async typeSafePut<
+    E extends Record<string, any> = Endpoints,
+    P extends PathsWithMethod<E, 'PUT'> = PathsWithMethod<E, 'PUT'>,
+  >(
+    path: P,
+    body?: DeepPartial<ExtractRequestType<E, P, 'PUT'>>,
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
+    return this.typeSafeRequest(path, 'PUT' as ExtractMethods<E, P>, body, options);
+  }
+
+  /**
+   * Type-safe PATCH request
+   */
+  protected async typeSafePatch<
+    E extends Record<string, any> = Endpoints,
+    P extends PathsWithMethod<E, 'PATCH'> = PathsWithMethod<E, 'PATCH'>,
+  >(
+    path: P,
+    body?: DeepPartial<ExtractRequestType<E, P, 'PATCH'>>,
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
+    return this.typeSafeRequest(path, 'PATCH' as ExtractMethods<E, P>, body, options);
+  }
+
+  /**
+   * Type-safe DELETE request
+   */
+  protected async typeSafeDelete<
+    E extends Record<string, any> = Endpoints,
+    P extends PathsWithMethod<E, 'DELETE'> = PathsWithMethod<E, 'DELETE'>,
+  >(
+    path: P,
+    params?: DeepPartial<ExtractRequestType<E, P, 'DELETE'>>,
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
+    return this.typeSafeRequest(path, 'DELETE' as ExtractMethods<E, P>, params, options);
+  }
+
+  /**
+   * Type-safe authenticated GET request
+   *
+   * @template P - The API path (must support GET method)
+   * @param path - The API endpoint path
+   * @param token - JWT authentication token
+   * @param params - Query parameters or path parameters
+   * @param options - Additional request options (headers will be merged with auth header)
+   * @returns Typed response with discriminated union
+   *
+   * @example
+   * ```typescript
+   * const token = this.createTestJwtToken();
+   * const response = await this.typeSafeAuthenticatedGet('/api/sessions', token);
+   * if (response.ok) {
+   *   console.log(response.body); // Typed as Session[]
+   * }
+   * ```
+   */
+  protected async typeSafeAuthenticatedGet<
+    E extends Record<string, any> = Endpoints,
+    P extends PathsWithMethod<E, 'GET'> = PathsWithMethod<E, 'GET'>,
+  >(
+    path: P,
+    token: string,
+    params?: DeepPartial<ExtractRequestType<E, P, 'GET'>>,
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
+    return this.typeSafeGet(path, params, {
+      ...options,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  /**
+   * Type-safe authenticated POST request
+   */
+  protected async typeSafeAuthenticatedPost<
+    E extends Record<string, any> = Endpoints,
+    P extends PathsWithMethod<E, 'POST'> = PathsWithMethod<E, 'POST'>,
+  >(
+    path: P,
+    token: string,
+    body?: DeepPartial<ExtractRequestType<E, P, 'POST'>>,
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
+    return this.typeSafePost(path, body, {
+      ...options,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  /**
+   * Type-safe authenticated PUT request
+   */
+  protected async typeSafeAuthenticatedPut<
+    E extends Record<string, any> = Endpoints,
+    P extends PathsWithMethod<E, 'PUT'> = PathsWithMethod<E, 'PUT'>,
+  >(
+    path: P,
+    token: string,
+    body?: DeepPartial<ExtractRequestType<E, P, 'PUT'>>,
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
+    return this.typeSafePut(path, body, {
+      ...options,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  /**
+   * Type-safe authenticated PATCH request
+   */
+  protected async typeSafeAuthenticatedPatch<
+    E extends Record<string, any> = Endpoints,
+    P extends PathsWithMethod<E, 'PATCH'> = PathsWithMethod<E, 'PATCH'>,
+  >(
+    path: P,
+    token: string,
+    body?: DeepPartial<ExtractRequestType<E, P, 'PATCH'>>,
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
+    return this.typeSafePatch(path, body, {
+      ...options,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  /**
+   * Type-safe authenticated DELETE request
+   */
+  protected async typeSafeAuthenticatedDelete<
+    E extends Record<string, any> = Endpoints,
+    P extends PathsWithMethod<E, 'DELETE'> = PathsWithMethod<E, 'DELETE'>,
+  >(
+    path: P,
+    token: string,
+    params?: DeepPartial<ExtractRequestType<E, P, 'DELETE'>>,
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
+    return this.typeSafeDelete(path, params, {
+      ...options,
+      headers: { Authorization: `Bearer ${token}` },
+    });
   }
 
   /**
@@ -415,10 +730,10 @@ export abstract class BaseIntegrationTest {
     const account = await this.getCachedUser();
     const token =
       overrides.token ??
-      (await this.createTestJwtToken({
+      this.createTestJwtToken({
         sub: overrides.accountId ?? account.id,
         email: account.email,
-      }));
+      });
     const refreshTokenData = {
       accountId: overrides.accountId ?? account.id,
       token,

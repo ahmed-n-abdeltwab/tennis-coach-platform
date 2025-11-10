@@ -14,6 +14,7 @@ import type {
   TypedResponse,
 } from '@test-utils';
 import { Endpoints } from '@test-utils';
+
 import { RequestOptions, TypeSafeHttpClient } from './type-safe-http-client';
 
 /**

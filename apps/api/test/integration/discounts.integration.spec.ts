@@ -1,10 +1,11 @@
+import { todo } from 'node:test';
+
 import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TestDatabaseManager } from '@test/utils/database/test-database-manager';
 
-import { todo } from 'node:test';
 import { DiscountsModule } from '../../src/app/discounts/discounts.module';
 import { DiscountsService } from '../../src/app/discounts/discounts.service';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';

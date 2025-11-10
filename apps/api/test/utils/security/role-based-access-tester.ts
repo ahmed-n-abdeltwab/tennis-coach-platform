@@ -7,9 +7,10 @@ import {
   ExtractRequestType,
   ExtractResponseType,
 } from '@test-utils';
-import { TypeSafeHttpClient, TypedResponse } from '../http/type-safe-http-client';
 
 import { AuthTestHelper } from '../auth/auth-test-helper';
+import { TypeSafeHttpClient, TypedResponse } from '../http/type-safe-http-client';
+
 
 /**
  * HTTP methods supported by the API
@@ -251,7 +252,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     const expectedStatus = method === 'POST' ? 201 : 200;
 
     return this.httpClient.request(path, method, data, {
-      headers: { authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` },
       expectedStatus,
     });
   }
@@ -281,12 +282,12 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     method: M,
     role: Role,
     data?: ExtractRequestType<E, P, M>,
-    expectedStatus: number = 403
+    expectedStatus = 403
   ): Promise<void> {
     const token = this.createTokenForRole(role);
 
     await this.httpClient.request(path, method, data, {
-      headers: { authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` },
       expectedStatus,
     });
   }
@@ -306,7 +307,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
 
     try {
       const response = await this.httpClient.request(path, method, data, {
-        headers: { authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` },
         expectedStatus,
       });
 

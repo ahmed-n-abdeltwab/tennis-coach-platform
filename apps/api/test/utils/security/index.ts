@@ -1,7 +1,7 @@
 /**
  * Security test utilities
  *
- * This module provides utilities for testing authentication and authorization:
+ * This module provides utilities for testing authentication and Authorization:
  * - Protected route testing
  * - Role-based access control testing
  */

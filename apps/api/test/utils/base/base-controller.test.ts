@@ -5,6 +5,7 @@
 
 import { INestApplication, Provider } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
 import { Role } from '@prisma/client';
 import {
   DeepPartial,
@@ -16,9 +17,8 @@ import {
   PathsWithMethod,
   buildPath,
 } from '@test-utils';
-
-import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
+
 import { JwtPayload } from '../auth/auth-test-helper';
 import { RequestOptions } from '../http';
 
@@ -134,12 +134,12 @@ export abstract class BaseControllerTest<
   }
 
   /**
-   * Creates authorization headers for HTTP requests
+   * Creates Authorization headers for HTTP requests
    */
-  protected createAuthHeaders(token?: string): { authorization: string } {
+  protected createAuthHeaders(token?: string): { Authorization: string } {
     const authToken = token || this.createTestJwtToken();
     return {
-      authorization: `Bearer ${authToken}`,
+      Authorization: `Bearer ${authToken}`,
     };
   }
   /**

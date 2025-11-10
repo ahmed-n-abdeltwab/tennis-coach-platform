@@ -5,6 +5,7 @@ import type {
   ExtractResponseType,
   PathsWithMethod,
 } from '@routes-helpers';
+
 import { RequestOptions, TypeSafeHttpClient, TypedResponse } from '../http/type-safe-http-client';
 
 /**
@@ -16,16 +17,73 @@ import { RequestOptions, TypeSafeHttpClient, TypedResponse } from '../http/type-
  *
  * @template E - The Endpoints interface type (defaults to auto-imported Endpoints)
  *
- * @example
+ * @example Basic Usage
  * ```typescript
+ * import { AuthenticatedHttpClient } from '@test-utils';
+ *
  * const client = new AuthenticatedHttpClient(app, accessToken);
  *
- * // Authentication is automatic
+ * // Authentication is automatic - no need to pass token
  * const sessions = await client.get('/api/sessions');
  * const newSession = await client.post('/api/sessions', {
  *   bookingTypeId: 'booking-123',
  *   timeSlotId: 'slot-456'
  * });
+ * ```
+ *
+ * @example With AuthTestHelper
+ * ```typescript
+ * import { AuthTestHelper, AuthenticatedHttpClient } from '@test-utils';
+ *
+ * const authHelper = new AuthTestHelper();
+ * const token = authHelper.createUserToken();
+ * const client = new AuthenticatedHttpClient(app, token);
+ *
+ * // All requests use the user token
+ * const profile = await client.get('/api/accounts/me');
+ * ```
+ *
+ * @example Switching Tokens
+ * ```typescript
+ * const client = new AuthenticatedHttpClient(app, userToken);
+ *
+ * // Make requests as user
+ * const userSessions = await client.get('/api/sessions');
+ *
+ * // Switch to coach token
+ * client.setToken(coachToken);
+ *
+ * // Make requests as coach
+ * const coachSessions = await client.get('/api/sessions');
+ * ```
+ *
+ * @example Discriminated Union Response
+ * ```typescript
+ * const client = new AuthenticatedHttpClient(app, token);
+ * const response = await client.get('/api/sessions');
+ *
+ * if (response.ok) {
+ *   // TypeScript knows response.body is Session[]
+ *   expect(response.body).toBeInstanceOf(Array);
+ * } else {
+ *   // TypeScript knows response.body is ErrorResponse
+ *   console.error(response.body.message);
+ * }
+ * ```
+ *
+ * @example Path Parameters
+ * ```typescript
+ * import { buildPath } from '@routes-helpers';
+ *
+ * const client = new AuthenticatedHttpClient(app, token);
+ * const sessionId = 'session-123';
+ *
+ * // Use template literal with type assertion
+ * const response = await client.get(`/api/sessions/${sessionId}` as '/api/sessions/{id}');
+ *
+ * // Or use buildPath helper
+ * const path = buildPath('/api/sessions/{id}', { id: sessionId });
+ * const response2 = await client.get(path as '/api/sessions/{id}');
  * ```
  */
 export class AuthenticatedHttpClient<E extends Record<string, any> = Endpoints> {
