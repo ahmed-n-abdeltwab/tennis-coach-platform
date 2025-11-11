@@ -25,43 +25,56 @@ export class AccountResponseDto extends BaseResponseDto {
   role: Role;
 
   @ApiProperty({ required: false, enum: ['male', 'female', 'other'], example: 'male' })
-  gender?: string;
+  @Transform(({ value }) => value ?? undefined)
+  gender?: string | null;
 
   @ApiProperty({ required: false, minimum: 5, maximum: 120 })
-  age?: number;
+  @Transform(({ value }) => value ?? undefined)
+  age?: number | null;
 
   @ApiProperty({ required: false, minimum: 50, maximum: 300 })
-  height?: number;
+  @Transform(({ value }) => value ?? undefined)
+  height?: number | null;
 
   @ApiProperty({ required: false, minimum: 20, maximum: 500 })
-  weight?: number;
+  @Transform(({ value }) => value ?? undefined)
+  weight?: number | null;
 
   @ApiProperty({ required: false })
-  bio?: string;
+  @Transform(({ value }) => value ?? undefined)
+  bio?: string | null;
 
   @ApiProperty({ required: false })
-  credentials?: string;
+  @Transform(({ value }) => value ?? undefined)
+  credentials?: string | null;
 
   @ApiProperty({ required: false })
-  philosophy?: string;
+  @Transform(({ value }) => value ?? undefined)
+  philosophy?: string | null;
 
   @ApiProperty({ required: false })
-  profileImage?: string;
+  @Transform(({ value }) => value ?? undefined)
+  profileImage?: string | null;
 
   @ApiProperty({ required: false })
-  disability?: boolean;
+  @Transform(({ value }) => value ?? undefined)
+  disability?: boolean | null;
 
   @ApiProperty({ required: false })
-  disabilityCause?: string;
+  @Transform(({ value }) => value ?? undefined)
+  disabilityCause?: string | null;
 
   @ApiProperty({ required: false })
-  country?: string;
+  @Transform(({ value }) => value ?? undefined)
+  country?: string | null;
 
   @ApiProperty({ required: false })
-  address?: string;
+  @Transform(({ value }) => value ?? undefined)
+  address?: string | null;
 
   @ApiProperty({ required: false })
-  notes?: string;
+  @Transform(({ value }) => value ?? undefined)
+  notes?: string | null;
 
   @ApiProperty()
   isActive!: boolean;

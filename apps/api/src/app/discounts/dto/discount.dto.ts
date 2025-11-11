@@ -1,5 +1,6 @@
 import { BaseResponseDto, createTypedApiDecorators } from '@common';
 import { ApiProperty } from '@nestjs/swagger';
+import { Decimal } from '@prisma/client/runtime/library';
 import { IsBoolean, IsDateString, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class DiscountResponseDto extends BaseResponseDto {
@@ -7,7 +8,7 @@ export class DiscountResponseDto extends BaseResponseDto {
   code: string;
 
   @ApiProperty({ example: 10.0, description: 'Discount amount in decimal format' })
-  amount: string;
+  amount: Decimal;
 
   @ApiProperty({ example: '2024-12-31T23:59:59Z', description: 'Expiry date and time' })
   expiry: string;

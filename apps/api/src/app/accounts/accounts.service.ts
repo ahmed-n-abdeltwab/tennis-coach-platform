@@ -30,7 +30,7 @@ export class AccountsService {
   /**
    * Find account by ID
    */
-  async findById(id: string): Promise<Account | null> {
+  async findById(id: string): Promise<Account> {
     const account = await this.prisma.account.findUnique({
       where: { id },
     });

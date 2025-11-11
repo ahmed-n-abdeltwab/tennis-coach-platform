@@ -6,7 +6,7 @@
 
 import { todo } from 'node:test';
 
-import { Account, BookingType, Session, TimeSlot } from '@prisma/client';
+import { Account, BookingType, Prisma, Session, TimeSlot } from '@prisma/client';
 
 import { AccountsModule } from '../../src/app/accounts/accounts.module';
 import { BookingTypesModule } from '../../src/app/booking-types/booking-types.module';
@@ -41,7 +41,7 @@ class BookingSystemIntegrationTest extends BaseIntegrationTest {
    * Custom seed method for booking system tests
    * Creates user, coach, booking type, and time slot
    */
-  async seedTestData(): Promise<void> {
+  override async seedTestData(): Promise<void> {
     // Create test user and coach using base class helpers
     this.testUser = await this.createTestUser({
       email: 'testuser@example.com',
@@ -55,7 +55,7 @@ class BookingSystemIntegrationTest extends BaseIntegrationTest {
     this.testBookingType = await this.createTestBookingType({
       coachId: this.testCoach.id,
       name: 'Individual Lesson',
-      basePrice: 100,
+      basePrice: new Prisma.Decimal(100),
       isActive: true,
     });
 
@@ -111,7 +111,7 @@ describe('Booking System Integration', () => {
   describe('Complete Booking Workflow', () => {
     it('should complete full booking workflow from time slot creation to session booking', async () => {
       // Step 1: Coach creates a time slot (already created in setup)
-      const timeSlotsResponse = await testInstance.typeSafeAuthenticatedGet<Endpoints>(
+      const timeSlotsResponse = await testInstance.typeSafeAuthenticatedGet(
         '/api/time-slots',
         testInstance.coachToken
       );
@@ -123,7 +123,7 @@ describe('Booking System Integration', () => {
       }
 
       // Step 2: User views available booking types
-      const bookingTypesResponse = await testInstance.typeSafeAuthenticatedGet<Endpoints>(
+      const bookingTypesResponse = await testInstance.typeSafeAuthenticatedGet(
         '/api/booking-types',
         testInstance.userToken
       );
@@ -135,15 +135,13 @@ describe('Booking System Integration', () => {
       }
 
       // Step 3: User creates a session booking
-      const createSessionResponse = await testInstance.typeSafeAuthenticatedPost<Endpoints>(
+      const createSessionResponse = await testInstance.typeSafeAuthenticatedPost(
         '/api/sessions',
         testInstance.userToken,
         {
-          coachId: testInstance.testCoach.id,
           bookingTypeId: testInstance.testBookingType.id,
           timeSlotId: testInstance.testTimeSlot.id,
-          dateTime: new Date('2024-12-25T10:00:00Z').toISOString(),
-          durationMin: 60,
+          discountCode: testInstance.testSession.discountCode ?? undefined,
         }
       );
 
@@ -166,7 +164,7 @@ describe('Booking System Integration', () => {
     });
 
     it('should allow user to view their sessions', async () => {
-      const response = await testInstance.typeSafeAuthenticatedGet<Endpoints>(
+      const response = await testInstance.typeSafeAuthenticatedGet(
         '/api/sessions',
         testInstance.userToken
       );
@@ -176,12 +174,12 @@ describe('Booking System Integration', () => {
         expect(Array.isArray(response.body)).toBe(true);
         expect(response.body.length).toBeGreaterThan(0);
         expect(response.body[0]).toHaveProperty('id');
-        expect(response.body[0].userId).toBe(testInstance.testUser.id);
+        expect(response.body[0]?.userId).toBe(testInstance.testUser.id);
       }
     });
 
     it('should allow coach to view their sessions', async () => {
-      const response = await testInstance.typeSafeAuthenticatedGet<Endpoints>(
+      const response = await testInstance.typeSafeAuthenticatedGet(
         '/api/sessions',
         testInstance.coachToken
       );
@@ -190,7 +188,7 @@ describe('Booking System Integration', () => {
       if (response.ok) {
         expect(Array.isArray(response.body)).toBe(true);
         expect(response.body.length).toBeGreaterThan(0);
-        expect(response.body[0].coachId).toBe(testInstance.testCoach.id);
+        expect(response.body[0]?.coachId).toBe(testInstance.testCoach.id);
       }
     });
 
@@ -228,15 +226,13 @@ describe('Booking System Integration', () => {
         { isAvailable: false }
       );
 
-      const response = await testInstance.typeSafeAuthenticatedPost<Endpoints>(
+      const response = await testInstance.typeSafeAuthenticatedPost(
         '/api/sessions',
         testInstance.userToken,
         {
-          coachId: testInstance.testCoach.id,
           bookingTypeId: testInstance.testBookingType.id,
           timeSlotId: testInstance.testTimeSlot.id,
-          dateTime: new Date('2024-12-25T10:00:00Z').toISOString(),
-          durationMin: 60,
+          discountCode: testInstance.testSession.discountCode ?? undefined,
         }
       );
 
@@ -258,7 +254,7 @@ describe('Booking System Integration', () => {
       });
 
       // Try to access the test session with different user token
-      const response = await testInstance.typeSafeAuthenticatedGet<Endpoints>(
+      const response = await testInstance.typeSafeAuthenticatedGet(
         `/api/sessions/${testInstance.testSession.id}` as any,
         otherUserToken
       );

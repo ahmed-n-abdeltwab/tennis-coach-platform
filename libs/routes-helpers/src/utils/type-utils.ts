@@ -112,7 +112,7 @@ export type ExtractRequestType<
         : never
       : never
     : never;
-
+type AccountParams = ExtractRequestType<Endpoints, "/api/sessions", "POST">;
 /**
  * Extract response type for a specific path and method
  *

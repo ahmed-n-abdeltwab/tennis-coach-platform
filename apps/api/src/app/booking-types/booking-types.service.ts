@@ -2,14 +2,20 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 
 import { PrismaService } from '../prisma/prisma.service';
 
-import { CreateBookingTypeDto, UpdateBookingTypeDto } from './dto/booking-type.dto';
+import { BookingType } from '@prisma/client';
+import { plainToInstance } from 'class-transformer';
+import {
+  CreateBookingTypeDto,
+  GetAllBookingTypeResponseDto,
+  UpdateBookingTypeDto,
+} from './dto/booking-type.dto';
 
 @Injectable()
 export class BookingTypesService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll() {
-    return this.prisma.bookingType.findMany({
+  async findAll(): Promise<GetAllBookingTypeResponseDto[]> {
+    const data = await this.prisma.bookingType.findMany({
       where: { isActive: true },
       include: {
         coach: {
@@ -21,9 +27,10 @@ export class BookingTypesService {
         },
       },
     });
+    return plainToInstance(GetAllBookingTypeResponseDto, data);
   }
 
-  async findByCoach(coachId: string) {
+  async findByCoach(coachId: string): Promise<BookingType[]> {
     return this.prisma.bookingType.findMany({
       where: {
         coachId,
@@ -33,7 +40,7 @@ export class BookingTypesService {
     });
   }
 
-  async create(createDto: CreateBookingTypeDto, coachId: string) {
+  async create(createDto: CreateBookingTypeDto, coachId: string): Promise<BookingType> {
     return this.prisma.bookingType.create({
       data: {
         ...createDto,
@@ -42,7 +49,7 @@ export class BookingTypesService {
     });
   }
 
-  async update(id: string, updateDto: UpdateBookingTypeDto, coachId: string) {
+  async update(id: string, updateDto: UpdateBookingTypeDto, coachId: string): Promise<BookingType> {
     // Verify ownership
     const bookingType = await this.prisma.bookingType.findUnique({
       where: { id },
@@ -62,7 +69,7 @@ export class BookingTypesService {
     });
   }
 
-  async remove(id: string, coachId: string) {
+  async remove(id: string, coachId: string): Promise<BookingType> {
     // Verify ownership
     const bookingType = await this.prisma.bookingType.findUnique({
       where: { id },

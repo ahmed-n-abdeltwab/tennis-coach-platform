@@ -17,22 +17,17 @@ const config: Config = {
 
   // Module resolution with clean imports
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-
+    // Workspace libraries
+    '^@routes-helpers$': '<rootDir>/../../libs/routes-helpers/src/index',
+    '^@utils$': '<rootDir>/../../libs/utils/src/index',
+    // App
     '^@app/(.*)$': '<rootDir>/src/app/$1',
-
     '^@common$': '<rootDir>/src/common/index',
     '^@common/(.*)$': '<rootDir>/src/common/$1',
-
+    '^@config$': '<rootDir>/src/config/index',
     '^@config/(.*)$': '<rootDir>/src/config/$1',
-
-    '^@test-utils/(.*)$': '<rootDir>/test/utils/$1',
-
+    '^@test-utils$': '<rootDir>/test/utils/index',
     '^@test/(.*)$': '<rootDir>/test/$1',
-
-    // Workspace libraries
-    '^@routes-helpers$': '<rootDir>/../../libs/routes-helpers/src/index.ts',
-    '^@utils$': '<rootDir>/../../libs/utils/src/index.ts',
   },
 
   // File extensions to consider

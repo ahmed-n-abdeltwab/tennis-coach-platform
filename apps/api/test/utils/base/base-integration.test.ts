@@ -7,26 +7,27 @@
 import { INestApplication, Provider } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Role ,
+import {
   Account,
   BookingType,
   Discount,
   Message,
   Prisma,
   RefreshToken,
+  Role,
   Session,
   TimeSlot,
 } from '@prisma/client';
-import {
-  buildPath,
-  type DeepPartial,
-  type Endpoints,
-  type ExtractMethods,
-  type ExtractPaths,
-  type ExtractRequestType,
-  type ExtractResponseType,
-  type PathsWithMethod,
+import type {
+  DeepPartial,
+  Endpoints,
+  ExtractMethods,
+  ExtractPaths,
+  ExtractRequestType,
+  ExtractResponseType,
+  PathsWithMethod,
 } from '@test-utils';
+import { buildPath } from '@test-utils';
 import request from 'supertest';
 
 import { PrismaService } from '../../../src/app/prisma/prisma.service';
@@ -137,7 +138,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Creates a test JWT token for authentication
    */
-  protected createTestJwtToken(
+  createTestJwtToken(
     payload: Partial<JwtPayload> = {
       sub: 'test-user-id',
       email: 'test@example.com',
@@ -166,7 +167,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Makes an authenticated GET request
    */
-  protected authenticatedGet(endpoint: string, token?: string): request.Test {
+  authenticatedGet(endpoint: string, token?: string): request.Test {
     return request(this.app.getHttpServer())
       .get(`/api${endpoint}`)
       .set(this.createAuthHeaders(token));
@@ -175,7 +176,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Makes an authenticated POST request
    */
-  protected authenticatedPost(endpoint: string, data?: any, token?: string): request.Test {
+  authenticatedPost(endpoint: string, data?: any, token?: string): request.Test {
     return request(this.app.getHttpServer())
       .post(`/api${endpoint}`)
       .set(this.createAuthHeaders(token))
@@ -185,7 +186,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Makes an authenticated PUT request
    */
-  protected authenticatedPut(endpoint: string, data?: any, token?: string): request.Test {
+  authenticatedPut(endpoint: string, data?: any, token?: string): request.Test {
     return request(this.app.getHttpServer())
       .put(`/api${endpoint}`)
       .set(this.createAuthHeaders(token))
@@ -195,7 +196,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Makes an authenticated DELETE request
    */
-  protected authenticatedDelete(endpoint: string, token?: string): request.Test {
+  authenticatedDelete(endpoint: string, token?: string): request.Test {
     return request(this.app.getHttpServer())
       .delete(`/api${endpoint}`)
       .set(this.createAuthHeaders(token));
@@ -204,14 +205,14 @@ export abstract class BaseIntegrationTest {
   /**
    * Makes an unauthenticated GET request
    */
-  protected get(endpoint: string): request.Test {
+  get(endpoint: string): request.Test {
     return request(this.app.getHttpServer()).get(`/api${endpoint}`);
   }
 
   /**
    * Makes an unauthenticated POST request
    */
-  protected post(endpoint: string, data?: any): request.Test {
+  post(endpoint: string, data?: any): request.Test {
     return request(this.app.getHttpServer())
       .post(`/api${endpoint}`)
       .send(data || {});
@@ -262,7 +263,7 @@ export abstract class BaseIntegrationTest {
     options: RequestOptions = {}
   ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
     // Build path with parameters if needed
-    const builtPath = this.buildPathWithParams(path as string, data as Record<string, any>);
+    const builtPath = this.buildPathWithParams(path, data);
 
     // Create supertest request
     const normalizedMethod = method.toLowerCase() as Lowercase<M>;
@@ -332,7 +333,7 @@ export abstract class BaseIntegrationTest {
    * }
    * ```
    */
-  protected async typeSafeGet<
+  async typeSafeGet<
     E extends Record<string, any> = Endpoints,
     P extends PathsWithMethod<E, 'GET'> = PathsWithMethod<E, 'GET'>,
   >(
@@ -363,7 +364,7 @@ export abstract class BaseIntegrationTest {
    * }
    * ```
    */
-  protected async typeSafePost<
+  async typeSafePost<
     E extends Record<string, any> = Endpoints,
     P extends PathsWithMethod<E, 'POST'> = PathsWithMethod<E, 'POST'>,
   >(
@@ -377,7 +378,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Type-safe PUT request
    */
-  protected async typeSafePut<
+  async typeSafePut<
     E extends Record<string, any> = Endpoints,
     P extends PathsWithMethod<E, 'PUT'> = PathsWithMethod<E, 'PUT'>,
   >(
@@ -391,7 +392,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Type-safe PATCH request
    */
-  protected async typeSafePatch<
+  async typeSafePatch<
     E extends Record<string, any> = Endpoints,
     P extends PathsWithMethod<E, 'PATCH'> = PathsWithMethod<E, 'PATCH'>,
   >(
@@ -405,7 +406,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Type-safe DELETE request
    */
-  protected async typeSafeDelete<
+  async typeSafeDelete<
     E extends Record<string, any> = Endpoints,
     P extends PathsWithMethod<E, 'DELETE'> = PathsWithMethod<E, 'DELETE'>,
   >(
@@ -435,7 +436,7 @@ export abstract class BaseIntegrationTest {
    * }
    * ```
    */
-  protected async typeSafeAuthenticatedGet<
+  async typeSafeAuthenticatedGet<
     E extends Record<string, any> = Endpoints,
     P extends PathsWithMethod<E, 'GET'> = PathsWithMethod<E, 'GET'>,
   >(
@@ -453,7 +454,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Type-safe authenticated POST request
    */
-  protected async typeSafeAuthenticatedPost<
+  async typeSafeAuthenticatedPost<
     E extends Record<string, any> = Endpoints,
     P extends PathsWithMethod<E, 'POST'> = PathsWithMethod<E, 'POST'>,
   >(
@@ -471,7 +472,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Type-safe authenticated PUT request
    */
-  protected async typeSafeAuthenticatedPut<
+  async typeSafeAuthenticatedPut<
     E extends Record<string, any> = Endpoints,
     P extends PathsWithMethod<E, 'PUT'> = PathsWithMethod<E, 'PUT'>,
   >(
@@ -489,7 +490,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Type-safe authenticated PATCH request
    */
-  protected async typeSafeAuthenticatedPatch<
+  async typeSafeAuthenticatedPatch<
     E extends Record<string, any> = Endpoints,
     P extends PathsWithMethod<E, 'PATCH'> = PathsWithMethod<E, 'PATCH'>,
   >(
@@ -507,7 +508,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Type-safe authenticated DELETE request
    */
-  protected async typeSafeAuthenticatedDelete<
+  async typeSafeAuthenticatedDelete<
     E extends Record<string, any> = Endpoints,
     P extends PathsWithMethod<E, 'DELETE'> = PathsWithMethod<E, 'DELETE'>,
   >(
@@ -535,7 +536,7 @@ export abstract class BaseIntegrationTest {
    * Creates test user data in the database with sensible defaults.
    * Allows overriding any field via partial parameter.
    */
-  protected async createTestUser(overrides: Partial<Account> = {}): Promise<Account> {
+  async createTestUser(overrides: Partial<Account> = {}): Promise<Account> {
     const userData = {
       email: `test-user-${Date.now()}@example.com`,
       name: 'Test User',
@@ -563,7 +564,7 @@ export abstract class BaseIntegrationTest {
    * Creates test coach data in the database with sensible defaults.
    * Allows overriding any field via partial parameter.
    */
-  protected async createTestCoach(overrides: Partial<Account> = {}): Promise<Account> {
+  async createTestCoach(overrides: Partial<Account> = {}): Promise<Account> {
     const coachData = {
       email: `test-coach-${Date.now()}@example.com`,
       name: 'Test Coach',
@@ -590,9 +591,7 @@ export abstract class BaseIntegrationTest {
    * Related entities (coach) are created if not provided.
    * Allows overriding any field via partial parameter.
    */
-  protected async createTestBookingType(
-    overrides: Partial<BookingType> = {}
-  ): Promise<BookingType> {
+  async createTestBookingType(overrides: Partial<BookingType> = {}): Promise<BookingType> {
     const coachId = overrides.coachId ?? (await this.getCachedCoach()).id;
 
     const bookingTypeData = {
@@ -616,7 +615,7 @@ export abstract class BaseIntegrationTest {
    * Related entities (coach, user, bookingType, timeSlot) are created if not provided.
    * Allows overriding any field via partial parameter.
    */
-  protected async createTestSession(overrides: Partial<Session> = {}): Promise<Session> {
+  async createTestSession(overrides: Partial<Session> = {}): Promise<Session> {
     const coachId = overrides.coachId ?? (await this.getCachedCoach()).id;
     const userId = overrides.userId ?? (await this.getCachedUser()).id;
     const bookingTypeId =
@@ -649,7 +648,7 @@ export abstract class BaseIntegrationTest {
    * Related entities (coach) are created if not provided.
    * Allows overriding any field via partial parameter.
    */
-  protected async createTestTimeSlot(overrides: Partial<TimeSlot> = {}): Promise<TimeSlot> {
+  async createTestTimeSlot(overrides: Partial<TimeSlot> = {}): Promise<TimeSlot> {
     const coachId = overrides.coachId ?? (await this.getCachedCoach()).id;
 
     const timeSlotData = {
@@ -809,7 +808,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Finds a single record in the database
    */
-  protected async findRecord(model: string, where: any): Promise<any> {
+  async findRecord(model: string, where: any): Promise<any> {
     return this.prisma[model].findFirst({ where });
   }
 
@@ -823,7 +822,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Updates a record in the database
    */
-  protected async updateRecord(model: string, where: any, data: any): Promise<any> {
+  async updateRecord(model: string, where: any, data: any): Promise<any> {
     return this.prisma[model].update({ where, data });
   }
 
@@ -856,7 +855,7 @@ export abstract class BaseIntegrationTest {
   /**
    * Asserts that a response array has expected length
    */
-  protected assertArrayLength(response: any, expectedLength: number): void {
+  assertArrayLength(response: any, expectedLength: number): void {
     expect(response.body).toBeDefined();
     const data = Array.isArray(response.body) ? response.body : response.body.data;
     expect(Array.isArray(data)).toBe(true);

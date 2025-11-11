@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 
 import { AccountsService } from './accounts.service';
-import { AccountApiResponses, UpdateAccountDto } from './dto/account.dto';
+import { AccountApiResponses, AccountResponseDto, UpdateAccountDto } from './dto/account.dto';
 
 @ApiTags('accounts')
 @Controller('accounts')
@@ -12,11 +12,11 @@ export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
 
   @Get()
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.COACH)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all accounts (admin only)' })
-  @AccountApiResponses.Found('Accounts retrieved successfully')
-  async findAll() {
+  @AccountApiResponses.FoundMany('Accounts retrieved successfully')
+  async findAll(): Promise<AccountResponseDto[]> {
     // Return all accounts for admin
     return this.accountsService.findUsers({});
   }
@@ -25,7 +25,7 @@ export class AccountsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user account' })
   @AccountApiResponses.Found('Account retrieved successfully')
-  async getMe(@CurrentUser() user: JwtPayload) {
+  async getMe(@CurrentUser() user: JwtPayload): Promise<AccountResponseDto> {
     return this.accountsService.findById(user.sub);
   }
 
@@ -33,12 +33,13 @@ export class AccountsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get account by ID' })
   @AccountApiResponses.Found('Account retrieved successfully')
-  async findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload
+  ): Promise<AccountResponseDto> {
     // Users can only view their own account unless they're admin
-    if (user.role !== Role.ADMIN && user.sub !== id) {
-      return this.accountsService.findById(user.sub);
-    }
-    return this.accountsService.findById(id);
+    const accountId = user.role === Role.ADMIN ? id : user.sub;
+    return this.accountsService.findById(accountId);
   }
 
   @Patch(':id')
@@ -49,7 +50,7 @@ export class AccountsController {
     @Param('id') id: string,
     @Body() updateDto: UpdateAccountDto,
     @CurrentUser() user: JwtPayload
-  ) {
+  ): Promise<AccountResponseDto> {
     // Users can only update their own account unless they're admin
     const accountId = user.role === Role.ADMIN ? id : user.sub;
     return this.accountsService.update(accountId, updateDto);
@@ -60,7 +61,7 @@ export class AccountsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete account (admin only)' })
   @AccountApiResponses.Deleted('Account deleted successfully')
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id') id: string): Promise<AccountResponseDto> {
     return this.accountsService.delete(id);
   }
 }

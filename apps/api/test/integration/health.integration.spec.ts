@@ -21,7 +21,7 @@ class HealthIntegrationTest extends BaseIntegrationTest {
   }
 
   // Override seedTestData to skip seeding for health tests
-  async seedTestData(): Promise<void> {
+  override async seedTestData(): Promise<void> {
     // Health endpoints don't need test data
   }
 }
@@ -40,7 +40,7 @@ describe('Health Endpoints Integration', () => {
 
   describe('GET /api/health', () => {
     it('should return health check with 200 status', async () => {
-      const response = await testInstance.typeSafeGet<Endpoints>('/api/health');
+      const response = await testInstance.typeSafeGet('/api/health');
 
       expect(response.ok).toBe(true);
       if (response.ok) {
@@ -52,7 +52,7 @@ describe('Health Endpoints Integration', () => {
     });
 
     it('should return valid timestamp in ISO format', async () => {
-      const response = await testInstance.typeSafeGet<Endpoints>('/api/health');
+      const response = await testInstance.typeSafeGet('/api/health');
 
       if (response.ok) {
         expect(response.body.timestamp).toBeDefined();
@@ -77,7 +77,7 @@ describe('Health Endpoints Integration', () => {
 
   describe('GET /api/health/liveness', () => {
     it('should return alive status with 200', async () => {
-      const response = await testInstance.typeSafeGet<Endpoints>('/api/health/liveness');
+      const response = await testInstance.typeSafeGet('/api/health/liveness');
 
       expect(response.ok).toBe(true);
       if (response.ok) {
@@ -89,7 +89,7 @@ describe('Health Endpoints Integration', () => {
     });
 
     it('should return valid timestamp', async () => {
-      const response = await testInstance.typeSafeGet<Endpoints>('/api/health/liveness');
+      const response = await testInstance.typeSafeGet('/api/health/liveness');
 
       if (response.ok) {
         expect(response.body.timestamp).toBeDefined();
@@ -108,7 +108,7 @@ describe('Health Endpoints Integration', () => {
 
   describe('GET /api/health/readiness', () => {
     it('should return ready status with 200 when database is available', async () => {
-      const response = await testInstance.typeSafeGet<Endpoints>('/api/health/readiness');
+      const response = await testInstance.typeSafeGet('/api/health/readiness');
 
       expect(response.ok).toBe(true);
       if (response.ok) {
@@ -120,7 +120,7 @@ describe('Health Endpoints Integration', () => {
     });
 
     it('should return valid timestamp', async () => {
-      const response = await testInstance.typeSafeGet<Endpoints>('/api/health/readiness');
+      const response = await testInstance.typeSafeGet('/api/health/readiness');
 
       if (response.ok) {
         expect(response.body.timestamp).toBeDefined();

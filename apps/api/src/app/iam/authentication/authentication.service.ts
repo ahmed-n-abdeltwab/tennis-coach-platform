@@ -8,7 +8,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import jwtConfig from '../config/jwt.config';
 import { HashingService } from '../hashing/hashing.service';
 
-import { AuthResponseDto, LoginDto, SignUpDto } from './dto';
+import { AuthResponseDto, LoginDto, RefreshResponseDto, SignUpDto } from './dto';
 
 @Injectable()
 export class AuthenticationService {
@@ -87,7 +87,7 @@ export class AuthenticationService {
     ]);
   }
 
-  async refreshToken(user: JwtPayload): Promise<{ accessToken: string }> {
+  async refreshToken(user: JwtPayload): Promise<RefreshResponseDto> {
     const payload: JwtPayload = {
       sub: user.sub,
       email: user.email,
@@ -100,7 +100,14 @@ export class AuthenticationService {
       expiresIn: this.jwtConfiguration.signOptions.expiresIn,
     });
 
-    return { accessToken };
+    return {
+      accessToken,
+      account: {
+        id: user.sub,
+        email: user.email,
+        role: user.role,
+      },
+    };
   }
 
   private async generateTokens(

@@ -7,7 +7,6 @@ export default registerAs('jwt', () => ({
     issuer: process.env.JWT_ISSUER || 'my-app',
     audience: process.env.JWT_AUDIENCE || 'my-api',
     expiresIn: parseJwtTime(process.env.JWT_EXPIRES_IN, '24h'),
-    refreshSecret: process.env.JWT_REFRESH_SECRET ?? '',
   },
   global: true,
 }));

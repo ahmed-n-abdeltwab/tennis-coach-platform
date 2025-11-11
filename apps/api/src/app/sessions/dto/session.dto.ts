@@ -1,5 +1,6 @@
 import { BaseResponseDto, createTypedApiDecorators } from '@common';
 import { ApiProperty } from '@nestjs/swagger';
+import { Decimal } from '@prisma/client/runtime/library';
 import { IsDateString, IsOptional, IsString } from 'class-validator';
 
 export class CreateSessionDto {
@@ -69,7 +70,7 @@ export class SessionResponseDto extends BaseResponseDto {
   durationMin: number;
 
   @ApiProperty({ example: 99.99, description: 'Session price in decimal format' })
-  price: string;
+  price: Decimal;
 
   @ApiProperty({ example: false, description: 'Whether the session has been paid for' })
   isPaid: boolean;

@@ -1,12 +1,19 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsDate, IsString } from 'class-validator';
 export class BaseResponseDto {
   @ApiProperty()
+  @IsString()
   id!: string;
 
   @ApiProperty({ type: String, format: 'date-time' })
+  @IsDate()
+  @Type(() => Date)
   createdAt!: Date | string;
 
   @ApiProperty({ type: String, format: 'date-time' })
+  @IsDate()
+  @Type(() => Date)
   updatedAt!: Date | string;
 }
 

@@ -4,7 +4,14 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 
 import { BookingTypesService } from './booking-types.service';
-import { CreateBookingTypeDto, UpdateBookingTypeDto } from './dto/booking-type.dto';
+import {
+  BookingTypeApiResponses,
+  BookingTypeResponseDto,
+  CreateBookingTypeDto,
+  GetAllBookingTypeApiResponses,
+  GetAllBookingTypeResponseDto,
+  UpdateBookingTypeDto,
+} from './dto/booking-type.dto';
 
 @ApiTags('booking-types')
 @Controller('booking-types')
@@ -14,14 +21,16 @@ export class BookingTypesController {
   @Get()
   @Public()
   @ApiOperation({ summary: 'Get all active booking types' })
-  async findAll() {
+  @GetAllBookingTypeApiResponses.FoundMany('Booking Types retrieved successfully')
+  async findAll(): Promise<GetAllBookingTypeResponseDto[]> {
     return this.bookingTypesService.findAll();
   }
 
   @Get('coach/:coachId')
   @Public()
   @ApiOperation({ summary: 'Get booking types for specific coach' })
-  async findByCoach(@Param('coachId') coachId: string) {
+  @BookingTypeApiResponses.FoundMany("Coach's Booking Types retrieved successfully")
+  async findByCoach(@Param('coachId') coachId: string): Promise<BookingTypeResponseDto[]> {
     return this.bookingTypesService.findByCoach(coachId);
   }
 
@@ -29,7 +38,11 @@ export class BookingTypesController {
   @Roles(Role.COACH)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create new booking type (coach only)' })
-  async create(@Body() createDto: CreateBookingTypeDto, @CurrentUser() user: JwtPayload) {
+  @BookingTypeApiResponses.Created('Booking Types created successfully')
+  async create(
+    @Body() createDto: CreateBookingTypeDto,
+    @CurrentUser() user: JwtPayload
+  ): Promise<BookingTypeResponseDto> {
     return this.bookingTypesService.create(createDto, user.sub);
   }
 
@@ -37,11 +50,12 @@ export class BookingTypesController {
   @Roles(Role.COACH, Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update booking type (coach only)' })
+  @BookingTypeApiResponses.Updated('Booking Types updated successfully')
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateBookingTypeDto,
     @CurrentUser() user: JwtPayload
-  ) {
+  ): Promise<BookingTypeResponseDto> {
     return this.bookingTypesService.update(id, updateDto, user.sub);
   }
 
@@ -49,7 +63,11 @@ export class BookingTypesController {
   @Roles(Role.COACH, Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete booking type (coach only)' })
-  async remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+  @BookingTypeApiResponses.Deleted('Booking Types deleted successfully')
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload
+  ): Promise<BookingTypeResponseDto> {
     return this.bookingTypesService.remove(id, user.sub);
   }
 }

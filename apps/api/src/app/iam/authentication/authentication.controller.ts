@@ -1,92 +1,71 @@
 import { JwtPayload, Roles } from '@common';
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
-import {
-  ApiBadRequestResponse,
-  ApiBearerAuth,
-  ApiCreatedResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 
-import { CurrentUser, ErrorResponseDto, JwtRefreshGuard, Public } from '../../../common';
+import { CurrentUser, JwtRefreshGuard } from '../../../common';
 
 import { AuthenticationService } from './authentication.service';
-import { AuthResponseDto, LoginDto, SignUpDto } from './dto';
+import { Auth } from './decorators/auth.decorator';
+import {
+  AuthApiResponses,
+  AuthResponseDto,
+  LoginDto,
+  LogoutResponseDto,
+  RefreshApiResponses,
+  RefreshResponseDto,
+  SignUpDto,
+} from './dto';
+import { AuthType } from './enums/auth-type.enum';
 
 @Controller('authentication')
 export class AuthenticationController {
   constructor(private authenticationService: AuthenticationService) {}
 
-  @Public()
   @Post('signup')
+  @Auth(AuthType.None)
   @ApiOperation({ summary: 'Register a new user account' })
-  @ApiCreatedResponse({
-    description: 'User successfully registered',
-    type: AuthResponseDto,
-  })
-  @ApiBadRequestResponse({
-    description: 'Invalid input data',
-    type: ErrorResponseDto,
-  })
+  @AuthApiResponses.Created('User successfully registered')
   async signup(@Body() signupDto: SignUpDto): Promise<AuthResponseDto> {
     return this.authenticationService.signup(signupDto);
   }
 
-  @Public()
   @HttpCode(HttpStatus.OK)
   @Post('user/login')
+  @Auth(AuthType.None)
   @Roles(Role.USER, Role.PREMIUM_USER)
   @ApiOperation({ summary: 'User login' })
-  @ApiOkResponse({
-    description: 'Login successful',
-    type: AuthResponseDto,
-  })
-  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
+  @AuthApiResponses.Found('User successfully Login')
   async userLogin(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
     return this.authenticationService.loginUser(loginDto);
   }
 
-  @Public()
   @HttpCode(HttpStatus.OK)
   @Post('coach/login')
+  @Auth(AuthType.None)
   @ApiOperation({ summary: 'Coach login' })
-  @ApiOkResponse({
-    description: 'Login successful',
-    type: AuthResponseDto,
-  })
-  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
+  @AuthApiResponses.Found('Coach successfully Login')
   async coachLogin(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
     return this.authenticationService.loginCoach(loginDto);
   }
 
-  @Public()
   @HttpCode(HttpStatus.OK)
   @Post('login')
+  @Auth(AuthType.None)
   @ApiOperation({ summary: 'Universal login endpoint for all account types' })
-  @ApiOkResponse({
-    description: 'Login successful',
-    type: AuthResponseDto,
-  })
-  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
+  @AuthApiResponses.Found('Login successfully')
   async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
     return this.authenticationService.login(loginDto);
   }
 
   // Shared endpoints
-  @Public()
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtRefreshGuard)
   @Post('refresh')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
-  @ApiOkResponse({
-    description: 'Token refreshed successfully',
-    type: AuthResponseDto,
-  })
-  @ApiUnauthorizedResponse({ description: 'Invalid or expired refresh token' })
-  async refresh(@CurrentUser() user: JwtPayload): Promise<{ accessToken: string }> {
+  @RefreshApiResponses.AuthSuccess('Token refreshed successfully')
+  async refresh(@CurrentUser() user: JwtPayload): Promise<RefreshResponseDto> {
     return this.authenticationService.refreshToken(user);
   }
 
@@ -94,8 +73,11 @@ export class AuthenticationController {
   @Post('logout')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Logout and invalidate refresh tokens' })
-  @ApiOkResponse({ description: 'Logout successful' })
-  async logout(@CurrentUser() user: JwtPayload): Promise<{ message: string }> {
+  @ApiOkResponse({
+    description: 'Logout successful',
+    type: LogoutResponseDto,
+  })
+  async logout(@CurrentUser() user: JwtPayload): Promise<LogoutResponseDto> {
     await this.authenticationService.logout(user);
     return { message: 'Logged out successfully' };
   }

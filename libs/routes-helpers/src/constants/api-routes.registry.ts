@@ -10,55 +10,55 @@
 
 export interface Endpoints {
   "/api/accounts": {
-    GET: (params: undefined | never) => { id: string; createdAt: string; updatedAt: string; email: string; name: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH"; gender?: "male" | "female" | "other"; age?: number; height?: number; weight?: number; bio?: string; credentials?: string; philosophy?: string; profileImage?: string; disability?: boolean; disabilityCause?: string; country?: string; address?: string; notes?: string; isActive: boolean; isOnline: boolean };
+    GET: (params: undefined | never) => { id: string; createdAt: string; updatedAt: string; email: string; name: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH"; gender?: "male" | "female" | "other"; age?: Record<string, unknown>; height?: Record<string, unknown>; weight?: Record<string, unknown>; bio?: Record<string, unknown>; credentials?: Record<string, unknown>; philosophy?: Record<string, unknown>; profileImage?: Record<string, unknown>; disability?: Record<string, unknown>; disabilityCause?: Record<string, unknown>; country?: Record<string, unknown>; address?: Record<string, unknown>; notes?: Record<string, unknown>; isActive: boolean; isOnline: boolean }[];
   };
 
   "/api/accounts/me": {
-    GET: (params: undefined | never) => { id: string; createdAt: string; updatedAt: string; email: string; name: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH"; gender?: "male" | "female" | "other"; age?: number; height?: number; weight?: number; bio?: string; credentials?: string; philosophy?: string; profileImage?: string; disability?: boolean; disabilityCause?: string; country?: string; address?: string; notes?: string; isActive: boolean; isOnline: boolean };
+    GET: (params: undefined | never) => { id: string; createdAt: string; updatedAt: string; email: string; name: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH"; gender?: "male" | "female" | "other"; age?: Record<string, unknown>; height?: Record<string, unknown>; weight?: Record<string, unknown>; bio?: Record<string, unknown>; credentials?: Record<string, unknown>; philosophy?: Record<string, unknown>; profileImage?: Record<string, unknown>; disability?: Record<string, unknown>; disabilityCause?: Record<string, unknown>; country?: Record<string, unknown>; address?: Record<string, unknown>; notes?: Record<string, unknown>; isActive: boolean; isOnline: boolean };
   };
 
   "/api/accounts/{id}": {
     DELETE: (body: undefined) => void;
-    GET: (params: { id: string }) => { id: string; createdAt: string; updatedAt: string; email: string; name: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH"; gender?: "male" | "female" | "other"; age?: number; height?: number; weight?: number; bio?: string; credentials?: string; philosophy?: string; profileImage?: string; disability?: boolean; disabilityCause?: string; country?: string; address?: string; notes?: string; isActive: boolean; isOnline: boolean };
-    PATCH: (body: { name?: string; gender?: "male" | "female" | "other"; age?: Record<string, unknown>; height?: Record<string, unknown>; weight?: Record<string, unknown>; disability?: boolean; disabilityCause?: Record<string, unknown>; country?: Record<string, unknown>; address?: Record<string, unknown>; notes?: Record<string, unknown>; bio?: string; credentials?: string; philosophy?: string; profileImage?: string }) => { id: string; createdAt: string; updatedAt: string; email: string; name: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH"; gender?: "male" | "female" | "other"; age?: number; height?: number; weight?: number; bio?: string; credentials?: string; philosophy?: string; profileImage?: string; disability?: boolean; disabilityCause?: string; country?: string; address?: string; notes?: string; isActive: boolean; isOnline: boolean };
+    GET: (params: { id: string }) => { id: string; createdAt: string; updatedAt: string; email: string; name: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH"; gender?: "male" | "female" | "other"; age?: Record<string, unknown>; height?: Record<string, unknown>; weight?: Record<string, unknown>; bio?: Record<string, unknown>; credentials?: Record<string, unknown>; philosophy?: Record<string, unknown>; profileImage?: Record<string, unknown>; disability?: Record<string, unknown>; disabilityCause?: Record<string, unknown>; country?: Record<string, unknown>; address?: Record<string, unknown>; notes?: Record<string, unknown>; isActive: boolean; isOnline: boolean };
+    PATCH: (body: { name?: string; gender?: "male" | "female" | "other"; age?: Record<string, unknown>; height?: Record<string, unknown>; weight?: Record<string, unknown>; disability?: boolean; disabilityCause?: Record<string, unknown>; country?: Record<string, unknown>; address?: Record<string, unknown>; notes?: Record<string, unknown>; bio?: string; credentials?: string; philosophy?: string; profileImage?: string }) => { id: string; createdAt: string; updatedAt: string; email: string; name: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH"; gender?: "male" | "female" | "other"; age?: Record<string, unknown>; height?: Record<string, unknown>; weight?: Record<string, unknown>; bio?: Record<string, unknown>; credentials?: Record<string, unknown>; philosophy?: Record<string, unknown>; profileImage?: Record<string, unknown>; disability?: Record<string, unknown>; disabilityCause?: Record<string, unknown>; country?: Record<string, unknown>; address?: Record<string, unknown>; notes?: Record<string, unknown>; isActive: boolean; isOnline: boolean };
   };
 
   "/api/authentication/coach/login": {
-    POST: (body: { email: string; password: string }) => { accessToken: string; refreshToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" } };
+    POST: (body: { email: string; password: string }) => { accessToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" }; refreshToken: string };
   };
 
   "/api/authentication/login": {
-    POST: (body: { email: string; password: string }) => { accessToken: string; refreshToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" } };
+    POST: (body: { email: string; password: string }) => { accessToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" }; refreshToken: string };
   };
 
   "/api/authentication/logout": {
-    POST: (body: undefined) => void;
+    POST: (body: undefined) => { message: string };
   };
 
   "/api/authentication/refresh": {
-    POST: (body: undefined) => { accessToken: string; refreshToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" } };
+    POST: (body: undefined) => { accessToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" } };
   };
 
   "/api/authentication/signup": {
-    POST: (body: { email: string; password: string; name: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" }) => { accessToken: string; refreshToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" } };
+    POST: (body: { email: string; password: string; name: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" }) => { accessToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" }; refreshToken: string };
   };
 
   "/api/authentication/user/login": {
-    POST: (body: { email: string; password: string }) => { accessToken: string; refreshToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" } };
+    POST: (body: { email: string; password: string }) => { accessToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" }; refreshToken: string };
   };
 
   "/api/booking-types": {
-    GET: (params: undefined | never) => void;
-    POST: (body: { name: string; description?: string; basePrice: number; isActive: boolean }) => void;
+    GET: (params: undefined | never) => { id: string; createdAt: string; updatedAt: string; name: string; description?: Record<string, unknown>; basePrice: Record<string, unknown>; isActive: boolean; coachId: string }[];
+    POST: (body: { name: string; description?: string; basePrice: Record<string, unknown>; isActive: boolean }) => { id: string; createdAt: string; updatedAt: string; name: string; description?: Record<string, unknown>; basePrice: Record<string, unknown>; isActive: boolean; coachId: string };
   };
 
   "/api/booking-types/coach/{coachId}": {
-    GET: (params: { coachId: string }) => void;
+    GET: (params: { coachId: string }) => { id: string; createdAt: string; updatedAt: string; name: string; description?: Record<string, unknown>; basePrice: Record<string, unknown>; isActive: boolean; coachId: string }[];
   };
 
   "/api/booking-types/{id}": {
     DELETE: (body: undefined) => void;
-    PUT: (body: { name?: string; description?: string; basePrice?: number; isActive?: boolean }) => void;
+    PUT: (body: { name?: string; description?: string; basePrice?: number; isActive?: boolean }) => { id: string; createdAt: string; updatedAt: string; name: string; description?: Record<string, unknown>; basePrice: Record<string, unknown>; isActive: boolean; coachId: string };
   };
 
   "/api/calendar/event": {
@@ -119,17 +119,17 @@ export interface Endpoints {
   };
 
   "/api/sessions": {
-    GET: (params: { status?: string; startDate?: string; endDate?: string }) => { id: string; createdAt: string; updatedAt: string; dateTime: string; durationMin: number; price: string; isPaid: boolean; status: string; notes?: string; paymentId?: string; discountCode?: string; calendarEventId?: string; userId: string; coachId: string; bookingTypeId: string; timeSlotId: string; discountId?: string; user?: Record<string, unknown>; coach?: Record<string, unknown>; bookingType?: Record<string, unknown>; timeSlot?: Record<string, unknown>; discount?: Record<string, unknown> }[];
-    POST: (body: { bookingTypeId: string; timeSlotId: string; discountCode?: string; notes?: string }) => { id: string; createdAt: string; updatedAt: string; dateTime: string; durationMin: number; price: string; isPaid: boolean; status: string; notes?: string; paymentId?: string; discountCode?: string; calendarEventId?: string; userId: string; coachId: string; bookingTypeId: string; timeSlotId: string; discountId?: string; user?: Record<string, unknown>; coach?: Record<string, unknown>; bookingType?: Record<string, unknown>; timeSlot?: Record<string, unknown>; discount?: Record<string, unknown> };
+    GET: (params: { status?: string; startDate?: string; endDate?: string }) => { id: string; createdAt: string; updatedAt: string; dateTime: string; durationMin: number; price: Record<string, unknown>; isPaid: boolean; status: string; notes?: string; paymentId?: string; discountCode?: string; calendarEventId?: string; userId: string; coachId: string; bookingTypeId: string; timeSlotId: string; discountId?: string; user?: Record<string, unknown>; coach?: Record<string, unknown>; bookingType?: Record<string, unknown>; timeSlot?: Record<string, unknown>; discount?: Record<string, unknown> }[];
+    POST: (body: { bookingTypeId: string; timeSlotId: string; discountCode?: string; notes?: string }) => { id: string; createdAt: string; updatedAt: string; dateTime: string; durationMin: number; price: Record<string, unknown>; isPaid: boolean; status: string; notes?: string; paymentId?: string; discountCode?: string; calendarEventId?: string; userId: string; coachId: string; bookingTypeId: string; timeSlotId: string; discountId?: string; user?: Record<string, unknown>; coach?: Record<string, unknown>; bookingType?: Record<string, unknown>; timeSlot?: Record<string, unknown>; discount?: Record<string, unknown> };
   };
 
   "/api/sessions/{id}": {
-    GET: (params: { id: string }) => { id: string; createdAt: string; updatedAt: string; dateTime: string; durationMin: number; price: string; isPaid: boolean; status: string; notes?: string; paymentId?: string; discountCode?: string; calendarEventId?: string; userId: string; coachId: string; bookingTypeId: string; timeSlotId: string; discountId?: string; user?: Record<string, unknown>; coach?: Record<string, unknown>; bookingType?: Record<string, unknown>; timeSlot?: Record<string, unknown>; discount?: Record<string, unknown> };
-    PUT: (body: { notes?: string; status?: string; paymentId?: string; calendarEventId?: string }) => { id: string; createdAt: string; updatedAt: string; dateTime: string; durationMin: number; price: string; isPaid: boolean; status: string; notes?: string; paymentId?: string; discountCode?: string; calendarEventId?: string; userId: string; coachId: string; bookingTypeId: string; timeSlotId: string; discountId?: string; user?: Record<string, unknown>; coach?: Record<string, unknown>; bookingType?: Record<string, unknown>; timeSlot?: Record<string, unknown>; discount?: Record<string, unknown> };
+    GET: (params: { id: string }) => { id: string; createdAt: string; updatedAt: string; dateTime: string; durationMin: number; price: Record<string, unknown>; isPaid: boolean; status: string; notes?: string; paymentId?: string; discountCode?: string; calendarEventId?: string; userId: string; coachId: string; bookingTypeId: string; timeSlotId: string; discountId?: string; user?: Record<string, unknown>; coach?: Record<string, unknown>; bookingType?: Record<string, unknown>; timeSlot?: Record<string, unknown>; discount?: Record<string, unknown> };
+    PUT: (body: { notes?: string; status?: string; paymentId?: string; calendarEventId?: string }) => { id: string; createdAt: string; updatedAt: string; dateTime: string; durationMin: number; price: Record<string, unknown>; isPaid: boolean; status: string; notes?: string; paymentId?: string; discountCode?: string; calendarEventId?: string; userId: string; coachId: string; bookingTypeId: string; timeSlotId: string; discountId?: string; user?: Record<string, unknown>; coach?: Record<string, unknown>; bookingType?: Record<string, unknown>; timeSlot?: Record<string, unknown>; discount?: Record<string, unknown> };
   };
 
   "/api/sessions/{id}/cancel": {
-    PUT: (body: undefined) => { id: string; createdAt: string; updatedAt: string; dateTime: string; durationMin: number; price: string; isPaid: boolean; status: string; notes?: string; paymentId?: string; discountCode?: string; calendarEventId?: string; userId: string; coachId: string; bookingTypeId: string; timeSlotId: string; discountId?: string; user?: Record<string, unknown>; coach?: Record<string, unknown>; bookingType?: Record<string, unknown>; timeSlot?: Record<string, unknown>; discount?: Record<string, unknown> };
+    PUT: (body: undefined) => { id: string; createdAt: string; updatedAt: string; dateTime: string; durationMin: number; price: Record<string, unknown>; isPaid: boolean; status: string; notes?: string; paymentId?: string; discountCode?: string; calendarEventId?: string; userId: string; coachId: string; bookingTypeId: string; timeSlotId: string; discountId?: string; user?: Record<string, unknown>; coach?: Record<string, unknown>; bookingType?: Record<string, unknown>; timeSlot?: Record<string, unknown>; discount?: Record<string, unknown> };
   };
 
   "/api/time-slots": {
