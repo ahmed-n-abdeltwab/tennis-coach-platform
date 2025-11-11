@@ -7,6 +7,7 @@ import {
 
 import { PrismaService } from '../prisma/prisma.service';
 
+import { Discount } from '@prisma/client';
 import { CreateDiscountDto, UpdateDiscountDto } from './dto/discount.dto';
 
 @Injectable()
@@ -37,14 +38,14 @@ export class DiscountsService {
     };
   }
 
-  async findByCoach(coachId: string) {
+  async findByCoach(coachId: string): Promise<Discount[]> {
     return this.prisma.discount.findMany({
       where: { coachId },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async create(createDto: CreateDiscountDto, coachId: string) {
+  async create(createDto: CreateDiscountDto, coachId: string): Promise<Discount> {
     // Check if code already exists
     const existing = await this.prisma.discount.findUnique({
       where: { code: createDto.code },
@@ -63,7 +64,7 @@ export class DiscountsService {
     });
   }
 
-  async update(code: string, updateDto: UpdateDiscountDto, coachId: string) {
+  async update(code: string, updateDto: UpdateDiscountDto, coachId: string): Promise<Discount> {
     const discount = await this.prisma.discount.findUnique({
       where: { code },
     });
@@ -85,7 +86,7 @@ export class DiscountsService {
     });
   }
 
-  async remove(code: string, coachId: string) {
+  async remove(code: string, coachId: string): Promise<Discount> {
     const discount = await this.prisma.discount.findUnique({
       where: { code },
     });

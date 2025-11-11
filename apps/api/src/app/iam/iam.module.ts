@@ -10,7 +10,6 @@ import { AuthenticationController } from './authentication/authentication.contro
 import { AuthenticationService } from './authentication/authentication.service';
 import { AccessTokenGuard } from './authentication/guards/access-token/access-token.guard';
 import { AuthenticationGuard } from './authentication/guards/authentication/authentication.guard';
-import { JwtAuthGuard } from './authentication/guards/jwt-auth.guard';
 import { RolesGuard } from './authentication/guards/roles.guard';
 import jwtConfig from './config/jwt.config';
 import { BcryptService } from './hashing/bcrypt.service';
@@ -33,10 +32,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     AuthenticationService,
     JwtStrategy,
     JwtRefreshStrategy,
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
     {
       provide: APP_GUARD,
       useClass: RolesGuard,

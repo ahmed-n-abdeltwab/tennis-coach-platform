@@ -1,5 +1,5 @@
 import { BaseResponseDto, createTypedApiDecorators } from '@common';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Transform, Type } from 'class-transformer';
 import { IsBoolean, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
@@ -19,7 +19,7 @@ export class BookingTypeResponseDto extends BaseResponseDto {
   @IsString()
   name: string;
 
-  @ApiProperty({ required: false, example: 'One-on-one coaching session focused on your goals' })
+  @ApiPropertyOptional({ example: 'One-on-one coaching session focused on your goals' })
   @Transform(({ value }) => value ?? undefined)
   @IsOptional()
   @IsString()
@@ -48,40 +48,42 @@ export class CreateBookingTypeDto {
   @IsString()
   name: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 99.99, description: 'Base price in decimal format' })
   @IsNumber()
   @Min(0)
+  @Type(() => Number)
   basePrice: Decimal;
 
-  @ApiProperty({ default: true })
+  @ApiPropertyOptional({ default: true })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 }
 
 export class UpdateBookingTypeDto {
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   name?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional({ example: 99.99, description: 'Base price in decimal format' })
   @IsOptional()
   @IsNumber()
   @Min(0)
-  basePrice?: number;
+  @Type(() => Number)
+  basePrice?: Decimal;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;

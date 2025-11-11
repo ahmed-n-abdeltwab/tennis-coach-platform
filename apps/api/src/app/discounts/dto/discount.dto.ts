@@ -1,17 +1,38 @@
 import { BaseResponseDto, createTypedApiDecorators } from '@common';
 import { ApiProperty } from '@nestjs/swagger';
 import { Decimal } from '@prisma/client/runtime/library';
-import { IsBoolean, IsDateString, IsNumber, IsOptional, IsString, Min } from 'class-validator';
-
+import { Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsDate,
+  IsDateString,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
+export class ValidateDiscountResponseDto {
+  code: string;
+  amount: Decimal;
+  isValid: boolean;
+}
 export class DiscountResponseDto extends BaseResponseDto {
   @ApiProperty({ example: 'SUMMER2024' })
   code: string;
 
   @ApiProperty({ example: 10.0, description: 'Discount amount in decimal format' })
+  @Type(() => Number)
   amount: Decimal;
 
-  @ApiProperty({ example: '2024-12-31T23:59:59Z', description: 'Expiry date and time' })
-  expiry: string;
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    example: '2024-12-31T23:59:59Z',
+    description: 'Expiry date and time',
+  })
+  @IsDate()
+  @Type(() => Date)
+  expiry: Date | string;
 
   @ApiProperty({ example: 0, description: 'Number of times this discount has been used' })
   useCount: number;
@@ -25,12 +46,12 @@ export class DiscountResponseDto extends BaseResponseDto {
   @ApiProperty({ example: 'coach-id-123' })
   coachId: string;
 
-  @ApiProperty({ required: false, description: 'Coach summary information' })
-  coach?: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  // @ApiProperty({ required: false, description: 'Coach summary information' })
+  // coach?: {
+  //   id: string;
+  //   name: string;
+  //   email: string;
+  // };
 }
 
 export class CreateDiscountDto {
@@ -91,3 +112,4 @@ export class ValidateDiscountDto {
 
 // Create typed API decorators for discounts
 export const DiscountApiResponses = createTypedApiDecorators(DiscountResponseDto);
+export const ValidateDiscountApiResponses = createTypedApiDecorators(ValidateDiscountResponseDto);

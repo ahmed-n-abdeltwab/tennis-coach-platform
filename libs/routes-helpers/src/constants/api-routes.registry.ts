@@ -49,7 +49,7 @@ export interface Endpoints {
 
   "/api/booking-types": {
     GET: (params: undefined | never) => { id: string; createdAt: string; updatedAt: string; name: string; description?: Record<string, unknown>; basePrice: Record<string, unknown>; isActive: boolean; coachId: string }[];
-    POST: (body: { name: string; description?: string; basePrice: Record<string, unknown>; isActive: boolean }) => { id: string; createdAt: string; updatedAt: string; name: string; description?: Record<string, unknown>; basePrice: Record<string, unknown>; isActive: boolean; coachId: string };
+    POST: (body: { name: string; description?: string; basePrice: Record<string, unknown>; isActive?: boolean }) => { id: string; createdAt: string; updatedAt: string; name: string; description?: Record<string, unknown>; basePrice: Record<string, unknown>; isActive: boolean; coachId: string };
   };
 
   "/api/booking-types/coach/{coachId}": {
@@ -58,11 +58,11 @@ export interface Endpoints {
 
   "/api/booking-types/{id}": {
     DELETE: (body: undefined) => void;
-    PUT: (body: { name?: string; description?: string; basePrice?: number; isActive?: boolean }) => { id: string; createdAt: string; updatedAt: string; name: string; description?: Record<string, unknown>; basePrice: Record<string, unknown>; isActive: boolean; coachId: string };
+    PUT: (body: { name?: string; description?: string; basePrice?: Record<string, unknown>; isActive?: boolean }) => { id: string; createdAt: string; updatedAt: string; name: string; description?: Record<string, unknown>; basePrice: Record<string, unknown>; isActive: boolean; coachId: string };
   };
 
   "/api/calendar/event": {
-    POST: (body: { sessionId: string }) => void;
+    POST: (body: { sessionId: string }) => { eventId: string; summary: string; start: string; end: string; attendees: string[] };
   };
 
   "/api/calendar/event/{eventId}": {
@@ -70,20 +70,20 @@ export interface Endpoints {
   };
 
   "/api/discounts": {
-    POST: (body: { code: string; amount: number; expiry: string; maxUsage: number; isActive: boolean }) => void;
+    POST: (body: { code: string; amount: number; expiry: string; maxUsage: number; isActive: boolean }) => { id: string; createdAt: string; updatedAt: string; code: string; amount: Record<string, unknown>; expiry: string; useCount: number; maxUsage: number; isActive: boolean; coachId: string };
   };
 
   "/api/discounts/coach": {
-    GET: (params: undefined | never) => void;
+    GET: (params: undefined | never) => { id: string; createdAt: string; updatedAt: string; code: string; amount: Record<string, unknown>; expiry: string; useCount: number; maxUsage: number; isActive: boolean; coachId: string }[];
   };
 
   "/api/discounts/validate": {
-    POST: (body: { code: string }) => void;
+    POST: (body: { code: string }) => Record<string, unknown>;
   };
 
   "/api/discounts/{code}": {
     DELETE: (body: undefined) => void;
-    PUT: (body: { amount?: number; expiry?: string; maxUsage?: number; isActive?: boolean }) => void;
+    PUT: (body: { amount?: number; expiry?: string; maxUsage?: number; isActive?: boolean }) => { id: string; createdAt: string; updatedAt: string; code: string; amount: Record<string, unknown>; expiry: string; useCount: number; maxUsage: number; isActive: boolean; coachId: string };
   };
 
   "/api/health": {

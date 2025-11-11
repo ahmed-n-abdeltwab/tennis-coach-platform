@@ -17,22 +17,21 @@ import {
   SignUpDto,
 } from './dto';
 import { AuthType } from './enums/auth-type.enum';
-
 @Controller('authentication')
 export class AuthenticationController {
   constructor(private authenticationService: AuthenticationService) {}
 
-  @Post('signup')
   @Auth(AuthType.None)
+  @Post('signup')
   @ApiOperation({ summary: 'Register a new user account' })
   @AuthApiResponses.Created('User successfully registered')
   async signup(@Body() signupDto: SignUpDto): Promise<AuthResponseDto> {
     return this.authenticationService.signup(signupDto);
   }
 
+  @Auth(AuthType.None)
   @HttpCode(HttpStatus.OK)
   @Post('user/login')
-  @Auth(AuthType.None)
   @Roles(Role.USER, Role.PREMIUM_USER)
   @ApiOperation({ summary: 'User login' })
   @AuthApiResponses.Found('User successfully Login')
@@ -40,18 +39,18 @@ export class AuthenticationController {
     return this.authenticationService.loginUser(loginDto);
   }
 
+  @Auth(AuthType.None)
   @HttpCode(HttpStatus.OK)
   @Post('coach/login')
-  @Auth(AuthType.None)
   @ApiOperation({ summary: 'Coach login' })
   @AuthApiResponses.Found('Coach successfully Login')
   async coachLogin(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
     return this.authenticationService.loginCoach(loginDto);
   }
 
+  @Auth(AuthType.None)
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  @Auth(AuthType.None)
   @ApiOperation({ summary: 'Universal login endpoint for all account types' })
   @AuthApiResponses.Found('Login successfully')
   async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {

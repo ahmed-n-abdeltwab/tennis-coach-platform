@@ -51,6 +51,17 @@ export class SessionsService {
     });
   }
 
+  async findUnique(id: string) {
+    return this.prisma.session.findUnique({
+      where: { id: id },
+      include: {
+        user: true,
+        coach: true,
+        bookingType: true,
+      },
+    });
+  }
+
   async findOne(id: string, userId: string, role: Role) {
     const session = await this.prisma.session.findUnique({
       where: { id },
@@ -87,6 +98,17 @@ export class SessionsService {
 
     if (!isAuthorized) {
       throw new ForbiddenException('Not authorized to view this session');
+    }
+
+    return session;
+  }
+  async findFirst(id: string) {
+    const session = await this.prisma.session.findFirst({
+      where: { calendarEventId: id },
+    });
+
+    if (!session) {
+      throw new BadRequestException('Session not found');
     }
 
     return session;
@@ -178,6 +200,10 @@ export class SessionsService {
 
   async update(id: string, updateDto: UpdateSessionDto, userId: string, role: Role) {
     const session = await this.findOne(id, userId, role);
+
+    if (!session) {
+      throw new BadRequestException('Session not found');
+    }
 
     return this.prisma.session.update({
       where: { id },

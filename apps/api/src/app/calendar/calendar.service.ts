@@ -1,26 +1,27 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Role } from '@prisma/client';
+import { SessionsService } from './../sessions/sessions.service';
 
 import { PrismaService } from '../prisma/prisma.service';
 
-import { CreateCalendarEventDto } from './dto/calendar.dto';
+import { CalendarEventResponse, CreateCalendarEventDto } from './dto/calendar.dto';
 
 @Injectable()
 export class CalendarService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private sessionsService: SessionsService
+  ) {}
 
-  async createEvent(createDto: CreateCalendarEventDto, userId: string, role: Role) {
+  async createEvent(
+    createDto: CreateCalendarEventDto,
+    userId: string,
+    role: Role
+  ): Promise<CalendarEventResponse> {
     const { sessionId } = createDto;
 
     // Get session details
-    const session = await this.prisma.session.findUnique({
-      where: { id: sessionId },
-      include: {
-        user: true,
-        coach: true,
-        bookingType: true,
-      },
-    });
+    const session = await this.sessionsService.findUnique(sessionId);
 
     if (!session) {
       throw new BadRequestException('Session not found');
@@ -41,10 +42,7 @@ export class CalendarService {
     const mockEventId = `event_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
     // Update session with calendar event ID
-    await this.prisma.session.update({
-      where: { id: sessionId },
-      data: { calendarEventId: mockEventId },
-    });
+    await this.sessionsService.update(sessionId, { calendarEventId: mockEventId }, userId, role);
 
     return {
       eventId: mockEventId,
@@ -55,11 +53,9 @@ export class CalendarService {
     };
   }
 
-  async deleteEvent(eventId: string, userId: string, role: Role) {
+  async deleteEvent(eventId: string, userId: string, role: Role): Promise<CalendarEventResponse> {
     // Find session by calendar event ID
-    const session = await this.prisma.session.findFirst({
-      where: { calendarEventId: eventId },
-    });
+    const session = await this.sessionsService.findFirst(eventId);
 
     if (!session) {
       throw new BadRequestException('Event not found');
@@ -76,11 +72,11 @@ export class CalendarService {
     }
 
     // Mock deletion - in production, call Google Calendar API
-    await this.prisma.session.update({
-      where: { id: session.id },
-      data: { calendarEventId: null },
-    });
+    await this.sessionsService.update(session.id, { calendarEventId: undefined }, userId, role);
 
-    return { success: true };
+    return {
+      eventId: eventId,
+      summary: `The calender event successfully deleted`,
+    };
   }
 }
