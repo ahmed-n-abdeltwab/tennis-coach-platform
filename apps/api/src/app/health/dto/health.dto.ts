@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { createApiPropertyDecorator } from '@nestjs/swagger/dist/decorators/api-property.decorator';
 import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { createTypedApiDecorators } from '../../../common';
 
 export class BaseHealthDto {
   @ApiProperty({ enum: ['ok', 'error'] })
@@ -36,3 +38,9 @@ export class CheckHealthDto extends BaseHealthDto {
 export class LivenessHealthDto extends BaseHealthDto {}
 
 export class ReadinessHealthDto extends BaseHealthDto {}
+
+export const CheckHealthApiResponses = createTypedApiDecorators(CheckHealthDto);
+
+export const LivenessHealthApiResponses = createTypedApiDecorators(LivenessHealthDto);
+
+export const ReadinessHealthApiResponses = createTypedApiDecorators(ReadinessHealthDto);

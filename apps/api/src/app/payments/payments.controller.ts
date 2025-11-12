@@ -1,9 +1,16 @@
-import { CurrentUser, JwtPayload, Roles } from '@common';
+import { CurrentUser, Roles } from '@common';
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 
-import { CapturePaymentDto, CreatePaymentDto } from './dto/payment.dto';
+import {
+  CapturePaymentApiResponses,
+  CapturePaymentDto,
+  CapturePaymentResponses,
+  CreateOrderApiResponses,
+  CreateOrderResponses,
+  CreatePaymentDto,
+} from './dto/payment.dto';
 import { PaymentsService } from './payments.service';
 
 @ApiTags('payments')
@@ -15,15 +22,23 @@ export class PaymentsController {
   @Roles(Role.USER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create PayPal payment order' })
-  async createOrder(@Body() createDto: CreatePaymentDto, @CurrentUser() user: JwtPayload) {
-    return this.paymentsService.createOrder(createDto, user.sub);
+  @CreateOrderApiResponses.Created('Created PayPal payment order successfully')
+  async createOrder(
+    @Body() createDto: CreatePaymentDto,
+    @CurrentUser('sub') id: string
+  ): Promise<CreateOrderResponses> {
+    return this.paymentsService.createOrder(createDto, id);
   }
 
   @Post('capture-order')
   @Roles(Role.USER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Capture PayPal payment order' })
-  async captureOrder(@Body() captureDto: CapturePaymentDto, @CurrentUser() user: JwtPayload) {
-    return this.paymentsService.captureOrder(captureDto, user.sub);
+  @CapturePaymentApiResponses.Found('Captured PayPal payment order successfully')
+  async captureOrder(
+    @Body() captureDto: CapturePaymentDto,
+    @CurrentUser('sub') id: string
+  ): Promise<CapturePaymentResponses> {
+    return this.paymentsService.captureOrder(captureDto, id);
   }
 }

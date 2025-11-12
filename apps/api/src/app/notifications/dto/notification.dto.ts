@@ -1,5 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEmail, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsArray, IsBoolean, IsEmail, IsOptional, IsString } from 'class-validator';
+import { createTypedApiDecorators } from '../../../common';
 
 export class SendEmailDto {
   @ApiProperty()
@@ -10,13 +11,31 @@ export class SendEmailDto {
   @IsString()
   subject: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   text?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   html?: string;
 }
+
+export class MailResponse {
+  @ApiProperty()
+  @IsBoolean()
+  success: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsArray()
+  errors?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsArray()
+  message_ids?: string[];
+}
+
+export const MailApiResponse = createTypedApiDecorators(MailResponse);

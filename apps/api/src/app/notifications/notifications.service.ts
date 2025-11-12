@@ -1,11 +1,13 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { MailtrapTransport } from 'mailtrap';
-import { MailtrapResponse, MailtrapTransporter } from 'mailtrap/dist/types/transport';
 import { createTransport } from 'nodemailer';
+import { SessionsService } from './../sessions/sessions.service';
 
+import { Role } from '@prisma/client';
 import notificationsConfig from './config/notifications.config';
-import { SendEmailDto } from './dto/notification.dto';
+import { MailResponse, SendEmailDto } from './dto/notification.dto';
+import { MailtrapTransporter, MailtrapResponse } from 'mailtrap/dist/types/transport';
 
 @Injectable()
 export class NotificationsService {
@@ -14,7 +16,8 @@ export class NotificationsService {
 
   constructor(
     @Inject(notificationsConfig.KEY)
-    private readonly notificationsConfiguration: ConfigType<typeof notificationsConfig>
+    private readonly notificationsConfiguration: ConfigType<typeof notificationsConfig>,
+    private sessionsService: SessionsService
   ) {
     const { token, senderEmail } = this.notificationsConfiguration;
     if (!token || !senderEmail) {
@@ -29,7 +32,7 @@ export class NotificationsService {
     this.senderEmail = senderEmail;
   }
 
-  async sendEmail(emailDto: SendEmailDto, userId: string, role: string): Promise<MailtrapResponse> {
+  async sendEmail(emailDto: SendEmailDto, userId: string, role: Role): Promise<MailResponse> {
     const { to, subject, html, text } = emailDto;
 
     const info: MailtrapResponse = await this.transporter.sendMail({
@@ -54,8 +57,11 @@ export class NotificationsService {
     };
   }
 
-  // TODO: need to implement email templates properly the user, coach and bookingType need to retrieve from database
-  async sendBookingConfirmation(session: any) {
+  async sendBookingConfirmation(sessionId: string) {
+    const session = await this.sessionsService.findUnique(sessionId);
+
+    if (!session) throw new UnauthorizedException('you must create session first');
+
     const subject = 'Booking Confirmation - Tennis Coaching Session';
     const html = `
       <h2>Booking Confirmed!</h2>
@@ -79,7 +85,7 @@ export class NotificationsService {
         text: html.replace(/<[^>]*>/g, ''),
       },
       'system',
-      'system'
+      Role.COACH
     );
   }
 }

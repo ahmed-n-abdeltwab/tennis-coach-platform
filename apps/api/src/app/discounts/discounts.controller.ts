@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { applyDecorators, Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { CurrentUser } from '../../common';
+import { CurrentUser } from '@common';
 import { DiscountsService } from './discounts.service';
 import {
   CreateDiscountDto,
@@ -29,7 +29,11 @@ export class DiscountsController {
   @Get('coach')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get coach discounts' })
-  @DiscountApiResponses.FoundMany()
+  @applyDecorators(
+    DiscountApiResponses.FoundMany('Coach discounts retrieved successfully'),
+    DiscountApiResponses.errors.Unauthorized('Authentication required to access coach discounts'),
+    DiscountApiResponses.errors.Forbidden('Only coaches can access their discount list')
+  )
   async findByCoach(@CurrentUser('sub') id: string): Promise<DiscountResponseDto[]> {
     return this.discountsService.findByCoach(id);
   }

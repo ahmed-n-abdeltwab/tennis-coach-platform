@@ -1,5 +1,15 @@
 import { CurrentUser, JwtPayload, Public, Roles } from '@common';
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+  applyDecorators,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 
@@ -59,11 +69,30 @@ export class BookingTypesController {
     return this.bookingTypesService.update(id, updateDto, user.sub);
   }
 
+  @Patch(':id')
+  @Roles(Role.COACH, Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Partially update booking type (coach only)' })
+  @BookingTypeApiResponses.PartiallyUpdated('Booking type partially updated successfully')
+  async partialUpdate(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateBookingTypeDto,
+    @CurrentUser() user: JwtPayload
+  ): Promise<BookingTypeResponseDto> {
+    return this.bookingTypesService.update(id, updateDto, user.sub);
+  }
+
   @Delete(':id')
   @Roles(Role.COACH, Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete booking type (coach only)' })
-  @BookingTypeApiResponses.Deleted('Booking Types deleted successfully')
+  @applyDecorators(
+    BookingTypeApiResponses.Deleted('Booking type deleted successfully'),
+    BookingTypeApiResponses.errors.Forbidden(
+      'Only the booking type owner or admin can delete this resource'
+    ),
+    BookingTypeApiResponses.errors.Conflict('Cannot delete booking type with active sessions')
+  )
   async remove(
     @Param('id') id: string,
     @CurrentUser() user: JwtPayload

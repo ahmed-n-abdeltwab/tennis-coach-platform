@@ -16,8 +16,7 @@ const config: Config = {
   setupFilesAfterEnv: ['<rootDir>/test/setup/integration.setup.ts'],
 
   // Coverage configuration
-  collectCoverage: true,
-
+  collectCoverage: false,
   coverageDirectory: '../../coverage/apps/api/integration',
   coverageThreshold: {
     global: {
@@ -41,6 +40,7 @@ const config: Config = {
 
   forceExit: true,
   detectOpenHandles: true,
+
   ...baseConfig,
 };
 

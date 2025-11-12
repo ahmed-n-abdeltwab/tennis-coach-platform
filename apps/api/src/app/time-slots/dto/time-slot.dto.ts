@@ -1,6 +1,15 @@
 import { BaseResponseDto, createTypedApiDecorators } from '@common';
-import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsDateString, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsDate,
+  IsDateString,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class CreateTimeSlotDto {
   @ApiProperty()
@@ -46,7 +55,37 @@ export class CoachSummaryDto {
   @ApiProperty()
   email!: string;
 }
+export class UpdateTimeSlotDto {
+  @ApiPropertyOptional()
+  @IsDateString()
+  dateTime?: string;
 
+  @ApiPropertyOptional({ default: 60 })
+  @IsOptional()
+  @IsNumber()
+  @Min(15)
+  durationMin?: number;
+
+  @ApiPropertyOptional({ default: true })
+  @IsOptional()
+  @IsBoolean()
+  isAvailable?: boolean;
+
+  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @IsDate()
+  @Type(() => Date)
+  createdAt?: Date | string;
+
+  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @IsDate()
+  @Type(() => Date)
+  updatedAt?: Date | string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  coachId?: string;
+}
 export class TimeSlotResponseDto extends BaseResponseDto {
   @ApiProperty()
   coachId!: string;

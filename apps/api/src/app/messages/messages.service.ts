@@ -1,19 +1,26 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Role } from '@prisma/client';
+import { SessionsService } from './../sessions/sessions.service';
 
 import { PrismaService } from '../prisma/prisma.service';
 
-import { GetMessagesQuery, SendMessageDto } from './dto/message.dto';
+import { GetMessagesQuery, MessageResponseDto, SendMessageDto } from './dto/message.dto';
 
 @Injectable()
 export class MessagesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private sessionsService: SessionsService
+  ) {}
 
-  async findBySession(sessionId: string, userId: string, role: Role, query: GetMessagesQuery) {
+  async findBySession(
+    sessionId: string,
+    userId: string,
+    role: Role,
+    query: GetMessagesQuery
+  ): Promise<MessageResponseDto[]> {
     // Verify user has access to this session
-    const session = await this.prisma.session.findUnique({
-      where: { id: sessionId },
-    });
+    const session = await this.sessionsService.findUnique(sessionId);
 
     if (!session) {
       throw new NotFoundException('Session not found');
@@ -55,13 +62,11 @@ export class MessagesService {
     });
   }
 
-  async create(createDto: SendMessageDto, userId: string, role: Role) {
+  async create(createDto: SendMessageDto, userId: string, role: Role): Promise<MessageResponseDto> {
     const { content, sessionId, receiverType } = createDto;
 
     // Verify session access
-    const session = await this.prisma.session.findUnique({
-      where: { id: sessionId },
-    });
+    const session = await this.sessionsService.findUnique(sessionId);
 
     if (!session) {
       throw new NotFoundException('Session not found');

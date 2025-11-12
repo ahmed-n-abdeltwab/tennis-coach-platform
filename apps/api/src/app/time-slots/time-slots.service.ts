@@ -2,7 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 
 import { PrismaService } from '../prisma/prisma.service';
 
-import { CreateTimeSlotDto, GetTimeSlotsQuery } from './dto/time-slot.dto';
+import { CreateTimeSlotDto, GetTimeSlotsQuery, UpdateTimeSlotDto } from './dto/time-slot.dto';
 
 @Injectable()
 export class TimeSlotsService {
@@ -44,6 +44,13 @@ export class TimeSlotsService {
         },
       },
       orderBy: { dateTime: 'asc' },
+    });
+  }
+
+  async update(id: string, updateDto: UpdateTimeSlotDto) {
+    return this.prisma.timeSlot.update({
+      where: { id },
+      data: updateDto,
     });
   }
 

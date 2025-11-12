@@ -14,8 +14,13 @@ import { CreateSessionDto, GetSessionsQuery, UpdateSessionDto } from './dto/sess
 export class SessionsService {
   constructor(private prisma: PrismaService) {}
 
-  async findByUser(userId: string, role: Role, query: GetSessionsQuery) {
-    const { status, startDate, endDate } = query;
+  async findByUser(userId: string, role: Role, query?: GetSessionsQuery) {
+    let status, startDate, endDate;
+    if (query) {
+      status = query.status;
+      startDate = query.startDate;
+      endDate = query.endDate;
+    }
 
     const where =
       role === Role.USER || role === Role.PREMIUM_USER ? { userId } : { coachId: userId };

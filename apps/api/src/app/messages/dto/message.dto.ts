@@ -1,14 +1,18 @@
-import { BaseResponseDto, createTypedApiDecorators } from '@common';
-import { ApiProperty } from '@nestjs/swagger';
+import { createTypedApiDecorators } from '@common';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
-export class MessageResponseDto extends BaseResponseDto {
+export class MessageResponseDto {
+  @ApiProperty()
+  @IsString()
+  id!: string;
+
   @ApiProperty({ example: 'Hello, how can I help you today?' })
   content: string;
 
   @ApiProperty({ example: '2024-11-10T10:00:00Z', description: 'When the message was sent' })
-  sentAt: string;
+  sentAt: Date | string;
 
   @ApiProperty({ example: 'sender-id-123' })
   senderId: string;
@@ -16,12 +20,11 @@ export class MessageResponseDto extends BaseResponseDto {
   @ApiProperty({ example: 'receiver-id-456' })
   receiverId: string;
 
-  @ApiProperty({
-    required: false,
+  @ApiPropertyOptional({
     example: 'session-id-789',
     description: 'Associated session ID if applicable',
   })
-  sessionId?: string;
+  sessionId?: string | null;
 
   @ApiProperty({ enum: Role, example: Role.USER })
   senderType: Role;
@@ -29,18 +32,18 @@ export class MessageResponseDto extends BaseResponseDto {
   @ApiProperty({ enum: Role, example: Role.COACH })
   receiverType: Role;
 
-  @ApiProperty({ required: false, description: 'Sender account summary' })
-  sender?: {
+  @ApiProperty({ description: 'Sender account summary' })
+  sender: {
     id: string;
     name: string;
-    email: string;
+    role: Role;
   };
 
-  @ApiProperty({ required: false, description: 'Receiver account summary' })
-  receiver?: {
+  @ApiProperty({ description: 'Receiver account summary' })
+  receiver: {
     id: string;
     name: string;
-    email: string;
+    role: Role;
   };
 }
 
@@ -59,13 +62,13 @@ export class SendMessageDto {
 }
 
 export class GetMessagesQuery {
-  @ApiProperty({ required: false, default: 1 })
+  @ApiPropertyOptional({ default: 1 })
   @IsOptional()
   @IsNumber()
   @Min(1)
   page?: number;
 
-  @ApiProperty({ required: false, default: 50 })
+  @ApiPropertyOptional({ default: 50 })
   @IsOptional()
   @IsNumber()
   @Min(1)
