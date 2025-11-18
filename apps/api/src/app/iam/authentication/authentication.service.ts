@@ -3,21 +3,30 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Account, Role } from '@prisma/client';
+import { RedisService } from './../../redis/redis.service';
 
 import { PrismaService } from '../../prisma/prisma.service';
 import jwtConfig from '../config/jwt.config';
 import { HashingService } from '../hashing/hashing.service';
 
+import { parseJwtTime } from '@utils';
+import { randomUUID } from 'crypto';
 import { AuthResponseDto, LoginDto, RefreshResponseDto, SignUpDto } from './dto';
 
 @Injectable()
 export class AuthenticationService {
+  refreshTokenTtl: number;
+  refreshSecret: string;
   constructor(
     private prisma: PrismaService,
+    private redis: RedisService,
     private jwtService: JwtService,
     private readonly hashingService: HashingService,
     @Inject(jwtConfig.KEY) private readonly jwtConfiguration: ConfigType<typeof jwtConfig>
-  ) {}
+  ) {
+    this.refreshTokenTtl = parseJwtTime(process.env.JWT_REFRESH_EXPIRES_IN, '24h');
+    this.refreshSecret = process.env.JWT_REFRESH_SECRET ?? 'refresh-secret';
+  }
 
   async signup(signupDto: SignUpDto): Promise<AuthResponseDto> {
     const account: Account = await this.prisma.account.create({
@@ -29,7 +38,7 @@ export class AuthenticationService {
       },
     });
 
-    return this.generateTokens(account.id, account.email, account.role);
+    return this.generateTokens({ sub: account.id, email: account.email, role: account.role });
   }
 
   async loginUser(loginDto: LoginDto): Promise<AuthResponseDto> {
@@ -74,7 +83,7 @@ export class AuthenticationService {
       data: { isOnline: true },
     });
 
-    return this.generateTokens(account.id, account.email, account.role);
+    return this.generateTokens({ sub: account.id, email: account.email, role: account.role });
   }
 
   async logout(account: JwtPayload): Promise<void> {
@@ -83,25 +92,40 @@ export class AuthenticationService {
         where: { id: account.sub },
         data: { isOnline: false },
       }),
-      this.prisma.refreshToken.deleteMany({ where: { accountId: account.sub } }),
+      this.redis.invalidate(account.sub),
     ]);
   }
 
   async refreshToken(user: JwtPayload): Promise<RefreshResponseDto> {
-    const payload: JwtPayload = {
-      sub: user.sub,
+    // Generate new refresh token ID
+    const newRefreshTokenId = randomUUID();
+
+    const payload = {
       email: user.email,
       role: user.role,
     };
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.jwtConfiguration.secret,
-      issuer: this.jwtConfiguration.signOptions.issuer,
-      audience: this.jwtConfiguration.signOptions.audience,
-      expiresIn: this.jwtConfiguration.signOptions.expiresIn,
-    });
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.signToken<Partial<JwtPayload>>(
+        user.sub,
+        this.jwtConfiguration.signOptions.expiresIn,
+        payload,
+        this.jwtConfiguration.secret
+      ),
+      this.signToken(
+        user.sub,
+        this.refreshTokenTtl,
+        { refreshTokenId: newRefreshTokenId },
+        this.refreshSecret
+      ),
+    ]);
+
+    // Store new refresh token ID in Redis
+    await this.redis.set(user.sub, newRefreshTokenId, this.refreshTokenTtl);
 
     return {
       accessToken,
+      refreshToken,
       account: {
         id: user.sub,
         email: user.email,
@@ -110,47 +134,43 @@ export class AuthenticationService {
     };
   }
 
-  private async generateTokens(
-    accountId: string,
-    email: string,
-    role: Role
-  ): Promise<AuthResponseDto> {
-    const payload: JwtPayload = {
-      sub: accountId,
-      email,
-      role,
-    };
+  async generateTokens(payload: JwtPayload): Promise<AuthResponseDto> {
+    const refreshTokenId = randomUUID();
+    const [accessToken, refreshToken] = await Promise.all([
+      this.signToken<Partial<JwtPayload>>(
+        payload.sub,
+        this.jwtConfiguration.signOptions.expiresIn,
+        payload,
+        this.jwtConfiguration.secret
+      ),
+      this.signToken(payload.sub, this.refreshTokenTtl, { refreshTokenId }, this.refreshSecret),
+    ]);
 
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.jwtConfiguration.secret,
-      issuer: this.jwtConfiguration.signOptions.issuer,
-      audience: this.jwtConfiguration.signOptions.audience,
-      expiresIn: this.jwtConfiguration.signOptions.expiresIn,
-    });
-
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.jwtConfiguration.secret,
-      issuer: this.jwtConfiguration.signOptions.issuer,
-      audience: this.jwtConfiguration.signOptions.audience,
-      expiresIn: this.jwtConfiguration.signOptions.expiresIn,
-    });
-
-    await this.prisma.refreshToken.create({
-      data: {
-        token: await this.hashingService.hash(refreshToken),
-        accountId,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-      },
-    });
+    await this.redis.set(payload.sub, refreshTokenId, this.refreshTokenTtl);
 
     return {
       accessToken,
       refreshToken,
       account: {
-        id: accountId,
-        email,
-        role,
+        id: payload.sub,
+        email: payload.email,
+        role: payload.role,
       },
     };
+  }
+
+  private async signToken<T>(userId: string, expiresIn: number, payload?: T, secret?: string) {
+    return await this.jwtService.signAsync(
+      {
+        sub: userId,
+        ...payload,
+      },
+      {
+        secret: secret ?? this.jwtConfiguration.secret,
+        issuer: this.jwtConfiguration.signOptions.issuer,
+        audience: this.jwtConfiguration.signOptions.audience,
+        expiresIn,
+      }
+    );
   }
 }

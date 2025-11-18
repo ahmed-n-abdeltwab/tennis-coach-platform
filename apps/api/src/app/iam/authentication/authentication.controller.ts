@@ -3,7 +3,7 @@ import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs
 import { ApiBearerAuth, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 
-import { CurrentUser, JwtRefreshGuard } from '../../../common';
+import { CurrentUser, JwtRefreshGuard } from '@common';
 
 import { AuthenticationService } from './authentication.service';
 import { Auth } from './decorators/auth.decorator';
@@ -17,6 +17,7 @@ import {
   SignUpDto,
 } from './dto';
 import { AuthType } from './enums/auth-type.enum';
+
 @Controller('authentication')
 export class AuthenticationController {
   constructor(private authenticationService: AuthenticationService) {}
@@ -29,8 +30,6 @@ export class AuthenticationController {
     return this.authenticationService.signup(signupDto);
   }
 
-  @Auth(AuthType.None)
-  @HttpCode(HttpStatus.OK)
   @Post('user/login')
   @Roles(Role.USER, Role.PREMIUM_USER)
   @ApiOperation({ summary: 'User login' })
@@ -39,8 +38,6 @@ export class AuthenticationController {
     return this.authenticationService.loginUser(loginDto);
   }
 
-  @Auth(AuthType.None)
-  @HttpCode(HttpStatus.OK)
   @Post('coach/login')
   @ApiOperation({ summary: 'Coach login' })
   @AuthApiResponses.Found('Coach successfully Login')
@@ -49,7 +46,6 @@ export class AuthenticationController {
   }
 
   @Auth(AuthType.None)
-  @HttpCode(HttpStatus.OK)
   @Post('login')
   @ApiOperation({ summary: 'Universal login endpoint for all account types' })
   @AuthApiResponses.Found('Login successfully')
@@ -59,6 +55,7 @@ export class AuthenticationController {
 
   // Shared endpoints
   @HttpCode(HttpStatus.OK)
+  @Auth(AuthType.None)
   @UseGuards(JwtRefreshGuard)
   @Post('refresh')
   @ApiBearerAuth('JWT-auth')
@@ -68,7 +65,7 @@ export class AuthenticationController {
     return this.authenticationService.refreshToken(user);
   }
 
-  @HttpCode(HttpStatus.OK)
+  @Auth(AuthType.Bearer)
   @Post('logout')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Logout and invalidate refresh tokens' })

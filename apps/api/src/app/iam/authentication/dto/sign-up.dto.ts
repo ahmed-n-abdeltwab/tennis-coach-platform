@@ -140,17 +140,17 @@ export class RefreshResponseDto {
   @IsNotEmpty()
   accessToken: string;
 
+  @ApiProperty({ example: 'dGhpc2lzYXJlZnJlc2h0b2tlbg==' })
+  @IsString()
+  @IsNotEmpty()
+  refreshToken: string;
+
   @ApiProperty({ type: AccountSummaryDto })
   @Type(() => AccountSummaryDto)
   account: AccountSummaryDto;
 }
 
-export class AuthResponseDto extends RefreshResponseDto {
-  @ApiProperty({ example: 'dGhpc2lzYXJlZnJlc2h0b2tlbg==' })
-  @IsString()
-  @IsNotEmpty()
-  refreshToken: string;
-}
+export class AuthResponseDto extends RefreshResponseDto {}
 
 // ===========================================
 // Profile Responses

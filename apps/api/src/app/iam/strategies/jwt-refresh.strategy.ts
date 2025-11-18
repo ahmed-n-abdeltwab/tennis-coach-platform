@@ -5,6 +5,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
 import { PrismaService } from '../../prisma/prisma.service';
+import { RedisService } from '../../redis/redis.service';
 import jwtConfig from '../config/jwt.config';
 
 @Injectable()
@@ -12,7 +13,8 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
   constructor(
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
-    private prisma: PrismaService
+    private prisma: PrismaService,
+    private redis: RedisService
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -21,9 +23,9 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     });
   }
 
-  async validate(payload: JwtPayload): Promise<JwtPayload> {
+  async validate(payload: { sub: string; refreshTokenId: string }): Promise<JwtPayload> {
     // Validate payload structure
-    if (!payload.sub || !payload.email || !payload.role) {
+    if (!payload.sub || !payload.refreshTokenId) {
       throw new UnauthorizedException('Invalid refresh token payload');
     }
 
@@ -41,12 +43,18 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
       throw new UnauthorizedException('Invalid refresh token');
     }
 
+    const exists = await this.redis.validate(account.id, payload.refreshTokenId);
+    if (!exists) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // Invalidate the old refresh token (rotation)
+    await this.redis.invalidate(account.id);
+
     return {
       sub: account.id,
       email: account.email,
       role: account.role,
-      iat: payload.iat,
-      exp: payload.exp,
     };
   }
 }

@@ -6,6 +6,7 @@ import { PassportModule } from '@nestjs/passport';
 
 import { PrismaModule } from '../prisma/prisma.module';
 
+import { RedisModule } from '../redis/redis.module';
 import { AuthenticationController } from './authentication/authentication.controller';
 import { AuthenticationService } from './authentication/authentication.service';
 import { AccessTokenGuard } from './authentication/guards/access-token/access-token.guard';
@@ -21,6 +22,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   imports: [
     ConfigModule.forFeature(jwtConfig),
     PrismaModule,
+    RedisModule,
     PassportModule,
     JwtModule.registerAsync(jwtConfig.asProvider()),
   ],
@@ -29,18 +31,18 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       provide: HashingService,
       useClass: BcryptService,
     },
-    AuthenticationService,
-    JwtStrategy,
-    JwtRefreshStrategy,
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
     {
       provide: APP_GUARD,
       useClass: AuthenticationGuard,
     },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
     AccessTokenGuard,
+    AuthenticationService,
+    JwtStrategy,
+    JwtRefreshStrategy,
   ],
   controllers: [AuthenticationController],
   exports: [AuthenticationService, HashingService],
