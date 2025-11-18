@@ -45,7 +45,7 @@ export class AccountsController {
   @Patch(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update account' })
-  @AccountApiResponses.Updated('Account updated successfully')
+  @AccountApiResponses.PartiallyUpdated('Account updated successfully')
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateAccountDto,
@@ -60,8 +60,8 @@ export class AccountsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete account (admin only)' })
-  @AccountApiResponses.Deleted('Account deleted successfully')
-  async delete(@Param('id') id: string): Promise<AccountResponseDto> {
+  @AccountApiResponses.NoContent('Account deleted successfully')
+  async delete(@Param('id') id: string): Promise<void> {
     return this.accountsService.delete(id);
   }
 }

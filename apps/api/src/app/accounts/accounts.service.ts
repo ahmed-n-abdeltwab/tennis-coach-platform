@@ -9,7 +9,7 @@ import { Account, Role } from '@prisma/client';
 import { HashingService } from '../iam/hashing/hashing.service';
 import { PrismaService } from '../prisma/prisma.service';
 
-import { CreateAccountDto, UpdateAccountDto } from './dto/account.dto';
+import { AccountResponseDto, CreateAccountDto, UpdateAccountDto } from './dto/account.dto';
 
 @Injectable()
 export class AccountsService {
@@ -17,6 +17,20 @@ export class AccountsService {
     private prisma: PrismaService,
     private readonly hashingService: HashingService
   ) {}
+
+  /**
+   * Transform Prisma Account to AccountResponseDto
+   * Excludes sensitive fields like passwordHash
+   * Transforms Date objects to ISO strings
+   */
+  private toResponseDto(account: Account): AccountResponseDto {
+    const { passwordHash, ...safeData } = account;
+    return {
+      ...safeData,
+      createdAt: account.createdAt.toISOString(),
+      updatedAt: account.updatedAt.toISOString(),
+    } as AccountResponseDto;
+  }
 
   /**
    * Find account by email
@@ -30,7 +44,7 @@ export class AccountsService {
   /**
    * Find account by ID
    */
-  async findById(id: string): Promise<Account> {
+  async findById(id: string): Promise<AccountResponseDto> {
     const account = await this.prisma.account.findUnique({
       where: { id },
     });
@@ -39,7 +53,7 @@ export class AccountsService {
       throw new NotFoundException('Account not found');
     }
 
-    return account;
+    return this.toResponseDto(account);
   }
 
   /**
@@ -99,21 +113,23 @@ export class AccountsService {
   /**
    * Find all users with optional filters
    */
-  async findUsers(filters?: { role?: Role; isActive?: boolean }): Promise<Account[]> {
+  async findUsers(filters?: { role?: Role; isActive?: boolean }): Promise<AccountResponseDto[]> {
     const roleFilter = filters?.role || { in: [Role.USER, Role.PREMIUM_USER] };
 
-    return this.prisma.account.findMany({
+    const accounts = await this.prisma.account.findMany({
       where: {
         role: roleFilter,
         isActive: filters?.isActive,
       },
     });
+
+    return accounts.map(account => this.toResponseDto(account));
   }
 
   /**
    * Create a new account
    */
-  async create(data: CreateAccountDto): Promise<Account> {
+  async create(data: CreateAccountDto): Promise<AccountResponseDto> {
     const existingAccount = await this.prisma.account.findUnique({
       where: { email: data.email },
     });
@@ -129,7 +145,7 @@ export class AccountsService {
 
     const passwordHash = await this.hashingService.hash(data.password);
 
-    return this.prisma.account.create({
+    const account = await this.prisma.account.create({
       data: {
         email: data.email,
         name: data.name,
@@ -150,12 +166,14 @@ export class AccountsService {
         profileImage: data.profileImage,
       },
     });
+
+    return this.toResponseDto(account);
   }
 
   /**
    * Update account profile
    */
-  async update(id: string, data: UpdateAccountDto): Promise<Account> {
+  async update(id: string, data: UpdateAccountDto): Promise<AccountResponseDto> {
     const account = await this.prisma.account.findUnique({
       where: { id },
     });
@@ -164,16 +182,18 @@ export class AccountsService {
       throw new NotFoundException('Account not found');
     }
 
-    return this.prisma.account.update({
+    const updatedAccount = await this.prisma.account.update({
       where: { id },
       data,
     });
+
+    return this.toResponseDto(updatedAccount);
   }
 
   /**
    * Delete account
    */
-  async delete(id: string): Promise<Account> {
+  async delete(id: string): Promise<void> {
     const account = await this.prisma.account.findUnique({
       where: { id },
     });
@@ -182,7 +202,7 @@ export class AccountsService {
       throw new NotFoundException('Account not found');
     }
 
-    return this.prisma.account.delete({
+    await this.prisma.account.delete({
       where: { id },
     });
   }

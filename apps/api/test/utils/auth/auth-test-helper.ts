@@ -398,9 +398,9 @@ export class AuthTestHelper {
    * }
    * ```
    */
-  verifyToken(token: string): JwtPayload | null {
+  async verifyToken(token: string): Promise<JwtPayload | null> {
     try {
-      return this.jwtService.verify(token) as JwtPayload;
+      return (await this.jwtService.verifyAsync(token)) as JwtPayload;
     } catch {
       return null;
     }

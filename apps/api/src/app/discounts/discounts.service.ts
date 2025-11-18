@@ -8,13 +8,18 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 
 import { Discount } from '@prisma/client';
-import { CreateDiscountDto, UpdateDiscountDto } from './dto/discount.dto';
+import {
+  CreateDiscountDto,
+  DiscountResponseDto,
+  UpdateDiscountDto,
+  ValidateDiscountResponseDto,
+} from './dto/discount.dto';
 
 @Injectable()
 export class DiscountsService {
   constructor(private prisma: PrismaService) {}
 
-  async validateCode(code: string) {
+  async validateCode(code: string): Promise<ValidateDiscountResponseDto> {
     const discount = await this.prisma.discount.findFirst({
       where: {
         code,
@@ -38,14 +43,25 @@ export class DiscountsService {
     };
   }
 
-  async findByCoach(coachId: string): Promise<Discount[]> {
-    return this.prisma.discount.findMany({
+  async findByCoach(coachId: string): Promise<DiscountResponseDto[]> {
+    const discounts = await this.prisma.discount.findMany({
       where: { coachId },
       orderBy: { createdAt: 'desc' },
+      include: {
+        coach: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
+
+    return discounts.map(discount => this.toResponseDto(discount));
   }
 
-  async create(createDto: CreateDiscountDto, coachId: string): Promise<Discount> {
+  async create(createDto: CreateDiscountDto, coachId: string): Promise<DiscountResponseDto> {
     // Check if code already exists
     const existing = await this.prisma.discount.findUnique({
       where: { code: createDto.code },
@@ -55,16 +71,31 @@ export class DiscountsService {
       throw new BadRequestException('Discount code already exists');
     }
 
-    return this.prisma.discount.create({
+    const discount = await this.prisma.discount.create({
       data: {
         ...createDto,
         expiry: new Date(createDto.expiry),
         coachId,
       },
+      include: {
+        coach: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
+
+    return this.toResponseDto(discount);
   }
 
-  async update(code: string, updateDto: UpdateDiscountDto, coachId: string): Promise<Discount> {
+  async update(
+    code: string,
+    updateDto: UpdateDiscountDto,
+    coachId: string
+  ): Promise<DiscountResponseDto> {
     const discount = await this.prisma.discount.findUnique({
       where: { code },
     });
@@ -77,16 +108,27 @@ export class DiscountsService {
       throw new ForbiddenException('Not authorized to update this discount');
     }
 
-    return this.prisma.discount.update({
+    const updated = await this.prisma.discount.update({
       where: { code },
       data: {
         ...updateDto,
         expiry: updateDto.expiry ? new Date(updateDto.expiry) : undefined,
       },
+      include: {
+        coach: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
+
+    return this.toResponseDto(updated);
   }
 
-  async remove(code: string, coachId: string): Promise<Discount> {
+  async remove(code: string, coachId: string): Promise<void> {
     const discount = await this.prisma.discount.findUnique({
       where: { code },
     });
@@ -99,9 +141,27 @@ export class DiscountsService {
       throw new ForbiddenException('Not authorized to delete this discount');
     }
 
-    return this.prisma.discount.update({
+    await this.prisma.discount.update({
       where: { code },
       data: { isActive: false },
     });
+  }
+
+  private toResponseDto(
+    discount: Discount & { coach?: { id: string; name: string; email: string } }
+  ): DiscountResponseDto {
+    return {
+      id: discount.id,
+      code: discount.code,
+      amount: discount.amount.toString() as any,
+      expiry: discount.expiry.toISOString(),
+      useCount: discount.useCount,
+      maxUsage: discount.maxUsage,
+      isActive: discount.isActive,
+      coachId: discount.coachId,
+      createdAt: discount.createdAt.toISOString(),
+      updatedAt: discount.updatedAt.toISOString(),
+      coach: discount.coach,
+    };
   }
 }

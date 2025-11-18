@@ -11,7 +11,7 @@ import {
 import { Role } from '@prisma/client';
 import { Server, Socket } from 'socket.io';
 
-import { SendMessageDto } from './dto/message.dto';
+import { CreateMessageDto } from './dto/message.dto';
 import { MessagesService } from './messages.service';
 
 @WebSocketGateway({
@@ -49,13 +49,15 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   @Roles(Role.USER, Role.COACH)
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: SendMessageDto,
+    @MessageBody() data: CreateMessageDto,
     @CurrentUser() user: JwtPayload
   ) {
     const message = await this.messagesService.create(data, user.sub, user.role);
 
     // Emit to all clients in the session room
-    this.server.to(`session-${data.sessionId}`).emit('new-message', message);
+    if (data.sessionId) {
+      this.server.to(`session-${data.sessionId}`).emit('new-message', message);
+    }
 
     return message;
   }

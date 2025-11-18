@@ -1,4 +1,4 @@
-import { applyDecorators, Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '@common';
@@ -21,27 +21,23 @@ export class DiscountsController {
   @Post('validate')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Validate discount code' })
-  @ValidateDiscountApiResponses.Created('Validate discount code Successfully')
+  @ValidateDiscountApiResponses.Found('Discount code validated successfully')
   async validate(@Body() validateDto: ValidateDiscountDto): Promise<ValidateDiscountResponseDto> {
     return this.discountsService.validateCode(validateDto.code);
   }
 
   @Get('coach')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get coach discounts' })
-  @applyDecorators(
-    DiscountApiResponses.FoundMany('Coach discounts retrieved successfully'),
-    DiscountApiResponses.errors.Unauthorized('Authentication required to access coach discounts'),
-    DiscountApiResponses.errors.Forbidden('Only coaches can access their discount list')
-  )
+  @ApiOperation({ summary: 'Get all discounts for the authenticated coach' })
+  @DiscountApiResponses.FoundMany('Coach discounts retrieved successfully')
   async findByCoach(@CurrentUser('sub') id: string): Promise<DiscountResponseDto[]> {
     return this.discountsService.findByCoach(id);
   }
 
   @Post()
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create discount (coach only)' })
-  @DiscountApiResponses.Created('Discounts successfully Created')
+  @ApiOperation({ summary: 'Create a new discount code' })
+  @DiscountApiResponses.Created('Discount created successfully')
   async create(
     @Body() createDto: CreateDiscountDto,
     @CurrentUser('sub') id: string
@@ -51,8 +47,8 @@ export class DiscountsController {
 
   @Put(':code')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update discount (coach only)' })
-  @DiscountApiResponses.Updated('Discounts successfully Updated')
+  @ApiOperation({ summary: 'Update an existing discount code' })
+  @DiscountApiResponses.Updated('Discount updated successfully')
   async update(
     @Param('code') code: string,
     @Body() updateDto: UpdateDiscountDto,
@@ -63,12 +59,9 @@ export class DiscountsController {
 
   @Delete(':code')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete discount (coach only)' })
-  @DiscountApiResponses.Deleted('Discounts successfully Deleted')
-  async remove(
-    @Param('code') code: string,
-    @CurrentUser('sub') id: string
-  ): Promise<DiscountResponseDto> {
+  @ApiOperation({ summary: 'Delete a discount code' })
+  @DiscountApiResponses.NoContent('Discount deleted successfully')
+  async remove(@Param('code') code: string, @CurrentUser('sub') id: string): Promise<void> {
     return this.discountsService.remove(code, id);
   }
 }

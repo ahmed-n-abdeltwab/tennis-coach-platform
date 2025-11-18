@@ -44,6 +44,14 @@ export class BookingTypesController {
     return this.bookingTypesService.findByCoach(coachId);
   }
 
+  @Get(':id')
+  @Public()
+  @ApiOperation({ summary: 'Get booking type by ID' })
+  @BookingTypeApiResponses.Found('Booking Type retrieved successfully')
+  async findOne(@Param('id') id: string): Promise<BookingTypeResponseDto> {
+    return this.bookingTypesService.findOne(id);
+  }
+
   @Post()
   @Roles(Role.COACH)
   @ApiBearerAuth()
@@ -87,16 +95,13 @@ export class BookingTypesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete booking type (coach only)' })
   @applyDecorators(
-    BookingTypeApiResponses.Deleted('Booking type deleted successfully'),
+    BookingTypeApiResponses.NoContent('Booking type deleted successfully'),
     BookingTypeApiResponses.errors.Forbidden(
       'Only the booking type owner or admin can delete this resource'
     ),
     BookingTypeApiResponses.errors.Conflict('Cannot delete booking type with active sessions')
   )
-  async remove(
-    @Param('id') id: string,
-    @CurrentUser() user: JwtPayload
-  ): Promise<BookingTypeResponseDto> {
+  async remove(@Param('id') id: string, @CurrentUser() user: JwtPayload): Promise<void> {
     return this.bookingTypesService.remove(id, user.sub);
   }
 }

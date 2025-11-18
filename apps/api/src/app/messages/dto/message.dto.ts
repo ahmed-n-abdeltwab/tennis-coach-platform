@@ -1,78 +1,134 @@
-import { createTypedApiDecorators } from '@common';
+import { BaseResponseDto, createTypedApiDecorators } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
-import { IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 
-export class MessageResponseDto {
-  @ApiProperty()
+export class MessageResponseDto extends BaseResponseDto {
+  @ApiProperty({
+    example: 'Hello, how can I help you today?',
+    description: 'The message content',
+  })
   @IsString()
-  id!: string;
+  content!: string;
 
-  @ApiProperty({ example: 'Hello, how can I help you today?' })
-  content: string;
+  @ApiProperty({
+    example: '2024-11-10T10:00:00Z',
+    description: 'When the message was sent',
+    type: String,
+    format: 'date-time',
+  })
+  sentAt!: Date | string;
 
-  @ApiProperty({ example: '2024-11-10T10:00:00Z', description: 'When the message was sent' })
-  sentAt: Date | string;
+  @ApiProperty({
+    example: 'sender-id-123',
+    description: 'ID of the account that sent the message',
+  })
+  @IsString()
+  senderId!: string;
 
-  @ApiProperty({ example: 'sender-id-123' })
-  senderId: string;
-
-  @ApiProperty({ example: 'receiver-id-456' })
-  receiverId: string;
+  @ApiProperty({
+    example: 'receiver-id-456',
+    description: 'ID of the account that received the message',
+  })
+  @IsString()
+  receiverId!: string;
 
   @ApiPropertyOptional({
     example: 'session-id-789',
-    description: 'Associated session ID if applicable',
+    description: 'Associated session ID if the message is related to a specific session',
   })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => value ?? undefined)
   sessionId?: string | null;
 
-  @ApiProperty({ enum: Role, example: Role.USER })
-  senderType: Role;
+  @ApiProperty({
+    enum: Role,
+    example: Role.USER,
+    description: 'Role of the sender',
+  })
+  @IsEnum(Role)
+  senderType!: Role;
 
-  @ApiProperty({ enum: Role, example: Role.COACH })
-  receiverType: Role;
+  @ApiProperty({
+    enum: Role,
+    example: Role.COACH,
+    description: 'Role of the receiver',
+  })
+  @IsEnum(Role)
+  receiverType!: Role;
 
-  @ApiProperty({ description: 'Sender account summary' })
-  sender: {
+  @ApiPropertyOptional({
+    description: 'Sender account summary information',
+    example: {
+      id: 'sender-id-123',
+      name: 'John Doe',
+      email: 'john@example.com',
+    },
+  })
+  sender?: {
     id: string;
     name: string;
-    role: Role;
+    email: string;
   };
 
-  @ApiProperty({ description: 'Receiver account summary' })
-  receiver: {
+  @ApiPropertyOptional({
+    description: 'Receiver account summary information',
+    example: {
+      id: 'receiver-id-456',
+      name: 'Jane Smith',
+      email: 'jane@example.com',
+    },
+  })
+  receiver?: {
     id: string;
     name: string;
-    role: Role;
+    email: string;
   };
 }
 
-export class SendMessageDto {
-  @ApiProperty()
+export class CreateMessageDto {
+  @ApiProperty({
+    example: 'Hello, I have a question about my upcoming session.',
+    description: 'The message content',
+  })
   @IsString()
-  content: string;
+  @MinLength(1)
+  content!: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    example: 'receiver-id-456',
+    description: 'ID of the account that will receive the message',
+  })
   @IsString()
-  sessionId: string;
+  receiverId!: string;
 
-  @ApiProperty({ enum: Role })
-  @IsEnum(Role)
-  receiverType: Role;
+  @ApiPropertyOptional({
+    example: 'session-id-789',
+    description: 'Optional session ID if the message is related to a specific session',
+  })
+  @IsOptional()
+  @IsString()
+  sessionId?: string;
 }
 
 export class GetMessagesQuery {
-  @ApiPropertyOptional({ default: 1 })
+  @ApiPropertyOptional({
+    example: 'session-id-789',
+    description: 'Filter messages by session ID',
+  })
   @IsOptional()
-  @IsNumber()
-  @Min(1)
-  page?: number;
+  @IsString()
+  sessionId?: string;
 
-  @ApiPropertyOptional({ default: 50 })
+  @ApiPropertyOptional({
+    example: 'user-id-123',
+    description: 'Get conversation between current user and this user ID',
+  })
   @IsOptional()
-  @IsNumber()
-  @Min(1)
-  limit?: number;
+  @IsString()
+  conversationWith?: string;
 }
 
 // Create typed API decorators for messages

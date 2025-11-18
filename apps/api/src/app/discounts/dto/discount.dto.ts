@@ -1,5 +1,5 @@
 import { BaseResponseDto, createTypedApiDecorators } from '@common';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Type } from 'class-transformer';
 import {
@@ -11,6 +11,7 @@ import {
   IsString,
   Min,
 } from 'class-validator';
+import { CoachSummaryDto } from '../../time-slots/dto/time-slot.dto';
 export class ValidateDiscountResponseDto {
   code: string;
   amount: Decimal;
@@ -46,12 +47,11 @@ export class DiscountResponseDto extends BaseResponseDto {
   @ApiProperty({ example: 'coach-id-123' })
   coachId: string;
 
-  // @ApiProperty({ required: false, description: 'Coach summary information' })
-  // coach?: {
-  //   id: string;
-  //   name: string;
-  //   email: string;
-  // };
+  @ApiPropertyOptional({
+    description: 'Coach summary information',
+    type: CoachSummaryDto,
+  })
+  coach?: CoachSummaryDto;
 }
 
 export class CreateDiscountDto {

@@ -1,6 +1,7 @@
 import { BaseResponseDto, createTypedApiDecorators } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Decimal } from '@prisma/client/runtime/library';
+import { Type } from 'class-transformer';
 import { IsBoolean, IsDateString, IsOptional, IsString } from 'class-validator';
 
 export class CreateSessionDto {
@@ -74,7 +75,8 @@ export class SessionResponseDto extends BaseResponseDto {
   @ApiProperty({ example: 60, description: 'Session duration in minutes' })
   durationMin: number;
 
-  @ApiProperty({ example: 99.99, description: 'Session price in decimal format' })
+  @ApiProperty({ example: '99.99', description: 'Session price as string' })
+  @Type(() => Number)
   price: Decimal;
 
   @ApiProperty({ example: false, description: 'Whether the session has been paid for' })
@@ -84,16 +86,19 @@ export class SessionResponseDto extends BaseResponseDto {
   status: string;
 
   @ApiProperty({ required: false, example: 'Please bring comfortable workout clothes' })
-  notes?: string;
+  @IsOptional()
+  notes?: string | null;
 
   @ApiProperty({ required: false, example: 'payment-id-123' })
-  paymentId?: string;
+  @IsOptional()
+  paymentId?: string | null;
 
   @ApiProperty({ required: false, example: 'SUMMER2024' })
-  discountCode?: string;
+  @IsOptional()
+  discountCode?: string | null;
 
   @ApiProperty({ required: false, example: 'calendar-event-id-123' })
-  calendarEventId?: string;
+  calendarEventId?: string | null;
 
   @ApiProperty({ example: 'user-id-123' })
   userId: string;
@@ -108,7 +113,8 @@ export class SessionResponseDto extends BaseResponseDto {
   timeSlotId: string;
 
   @ApiProperty({ required: false, example: 'discount-id-345' })
-  discountId?: string;
+  @IsOptional()
+  discountId?: string | null;
 
   @ApiProperty({ required: false, description: 'User summary information' })
   user?: {
@@ -128,7 +134,7 @@ export class SessionResponseDto extends BaseResponseDto {
   bookingType?: {
     id: string;
     name: string;
-    description?: string;
+    description?: string | null;
     basePrice: string;
   };
 

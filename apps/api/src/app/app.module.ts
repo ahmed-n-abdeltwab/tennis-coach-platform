@@ -12,6 +12,7 @@ import { MessagesModule } from './messages/messages.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { RedisModule } from './redis/redis.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { TimeSlotsModule } from './time-slots/time-slots.module';
 
@@ -35,6 +36,7 @@ import { TimeSlotsModule } from './time-slots/time-slots.module';
     NotificationsModule,
     HealthModule,
     AccountsModule,
+    RedisModule,
   ],
 })
 export class AppModule {}

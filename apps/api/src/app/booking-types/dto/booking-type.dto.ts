@@ -25,7 +25,7 @@ export class BookingTypeResponseDto extends BaseResponseDto {
   @IsString()
   description?: string | null;
 
-  @ApiProperty({ example: 99.99, description: 'Base price in decimal format' })
+  @ApiProperty({ example: '99.99', description: 'Base price in decimal format' })
   @Type(() => Number)
   basePrice: Decimal;
 
