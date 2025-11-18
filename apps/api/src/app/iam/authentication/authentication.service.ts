@@ -29,32 +29,34 @@ export class AuthenticationService {
   }
 
   async signup(signupDto: SignUpDto): Promise<AuthResponseDto> {
-    const account: Account = await this.prisma.account.create({
+    const account = await this.prisma.account.findUnique({
+      where: { email: signupDto.email },
+    });
+
+    if (account) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const newAccount: Account = await this.prisma.account.create({
       data: {
         email: signupDto.email,
         name: signupDto.name,
         passwordHash: await this.hashingService.hash(signupDto.password),
         isOnline: true,
+        role: Role.USER,
       },
     });
 
-    return this.generateTokens({ sub: account.id, email: account.email, role: account.role });
+    return this.generateTokens({ sub: newAccount.id, email: newAccount.email, role: newAccount.role });
   }
 
-  async login(loginDto: LoginDto, allowedRoles?: Role[]): Promise<AuthResponseDto> {
+  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
     const account = await this.prisma.account.findUnique({
       where: { email: loginDto.email },
     });
 
     if (!account) {
       throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // Validate role if specified
-    if (allowedRoles && !allowedRoles.includes(account.role)) {
-      throw new UnauthorizedException(
-        `This login endpoint is not available for ${account.role.toLowerCase()} accounts`
-      );
     }
 
     const isPasswordValid = await this.hashingService.compare(

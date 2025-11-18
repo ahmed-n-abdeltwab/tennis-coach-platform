@@ -1,5 +1,6 @@
 import { BaseResponseDto, createTypedApiDecorators } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import { IsBoolean, IsDateString, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class CreateTimeSlotDto {
@@ -50,7 +51,8 @@ export class UpdateTimeSlotDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsDateString()
-  dateTime?: string;
+  @Type(() => String)
+  dateTime?: Date | string;
 
   @ApiPropertyOptional({ default: 60 })
   @IsOptional()

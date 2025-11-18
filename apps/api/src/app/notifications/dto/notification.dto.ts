@@ -2,6 +2,11 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsBoolean, IsEmail, IsOptional, IsString } from 'class-validator';
 import { createTypedApiDecorators } from '../../../common';
 
+export class SendBookingConfirmationDto {
+  @ApiProperty()
+  @IsString()
+  sessionId: string;
+}
 export class SendEmailDto {
   @ApiProperty()
   @IsEmail()
@@ -21,7 +26,6 @@ export class SendEmailDto {
   @IsString()
   html?: string;
 }
-
 export class MailResponse {
   @ApiProperty()
   @IsBoolean()

@@ -1,7 +1,6 @@
-import { CurrentUser, Roles } from '@common';
+import { CurrentUser } from '@common';
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
 
 import {
   CapturePaymentApiResponses,
@@ -19,8 +18,7 @@ export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Post('create-order')
-  @Roles(Role.USER)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create PayPal payment order' })
   @CreateOrderApiResponses.Created('Created PayPal payment order successfully')
   async createOrder(
@@ -31,8 +29,7 @@ export class PaymentsController {
   }
 
   @Post('capture-order')
-  @Roles(Role.USER)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Capture PayPal payment order' })
   @CapturePaymentApiResponses.Found('Captured PayPal payment order successfully')
   async captureOrder(

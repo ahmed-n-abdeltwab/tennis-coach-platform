@@ -1,5 +1,5 @@
-import { CurrentUser, JwtAuthGuard, JwtPayload } from '@common';
-import { Body, Controller, Delete, Param, Post, Request, UseGuards } from '@nestjs/common';
+import { CurrentUser, JwtPayload } from '@common';
+import { Body, Controller, Delete, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CalendarService } from './calendar.service';
@@ -15,20 +15,18 @@ export class CalendarController {
   constructor(private readonly calendarService: CalendarService) {}
 
   @Post('event')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create calendar event' })
   @CalendarEventApiResponse.Created('Calendar event successfully Created')
   async createEvent(
     @Body() createDto: CreateCalendarEventDto,
-    @Request() req
+    @CurrentUser() user: JwtPayload
   ): Promise<CalendarEventResponse> {
-    return this.calendarService.createEvent(createDto, req.user.id, req.user.role);
+    return this.calendarService.createEvent(createDto, user.sub, user.role);
   }
 
   @Delete('event/:eventId')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete calendar event' })
   @CalendarEventApiResponse.Deleted('Calendar event successfully Deleted')
   async deleteEvent(

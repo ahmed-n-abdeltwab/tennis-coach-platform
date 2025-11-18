@@ -1,7 +1,6 @@
-import { CurrentUser, JwtPayload, Roles } from '@common';
+import { CurrentUser, JwtPayload } from '@common';
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
 
 import {
   CreateMessageDto,
@@ -17,8 +16,7 @@ export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
 
   @Post()
-  @Roles(Role.USER, Role.PREMIUM_USER, Role.COACH, Role.ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create a new message' })
   @MessageApiResponses.Created('Message created successfully')
   async create(
@@ -29,8 +27,7 @@ export class MessagesController {
   }
 
   @Get()
-  @Roles(Role.USER, Role.PREMIUM_USER, Role.COACH, Role.ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get all messages for current user' })
   @MessageApiResponses.FoundMany('Messages retrieved successfully')
   async findAll(
@@ -41,8 +38,7 @@ export class MessagesController {
   }
 
   @Get('conversation/:userId')
-  @Roles(Role.USER, Role.PREMIUM_USER, Role.COACH, Role.ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get conversation with a specific user' })
   @MessageApiResponses.FoundMany('Conversation retrieved successfully')
   async findConversation(
@@ -53,8 +49,7 @@ export class MessagesController {
   }
 
   @Get('session/:sessionId')
-  @Roles(Role.USER, Role.PREMIUM_USER, Role.COACH, Role.ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get messages for a specific session' })
   @MessageApiResponses.FoundMany('Session messages retrieved successfully')
   async findBySession(
@@ -66,14 +61,13 @@ export class MessagesController {
   }
 
   @Get(':id')
-  @Roles(Role.USER, Role.PREMIUM_USER, Role.COACH, Role.ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get a single message by ID' })
   @MessageApiResponses.Found('Message retrieved successfully')
   async findOne(
     @Param('id') id: string,
-    @CurrentUser() user: JwtPayload
+    @CurrentUser('sub') userId: string
   ): Promise<MessageResponseDto> {
-    return this.messagesService.findOne(id, user.sub);
+    return this.messagesService.findOne(id, userId);
   }
 }

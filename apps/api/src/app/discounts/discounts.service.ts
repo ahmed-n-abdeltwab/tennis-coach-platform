@@ -7,7 +7,7 @@ import {
 
 import { PrismaService } from '../prisma/prisma.service';
 
-import { Discount } from '@prisma/client';
+import { plainToInstance } from 'class-transformer';
 import {
   CreateDiscountDto,
   DiscountResponseDto,
@@ -58,7 +58,7 @@ export class DiscountsService {
       },
     });
 
-    return discounts.map(discount => this.toResponseDto(discount));
+    return plainToInstance(DiscountResponseDto, discounts);
   }
 
   async create(createDto: CreateDiscountDto, coachId: string): Promise<DiscountResponseDto> {
@@ -87,8 +87,7 @@ export class DiscountsService {
         },
       },
     });
-
-    return this.toResponseDto(discount);
+    return plainToInstance(DiscountResponseDto, discount);
   }
 
   async update(
@@ -100,7 +99,7 @@ export class DiscountsService {
       where: { code },
     });
 
-    if (!discount) {
+    if (!discount || !discount.isActive) {
       throw new NotFoundException('Discount not found');
     }
 
@@ -124,8 +123,7 @@ export class DiscountsService {
         },
       },
     });
-
-    return this.toResponseDto(updated);
+    return plainToInstance(DiscountResponseDto, updated);
   }
 
   async remove(code: string, coachId: string): Promise<void> {
@@ -145,23 +143,5 @@ export class DiscountsService {
       where: { code },
       data: { isActive: false },
     });
-  }
-
-  private toResponseDto(
-    discount: Discount & { coach?: { id: string; name: string; email: string } }
-  ): DiscountResponseDto {
-    return {
-      id: discount.id,
-      code: discount.code,
-      amount: discount.amount.toString() as any,
-      expiry: discount.expiry.toISOString(),
-      useCount: discount.useCount,
-      maxUsage: discount.maxUsage,
-      isActive: discount.isActive,
-      coachId: discount.coachId,
-      createdAt: discount.createdAt.toISOString(),
-      updatedAt: discount.updatedAt.toISOString(),
-      coach: discount.coach,
-    };
   }
 }

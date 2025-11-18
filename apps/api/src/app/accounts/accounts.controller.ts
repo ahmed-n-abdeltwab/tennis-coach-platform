@@ -3,8 +3,6 @@ import { Body, Controller, Delete, Get, Param, Patch } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 
-import { Auth } from '../iam/authentication/decorators/auth.decorator';
-import { AuthType } from '../iam/authentication/enums/auth-type.enum';
 import { AccountsService } from './accounts.service';
 import { AccountApiResponses, AccountResponseDto, UpdateAccountDto } from './dto/account.dto';
 
@@ -14,18 +12,16 @@ export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
 
   @Get()
-  @Auth(AuthType.Bearer)
   @Roles(Role.ADMIN, Role.COACH)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get all accounts (admin only)' })
   @AccountApiResponses.FoundMany('Accounts retrieved successfully')
   async findAll(): Promise<AccountResponseDto[]> {
     // Return all accounts for admin
-    return this.accountsService.findUsers({});
+    return this.accountsService.findUsers();
   }
 
   @Get('me')
-  @Auth(AuthType.Bearer)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get current user account' })
   @AccountApiResponses.Found('Account retrieved successfully')
@@ -34,7 +30,6 @@ export class AccountsController {
   }
 
   @Get(':id')
-  @Auth(AuthType.Bearer)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get account by ID' })
   @AccountApiResponses.Found('Account retrieved successfully')
@@ -48,7 +43,6 @@ export class AccountsController {
   }
 
   @Patch(':id')
-  @Auth(AuthType.Bearer)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update account' })
   @AccountApiResponses.PartiallyUpdated('Account updated successfully')
@@ -63,7 +57,6 @@ export class AccountsController {
   }
 
   @Delete(':id')
-  @Auth(AuthType.Bearer)
   @Roles(Role.ADMIN, Role.COACH)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete account (admin only)' })

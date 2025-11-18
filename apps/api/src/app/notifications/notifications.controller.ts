@@ -2,7 +2,12 @@ import { CurrentUser, JwtPayload } from '@common';
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { MailApiResponse, MailResponse, SendEmailDto } from './dto/notification.dto';
+import {
+  MailApiResponse,
+  MailResponse,
+  SendBookingConfirmationDto,
+  SendEmailDto,
+} from './dto/notification.dto';
 import { NotificationsService } from './notifications.service';
 
 @ApiTags('notifications')
@@ -11,7 +16,7 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Post('email')
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Send email notification' })
   @MailApiResponse.Created('Email notification Created successfully')
   async sendEmail(
@@ -19,5 +24,15 @@ export class NotificationsController {
     @CurrentUser() user: JwtPayload
   ): Promise<MailResponse> {
     return this.notificationsService.sendEmail(emailDto, user.sub, user.role);
+  }
+
+  @Post('confirm')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Send email notification' })
+  @MailApiResponse.Created('Email notification Created successfully')
+  async sendBookingConfirmation(
+    @Body() BookingConfirmDto: SendBookingConfirmationDto
+  ): Promise<void> {
+    this.notificationsService.sendBookingConfirmation(BookingConfirmDto.sessionId);
   }
 }

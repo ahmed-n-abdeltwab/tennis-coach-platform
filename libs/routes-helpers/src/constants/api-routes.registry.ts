@@ -23,10 +23,6 @@ export interface Endpoints {
     PATCH: (body: { name?: string; gender?: "male" | "female" | "other"; age?: Record<string, unknown>; height?: Record<string, unknown>; weight?: Record<string, unknown>; disability?: boolean; disabilityCause?: Record<string, unknown>; country?: Record<string, unknown>; address?: Record<string, unknown>; notes?: Record<string, unknown>; bio?: string; credentials?: string; philosophy?: string; profileImage?: string }) => { id: string; createdAt: string; updatedAt: string; email: string; name: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH"; gender?: "male" | "female" | "other"; age?: Record<string, unknown>; height?: Record<string, unknown>; weight?: Record<string, unknown>; bio?: Record<string, unknown>; credentials?: Record<string, unknown>; philosophy?: Record<string, unknown>; profileImage?: Record<string, unknown>; disability?: Record<string, unknown>; disabilityCause?: Record<string, unknown>; country?: Record<string, unknown>; address?: Record<string, unknown>; notes?: Record<string, unknown>; isActive: boolean; isOnline: boolean };
   };
 
-  "/api/authentication/coach/login": {
-    POST: (body: { email: string; password: string }) => { accessToken: string; refreshToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" } };
-  };
-
   "/api/authentication/login": {
     POST: (body: { email: string; password: string }) => { accessToken: string; refreshToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" } };
   };
@@ -40,11 +36,7 @@ export interface Endpoints {
   };
 
   "/api/authentication/signup": {
-    POST: (body: { email: string; password: string; name: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" }) => { accessToken: string; refreshToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" } };
-  };
-
-  "/api/authentication/user/login": {
-    POST: (body: { email: string; password: string }) => { accessToken: string; refreshToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" } };
+    POST: (body: { email: string; password: string; name: string }) => { accessToken: string; refreshToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" } };
   };
 
   "/api/booking-types": {
@@ -117,6 +109,10 @@ export interface Endpoints {
     GET: (params: { id: string }) => { id: string; createdAt: string; updatedAt: string; content: string; sentAt: string; senderId: string; receiverId: string; sessionId?: Record<string, unknown>; senderType: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH"; receiverType: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH"; sender?: Record<string, unknown>; receiver?: Record<string, unknown> };
   };
 
+  "/api/notifications/confirm": {
+    POST: (body: { sessionId: string }) => { success: boolean; errors?: string[]; message_ids?: string[] };
+  };
+
   "/api/notifications/email": {
     POST: (body: { to: string; subject: string; text?: string; html?: string }) => { success: boolean; errors?: string[]; message_ids?: string[] };
   };
@@ -156,7 +152,7 @@ export interface Endpoints {
   "/api/time-slots/{id}": {
     DELETE: (body: undefined) => void;
     GET: (params: { id: string }) => { id: string; createdAt: string; updatedAt: string; coachId: string; dateTime: string; durationMin: number; isAvailable: boolean; coach?: { id: string; name: string; email: string } };
-    PATCH: (body: { dateTime?: string; durationMin?: number; isAvailable?: boolean }) => { id: string; createdAt: string; updatedAt: string; coachId: string; dateTime: string; durationMin: number; isAvailable: boolean; coach?: { id: string; name: string; email: string } };
+    PATCH: (body: { dateTime?: Record<string, unknown>; durationMin?: number; isAvailable?: boolean }) => { id: string; createdAt: string; updatedAt: string; coachId: string; dateTime: string; durationMin: number; isAvailable: boolean; coach?: { id: string; name: string; email: string } };
   };
 }
 

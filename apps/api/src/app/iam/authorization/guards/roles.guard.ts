@@ -16,8 +16,6 @@ export class RolesGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    console.log('[RolesGuard] Required roles:', requiredRoles);
-
     if (!requiredRoles) {
       return true;
     }
@@ -25,19 +23,11 @@ export class RolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user: JwtPayload = request[REQUEST_USER_KEY];
 
-    console.log('[RolesGuard] User from request:', user);
-    console.log(
-      '[RolesGuard] Request keys:',
-      Object.keys(request).filter(k => !k.startsWith('_'))
-    );
-
     if (!user) {
-      console.log('[RolesGuard] No user found, denying access');
       return false;
     }
 
     const hasRole = requiredRoles.some(role => user.role === role);
-    console.log('[RolesGuard] User role:', user.role, 'Has required role:', hasRole);
     return hasRole;
   }
 }

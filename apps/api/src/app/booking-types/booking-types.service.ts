@@ -2,7 +2,6 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 
 import { PrismaService } from '../prisma/prisma.service';
 
-import { BookingType } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 import {
   BookingTypeResponseDto,
@@ -14,23 +13,6 @@ import {
 @Injectable()
 export class BookingTypesService {
   constructor(private prisma: PrismaService) {}
-
-  /**
-   * Transform Prisma BookingType to BookingTypeResponseDto
-   * Handles Decimal to string conversion for basePrice
-   */
-  private toResponseDto(bookingType: BookingType): BookingTypeResponseDto {
-    return {
-      id: bookingType.id,
-      name: bookingType.name,
-      description: bookingType.description ?? undefined,
-      basePrice: bookingType.basePrice,
-      isActive: bookingType.isActive,
-      coachId: bookingType.coachId,
-      createdAt: bookingType.createdAt.toISOString(),
-      updatedAt: bookingType.updatedAt.toISOString(),
-    };
-  }
 
   async findAll(): Promise<GetAllBookingTypeResponseDto[]> {
     const data = await this.prisma.bookingType.findMany({
@@ -56,7 +38,7 @@ export class BookingTypesService {
       },
       orderBy: { createdAt: 'asc' },
     });
-    return bookingTypes.map(bookingType => this.toResponseDto(bookingType));
+    return plainToInstance(BookingTypeResponseDto, bookingTypes);
   }
 
   async findOne(id: string): Promise<BookingTypeResponseDto> {
@@ -68,7 +50,7 @@ export class BookingTypesService {
       throw new NotFoundException('Booking type not found');
     }
 
-    return this.toResponseDto(bookingType);
+    return plainToInstance(BookingTypeResponseDto, bookingType);
   }
 
   async create(createDto: CreateBookingTypeDto, coachId: string): Promise<BookingTypeResponseDto> {
@@ -78,7 +60,7 @@ export class BookingTypesService {
         coachId,
       },
     });
-    return this.toResponseDto(bookingType);
+    return plainToInstance(BookingTypeResponseDto, bookingType);
   }
 
   async update(
@@ -91,7 +73,7 @@ export class BookingTypesService {
       where: { id },
     });
 
-    if (!bookingType) {
+    if (!bookingType || !bookingType.isActive) {
       throw new NotFoundException('Booking type not found');
     }
 
@@ -104,7 +86,7 @@ export class BookingTypesService {
       data: updateDto,
     });
 
-    return this.toResponseDto(updatedBookingType);
+    return plainToInstance(BookingTypeResponseDto, updatedBookingType);
   }
 
   async remove(id: string, coachId: string): Promise<void> {

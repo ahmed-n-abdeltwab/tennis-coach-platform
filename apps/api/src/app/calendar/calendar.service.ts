@@ -9,7 +9,6 @@ import { CalendarEventResponse, CreateCalendarEventDto } from './dto/calendar.dt
 @Injectable()
 export class CalendarService {
   constructor(
-    private prisma: PrismaService,
     private sessionsService: SessionsService
   ) {}
 

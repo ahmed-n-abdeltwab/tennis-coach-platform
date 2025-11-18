@@ -4,13 +4,14 @@ import {
   ApiNotFoundResponse,
   CurrentUser,
   JwtPayload,
-  Public,
   Roles,
 } from '@common';
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 
+import { Auth } from '../iam/authentication/decorators/auth.decorator';
+import { AuthType } from '../iam/authentication/enums/auth-type.enum';
 import {
   CreateTimeSlotDto,
   GetTimeSlotsQuery,
@@ -26,7 +27,7 @@ export class TimeSlotsController {
   constructor(private readonly timeSlotsService: TimeSlotsService) {}
 
   @Get()
-  @Public()
+  @Auth(AuthType.None)
   @ApiOperation({ summary: 'Get available time slots' })
   @TimeSlotApiResponses.FoundMany('Available time slots retrieved successfully')
   async findAvailable(@Query() query: GetTimeSlotsQuery): Promise<TimeSlotResponseDto[]> {
@@ -34,7 +35,7 @@ export class TimeSlotsController {
   }
 
   @Get('coach/:coachId')
-  @Public()
+  @Auth(AuthType.None)
   @ApiOperation({ summary: 'Get time slots for specific coach' })
   @TimeSlotApiResponses.FoundMany('Coach time slots retrieved successfully')
   @ApiNotFoundResponse('Coach not found')
@@ -46,7 +47,7 @@ export class TimeSlotsController {
   }
 
   @Get(':id')
-  @Public()
+  @Auth(AuthType.None)
   @ApiOperation({ summary: 'Get time slot by ID' })
   @TimeSlotApiResponses.Found('Time slot retrieved successfully')
   @ApiNotFoundResponse('Time slot not found')
@@ -56,7 +57,7 @@ export class TimeSlotsController {
 
   @Post()
   @Roles(Role.COACH)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create new time slot (coach only)' })
   @TimeSlotApiResponses.Created('Time slot created successfully')
   @ApiForbiddenResponse('Only coaches can create time slots')
@@ -69,7 +70,7 @@ export class TimeSlotsController {
 
   @Patch(':id')
   @Roles(Role.COACH)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update time slot (coach only)' })
   @TimeSlotApiResponses.PartiallyUpdated('Time slot updated successfully')
   @ApiForbiddenResponse('Only coaches can update time slots')
@@ -77,14 +78,14 @@ export class TimeSlotsController {
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateTimeSlotDto,
-    @CurrentUser() user: JwtPayload
+    @CurrentUser('sub') coachId: string
   ): Promise<TimeSlotResponseDto> {
-    return this.timeSlotsService.update(id, updateDto);
+    return this.timeSlotsService.update(id, updateDto, coachId);
   }
 
   @Delete(':id')
   @Roles(Role.COACH)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete time slot (coach only)' })
   @TimeSlotApiResponses.Deleted('Time slot deleted successfully')
   @ApiForbiddenResponse('Only coaches can delete time slots')

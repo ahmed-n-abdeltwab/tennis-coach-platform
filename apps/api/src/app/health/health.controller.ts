@@ -1,6 +1,8 @@
 import { applyDecorators, Controller, Get } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { Auth } from '../iam/authentication/decorators/auth.decorator';
+import { AuthType } from '../iam/authentication/enums/auth-type.enum';
 import {
   CheckHealthApiResponses,
   CheckHealthDto,
@@ -13,6 +15,7 @@ import { HealthService } from './health.service';
 
 @ApiTags('health')
 @Controller('health')
+@Auth(AuthType.None)
 export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 

@@ -2,7 +2,7 @@ import { JwtPayload } from '@common';
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 
-import { CurrentUser, JwtRefreshGuard } from '@common';
+import { CurrentUser } from '@common';
 
 import { AuthenticationService } from './authentication.service';
 import { Auth } from './decorators/auth.decorator';
@@ -16,6 +16,7 @@ import {
   SignUpDto,
 } from './dto';
 import { AuthType } from './enums/auth-type.enum';
+import { JwtRefreshGuard } from './guards/jwt-refresh/jwt-refresh.guard';
 
 @Controller('authentication')
 export class AuthenticationController {
@@ -49,7 +50,6 @@ export class AuthenticationController {
     return this.authenticationService.refreshToken(user);
   }
 
-  @Auth(AuthType.Bearer)
   @Post('logout')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Logout and invalidate refresh tokens' })

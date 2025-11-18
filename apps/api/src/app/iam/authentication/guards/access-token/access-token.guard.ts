@@ -22,22 +22,15 @@ export class AccessTokenGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    console.log('[AccessTokenGuard] All headers:', JSON.stringify(request.headers, null, 2));
-    console.log('[AccessTokenGuard] Authorization header:', request.headers.authorization);
-    console.log('[AccessTokenGuard] Request method:', request.method);
-    console.log('[AccessTokenGuard] Request URL:', request.url);
+
     const token = this.extractTokenFromHeader(request);
-    console.log('[AccessTokenGuard] Token extracted:', token ? 'YES' : 'NO');
     if (!token) {
       throw new UnauthorizedException('No token found');
     }
     try {
       const payload = await this.jwtService.verifyAsync(token, this.jwtConfiguration);
-      console.log('[AccessTokenGuard] Token verified, payload:', payload);
       request[REQUEST_USER_KEY] = payload;
-      console.log('[AccessTokenGuard] User set in request:', request[REQUEST_USER_KEY]);
-    } catch (err: any) {
-      console.log('[AccessTokenGuard] Token verification failed:', err.message);
+    } catch {
       throw new UnauthorizedException('Invalid token');
     }
     return true;

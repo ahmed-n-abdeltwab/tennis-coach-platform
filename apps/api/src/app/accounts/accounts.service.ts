@@ -35,10 +35,15 @@ export class AccountsService {
   /**
    * Find account by email
    */
-  async findByEmail(email: string): Promise<Account | null> {
-    return this.prisma.account.findUnique({
+  async findByEmail(email: string): Promise<AccountResponseDto> {
+    const account = await this.prisma.account.findUnique({
       where: { email },
     });
+    if (!account) {
+      throw new NotFoundException('Account not found');
+    }
+
+    return this.toResponseDto(account);
   }
 
   /**
@@ -59,10 +64,15 @@ export class AccountsService {
   /**
    * Find accounts by role
    */
-  async findByRole(role: Role): Promise<Account[]> {
-    return this.prisma.account.findMany({
+  async findByRole(role: Role): Promise<AccountResponseDto[]> {
+    const accounts = await this.prisma.account.findMany({
       where: { role },
     });
+    if (!accounts) {
+      throw new NotFoundException('Account not found');
+    }
+
+    return accounts.map(account => this.toResponseDto(account));
   }
 
   /**
@@ -113,13 +123,11 @@ export class AccountsService {
   /**
    * Find all users with optional filters
    */
-  async findUsers(filters?: { role?: Role; isActive?: boolean }): Promise<AccountResponseDto[]> {
-    const roleFilter = filters?.role || { in: [Role.USER, Role.PREMIUM_USER] };
-
+  async findUsers(isActive: boolean = true): Promise<AccountResponseDto[]> {
     const accounts = await this.prisma.account.findMany({
       where: {
-        role: roleFilter,
-        isActive: filters?.isActive,
+        role: { in: [Role.USER, Role.PREMIUM_USER] },
+        isActive,
       },
     });
 

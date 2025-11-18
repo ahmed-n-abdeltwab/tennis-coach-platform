@@ -386,7 +386,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
      * // Role-protected endpoint
      * @Get('admin/users')
      * @Roles(Role.ADMIN)
-     * @ApiBearerAuth()
+     * @ApiBearerAuth('JWT-auth')
      * @applyDecorators(
      *   UserApiResponses.FoundMany('All users retrieved'),
      *   UserApiResponses.errors.Forbidden('Only admins can access this endpoint')
@@ -596,7 +596,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
      * ```typescript
      * @Patch(':id')
      * @Roles(Role.COACH)
-     * @ApiBearerAuth()
+     * @ApiBearerAuth('JWT-auth')
      * @BookingTypeApiResponses.PartiallyUpdated('Booking type updated')
      * async partialUpdate(
      *   @Param('id') id: string,
@@ -642,7 +642,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
      * ```typescript
      * @Delete(':id')
      * @Roles(Role.ADMIN)
-     * @ApiBearerAuth()
+     * @ApiBearerAuth('JWT-auth')
      * @TimeSlotApiResponses.NoContent('Time slot deleted')
      * async remove(@Param('id') id: string): Promise<void> {
      *   await this.timeSlotsService.remove(id);
@@ -674,7 +674,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
      * ```typescript
      * @Post('bulk')
      * @Roles(Role.ADMIN)
-     * @ApiBearerAuth()
+     * @ApiBearerAuth('JWT-auth')
      * @DiscountApiResponses.BulkCreated('Discounts created successfully')
      * async createBulk(@Body() createDtos: CreateDiscountDto[]) {
      *   return this.discountsService.createBulk(createDtos);
@@ -707,7 +707,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
      * ```typescript
      * @Patch('bulk')
      * @Roles(Role.ADMIN)
-     * @ApiBearerAuth()
+     * @ApiBearerAuth('JWT-auth')
      * @SessionApiResponses.BulkUpdated('Sessions updated successfully')
      * async updateBulk(@Body() updateDtos: UpdateSessionDto[]) {
      *   return this.sessionsService.updateBulk(updateDtos);
@@ -743,7 +743,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
      * ```typescript
      * @Delete('bulk')
      * @Roles(Role.ADMIN)
-     * @ApiBearerAuth()
+     * @ApiBearerAuth('JWT-auth')
      * @TimeSlotApiResponses.BulkDeleted('Time slots deleted')
      * async deleteBulk(@Body() ids: string[]) {
      *   return this.timeSlotsService.deleteBulk(ids);
@@ -789,7 +789,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
      * ```typescript
      * @Post('import')
      * @Roles(Role.ADMIN)
-     * @ApiBearerAuth()
+     * @ApiBearerAuth('JWT-auth')
      * @SessionApiResponses.Accepted('Import started', ImportStatusDto)
      * async importSessions(@Body() importDto: ImportSessionsDto) {
      *   return this.sessionsService.startImport(importDto);
@@ -801,7 +801,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
      * // Using default OperationStatusDto
      * @Post('export')
      * @Roles(Role.COACH)
-     * @ApiBearerAuth()
+     * @ApiBearerAuth('JWT-auth')
      * @SessionApiResponses.Accepted('Export job queued')
      * async exportSessions(@Body() exportDto: ExportSessionsDto) {
      *   return this.sessionsService.startExport(exportDto);

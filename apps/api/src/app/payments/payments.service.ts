@@ -5,7 +5,12 @@ import { TimeSlotsService } from './../time-slots/time-slots.service';
 
 import { Role } from '@prisma/client';
 import paymentsConfig from './config/payments.config';
-import { CapturePaymentDto, CapturePaymentResponses, CreateOrderResponses, CreatePaymentDto } from './dto/payment.dto';
+import {
+  CapturePaymentDto,
+  CapturePaymentResponses,
+  CreateOrderResponses,
+  CreatePaymentDto,
+} from './dto/payment.dto';
 
 @Injectable()
 export class PaymentsService {
@@ -79,7 +84,10 @@ export class PaymentsService {
     };
   }
 
-  async captureOrder(captureDto: CapturePaymentDto, userId: string): Promise<CapturePaymentResponses> {
+  async captureOrder(
+    captureDto: CapturePaymentDto,
+    userId: string
+  ): Promise<CapturePaymentResponses> {
     const { orderId, sessionId } = captureDto;
 
     // Verify session
@@ -116,7 +124,7 @@ export class PaymentsService {
     );
 
     // Mark time slot as unavailable
-    await this.timeSlotsService.update(session.timeSlotId, { isAvailable: false });
+    await this.timeSlotsService.update(session.timeSlotId, { isAvailable: false }, session.coachId);
 
     return {
       success: true,

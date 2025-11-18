@@ -1,7 +1,6 @@
-import { CurrentUser, JwtPayload, Roles } from '@common';
+import { CurrentUser, JwtPayload } from '@common';
 import { Body, Controller, Get, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
 
 import {
   CreateSessionDto,
@@ -18,8 +17,7 @@ export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
 
   @Get()
-  @Roles(Role.USER, Role.COACH)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get user sessions with pagination' })
   @SessionApiResponses.Paginated('Sessions retrieved successfully with pagination')
   async findByUser(
@@ -30,8 +28,7 @@ export class SessionsController {
   }
 
   @Get(':id')
-  @Roles(Role.USER, Role.COACH)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get session by ID' })
   @SessionApiResponses.Found('Session retrieved successfully')
   async findOne(
@@ -42,8 +39,7 @@ export class SessionsController {
   }
 
   @Post()
-  @Roles(Role.USER)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create new session booking' })
   @SessionApiResponses.Created('Session created successfully')
   async create(
@@ -54,8 +50,7 @@ export class SessionsController {
   }
 
   @Put(':id')
-  @Roles(Role.USER, Role.COACH)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update session' })
   @SessionApiResponses.Updated('Session updated successfully')
   async update(
@@ -67,8 +62,7 @@ export class SessionsController {
   }
 
   @Patch(':id')
-  @Roles(Role.USER, Role.COACH)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Partially update session' })
   @SessionApiResponses.PartiallyUpdated('Session partially updated successfully')
   async partialUpdate(
@@ -80,8 +74,7 @@ export class SessionsController {
   }
 
   @Put(':id/cancel')
-  @Roles(Role.USER, Role.COACH)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Cancel session' })
   @SessionApiResponses.Updated('Session cancelled successfully')
   async cancel(

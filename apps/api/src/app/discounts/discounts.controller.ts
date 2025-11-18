@@ -1,7 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { CurrentUser } from '@common';
+import { CurrentUser, Roles } from '@common';
+import { Role } from '@prisma/client';
 import { DiscountsService } from './discounts.service';
 import {
   CreateDiscountDto,
@@ -19,7 +20,7 @@ export class DiscountsController {
   constructor(private readonly discountsService: DiscountsService) {}
 
   @Post('validate')
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Validate discount code' })
   @ValidateDiscountApiResponses.Found('Discount code validated successfully')
   async validate(@Body() validateDto: ValidateDiscountDto): Promise<ValidateDiscountResponseDto> {
@@ -27,15 +28,17 @@ export class DiscountsController {
   }
 
   @Get('coach')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all discounts for the authenticated coach' })
+  @Roles(Role.ADMIN, Role.COACH)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get all discounts for the authenticated coach (only coach)' })
   @DiscountApiResponses.FoundMany('Coach discounts retrieved successfully')
   async findByCoach(@CurrentUser('sub') id: string): Promise<DiscountResponseDto[]> {
     return this.discountsService.findByCoach(id);
   }
 
   @Post()
-  @ApiBearerAuth()
+  @Roles(Role.ADMIN, Role.COACH)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create a new discount code' })
   @DiscountApiResponses.Created('Discount created successfully')
   async create(
@@ -46,7 +49,8 @@ export class DiscountsController {
   }
 
   @Put(':code')
-  @ApiBearerAuth()
+  @Roles(Role.ADMIN, Role.COACH)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update an existing discount code' })
   @DiscountApiResponses.Updated('Discount updated successfully')
   async update(
@@ -58,7 +62,8 @@ export class DiscountsController {
   }
 
   @Delete(':code')
-  @ApiBearerAuth()
+  @Roles(Role.ADMIN, Role.COACH)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete a discount code' })
   @DiscountApiResponses.NoContent('Discount deleted successfully')
   async remove(@Param('code') code: string, @CurrentUser('sub') id: string): Promise<void> {

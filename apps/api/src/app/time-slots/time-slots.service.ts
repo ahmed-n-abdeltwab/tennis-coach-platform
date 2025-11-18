@@ -1,8 +1,8 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { TimeSlot } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 
+import { plainToInstance } from 'class-transformer';
 import {
   CreateTimeSlotDto,
   GetTimeSlotsQuery,
@@ -37,8 +37,7 @@ export class TimeSlotsService {
       },
       orderBy: { dateTime: 'asc' },
     });
-
-    return timeSlots.map(timeSlot => this.toResponseDto(timeSlot));
+    return plainToInstance(TimeSlotResponseDto, timeSlots);
   }
 
   async findByCoach(coachId: string, query: GetTimeSlotsQuery): Promise<TimeSlotResponseDto[]> {
@@ -54,8 +53,7 @@ export class TimeSlotsService {
       },
       orderBy: { dateTime: 'asc' },
     });
-
-    return timeSlots.map(timeSlot => this.toResponseDto(timeSlot));
+    return plainToInstance(TimeSlotResponseDto, timeSlots);
   }
 
   async findAll(): Promise<TimeSlotResponseDto[]> {
@@ -71,8 +69,7 @@ export class TimeSlotsService {
       },
       orderBy: { dateTime: 'asc' },
     });
-
-    return timeSlots.map(timeSlot => this.toResponseDto(timeSlot));
+    return plainToInstance(TimeSlotResponseDto, timeSlots);
   }
 
   async findOne(id: string): Promise<TimeSlotResponseDto> {
@@ -92,24 +89,31 @@ export class TimeSlotsService {
     if (!timeSlot) {
       throw new NotFoundException(`Time slot with ID ${id} not found`);
     }
-
-    return this.toResponseDto(timeSlot);
+    return plainToInstance(TimeSlotResponseDto, timeSlot);
   }
 
-  async update(id: string, updateDto: UpdateTimeSlotDto): Promise<TimeSlotResponseDto> {
-    const updatedData: any = { ...updateDto };
-
-    // Convert dateTime string to Date if provided
-    if (updateDto.dateTime) {
-      updatedData.dateTime = new Date(updateDto.dateTime);
-    }
-
-    const timeSlot = await this.prisma.timeSlot.update({
+  async update(
+    id: string,
+    updateDto: UpdateTimeSlotDto,
+    coachId: string
+  ): Promise<TimeSlotResponseDto> {
+    const timeSlot = await this.prisma.timeSlot.findUnique({
       where: { id },
-      data: updatedData,
     });
 
-    return this.toResponseDto(timeSlot);
+    if (!timeSlot) {
+      throw new NotFoundException('Discount not found');
+    }
+
+    if (timeSlot.coachId !== coachId) {
+      throw new ForbiddenException('Not authorized to update this time slot');
+    }
+
+    const updatedTimeSlot = await this.prisma.timeSlot.update({
+      where: { id },
+      data: updateDto,
+    });
+    return plainToInstance(TimeSlotResponseDto, updatedTimeSlot);
   }
 
   async create(createDto: CreateTimeSlotDto, coachId: string): Promise<TimeSlotResponseDto> {
@@ -120,8 +124,7 @@ export class TimeSlotsService {
         coachId,
       },
     });
-
-    return this.toResponseDto(timeSlot);
+    return plainToInstance(TimeSlotResponseDto, timeSlot);
   }
 
   async remove(id: string, coachId: string): Promise<void> {
@@ -141,26 +144,5 @@ export class TimeSlotsService {
     await this.prisma.timeSlot.delete({
       where: { id },
     });
-  }
-
-  private toResponseDto(
-    timeSlot: TimeSlot & { coach?: { id: string; name: string; email: string } }
-  ): TimeSlotResponseDto {
-    return {
-      id: timeSlot.id,
-      coachId: timeSlot.coachId,
-      dateTime: timeSlot.dateTime.toISOString(),
-      durationMin: timeSlot.durationMin,
-      isAvailable: timeSlot.isAvailable,
-      createdAt: timeSlot.createdAt.toISOString(),
-      updatedAt: timeSlot.updatedAt.toISOString(),
-      coach: timeSlot.coach
-        ? {
-            id: timeSlot.coach.id,
-            name: timeSlot.coach.name,
-            email: timeSlot.coach.email,
-          }
-        : undefined,
-    };
   }
 }

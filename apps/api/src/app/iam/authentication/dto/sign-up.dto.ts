@@ -23,9 +23,6 @@ export class SignUpDto extends BaseAuthDto {
   @IsString()
   @IsNotEmpty()
   name: string;
-
-  @ApiProperty({ enum: Role, example: Role.USER })
-  role: Role;
 }
 
 // ===========================================

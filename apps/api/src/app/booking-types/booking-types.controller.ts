@@ -1,4 +1,4 @@
-import { CurrentUser, JwtPayload, Public, Roles } from '@common';
+import { CurrentUser, Roles } from '@common';
 import {
   Body,
   Controller,
@@ -13,6 +13,8 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 
+import { Auth } from '../iam/authentication/decorators/auth.decorator';
+import { AuthType } from '../iam/authentication/enums/auth-type.enum';
 import { BookingTypesService } from './booking-types.service';
 import {
   BookingTypeApiResponses,
@@ -29,7 +31,7 @@ export class BookingTypesController {
   constructor(private readonly bookingTypesService: BookingTypesService) {}
 
   @Get()
-  @Public()
+  @Auth(AuthType.None)
   @ApiOperation({ summary: 'Get all active booking types' })
   @GetAllBookingTypeApiResponses.FoundMany('Booking Types retrieved successfully')
   async findAll(): Promise<GetAllBookingTypeResponseDto[]> {
@@ -37,7 +39,7 @@ export class BookingTypesController {
   }
 
   @Get('coach/:coachId')
-  @Public()
+  @Auth(AuthType.None)
   @ApiOperation({ summary: 'Get booking types for specific coach' })
   @BookingTypeApiResponses.FoundMany("Coach's Booking Types retrieved successfully")
   async findByCoach(@Param('coachId') coachId: string): Promise<BookingTypeResponseDto[]> {
@@ -45,7 +47,7 @@ export class BookingTypesController {
   }
 
   @Get(':id')
-  @Public()
+  @Auth(AuthType.None)
   @ApiOperation({ summary: 'Get booking type by ID' })
   @BookingTypeApiResponses.Found('Booking Type retrieved successfully')
   async findOne(@Param('id') id: string): Promise<BookingTypeResponseDto> {
@@ -53,46 +55,46 @@ export class BookingTypesController {
   }
 
   @Post()
-  @Roles(Role.COACH)
-  @ApiBearerAuth()
+  @Roles(Role.COACH, Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create new booking type (coach only)' })
   @BookingTypeApiResponses.Created('Booking Types created successfully')
   async create(
     @Body() createDto: CreateBookingTypeDto,
-    @CurrentUser() user: JwtPayload
+    @CurrentUser('sub') userId: string
   ): Promise<BookingTypeResponseDto> {
-    return this.bookingTypesService.create(createDto, user.sub);
+    return this.bookingTypesService.create(createDto, userId);
   }
 
   @Put(':id')
   @Roles(Role.COACH, Role.ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update booking type (coach only)' })
   @BookingTypeApiResponses.Updated('Booking Types updated successfully')
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateBookingTypeDto,
-    @CurrentUser() user: JwtPayload
+    @CurrentUser('sub') userId: string
   ): Promise<BookingTypeResponseDto> {
-    return this.bookingTypesService.update(id, updateDto, user.sub);
+    return this.bookingTypesService.update(id, updateDto, userId);
   }
 
   @Patch(':id')
   @Roles(Role.COACH, Role.ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Partially update booking type (coach only)' })
   @BookingTypeApiResponses.PartiallyUpdated('Booking type partially updated successfully')
   async partialUpdate(
     @Param('id') id: string,
     @Body() updateDto: UpdateBookingTypeDto,
-    @CurrentUser() user: JwtPayload
+    @CurrentUser('sub') userId: string
   ): Promise<BookingTypeResponseDto> {
-    return this.bookingTypesService.update(id, updateDto, user.sub);
+    return this.bookingTypesService.update(id, updateDto, userId);
   }
 
   @Delete(':id')
   @Roles(Role.COACH, Role.ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete booking type (coach only)' })
   @applyDecorators(
     BookingTypeApiResponses.NoContent('Booking type deleted successfully'),
@@ -101,7 +103,7 @@ export class BookingTypesController {
     ),
     BookingTypeApiResponses.errors.Conflict('Cannot delete booking type with active sessions')
   )
-  async remove(@Param('id') id: string, @CurrentUser() user: JwtPayload): Promise<void> {
-    return this.bookingTypesService.remove(id, user.sub);
+  async remove(@Param('id') id: string, @CurrentUser('sub') userId: string): Promise<void> {
+    return this.bookingTypesService.remove(id, userId);
   }
 }
