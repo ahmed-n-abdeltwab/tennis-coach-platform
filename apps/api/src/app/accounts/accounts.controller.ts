@@ -3,6 +3,8 @@ import { Body, Controller, Delete, Get, Param, Patch } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 
+import { Auth } from '../iam/authentication/decorators/auth.decorator';
+import { AuthType } from '../iam/authentication/enums/auth-type.enum';
 import { AccountsService } from './accounts.service';
 import { AccountApiResponses, AccountResponseDto, UpdateAccountDto } from './dto/account.dto';
 
@@ -12,8 +14,9 @@ export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
 
   @Get()
+  @Auth(AuthType.Bearer)
   @Roles(Role.ADMIN, Role.COACH)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get all accounts (admin only)' })
   @AccountApiResponses.FoundMany('Accounts retrieved successfully')
   async findAll(): Promise<AccountResponseDto[]> {
@@ -22,7 +25,8 @@ export class AccountsController {
   }
 
   @Get('me')
-  @ApiBearerAuth()
+  @Auth(AuthType.Bearer)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get current user account' })
   @AccountApiResponses.Found('Account retrieved successfully')
   async getMe(@CurrentUser() user: JwtPayload): Promise<AccountResponseDto> {
@@ -30,7 +34,8 @@ export class AccountsController {
   }
 
   @Get(':id')
-  @ApiBearerAuth()
+  @Auth(AuthType.Bearer)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get account by ID' })
   @AccountApiResponses.Found('Account retrieved successfully')
   async findOne(
@@ -43,7 +48,8 @@ export class AccountsController {
   }
 
   @Patch(':id')
-  @ApiBearerAuth()
+  @Auth(AuthType.Bearer)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update account' })
   @AccountApiResponses.PartiallyUpdated('Account updated successfully')
   async update(
@@ -57,8 +63,9 @@ export class AccountsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
-  @ApiBearerAuth()
+  @Auth(AuthType.Bearer)
+  @Roles(Role.ADMIN, Role.COACH)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete account (admin only)' })
   @AccountApiResponses.NoContent('Account deleted successfully')
   async delete(@Param('id') id: string): Promise<void> {

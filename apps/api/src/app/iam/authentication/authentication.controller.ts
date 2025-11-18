@@ -1,7 +1,6 @@
-import { JwtPayload, Roles } from '@common';
+import { JwtPayload } from '@common';
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
 
 import { CurrentUser, JwtRefreshGuard } from '@common';
 
@@ -28,21 +27,6 @@ export class AuthenticationController {
   @AuthApiResponses.Created('User successfully registered')
   async signup(@Body() signupDto: SignUpDto): Promise<AuthResponseDto> {
     return this.authenticationService.signup(signupDto);
-  }
-
-  @Post('user/login')
-  @Roles(Role.USER, Role.PREMIUM_USER)
-  @ApiOperation({ summary: 'User login' })
-  @AuthApiResponses.Found('User successfully Login')
-  async userLogin(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
-    return this.authenticationService.loginUser(loginDto);
-  }
-
-  @Post('coach/login')
-  @ApiOperation({ summary: 'Coach login' })
-  @AuthApiResponses.Found('Coach successfully Login')
-  async coachLogin(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
-    return this.authenticationService.loginCoach(loginDto);
   }
 
   @Auth(AuthType.None)

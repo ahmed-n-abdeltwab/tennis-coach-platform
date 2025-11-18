@@ -41,14 +41,6 @@ export class AuthenticationService {
     return this.generateTokens({ sub: account.id, email: account.email, role: account.role });
   }
 
-  async loginUser(loginDto: LoginDto): Promise<AuthResponseDto> {
-    return this.login(loginDto, [Role.USER, Role.PREMIUM_USER]);
-  }
-
-  async loginCoach(loginDto: LoginDto): Promise<AuthResponseDto> {
-    return this.login(loginDto, [Role.COACH, Role.ADMIN]);
-  }
-
   async login(loginDto: LoginDto, allowedRoles?: Role[]): Promise<AuthResponseDto> {
     const account = await this.prisma.account.findUnique({
       where: { email: loginDto.email },
@@ -97,44 +89,10 @@ export class AuthenticationService {
   }
 
   async refreshToken(user: JwtPayload): Promise<RefreshResponseDto> {
-    // Generate new refresh token ID
-    const newRefreshTokenId = randomUUID();
-
-    const payload = {
-      email: user.email,
-      role: user.role,
-    };
-
-    const [accessToken, refreshToken] = await Promise.all([
-      this.signToken<Partial<JwtPayload>>(
-        user.sub,
-        this.jwtConfiguration.signOptions.expiresIn,
-        payload,
-        this.jwtConfiguration.secret
-      ),
-      this.signToken(
-        user.sub,
-        this.refreshTokenTtl,
-        { refreshTokenId: newRefreshTokenId },
-        this.refreshSecret
-      ),
-    ]);
-
-    // Store new refresh token ID in Redis
-    await this.redis.set(user.sub, newRefreshTokenId, this.refreshTokenTtl);
-
-    return {
-      accessToken,
-      refreshToken,
-      account: {
-        id: user.sub,
-        email: user.email,
-        role: user.role,
-      },
-    };
+    return this.generateTokens(user);
   }
 
-  async generateTokens(payload: JwtPayload): Promise<AuthResponseDto> {
+  private async generateTokens(payload: JwtPayload): Promise<AuthResponseDto> {
     const refreshTokenId = randomUUID();
     const [accessToken, refreshToken] = await Promise.all([
       this.signToken<Partial<JwtPayload>>(
