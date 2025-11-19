@@ -278,14 +278,21 @@ export class DatabaseSeeder {
       },
     ];
 
-    for (const coach of coaches) {
+    for (let coachIndex = 0; coachIndex < coaches.length; coachIndex++) {
+      const coach = coaches[coachIndex];
+      if (!coach) throw new Error('can"t seed database with coach undefined');
       for (const discountInfo of discountData) {
         const expiry = new Date();
         expiry.setDate(expiry.getDate() + (discountInfo.isActive ? 30 : -30));
 
+        // Make discount code unique per coach by appending coach index
+        const uniqueCode =
+          coaches.length > 1 ? `${discountInfo.code}_C${coachIndex + 1}` : discountInfo.code;
+
         const discount: Discount = await this.client.discount.create({
           data: {
             ...discountInfo,
+            code: uniqueCode,
             expiry,
             coachId: coach.id,
           },

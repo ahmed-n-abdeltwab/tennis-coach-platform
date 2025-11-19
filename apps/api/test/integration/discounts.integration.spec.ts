@@ -11,6 +11,11 @@ import { DiscountsModule } from '../../src/app/discounts/discounts.module';
 import { DiscountsService } from '../../src/app/discounts/discounts.service';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
 import { PrismaService } from '../../src/app/prisma/prisma.service';
+import { BaseIntegrationTest } from '../utils';
+
+class DiscountsIntegrationTest extends BaseIntegrationTest {
+  // Test data
+}
 
 describe('Discounts Integration', () => {
   let app: INestApplication;

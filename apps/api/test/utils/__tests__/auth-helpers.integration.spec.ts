@@ -3,54 +3,57 @@
  * Verifies that helpers work correctly with the actual authentication system
  */
 
-import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { Test, TestingModule } from '@nestjs/testing';
 import { Role } from '@prisma/client';
 import { parseJwtTime } from '@utils';
 
 import { AuthTestHelper } from '../auth';
+import { BaseIntegrationTest } from '../base/base-integration.test';
 import { UserRoleHelper } from '../roles';
 
+class AuthHelpersIntegrationTest extends BaseIntegrationTest {
+  authHelper: AuthTestHelper;
+  userRoleHelper: UserRoleHelper;
+
+  async setupTestApp(): Promise<void> {
+    this.authHelper = new AuthTestHelper();
+    this.userRoleHelper = new UserRoleHelper();
+  }
+
+  getTestModules(): any[] {
+    return [
+      ConfigModule.forRoot({
+        isGlobal: true,
+      }),
+      JwtModule.register({
+        secret: process.env.JWT_SECRET ?? 'test-secret',
+        signOptions: { expiresIn: parseJwtTime(process.env.JWT_EXPIRES_IN, '24h') },
+      }),
+    ];
+  }
+
+  override async seedTestData(): Promise<void> {
+    // No database seeding needed for helper tests
+  }
+}
+
 describe('Auth Helpers Integration Tests', () => {
-  let app: INestApplication;
-  let authHelper: AuthTestHelper;
-  // let httpHelper: TypeSafeHttpClient;
-  // let protectedRouteHelper: ProtectedRouteTester;
-  let userRoleHelper: UserRoleHelper;
+  let testInstance: AuthHelpersIntegrationTest;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-        }),
-        JwtModule.register({
-          secret: process.env.JWT_SECRET ?? 'test-secret',
-          signOptions: { expiresIn: parseJwtTime(process.env.JWT_EXPIRES_IN, '24h') },
-        }),
-      ],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-
-    // Initialize helpers
-    authHelper = new AuthTestHelper();
-    // httpHelper = new TypeSafeHttpClient(app);
-    // protectedRouteHelper = new ProtectedRouteTester(app);
-    userRoleHelper = new UserRoleHelper();
+    testInstance = new AuthHelpersIntegrationTest();
+    await testInstance.setup();
   });
 
   afterAll(async () => {
-    await app.close();
+    await testInstance.cleanup();
   });
 
   describe('AuthTestHelper Integration', () => {
     it('should create valid JWT tokens', () => {
-      const userToken = authHelper.createUserToken();
-      const coachToken = authHelper.createCoachToken();
+      const userToken = testInstance.authHelper.createUserToken();
+      const coachToken = testInstance.authHelper.createCoachToken();
 
       expect(userToken).toBeDefined();
       expect(coachToken).toBeDefined();
@@ -69,8 +72,8 @@ describe('Auth Helpers Integration Tests', () => {
         role: Role.USER,
       };
 
-      const token = authHelper.createToken(customPayload);
-      const decodedPayload = authHelper.decodeToken(token);
+      const token = testInstance.authHelper.createToken(customPayload);
+      const decodedPayload = testInstance.authHelper.decodeToken(token);
 
       expect(decodedPayload).toBeDefined();
       expect(decodedPayload?.sub).toBe(customPayload.sub);
@@ -78,17 +81,17 @@ describe('Auth Helpers Integration Tests', () => {
       expect(decodedPayload?.role).toBe(customPayload.role);
     });
 
-    it('should create expired tokens that fail verification', () => {
-      const expiredToken = authHelper.createExpiredToken();
-      const verificationResult = authHelper.verifyToken(expiredToken);
+    it('should create expired tokens that fail verification', async () => {
+      const expiredToken = testInstance.authHelper.createExpiredToken();
+      const verificationResult = await testInstance.authHelper.verifyToken(expiredToken);
 
       expect(expiredToken).toBeDefined();
       expect(verificationResult).toBeNull(); // Should fail verification
     });
 
     it('should create proper Authorization headers', () => {
-      const userHeaders = authHelper.createUserAuthHeaders();
-      const coachHeaders = authHelper.createCoachAuthHeaders();
+      const userHeaders = testInstance.authHelper.createUserAuthHeaders();
+      const coachHeaders = testInstance.authHelper.createCoachAuthHeaders();
 
       expect(userHeaders.Authorization).toMatch(/^Bearer .+/);
       expect(coachHeaders.Authorization).toMatch(/^Bearer .+/);
@@ -97,8 +100,8 @@ describe('Auth Helpers Integration Tests', () => {
       const userToken = userHeaders.Authorization.replace('Bearer ', '');
       const coachToken = coachHeaders.Authorization.replace('Bearer ', '');
 
-      const userPayload = authHelper.decodeToken(userToken);
-      const coachPayload = authHelper.decodeToken(coachToken);
+      const userPayload = testInstance.authHelper.decodeToken(userToken);
+      const coachPayload = testInstance.authHelper.decodeToken(coachToken);
 
       expect(userPayload?.role).toBe(Role.USER);
       expect(coachPayload?.role).toBe(Role.COACH);
@@ -107,8 +110,8 @@ describe('Auth Helpers Integration Tests', () => {
 
   describe('UserRoleTestHelper Integration', () => {
     it('should create consistent test data for different roles', () => {
-      const userData = userRoleHelper.createUserTestData(Role.USER);
-      const coachData = userRoleHelper.createUserTestData(Role.COACH);
+      const userData = testInstance.userRoleHelper.createUserTestData(Role.USER);
+      const coachData = testInstance.userRoleHelper.createUserTestData(Role.COACH);
 
       expect(userData.role).toBe(Role.USER);
       expect(coachData.role).toBe(Role.COACH);
@@ -119,7 +122,7 @@ describe('Auth Helpers Integration Tests', () => {
     });
 
     it('should create multiple users with unique data', () => {
-      const { users, coaches } = userRoleHelper.createMultipleRoleUsers(3);
+      const { users, coaches } = testInstance.userRoleHelper.createMultipleRoleUsers(3);
 
       expect(users).toHaveLength(3);
       expect(coaches).toHaveLength(3);
@@ -137,7 +140,8 @@ describe('Auth Helpers Integration Tests', () => {
     });
 
     it('should create valid auth headers for multiple users', () => {
-      const { userHeaders, coachHeaders } = userRoleHelper.createMultipleRoleAuthHeaders(2);
+      const { userHeaders, coachHeaders } =
+        testInstance.userRoleHelper.createMultipleRoleAuthHeaders(2);
 
       expect(userHeaders).toHaveLength(2);
       expect(coachHeaders).toHaveLength(2);
@@ -146,14 +150,14 @@ describe('Auth Helpers Integration Tests', () => {
       userHeaders.forEach(header => {
         expect(header.Authorization).toMatch(/^Bearer .+/);
         const token = header.Authorization.replace('Bearer ', '');
-        const payload = authHelper.decodeToken(token);
+        const payload = testInstance.authHelper.decodeToken(token);
         expect(payload?.role).toBe(Role.USER);
       });
 
       coachHeaders.forEach(header => {
         expect(header.Authorization).toMatch(/^Bearer .+/);
         const token = header.Authorization.replace('Bearer ', '');
-        const payload = authHelper.decodeToken(token);
+        const payload = testInstance.authHelper.decodeToken(token);
         expect(payload?.role).toBe(Role.COACH);
       });
     });
@@ -167,30 +171,30 @@ describe('Auth Helpers Integration Tests', () => {
         role: Role.USER,
       };
 
-      const token = authHelper.createToken(testPayload);
+      const token = testInstance.authHelper.createToken(testPayload);
 
       // Token should be decodable
-      const decodedPayload = authHelper.decodeToken(token);
+      const decodedPayload = testInstance.authHelper.decodeToken(token);
       expect(decodedPayload).toBeDefined();
       expect(decodedPayload?.sub).toBe(testPayload.sub);
       expect(decodedPayload?.email).toBe(testPayload.email);
       expect(decodedPayload?.role).toBe(testPayload.role);
 
       // Token should be verifiable (not expired)
-      const verifiedPayload = await authHelper.verifyToken(token);
+      const verifiedPayload = await testInstance.authHelper.verifyToken(token);
       expect(verifiedPayload).toBeDefined();
       expect(verifiedPayload?.sub).toBe(testPayload.sub);
     });
 
-    it('should handle token expiration correctly', () => {
+    it('should handle token expiration correctly', async () => {
       // Create a token that should be valid
-      const validToken = authHelper.createUserToken();
-      const validPayload = authHelper.verifyToken(validToken);
+      const validToken = testInstance.authHelper.createUserToken();
+      const validPayload = await testInstance.authHelper.verifyToken(validToken);
       expect(validPayload).toBeDefined();
 
       // Create an expired token
-      const expiredToken = authHelper.createExpiredToken();
-      const expiredPayload = authHelper.verifyToken(expiredToken);
+      const expiredToken = testInstance.authHelper.createExpiredToken();
+      const expiredPayload = await testInstance.authHelper.verifyToken(expiredToken);
       expect(expiredPayload).toBeNull();
     });
   });
@@ -198,14 +202,14 @@ describe('Auth Helpers Integration Tests', () => {
   describe('Helper Consistency', () => {
     it('should maintain consistency between different helper methods', () => {
       // Create user data using UserRoleTestHelper
-      const userData = userRoleHelper.createUserTestData(Role.USER, {
+      const userData = testInstance.userRoleHelper.createUserTestData(Role.USER, {
         id: 'consistent-user-123',
         email: 'consistent@example.com',
       });
 
       // Create token using AuthTestHelper with same data
-      const token = authHelper.createUserToken(userData);
-      const decodedPayload = authHelper.decodeToken(token);
+      const token = testInstance.authHelper.createUserToken(userData);
+      const decodedPayload = testInstance.authHelper.decodeToken(token);
 
       // Verify consistency
       expect(decodedPayload?.sub).toBe(userData.id);
@@ -214,8 +218,8 @@ describe('Auth Helpers Integration Tests', () => {
     });
 
     it('should create headers that work with HTTP helpers', () => {
-      const userHeaders = authHelper.createUserAuthHeaders();
-      const coachHeaders = authHelper.createCoachAuthHeaders();
+      const userHeaders = testInstance.authHelper.createUserAuthHeaders();
+      const coachHeaders = testInstance.authHelper.createCoachAuthHeaders();
 
       // Headers should have the correct format for HTTP requests
       expect(userHeaders).toHaveProperty('Authorization');
@@ -227,8 +231,8 @@ describe('Auth Helpers Integration Tests', () => {
       const userToken = userHeaders.Authorization.replace('Bearer ', '');
       const coachToken = coachHeaders.Authorization.replace('Bearer ', '');
 
-      const userPayload = authHelper.decodeToken(userToken);
-      const coachPayload = authHelper.decodeToken(coachToken);
+      const userPayload = testInstance.authHelper.decodeToken(userToken);
+      const coachPayload = testInstance.authHelper.decodeToken(coachToken);
 
       expect(userPayload?.role).toBe(Role.USER);
       expect(coachPayload?.role).toBe(Role.COACH);
@@ -236,21 +240,21 @@ describe('Auth Helpers Integration Tests', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle invalid tokens gracefully', () => {
+    it('should handle invalid tokens gracefully', async () => {
       const invalidToken = 'invalid.token.here';
 
-      const decodedPayload = authHelper.decodeToken(invalidToken);
-      const verifiedPayload = authHelper.verifyToken(invalidToken);
+      const decodedPayload = testInstance.authHelper.decodeToken(invalidToken);
+      const verifiedPayload = await testInstance.authHelper.verifyToken(invalidToken);
 
       expect(decodedPayload).toBeNull();
       expect(verifiedPayload).toBeNull();
     });
 
-    it('should handle malformed tokens gracefully', () => {
+    it('should handle malformed tokens gracefully', async () => {
       const malformedToken = 'not-a-jwt-token';
 
-      const decodedPayload = authHelper.decodeToken(malformedToken);
-      const verifiedPayload = authHelper.verifyToken(malformedToken);
+      const decodedPayload = testInstance.authHelper.decodeToken(malformedToken);
+      const verifiedPayload = await testInstance.authHelper.verifyToken(malformedToken);
 
       expect(decodedPayload).toBeNull();
       expect(verifiedPayload).toBeNull();

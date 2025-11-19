@@ -1,6 +1,6 @@
 import { getJestProjectsAsync } from '@nx/jest';
 
-module.exports = async () => ({
+export default async () => ({
   projects: [
     ...(await getJestProjectsAsync()),
     'apps/api/jest.config.ts',

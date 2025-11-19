@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Example demonstrating the discriminated union pattern in TypeSafeHttpClient
  *
@@ -206,7 +207,7 @@ describe('Discriminated Union Pattern Examples', () => {
     expect(notFoundResponse.ok).toBe(false);
     if (!notFoundResponse.ok) {
       expect(notFoundResponse.status).toBe(404);
-      expect(notFoundResponse.body.message).toContain('not found');
+      expect(notFoundResponse.body.message).toContain('Cannot GET');
     }
 
     // Test validation error

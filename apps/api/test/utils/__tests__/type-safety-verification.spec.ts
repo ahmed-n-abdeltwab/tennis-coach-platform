@@ -8,39 +8,59 @@
  * Uncomment them to verify that TypeScript catches the errors.
  */
 
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigModule } from '@nestjs/config';
 import { Endpoints } from '@routes-helpers';
 
 import { AuthTestHelper } from '../auth/auth-test-helper';
 import { AuthenticatedHttpClient } from '../auth/authenticated-client';
+import { BaseIntegrationTest } from '../base/base-integration.test';
 import { TypeSafeHttpClient } from '../http/type-safe-http-client';
 import { ProtectedRouteTester } from '../security/protected-route-tester';
 import { RoleBasedAccessTester } from '../security/role-based-access-tester';
 
+class TypeSafetyVerificationTest extends BaseIntegrationTest {
+  authHelper: AuthTestHelper;
+
+  async setupTestApp(): Promise<void> {
+    this.authHelper = new AuthTestHelper();
+  }
+
+  getTestModules(): any[] {
+    return [
+      ConfigModule.forRoot({
+        isGlobal: true,
+      }),
+    ];
+  }
+
+  override async seedTestData(): Promise<void> {
+    // No database seeding needed for type safety tests
+  }
+
+  // Expose app for testing purposes
+  getApp() {
+    return this.app;
+  }
+}
+
 describe('Type Safety Verification', () => {
-  let app: INestApplication;
-  let authHelper: AuthTestHelper;
+  let testInstance: TypeSafetyVerificationTest;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-
-    authHelper = new AuthTestHelper();
+    testInstance = new TypeSafetyVerificationTest();
+    await testInstance.setup();
   });
 
   afterAll(async () => {
-    await app.close();
+    await testInstance.cleanup();
   });
 
   describe('AuthTestHelper Type Safety', () => {
     it('should return properly typed AuthenticatedHttpClient', () => {
       // ✅ This should compile - createAuthenticatedClient returns typed client
-      const client = authHelper.createAuthenticatedClient<Endpoints>(app);
+      const client = testInstance.authHelper.createAuthenticatedClient<Endpoints>(
+        testInstance.getApp()
+      );
 
       // Verify the return type is correct
       expect(client).toBeInstanceOf(AuthenticatedHttpClient);
@@ -55,15 +75,18 @@ describe('Type Safety Verification', () => {
 
     it('should allow default Endpoints type parameter', () => {
       // ✅ This should compile - type parameter is optional
-      const client = authHelper.createAuthenticatedClient(app);
+      const client = testInstance.authHelper.createAuthenticatedClient(testInstance.getApp());
 
       expect(client).toBeInstanceOf(AuthenticatedHttpClient);
     });
 
     it('should allow custom token', () => {
       // ✅ This should compile - token parameter is optional
-      const customToken = authHelper.createUserToken();
-      const client = authHelper.createAuthenticatedClient<Endpoints>(app, customToken);
+      const customToken = testInstance.authHelper.createUserToken();
+      const client = testInstance.authHelper.createAuthenticatedClient<Endpoints>(
+        testInstance.getApp(),
+        customToken
+      );
 
       expect(client).toBeInstanceOf(AuthenticatedHttpClient);
       expect(client.getToken()).toBe(customToken);
@@ -72,8 +95,8 @@ describe('Type Safety Verification', () => {
 
   describe('AuthenticatedHttpClient Type Safety', () => {
     it('should provide type-safe methods', () => {
-      const token = authHelper.createUserToken();
-      const client = new AuthenticatedHttpClient<Endpoints>(app, token);
+      const token = testInstance.authHelper.createUserToken();
+      const client = new AuthenticatedHttpClient<Endpoints>(testInstance.getApp(), token);
 
       // ✅ TypeScript should know about all methods
       expect(typeof client.get).toBe('function');
@@ -87,19 +110,16 @@ describe('Type Safety Verification', () => {
     });
 
     it('should accept valid endpoint paths at compile time', async () => {
-      const token = authHelper.createUserToken();
-      const client = new AuthenticatedHttpClient<Endpoints>(app, token);
-
+      const token = testInstance.authHelper.createUserToken();
+      const client = new AuthenticatedHttpClient<Endpoints>(testInstance.getApp(), token);
 
       expect(typeof client.get).toBe('function');
-
-
     });
   });
 
   describe('TypeSafeHttpClient Type Safety', () => {
     it('should provide type-safe methods', () => {
-      const client = new TypeSafeHttpClient<Endpoints>(app);
+      const client = new TypeSafeHttpClient<Endpoints>(testInstance.getApp());
 
       // ✅ TypeScript should know about all methods
       expect(typeof client.get).toBe('function');
@@ -118,7 +138,7 @@ describe('Type Safety Verification', () => {
 
   describe('ProtectedRouteTester Type Safety', () => {
     it('should provide type-safe methods', () => {
-      const tester = new ProtectedRouteTester<Endpoints>(app);
+      const tester = new ProtectedRouteTester<Endpoints>(testInstance.getApp());
 
       // ✅ TypeScript should know about all methods
       expect(typeof tester.testRequiresAuth).toBe('function');
@@ -132,7 +152,7 @@ describe('Type Safety Verification', () => {
     });
 
     it('should return properly typed AuthTestHelper', () => {
-      const tester = new ProtectedRouteTester<Endpoints>(app);
+      const tester = new ProtectedRouteTester<Endpoints>(testInstance.getApp());
       const authHelper = tester.getAuthHelper();
 
       // ✅ Should be properly typed
@@ -141,7 +161,7 @@ describe('Type Safety Verification', () => {
     });
 
     it('should return properly typed TypeSafeHttpClient', () => {
-      const tester = new ProtectedRouteTester<Endpoints>(app);
+      const tester = new ProtectedRouteTester<Endpoints>(testInstance.getApp());
       const httpClient = tester.getHttpClient();
 
       // ✅ Should be properly typed
@@ -152,7 +172,7 @@ describe('Type Safety Verification', () => {
 
   describe('RoleBasedAccessTester Type Safety', () => {
     it('should provide type-safe methods', () => {
-      const tester = new RoleBasedAccessTester<Endpoints>(app);
+      const tester = new RoleBasedAccessTester<Endpoints>(testInstance.getApp());
 
       // ✅ TypeScript should know about all methods
       expect(typeof tester.testAccess).toBe('function');
@@ -165,7 +185,7 @@ describe('Type Safety Verification', () => {
     });
 
     it('should return properly typed AuthTestHelper', () => {
-      const tester = new RoleBasedAccessTester<Endpoints>(app);
+      const tester = new RoleBasedAccessTester<Endpoints>(testInstance.getApp());
       const authHelper = tester.getAuthHelper();
 
       // ✅ Should be properly typed
@@ -174,7 +194,7 @@ describe('Type Safety Verification', () => {
     });
 
     it('should return properly typed TypeSafeHttpClient', () => {
-      const tester = new RoleBasedAccessTester<Endpoints>(app);
+      const tester = new RoleBasedAccessTester<Endpoints>(testInstance.getApp());
       const httpClient = tester.getHttpClient();
 
       // ✅ Should be properly typed
@@ -185,11 +205,9 @@ describe('Type Safety Verification', () => {
 
   describe('Compile-Time Type Checking Examples', () => {
     it('demonstrates proper type inference', () => {
-      const token = authHelper.createUserToken();
-      const client = new AuthenticatedHttpClient<Endpoints>(app, token);
+      const token = testInstance.authHelper.createUserToken();
+      const client = new AuthenticatedHttpClient<Endpoints>(testInstance.getApp(), token);
       expect(client).toBeDefined();
     });
-
-
   });
 });

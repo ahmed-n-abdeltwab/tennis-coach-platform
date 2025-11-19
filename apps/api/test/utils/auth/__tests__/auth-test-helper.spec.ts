@@ -60,9 +60,9 @@ describe('AuthTestHelper', () => {
       expect(decoded?.role).toBe(Role.USER);
     });
 
-    it('should verify a valid token', () => {
+    it('should verify a valid token', async () => {
       const token = authHelper.createUserToken();
-      const verified = authHelper.verifyToken(token);
+      const verified = await authHelper.verifyToken(token);
 
       expect(verified).toBeDefined();
       expect(verified?.sub).toBe('test-user-id');
@@ -73,9 +73,9 @@ describe('AuthTestHelper', () => {
       expect(decoded).toBeNull();
     });
 
-    it('should return null when verifying expired token', () => {
+    it('should return null when verifying expired token', async () => {
       const expiredToken = authHelper.createExpiredToken();
-      const verified = authHelper.verifyToken(expiredToken);
+      const verified = await authHelper.verifyToken(expiredToken);
 
       expect(verified).toBeNull();
     });
@@ -106,7 +106,7 @@ describe('AuthTestHelper', () => {
       expect(headers.Authorization).toMatch(/^Bearer /);
     });
 
-    it('should create expired auth headers', () => {
+    it('should create expired auth headers', async () => {
       const headers = authHelper.createExpiredAuthHeaders();
 
       expect(headers).toBeDefined();
@@ -115,7 +115,7 @@ describe('AuthTestHelper', () => {
 
       // Extract token and verify it's expired
       const token = headers.Authorization.replace('Bearer ', '');
-      const verified = authHelper.verifyToken(token);
+      const verified = await authHelper.verifyToken(token);
       expect(verified).toBeNull();
     });
   });

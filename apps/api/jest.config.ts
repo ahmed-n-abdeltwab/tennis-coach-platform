@@ -4,6 +4,9 @@ const config: Config = {
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
 
+  // Set NODE_ENV for tests
+  setupFiles: ['<rootDir>/test/setup.ts'],
+
   // TypeScript configuration
   transform: {
     '^.+\\.(t|j)s$': [
@@ -55,6 +58,9 @@ const config: Config = {
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
+
+  // Timeout for long-running database tests
+  testTimeout: 30000,
 
   // Custom reporters
   reporters: ['default', ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }]],

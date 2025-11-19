@@ -84,7 +84,13 @@ export abstract class BaseIntegrationTest {
     this.app.setGlobalPrefix('api');
     await this.app.init();
 
-    this.prisma = this.module.get<PrismaService>(PrismaService);
+    // Only get PrismaService if it's available in the module
+    try {
+      this.prisma = this.module.get<PrismaService>(PrismaService, { strict: false });
+    } catch {
+      // PrismaService not available, skip database setup
+    }
+
     await this.setupDatabase();
   }
 
@@ -114,8 +120,10 @@ export abstract class BaseIntegrationTest {
    * Sets up the test database with clean state
    */
   async setupDatabase(): Promise<void> {
-    await this.cleanupDatabase();
-    await this.seedTestData();
+    if (this.prisma) {
+      await this.cleanupDatabase();
+      await this.seedTestData();
+    }
   }
 
   /**

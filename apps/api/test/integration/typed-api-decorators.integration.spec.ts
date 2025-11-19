@@ -1,16 +1,14 @@
-import { Body, Controller, Delete, Get, INestApplication, Param, Patch, Post, Put, Query } from '@nestjs/common';
-import { ApiOperation, ApiTags, DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { Test, TestingModule } from '@nestjs/testing';
-
-import { createTypedApiDecorators } from '../../src/common/decorators/typed-api-responses.decorator';
 import {
-    BaseResponseDto,
-    BulkOperationResultDto,
-    ErrorResponseDto,
-    OperationStatusDto,
-    PaginatedResponseDto,
-    ValidationErrorResponseDto
-} from '../../src/common/dto/base-response.dto';
+  BaseResponseDto,
+  BulkOperationResultDto,
+  createTypedApiDecorators,
+  ErrorResponseDto,
+  OperationStatusDto,
+  PaginatedResponseDto,
+  ValidationErrorResponseDto,
+} from '@common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query } from '@nestjs/common';
+import { ApiOperation, ApiTags, DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 /**
  * Test DTO for decorator testing
@@ -153,22 +151,12 @@ class TestResourceController {
   }
 }
 
-/**
- * Integration tests for typed API decorators with OpenAPI spec generation
- */
-describe('Typed API Decorators - OpenAPI Spec Generation', () => {
-  let app: INestApplication;
-  let document: any;
+import { BaseIntegrationTest } from '../utils/base/base-integration.test';
 
-  beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      controllers: [TestResourceController],
-    }).compile();
+class TypedApiDecoratorsTest extends BaseIntegrationTest {
+  document: any;
 
-    app = moduleFixture.createNestApplication();
-    app.setGlobalPrefix('api');
-    await app.init();
-
+  async setupTestApp(): Promise<void> {
     // Generate OpenAPI document
     const config = new DocumentBuilder()
       .setTitle('Test API')
@@ -177,7 +165,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
       .addBearerAuth()
       .build();
 
-    document = SwaggerModule.createDocument(app, config, {
+    this.document = SwaggerModule.createDocument(this.app, config, {
       extraModels: [
         TestResourceDto,
         PaginatedResponseDto,
@@ -188,15 +176,39 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
         CustomStatusDto,
       ],
     });
+  }
+
+  getTestModules(): any[] {
+    return [TestResourceController];
+  }
+
+  override getTestProviders() {
+    return [];
+  }
+
+  override async seedTestData(): Promise<void> {
+    // No database seeding needed
+  }
+}
+
+/**
+ * Integration tests for typed API decorators with OpenAPI spec generation
+ */
+describe('Typed API Decorators - OpenAPI Spec Generation', () => {
+  let testInstance: TypedApiDecoratorsTest;
+
+  beforeAll(async () => {
+    testInstance = new TypedApiDecoratorsTest();
+    await testInstance.setup();
   });
 
   afterAll(async () => {
-    await app.close();
+    await testInstance.cleanup();
   });
 
   describe('Paginated decorator', () => {
     it('should include 200 response with PaginatedResponseDto schema', () => {
-      const path = document.paths['/api/test-resources/paginated'];
+      const path = testInstance.document.paths['/api/test-resources/paginated'];
       expect(path).toBeDefined();
       expect(path.get).toBeDefined();
       expect(path.get.responses['200']).toBeDefined();
@@ -209,13 +221,13 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
     });
 
     it('should include 400 Bad Request error response', () => {
-      const path = document.paths['/api/test-resources/paginated'];
+      const path = testInstance.document.paths['/api/test-resources/paginated'];
       expect(path.get.responses['400']).toBeDefined();
-      expect(path.get.responses['400'].description).toContain('Bad Request');
+      expect(path.get.responses['400'].description).toContain('Invalid query parameters');
     });
 
     it('should include 401 Unauthorized error response', () => {
-      const path = document.paths['/api/test-resources/paginated'];
+      const path = testInstance.document.paths['/api/test-resources/paginated'];
       expect(path.get.responses['401']).toBeDefined();
       expect(path.get.responses['401'].description).toContain('Unauthorized');
     });
@@ -223,7 +235,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
 
   describe('PartiallyUpdated decorator', () => {
     it('should include 200 response with resource type', () => {
-      const path = document.paths['/api/test-resources/{id}'];
+      const path = testInstance.document.paths['/api/test-resources/{id}'];
       expect(path).toBeDefined();
       expect(path.patch).toBeDefined();
       expect(path.patch.responses['200']).toBeDefined();
@@ -231,7 +243,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
     });
 
     it('should include 400, 401, 404, and 422 error responses', () => {
-      const path = document.paths['/api/test-resources/{id}'];
+      const path = testInstance.document.paths['/api/test-resources/{id}'];
       expect(path.patch.responses['400']).toBeDefined();
       expect(path.patch.responses['401']).toBeDefined();
       expect(path.patch.responses['404']).toBeDefined();
@@ -239,7 +251,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
     });
 
     it('should use ValidationErrorResponseDto for 422 response', () => {
-      const path = document.paths['/api/test-resources/{id}'];
+      const path = testInstance.document.paths['/api/test-resources/{id}'];
       const response422 = path.patch.responses['422'];
       expect(response422).toBeDefined();
       expect(response422.description).toContain('Unprocessable Entity');
@@ -248,7 +260,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
 
   describe('NoContent decorator', () => {
     it('should include 204 response with no body schema', () => {
-      const path = document.paths['/api/test-resources/no-content/{id}'];
+      const path = testInstance.document.paths['/api/test-resources/no-content/{id}'];
       expect(path).toBeDefined();
       expect(path.delete).toBeDefined();
       expect(path.delete.responses['204']).toBeDefined();
@@ -260,7 +272,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
     });
 
     it('should include 401, 404, and 409 error responses', () => {
-      const path = document.paths['/api/test-resources/no-content/{id}'];
+      const path = testInstance.document.paths['/api/test-resources/no-content/{id}'];
       expect(path.delete.responses['401']).toBeDefined();
       expect(path.delete.responses['404']).toBeDefined();
       expect(path.delete.responses['409']).toBeDefined();
@@ -269,7 +281,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
 
   describe('Bulk operation decorators', () => {
     it('should include 201 response with array type for BulkCreated', () => {
-      const path = document.paths['/api/test-resources/bulk'];
+      const path = testInstance.document.paths['/api/test-resources/bulk'];
       expect(path).toBeDefined();
       expect(path.post).toBeDefined();
       expect(path.post.responses['201']).toBeDefined();
@@ -282,7 +294,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
     });
 
     it('should include 200 response with array type for BulkUpdated', () => {
-      const path = document.paths['/api/test-resources/bulk'];
+      const path = testInstance.document.paths['/api/test-resources/bulk'];
       expect(path.put).toBeDefined();
       expect(path.put.responses['200']).toBeDefined();
       expect(path.put.responses['200'].description).toBe('Resources updated in bulk');
@@ -294,7 +306,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
     });
 
     it('should include 200 response with BulkOperationResultDto for BulkDeleted', () => {
-      const path = document.paths['/api/test-resources/bulk'];
+      const path = testInstance.document.paths['/api/test-resources/bulk'];
       expect(path.delete).toBeDefined();
       expect(path.delete.responses['200']).toBeDefined();
       expect(path.delete.responses['200'].description).toBe('Resources deleted in bulk');
@@ -305,7 +317,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
     });
 
     it('should include 400, 401, and 422 error responses for bulk operations', () => {
-      const path = document.paths['/api/test-resources/bulk'];
+      const path = testInstance.document.paths['/api/test-resources/bulk'];
 
       // BulkCreated
       expect(path.post.responses['400']).toBeDefined();
@@ -325,7 +337,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
 
   describe('Accepted decorator', () => {
     it('should include 202 response with OperationStatusDto', () => {
-      const path = document.paths['/api/test-resources/async'];
+      const path = testInstance.document.paths['/api/test-resources/async'];
       expect(path).toBeDefined();
       expect(path.post).toBeDefined();
       expect(path.post.responses['202']).toBeDefined();
@@ -337,7 +349,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
     });
 
     it('should support custom status type', () => {
-      const path = document.paths['/api/test-resources/async-custom'];
+      const path = testInstance.document.paths['/api/test-resources/async-custom'];
       expect(path).toBeDefined();
       expect(path.post).toBeDefined();
       expect(path.post.responses['202']).toBeDefined();
@@ -349,7 +361,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
     });
 
     it('should include 400, 401, and 503 error responses', () => {
-      const path = document.paths['/api/test-resources/async'];
+      const path = testInstance.document.paths['/api/test-resources/async'];
       expect(path.post.responses['400']).toBeDefined();
       expect(path.post.responses['401']).toBeDefined();
       expect(path.post.responses['503']).toBeDefined();
@@ -359,8 +371,8 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
   describe('Error response documentation', () => {
     it('should document all error responses with correct status codes', () => {
       // Check various endpoints for error responses
-      const paginatedPath = document.paths['/api/test-resources/paginated'];
-      const singlePath = document.paths['/api/test-resources/{id}'];
+      const paginatedPath = testInstance.document.paths['/api/test-resources/paginated'];
+      const singlePath = testInstance.document.paths['/api/test-resources/{id}'];
 
       // Verify error status codes are documented
       expect(paginatedPath.get.responses['400']).toBeDefined();
@@ -376,7 +388,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
     });
 
     it('should use ErrorResponseDto for non-validation errors', () => {
-      const path = document.paths['/api/test-resources/{id}'];
+      const path = testInstance.document.paths['/api/test-resources/{id}'];
 
       // Check 401, 403, 404, 409 use ErrorResponseDto
       const response401 = path.get.responses['404'];
@@ -385,7 +397,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
     });
 
     it('should use ValidationErrorResponseDto for validation errors', () => {
-      const path = document.paths['/api/test-resources/{id}'];
+      const path = testInstance.document.paths['/api/test-resources/{id}'];
 
       // Check 400 and 422 use ValidationErrorResponseDto
       const response400 = path.patch.responses['400'];
@@ -398,7 +410,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
 
   describe('Standard CRUD decorators', () => {
     it('should document Created decorator correctly', () => {
-      const path = document.paths['/api/test-resources'];
+      const path = testInstance.document.paths['/api/test-resources'];
       expect(path.post.responses['201']).toBeDefined();
       expect(path.post.responses['201'].description).toBe('Resource created');
       expect(path.post.responses['400']).toBeDefined();
@@ -406,14 +418,14 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
     });
 
     it('should document Found decorator correctly', () => {
-      const path = document.paths['/api/test-resources/{id}'];
+      const path = testInstance.document.paths['/api/test-resources/{id}'];
       expect(path.get.responses['200']).toBeDefined();
       expect(path.get.responses['200'].description).toBe('Resource found');
       expect(path.get.responses['404']).toBeDefined();
     });
 
     it('should document FoundMany decorator correctly', () => {
-      const path = document.paths['/api/test-resources'];
+      const path = testInstance.document.paths['/api/test-resources'];
       expect(path.get.responses['200']).toBeDefined();
       expect(path.get.responses['200'].description).toBe('Resources found');
       expect(path.get.responses['400']).toBeDefined();
@@ -424,7 +436,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
     });
 
     it('should document Updated decorator correctly', () => {
-      const path = document.paths['/api/test-resources/{id}'];
+      const path = testInstance.document.paths['/api/test-resources/{id}'];
       expect(path.put.responses['200']).toBeDefined();
       expect(path.put.responses['200'].description).toBe('Resource updated');
       expect(path.put.responses['400']).toBeDefined();
@@ -433,7 +445,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
     });
 
     it('should document Deleted decorator correctly', () => {
-      const path = document.paths['/api/test-resources/{id}'];
+      const path = testInstance.document.paths['/api/test-resources/{id}'];
       expect(path.delete.responses['200']).toBeDefined();
       expect(path.delete.responses['200'].description).toBe('Resource deleted');
       expect(path.delete.responses['401']).toBeDefined();
@@ -444,27 +456,27 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
 
   describe('OpenAPI spec structure', () => {
     it('should include all test endpoints in the spec', () => {
-      expect(document.paths['/api/test-resources']).toBeDefined();
-      expect(document.paths['/api/test-resources/{id}']).toBeDefined();
-      expect(document.paths['/api/test-resources/paginated']).toBeDefined();
-      expect(document.paths['/api/test-resources/bulk']).toBeDefined();
-      expect(document.paths['/api/test-resources/async']).toBeDefined();
-      expect(document.paths['/api/test-resources/async-custom']).toBeDefined();
-      expect(document.paths['/api/test-resources/no-content/{id}']).toBeDefined();
+      expect(testInstance.document.paths['/api/test-resources']).toBeDefined();
+      expect(testInstance.document.paths['/api/test-resources/{id}']).toBeDefined();
+      expect(testInstance.document.paths['/api/test-resources/paginated']).toBeDefined();
+      expect(testInstance.document.paths['/api/test-resources/bulk']).toBeDefined();
+      expect(testInstance.document.paths['/api/test-resources/async']).toBeDefined();
+      expect(testInstance.document.paths['/api/test-resources/async-custom']).toBeDefined();
+      expect(testInstance.document.paths['/api/test-resources/no-content/{id}']).toBeDefined();
     });
 
     it('should include all required DTOs in components/schemas', () => {
-      expect(document.components.schemas).toBeDefined();
-      expect(document.components.schemas['TestResourceDto']).toBeDefined();
-      expect(document.components.schemas['PaginatedResponseDto']).toBeDefined();
-      expect(document.components.schemas['ErrorResponseDto']).toBeDefined();
-      expect(document.components.schemas['ValidationErrorResponseDto']).toBeDefined();
-      expect(document.components.schemas['OperationStatusDto']).toBeDefined();
-      expect(document.components.schemas['BulkOperationResultDto']).toBeDefined();
+      expect(testInstance.document.components.schemas).toBeDefined();
+      expect(testInstance.document.components.schemas['TestResourceDto']).toBeDefined();
+      expect(testInstance.document.components.schemas['PaginatedResponseDto']).toBeDefined();
+      expect(testInstance.document.components.schemas['ErrorResponseDto']).toBeDefined();
+      expect(testInstance.document.components.schemas['ValidationErrorResponseDto']).toBeDefined();
+      expect(testInstance.document.components.schemas['OperationStatusDto']).toBeDefined();
+      expect(testInstance.document.components.schemas['BulkOperationResultDto']).toBeDefined();
     });
 
     it('should have proper response content types', () => {
-      const path = document.paths['/api/test-resources/{id}'];
+      const path = testInstance.document.paths['/api/test-resources/{id}'];
 
       // Check that responses have application/json content type
       expect(path.get.responses['200'].content['application/json']).toBeDefined();
@@ -473,4 +485,3 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
     });
   });
 });
-

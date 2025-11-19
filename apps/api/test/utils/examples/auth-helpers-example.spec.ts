@@ -97,7 +97,7 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       expect(coachPayload?.role).toBe(Role.COACH);
     });
 
-    it('should create expired tokens for testing', () => {
+    it('should create expired tokens for testing', async () => {
       const expiredToken = authHelper.createExpiredToken({
         sub: 'user-123',
         email: 'user@example.com',
@@ -107,7 +107,7 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       expect(expiredToken).toBeDefined();
 
       // Token should be invalid when verified
-      const payload = authHelper.verifyToken(expiredToken);
+      const payload = await authHelper.verifyToken(expiredToken);
       expect(payload).toBeNull();
     });
 

@@ -3,6 +3,9 @@ import type { Config } from 'jest';
 const config: Config = {
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
+
+  // Set NODE_ENV for tests
+  setupFiles: ['<rootDir>/test/setup.ts'],
   transform: {
     '^.+\\.(t|j)s$': [
       'ts-jest',

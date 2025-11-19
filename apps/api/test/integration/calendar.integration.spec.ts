@@ -6,47 +6,39 @@
 
 import { todo } from 'node:test';
 
-import { INestApplication } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { Test, TestingModule } from '@nestjs/testing';
 
 import { CalendarModule } from '../../src/app/calendar/calendar.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
-import { PrismaService } from '../../src/app/prisma/prisma.service';
-import { cleanDatabase, seedTestDatabase } from '../utils/database/database-helpers';
+import { BaseIntegrationTest } from '../utils/base/base-integration.test';
+
+class CalendarIntegrationTest extends BaseIntegrationTest {
+  async setupTestApp(): Promise<void> {
+    // No additional setup needed
+  }
+
+  getTestModules(): any[] {
+    return [
+      CalendarModule,
+      PrismaModule,
+      JwtModule.register({
+        secret: process.env.JWT_SECRET ?? 'test-secret',
+        signOptions: { expiresIn: '1h' },
+      }),
+    ];
+  }
+}
 
 describe('Calendar Integration Tests', () => {
-  let app: INestApplication;
-  let prisma: PrismaService;
-  let testData: any;
+  let testInstance: CalendarIntegrationTest;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        CalendarModule,
-        PrismaModule,
-        JwtModule.register({
-          secret: process.env.JWT_SECRET ?? 'test-secret',
-          signOptions: { expiresIn: '1h' },
-        }),
-      ],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    app.setGlobalPrefix('api');
-    await app.init();
-
-    prisma = moduleFixture.get<PrismaService>(PrismaService);
-  });
-
-  beforeEach(async () => {
-    await cleanDatabase(prisma);
-    testData = await seedTestDatabase(prisma);
+    testInstance = new CalendarIntegrationTest();
+    await testInstance.setup();
   });
 
   afterAll(async () => {
-    await cleanDatabase(prisma);
-    await app.close();
+    await testInstance.cleanup();
   });
 
   describe('POST /api/calendar/event', () => {

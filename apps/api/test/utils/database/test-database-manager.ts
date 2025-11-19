@@ -35,7 +35,7 @@ export class TestDatabaseManager {
   private isInitialized = false;
 
   private constructor() {
-    this.baseUrl = this.extractBaseUrl(process.env.DATABASE_URL || '');
+    this.baseUrl = this.extractBaseUrl(process.env.DATABASE_URL ?? '');
   }
 
   /**
@@ -292,11 +292,12 @@ export class TestDatabaseManager {
       const originalUrl = process.env.DATABASE_URL;
       process.env.DATABASE_URL = databaseUrl;
 
-      // Run Prisma migrations
-      execSync('npx prisma migrate deploy', {
+      // Run Prisma migrations with timeout and explicit schema path
+      execSync('npx prisma migrate deploy --schema=./apps/api/prisma/schema.prisma', {
         cwd: process.cwd(),
         stdio: 'pipe',
         env: { ...process.env, DATABASE_URL: databaseUrl },
+        timeout: 30000, // 30 second timeout
       });
 
       // Restore original URL
@@ -305,6 +306,7 @@ export class TestDatabaseManager {
       }
     } catch (error) {
       if (error instanceof Error) {
+        console.error(`Failed to run migrations on ${databaseUrl}:`, error.message);
         throw new Error(`Failed to run migrations: ${error.message}`);
       }
       throw new Error(`Failed to run migrations: ${String(error)}`);
@@ -351,19 +353,27 @@ export class TestDatabaseManager {
   }
 
   private async createDatabase(dbName: string): Promise<void> {
+    const adminUrl = `${this.baseUrl}/postgres?connect_timeout=10`;
     const adminClient = new PrismaClient({
       datasources: {
         db: {
-          url: `${this.baseUrl}/postgres`, // Connect to default postgres database
+          url: adminUrl,
         },
       },
     });
 
     try {
-      await adminClient.$connect();
+      // Add timeout to connection attempt
+      const connectPromise = adminClient.$connect();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Database connection timeout after 10s')), 10000)
+      );
+
+      await Promise.race([connectPromise, timeoutPromise]);
       await adminClient.$executeRawUnsafe(`CREATE DATABASE "${dbName}"`);
     } catch (error) {
       if (error instanceof Error && !error.message.includes('already exists')) {
+        console.error(`Failed to create database ${dbName} with URL ${adminUrl}:`, error.message);
         throw error;
       }
     } finally {

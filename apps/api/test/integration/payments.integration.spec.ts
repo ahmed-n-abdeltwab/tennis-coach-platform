@@ -1,60 +1,54 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { todo } from 'node:test';
 
-import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { Test, TestingModule } from '@nestjs/testing';
-import { TestDatabaseManager } from '@test/utils/database/test-database-manager';
 
 import paymentsConfig from '../../src/app/payments/config/payments.config';
 import { PaymentsModule } from '../../src/app/payments/payments.module';
 import { PaymentsService } from '../../src/app/payments/payments.service';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
-import { PrismaService } from '../../src/app/prisma/prisma.service';
+import { BaseIntegrationTest } from '../utils/base/base-integration.test';
 
 // Mock fetch globally
 global.fetch = jest.fn();
 
+class PaymentsIntegrationTest extends BaseIntegrationTest {
+  paymentsService!: PaymentsService;
+
+  async setupTestApp(): Promise<void> {
+    this.paymentsService = this.module.get<PaymentsService>(PaymentsService);
+  }
+
+  getTestModules(): any[] {
+    return [
+      ConfigModule.forRoot({
+        isGlobal: true,
+        load: [paymentsConfig],
+      }),
+      PrismaModule,
+      PaymentsModule,
+      JwtModule.register({
+        secret: 'test-secret',
+        signOptions: { expiresIn: '1h' },
+      }),
+    ];
+  }
+}
+
 describe('Payments Integration', () => {
-  let app: INestApplication;
-  let paymentsService: PaymentsService;
-  let prisma: PrismaService;
-  let dbManager: TestDatabaseManager;
+  let testInstance: PaymentsIntegrationTest;
 
   beforeAll(async () => {
-    dbManager = TestDatabaseManager.getInstance();
-    // await dbManager.setupTestDatabase('payments-integration');
-
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          load: [paymentsConfig],
-        }),
-        PrismaModule,
-        PaymentsModule,
-        JwtModule.register({
-          secret: 'test-secret',
-          signOptions: { expiresIn: '1h' },
-        }),
-      ],
-    }).compile();
-
-    app = module.createNestApplication();
-    await app.init();
-
-    paymentsService = module.get<PaymentsService>(PaymentsService);
-    prisma = module.get<PrismaService>(PrismaService);
+    testInstance = new PaymentsIntegrationTest();
+    await testInstance.setup();
   });
 
   afterAll(async () => {
-    await app.close();
-    await dbManager.cleanupTestDatabase('payments-integration');
+    await testInstance.cleanup();
   });
 
   beforeEach(async () => {
-    // await dbManager.cleanupTestData();
     (fetch as jest.Mock).mockReset();
   });
 
