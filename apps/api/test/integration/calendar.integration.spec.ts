@@ -26,7 +26,7 @@ describe('Calendar Integration Tests', () => {
         CalendarModule,
         PrismaModule,
         JwtModule.register({
-          secret: process.env.JWT_SECRET || 'test-secret',
+          secret: process.env.JWT_SECRET ?? 'test-secret',
           signOptions: { expiresIn: '1h' },
         }),
       ],

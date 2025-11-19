@@ -148,7 +148,7 @@ export abstract class BaseIntegrationTest {
     }
   ): string {
     const jwtService = new JwtService({
-      secret: process.env.JWT_SECRET || 'test-secret',
+      secret: process.env.JWT_SECRET ?? 'test-secret',
       signOptions: { expiresIn: '1h' },
     });
     return jwtService.sign(payload);
@@ -158,7 +158,7 @@ export abstract class BaseIntegrationTest {
    * Creates Authorization headers for HTTP requests
    */
   protected createAuthHeaders(token?: string): { Authorization: string } {
-    const authToken = token || this.createTestJwtToken();
+    const authToken = token ?? this.createTestJwtToken();
     return {
       Authorization: `Bearer ${authToken}`,
     };
@@ -180,7 +180,7 @@ export abstract class BaseIntegrationTest {
     return request(this.app.getHttpServer())
       .post(`/api${endpoint}`)
       .set(this.createAuthHeaders(token))
-      .send(data || {});
+      .send(data ?? {});
   }
 
   /**
@@ -190,7 +190,7 @@ export abstract class BaseIntegrationTest {
     return request(this.app.getHttpServer())
       .put(`/api${endpoint}`)
       .set(this.createAuthHeaders(token))
-      .send(data || {});
+      .send(data ?? {});
   }
 
   /**
@@ -215,7 +215,7 @@ export abstract class BaseIntegrationTest {
   post(endpoint: string, data?: any): request.Test {
     return request(this.app.getHttpServer())
       .post(`/api${endpoint}`)
-      .send(data || {});
+      .send(data ?? {});
   }
 
   // ============================================================================
@@ -953,7 +953,7 @@ export abstract class BaseIntegrationTest {
    */
   protected createExpiredToken(payload?: Partial<JwtPayload>): string {
     const jwtService = new JwtService({
-      secret: process.env.JWT_SECRET || 'test-secret',
+      secret: process.env.JWT_SECRET ?? 'test-secret',
       signOptions: { expiresIn: '-1h' }, // Expired 1 hour ago
     });
     return jwtService.sign({

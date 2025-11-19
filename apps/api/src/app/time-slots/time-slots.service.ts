@@ -24,7 +24,7 @@ export class TimeSlotsService {
           gte: startDate ? new Date(startDate) : new Date(),
           lte: endDate ? new Date(endDate) : undefined,
         },
-        coachId: coachId || undefined,
+        coachId: coachId ?? undefined,
       },
       include: {
         coach: {

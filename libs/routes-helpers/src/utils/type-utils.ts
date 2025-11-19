@@ -1,9 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * TypeScript utility types for working with the Endpoints interface
  * These types provide compile-time type safety for API route operations
  */
 
-import { Endpoints } from '../constants/api-routes.registry';
 import { HttpMethod } from '../interfaces/IRoutes';
 
 /**
@@ -112,7 +112,6 @@ export type ExtractRequestType<
         : never
       : never
     : never;
-type AccountParams = ExtractRequestType<Endpoints, "/api/sessions", "POST">;
 /**
  * Extract response type for a specific path and method
  *
@@ -329,7 +328,6 @@ export type PathPattern<P extends string> =
     ? `${Before}${Segment}${PathPattern<After>}`
     : P;
 
-type Pattern = PathPattern<'/api/users/{id}/posts/{postId}'>;
 /**
  * Convert a path template to accept both template and actual values
  *
@@ -355,7 +353,6 @@ export type PathWithValues<P extends string> =
 
 // 3. Extract both literals safely
 export type UnwrappedPath<P extends string> = PathWithValues<P>[keyof PathWithValues<P>];
-type t = UnwrappedPath<'/api/users/{id}/posts/{postId}'>;
 /**
  * Extract paths that can accept either template or actual values
  *
@@ -367,7 +364,6 @@ type t = UnwrappedPath<'/api/users/{id}/posts/{postId}'>;
 export type FlexiblePath<E extends Record<string, any>> = {
   [P in ExtractPaths<E>]: UnwrappedPath<P>;
 }[ExtractPaths<E>];
-type FlexiblePaths = FlexiblePath<Endpoints>;
 /**
  * Match a runtime path string to its template path
  *
@@ -387,8 +383,6 @@ export type MatchPathTemplate<E extends Record<string, any>, RuntimePath extends
       : never;
 }[ExtractPaths<E>];
 
-type Matched = MatchPathTemplate<Endpoints, `/api/users/${string}`>;
-type MatchPost = MatchPathTemplate<Endpoints, `/api/accounts/${string}`>;
 /**
  * Accept either a template path or a runtime path with values
  *

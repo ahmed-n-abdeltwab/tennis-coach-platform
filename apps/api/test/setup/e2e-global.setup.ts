@@ -7,7 +7,7 @@ export default async function e2eGlobalSetup(): Promise<void> {
   // Set e2e test environment variables
   process.env.NODE_ENV = 'test';
   process.env.DATABASE_URL =
-    process.env.DATABASE_URL?.replace('tennis_coach_dev', 'tennis_coach_test_e2e') ||
+    process.env.DATABASE_URL?.replace('tennis_coach_dev', 'tennis_coach_test_e2e') ??
     'postgresql://postgres:password@localhost:5432/tennis_coach_test_e2e?connection_limit=5&pool_timeout=2';
 
   // Set test-specific JWT configuration

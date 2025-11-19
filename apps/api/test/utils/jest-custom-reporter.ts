@@ -54,7 +54,7 @@ export default class JestCustomReporter implements Reporter {
         numFailingTests: result.numFailingTests,
         numPassingTests: result.numPassingTests,
         numPendingTests: result.numPendingTests,
-        failureMessage: result.failureMessage || undefined,
+        failureMessage: result.failureMessage ?? undefined,
       })),
       coverageMap: results.coverageMap,
       startTime: this.startTime,
@@ -70,7 +70,7 @@ export default class JestCustomReporter implements Reporter {
   }
 
   private determineTestType(): 'unit' | 'integration' | 'e2e' | 'all' {
-    const configPath = this.globalConfig.testPathPatterns?.[0] || '';
+    const configPath = this.globalConfig.testPathPatterns?.[0] ?? '';
 
     if (configPath.includes('integration')) return 'integration';
     if (configPath.includes('e2e')) return 'e2e';

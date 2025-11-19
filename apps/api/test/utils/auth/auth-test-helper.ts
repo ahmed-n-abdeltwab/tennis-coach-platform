@@ -46,7 +46,7 @@ export interface AuthHeaders {
  * ```
  */
 function parseJwtTime(timeStr: string | undefined, defaultValue: string): number {
-  const str = timeStr || defaultValue;
+  const str = timeStr ?? defaultValue;
   const match = str.match(/^(\d+)([smhd])$/);
 
   if (!match) {
@@ -112,7 +112,7 @@ export class AuthTestHelper {
    */
   constructor(jwtSecret?: string) {
     this.jwtService = new JwtService({
-      secret: jwtSecret || process.env.JWT_SECRET || 'test-secret',
+      secret: jwtSecret ?? process.env.JWT_SECRET ?? 'test-secret',
       signOptions: { expiresIn: parseJwtTime(process.env.JWT_EXPIRES_IN, '24h') },
     });
   }
@@ -252,7 +252,7 @@ export class AuthTestHelper {
    */
   createExpiredToken(payload?: Partial<JwtPayload>): string {
     const expiredJwtService = new JwtService({
-      secret: process.env.JWT_SECRET || 'test-secret',
+      secret: process.env.JWT_SECRET ?? 'test-secret',
       signOptions: { expiresIn: '-1h' },
     });
     const defaultPayload: JwtPayload = {
@@ -279,7 +279,7 @@ export class AuthTestHelper {
    * ```
    */
   createAuthHeaders(token?: string): AuthHeaders {
-    const authToken = token || this.createUserToken();
+    const authToken = token ?? this.createUserToken();
     return { Authorization: `Bearer ${authToken}` };
   }
 
@@ -433,7 +433,7 @@ export class AuthTestHelper {
     token?: string
   ): AuthenticatedHttpClient<E> {
     // Import dynamically to avoid circular dependencies
-    const authToken = token || this.createUserToken();
+    const authToken = token ?? this.createUserToken();
     // Type assertion needed because require() returns untyped module
     return new AuthenticatedHttpClient(app, authToken) as AuthenticatedHttpClient<E>;
   }
@@ -455,7 +455,7 @@ export class AuthTestHelper {
    */
   createTokenWithExpiry(payload: Partial<JwtPayload>, expiresIn: string): string {
     const customJwtService = new JwtService({
-      secret: process.env.JWT_SECRET || 'test-secret',
+      secret: process.env.JWT_SECRET ?? 'test-secret',
       signOptions: { expiresIn: expiresIn as any },
     });
     const fullPayload: JwtPayload = {
@@ -481,7 +481,7 @@ export class AuthTestHelper {
    * ```
    */
   createSoonToExpireToken(payload?: Partial<JwtPayload>, secondsUntilExpiry = 5): string {
-    return this.createTokenWithExpiry(payload || {}, `${secondsUntilExpiry}s`);
+    return this.createTokenWithExpiry(payload ?? {}, `${secondsUntilExpiry}s`);
   }
 
   /**

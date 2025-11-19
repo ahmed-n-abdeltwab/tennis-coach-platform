@@ -7,7 +7,7 @@ export default async function globalSetup(): Promise<void> {
   // Set test environment variables
   process.env.NODE_ENV = 'test';
   process.env.DATABASE_URL =
-    process.env.DATABASE_URL?.replace('tennis_coach_dev', 'tennis_coach_test') ||
+    process.env.DATABASE_URL?.replace('tennis_coach_dev', 'tennis_coach_test') ??
     'postgresql://postgres:password@localhost:5432/tennis_coach_test?connection_limit=5&pool_timeout=2';
 
   // Set test-specific JWT configuration

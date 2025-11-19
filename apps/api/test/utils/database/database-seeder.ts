@@ -193,9 +193,17 @@ export class DatabaseSeeder {
 
     for (const coach of coaches) {
       for (let i = 0; i < Math.min(count, types.length); i++) {
+        // eslint-disable-next-line security/detect-object-injection
+        const typeData = types[i];
+        if (!typeData) {
+          continue;
+        }
+
         const bookingType: BookingType = await this.client.bookingType.create({
           data: {
-            ...types[i],
+            name: typeData.name,
+            description: typeData.description,
+            basePrice: typeData.basePrice,
             coachId: coach.id,
             isActive: true,
           },
@@ -309,8 +317,19 @@ export class DatabaseSeeder {
     for (let i = 0; i < count && i < timeSlots.length; i++) {
       const user = users[i % users.length];
       const coach = coaches[i % coaches.length];
-      const bookingType = bookingTypes.find(bt => bt.coachId === coach.id) || bookingTypes[0];
+      // eslint-disable-next-line security/detect-object-injection
       const timeSlot = timeSlots[i];
+
+      if (!user || !coach || !timeSlot) {
+        continue; // Skip if any required data is missing
+      }
+
+      const bookingType = bookingTypes.find(bt => bt.coachId === coach.id) ?? bookingTypes[0];
+
+      if (!bookingType) {
+        throw new Error(`No booking type found for coach ${coach.id}`);
+      }
+
       const discount = i % 3 === 0 ? discounts.find(d => d.coachId === coach.id) : null;
 
       const basePrice = Number(bookingType.basePrice);
@@ -333,13 +352,13 @@ export class DatabaseSeeder {
                   ? 'Match preparation session'
                   : null,
           paymentId: i % 2 === 0 ? `payment_${i}_${Date.now()}` : null,
-          discountCode: discount?.code || null,
+          discountCode: discount?.code ?? null,
           calendarEventId: `cal_event_${i}_${Date.now()}`,
           userId: user.id,
           coachId: coach.id,
           bookingTypeId: bookingType.id,
           timeSlotId: timeSlot.id,
-          discountId: discount?.id || null,
+          discountId: discount?.id ?? null,
         },
       });
       sessions.push(session);
@@ -360,18 +379,27 @@ export class DatabaseSeeder {
 
     // Create messages for each session
     for (let i = 0; i < Math.min(sessions.length, 3); i++) {
+      // eslint-disable-next-line security/detect-object-injection
       const session = sessions[i];
+      if (!session) {
+        continue;
+      }
+
       const user = users.find(u => u.id === session.userId);
       const coach = coaches.find(c => c.id === session.coachId);
+
+      if (!user || !coach) {
+        continue; // Skip if user or coach not found
+      }
 
       // User to coach message
       const userMessage: Message = await this.client.message.create({
         data: {
-          content: `Hi ${coach?.name}, I'm looking forward to our session on ${session.dateTime.toDateString()}. Any specific things I should prepare?`,
+          content: `Hi ${coach.name}, I'm looking forward to our session on ${session.dateTime.toDateString()}. Any specific things I should prepare?`,
           senderType: Role.USER,
-          senderId: user?.id,
+          senderId: user.id,
           receiverType: Role.COACH,
-          receiverId: coach?.id,
+          receiverId: coach.id,
           sessionId: session.id,
         },
       });
@@ -380,11 +408,11 @@ export class DatabaseSeeder {
       // Coach to user response
       const coachMessage: Message = await this.client.message.create({
         data: {
-          content: `Hi ${user?.name}! Great to hear from you. Please bring comfortable athletic wear and a water bottle. We'll focus on your serve technique as discussed.`,
+          content: `Hi ${user.name}! Great to hear from you. Please bring comfortable athletic wear and a water bottle. We'll focus on your serve technique as discussed.`,
           senderType: Role.COACH,
-          senderId: coach?.id,
+          senderId: coach.id,
           receiverType: Role.USER,
-          receiverId: user?.id,
+          receiverId: user.id,
           sessionId: session.id,
         },
       });

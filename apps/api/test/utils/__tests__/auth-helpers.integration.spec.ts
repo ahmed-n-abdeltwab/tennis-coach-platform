@@ -27,7 +27,7 @@ describe('Auth Helpers Integration Tests', () => {
           isGlobal: true,
         }),
         JwtModule.register({
-          secret: process.env.JWT_SECRET || 'test-secret',
+          secret: process.env.JWT_SECRET ?? 'test-secret',
           signOptions: { expiresIn: parseJwtTime(process.env.JWT_EXPIRES_IN, '24h') },
         }),
       ],

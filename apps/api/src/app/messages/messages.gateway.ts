@@ -16,7 +16,7 @@ import { MessagesService } from './messages.service';
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:4200',
     credentials: true,
   },
 })

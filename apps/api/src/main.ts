@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -21,7 +22,7 @@ async function bootstrap() {
   );
   // CORS
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:4200',
     credentials: true,
   });
 

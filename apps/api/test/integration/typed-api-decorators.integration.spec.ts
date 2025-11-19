@@ -301,7 +301,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
 
       // Verify BulkOperationResultDto schema
       const schema = path.delete.responses['200'].content['application/json'].schema;
-      expect(schema.$ref || schema.allOf).toBeDefined();
+      expect(schema.$ref ?? schema.allOf).toBeDefined();
     });
 
     it('should include 400, 401, and 422 error responses for bulk operations', () => {
@@ -333,7 +333,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
 
       // Verify OperationStatusDto schema
       const schema = path.post.responses['202'].content['application/json'].schema;
-      expect(schema.$ref || schema.allOf).toBeDefined();
+      expect(schema.$ref ?? schema.allOf).toBeDefined();
     });
 
     it('should support custom status type', () => {
@@ -345,7 +345,7 @@ describe('Typed API Decorators - OpenAPI Spec Generation', () => {
 
       // Verify custom status schema
       const schema = path.post.responses['202'].content['application/json'].schema;
-      expect(schema.$ref || schema.allOf).toBeDefined();
+      expect(schema.$ref ?? schema.allOf).toBeDefined();
     });
 
     it('should include 400, 401, and 503 error responses', () => {

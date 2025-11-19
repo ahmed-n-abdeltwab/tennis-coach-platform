@@ -28,7 +28,7 @@ import {
  *
  * @template _T - The response DTO type that decorators will be bound to
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 export interface TypedApiDecorators<_T extends Type<any>> {
   /**
    * Composable error decorator methods
@@ -680,7 +680,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
       applyDecorators(
         ApiResponse({
           status: 201,
-          description: description || 'Resources created successfully',
+          description: description ?? 'Resources created successfully',
           type: [responseType],
         }),
         errors.BadRequest(),
@@ -713,7 +713,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
       applyDecorators(
         ApiResponse({
           status: 200,
-          description: description || 'Resources updated successfully',
+          description: description ?? 'Resources updated successfully',
           type: [responseType],
         }),
         errors.BadRequest(),
@@ -749,7 +749,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
       applyDecorators(
         ApiResponse({
           status: 200,
-          description: description || 'Resources deleted successfully',
+          description: description ?? 'Resources deleted successfully',
           type: BulkOperationResultDto,
         }),
         errors.BadRequest(),
@@ -807,7 +807,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
       applyDecorators(
         ApiResponse({
           status: 202,
-          description: description || 'Operation accepted for processing',
+          description: description ?? 'Operation accepted for processing',
           type: statusType ?? OperationStatusDto,
         }),
         errors.BadRequest(),

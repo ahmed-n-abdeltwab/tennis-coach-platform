@@ -137,7 +137,7 @@ export class SessionsService {
     const sessions = await this.prisma.session.findMany({
       where: {
         ...where,
-        status: status || undefined,
+        status: status ?? undefined,
         dateTime: {
           gte: startDate ? new Date(startDate) : undefined,
           lte: endDate ? new Date(endDate) : undefined,

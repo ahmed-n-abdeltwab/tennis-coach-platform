@@ -13,7 +13,7 @@ export const createRateLimiter = (windowMs: number = 15 * 60 * 1000, max: number
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req: Request) => {
-      return req.ip || req.socket.remoteAddress || 'unknown';
+      return req.ip ?? req.socket.remoteAddress ?? 'unknown';
     },
   });
 };

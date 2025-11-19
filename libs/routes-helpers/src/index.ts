@@ -18,7 +18,7 @@ export * from './lib/generate-routes-from-swagger';
  *
  * type LoginPath = keyof Endpoints; // "/api/auth/login" | ...
  */
-// @ts-ignore - This file is auto-generated at runtime
+// // @ts-expect-error - This file is auto-generated at runtime
 export type { Endpoints } from './constants/api-routes.registry';
 
 /**

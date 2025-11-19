@@ -7,7 +7,7 @@ export default async function integrationGlobalSetup(): Promise<void> {
   // Set integration test environment variables
   process.env.NODE_ENV = 'test';
   process.env.DATABASE_URL =
-    process.env.DATABASE_URL?.replace('tennis_coach_dev', 'tennis_coach_test_integration') ||
+    process.env.DATABASE_URL?.replace('tennis_coach_dev', 'tennis_coach_test_integration') ??
     'postgresql://postgres:password@localhost:5432/tennis_coach_test_integration?connection_limit=5&pool_timeout=2';
 
   // Set test-specific JWT configuration
