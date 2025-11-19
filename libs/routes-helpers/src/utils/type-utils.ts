@@ -61,25 +61,26 @@ export type ExtractMethods<E extends Record<string, any>, P extends ExtractPaths
 
 /**
  * Extract request type for a specific path and method
+ * Returns an object with params and body properties
  *
  * @example GET Request (Query Parameters)
  * ```typescript
  * import { ExtractRequestType, Endpoints } from '@routes-helpers';
  *
- * type SessionParams = ExtractRequestType<Endpoints, "/api/sessions", "GET">;
- * // Result: { status?: string; startDate?: string; endDate?: string }
+ * type SessionRequest = ExtractRequestType<Endpoints, "/api/sessions", "GET">;
+ * // Result: { params: { status?: string; startDate?: string; endDate?: string }; body: never }
  * ```
  *
- * @example POST Request (Body)
+ * @example POST Request (Body only)
  * ```typescript
  * type LoginRequest = ExtractRequestType<Endpoints, "/api/authentication/login", "POST">;
- * // Result: { email: string; password: string }
+ * // Result: { params: never; body: { email: string; password: string } }
  * ```
  *
- * @example Path Parameters
+ * @example PATCH with Path Parameters and Body
  * ```typescript
- * type AccountParams = ExtractRequestType<Endpoints, "/api/accounts/{id}", "GET">;
- * // Result: { id: string }
+ * type UpdateBookingRequest = ExtractRequestType<Endpoints, "/api/booking-types/{id}", "PATCH">;
+ * // Result: { params: { id: string }; body: { name?: string; description?: string; ... } }
  * ```
  *
  * @example In Function Signature
@@ -90,12 +91,14 @@ export type ExtractMethods<E extends Record<string, any>, P extends ExtractPaths
  * >(
  *   path: P,
  *   method: M,
- *   data: ExtractRequestType<Endpoints, P, M>
+ *   request: ExtractRequestType<Endpoints, P, M>
  * ) {
- *   // TypeScript validates data structure matches endpoint requirements
+ *   // TypeScript validates request structure matches endpoint requirements
+ *   const { params, body } = request;
  * }
  * ```
  */
+
 export type ExtractRequestType<
   E extends Record<string, any>,
   P extends keyof E,
@@ -103,15 +106,12 @@ export type ExtractRequestType<
 > =
   E[P] extends Record<string, any>
     ? M extends keyof E[P]
-      ? E[P][M] extends (...args: infer A) => any
-        ? A extends [infer First]
-          ? First extends Record<string, any>
-            ? First
-            : never
-          : never
+      ? E[P][M] extends (...args: infer Args) => any
+        ? Args
         : never
       : never
     : never;
+
 /**
  * Extract response type for a specific path and method
  *
@@ -361,7 +361,7 @@ export type UnwrappedPath<P extends string> = PathWithValues<P>[keyof PathWithVa
  * // Accepts both "/api/users/{id}" and "/api/users/123"
  */
 
-export type FlexiblePath<E extends Record<string, any>> = {
+export type FlexiblePath<E extends Record<string, unknown>> = {
   [P in ExtractPaths<E>]: UnwrappedPath<P>;
 }[ExtractPaths<E>];
 /**
@@ -373,7 +373,7 @@ export type FlexiblePath<E extends Record<string, any>> = {
  * type Matched = MatchPathTemplate<Endpoints, `/api/users/${string}`>
  * // Result: "/api/users/{id}"
  */
-export type MatchPathTemplate<E extends Record<string, any>, RuntimePath extends string> = {
+export type MatchPathTemplate<E extends Record<string, unknown>, RuntimePath extends string> = {
   [P in ExtractPaths<E>]: P extends `${infer _Before}{${infer _Param}}${infer _After}`
     ? RuntimePath extends PathPattern<P>
       ? P
@@ -388,7 +388,7 @@ export type MatchPathTemplate<E extends Record<string, any>, RuntimePath extends
  *
  * This is the main type to use in function signatures to accept both forms
  */
-export type AcceptPath<E extends Record<string, any>> = ExtractPaths<E> | FlexiblePath<E>;
+export type AcceptPath<E extends Record<string, unknown>> = ExtractPaths<E> | FlexiblePath<E>;
 
 /**
  * Build a path with parameters replaced

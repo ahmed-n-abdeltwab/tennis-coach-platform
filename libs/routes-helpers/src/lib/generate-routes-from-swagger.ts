@@ -84,7 +84,7 @@ export function generateEndpointsObject(
     if (!routesByPath.has(path)) {
       routesByPath.set(path, []);
     }
-    routesByPath.get(path)!.push(route);
+    routesByPath.get(path)?.push(route);
   });
 
   // Build the endpoints object
@@ -166,7 +166,6 @@ export async function generateApiRoutes(
   fs.writeFileSync(config.outputPath, code);
 
   console.log(`✅ Generated ${routes.length} routes`);
-  console.log(`📝 Written to: ${config.outputPath}\n`);
 }
 
 /**
@@ -212,7 +211,7 @@ function generateCode(
     if (!routesByPath.has(path)) {
       routesByPath.set(path, []);
     }
-    routesByPath.get(path)!.push(route);
+    routesByPath.get(path)?.push(route);
   });
 
   // Generate interface entries grouped by path
@@ -231,10 +230,19 @@ function generateCode(
         const response = extractResponseType(operation, document);
         methodEntries.push(`    ${method}: (params: ${paramType}) => ${response};`);
       } else {
-        // For non-GET: extract body, return undefined if none
+        // For non-GET: extract both path params and body
+        const pathParams = extractPathParams(document, operation.parameters);
         const bodyType = extractBody(operation.requestBody, document);
         const response = extractResponseType(operation, document);
-        methodEntries.push(`    ${method}: (body: ${bodyType}) => ${response};`);
+
+        // If there are path parameters, include them in the signature
+        if (pathParams !== 'undefined | never') {
+          methodEntries.push(
+            `    ${method}: (params: ${pathParams}, body: ${bodyType}) => ${response};`
+          );
+        } else {
+          methodEntries.push(`    ${method}: (body: ${bodyType}) => ${response};`);
+        }
       }
     });
 
@@ -297,6 +305,31 @@ function isSchemaObject(obj: SchemaObject | ReferenceObject | unknown): obj is S
 function isParameterObject(obj: ParameterObject | ReferenceObject): obj is ParameterObject {
   return 'in' in obj && 'name' in obj;
 }
+
+/**
+ * Extracts only path parameters for non-GET requests
+ * Returns undefined if no path parameters exist
+ */
+function extractPathParams(
+  document: OpenAPIObject,
+  parameters?: (ParameterObject | ReferenceObject)[]
+): string {
+  if (!parameters || parameters.length === 0) {
+    return 'undefined | never';
+  }
+
+  const pathParams: ParameterObject[] = parameters
+    .filter(isParameterObject)
+    .filter(p => p.in === 'path');
+
+  if (pathParams.length === 0) {
+    return 'undefined | never';
+  }
+
+  const properties = pathParams.map((p: ParameterObject) => `${p.name}: string`);
+  return `{ ${properties.join('; ')} }`;
+}
+
 /**
  * Extracts path and query parameters for GET requests
  * Returns undefined if no parameters exist
@@ -438,7 +471,7 @@ function schemaToTypeScript(
     const refPath = schema.$ref;
     // Prevent infinite recursion
     if (visited.has(refPath)) {
-      return schema.$ref.split('/').pop() || 'unknown';
+      return schema.$ref.split('/').pop() ?? 'unknown';
     }
 
     visited.add(refPath);
@@ -456,6 +489,22 @@ function schemaToTypeScript(
 
   // Handle allOf - merge all schemas and combine their properties
   if (isSchemaObject(schema) && schema.allOf && Array.isArray(schema.allOf)) {
+    // Check if this is a Decimal type with example (before resolving allOf)
+    if (schema.example !== undefined) {
+      const exampleStr = String(schema.example).trim();
+      // Use a safer approach: check if it's a valid number without regex
+      const num = Number(exampleStr);
+      if (
+        !isNaN(num) &&
+        isFinite(num) &&
+        exampleStr !== '' &&
+        exampleStr !== 'Infinity' &&
+        exampleStr !== '-Infinity'
+      ) {
+        return 'number';
+      }
+    }
+
     // Resolve all schemas in allOf
     const resolvedSchemas = schema.allOf.map((s: SchemaObject | ReferenceObject) => {
       if (isReferenceObject(s)) {
@@ -477,10 +526,7 @@ function schemaToTypeScript(
       if (isSchemaObject(s) && s.properties) {
         Object.entries(s.properties).forEach(
           ([key, propSchema]: [string, SchemaObject | ReferenceObject]) => {
-            const required =
-              ((s.required?.includes(key)) ||
-                (schema.required?.includes(key))) ??
-              false;
+            const required = (s.required?.includes(key) || schema.required?.includes(key)) ?? false;
             // Set will overwrite previous occurrences, keeping the last one
             mergedProperties.set(key, { schema: propSchema, required });
           }
@@ -553,8 +599,29 @@ function schemaToTypeScript(
       if (schema.format === 'date' || schema.format === 'date-time') {
         return 'string';
       }
-      // Empty object or object without properties
-      return 'Record<string, unknown>';
+      // Check if this is a Decimal/numeric type from Prisma
+      // Prisma Decimal types and nullable numbers are represented as objects with numeric constraints
+      if (schema.minimum !== undefined || schema.maximum !== undefined) {
+        return 'number';
+      }
+      // Check if example looks like a number
+      if (schema.example !== undefined) {
+        const exampleStr = String(schema.example).trim();
+        // Use a safer approach: check if it's a valid number without regex
+        const num = Number(exampleStr);
+        if (
+          !isNaN(num) &&
+          isFinite(num) &&
+          exampleStr !== '' &&
+          exampleStr !== 'Infinity' &&
+          exampleStr !== '-Infinity'
+        ) {
+          return 'number';
+        }
+      }
+
+      // Empty object or object without properties - likely a nullable string field
+      return 'string | null';
     }
 
     // Handle primitives

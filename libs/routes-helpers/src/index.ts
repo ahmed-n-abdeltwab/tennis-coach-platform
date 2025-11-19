@@ -43,8 +43,8 @@ export type {
   FlexiblePath,
   MatchPathTemplate,
   PathPattern,
-  PathsWithMethod,
   PathWithValues,
+  PathsWithMethod,
   RequiresParams,
   UnwrappedPath,
 } from './utils/type-utils';
