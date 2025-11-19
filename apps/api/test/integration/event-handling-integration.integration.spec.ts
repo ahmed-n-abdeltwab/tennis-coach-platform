@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Event Handling Integration Tests
  * Tests event handling, message passing, and real-time communication across modules
@@ -33,6 +34,7 @@ describe('Event Handling Integration Tests', () => {
       await this.app.init();
 
       this.prisma = this.module.get<PrismaService>(PrismaService);
+      this.module = this.module;
     }
 
     getTestModules(): any[] {
@@ -58,24 +60,6 @@ describe('Event Handling Integration Tests', () => {
   beforeAll(async () => {
     testHelper = new EventHandlingIntegrationTest();
     await testHelper.setupTestApp();
-
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-        }),
-        PrismaModule,
-        JwtModule.register({
-          secret: 'test-secret',
-          signOptions: { expiresIn: '1h' },
-        }),
-      ],
-    }).compile();
-
-    app = module.createNestApplication();
-    await app.init();
-
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   afterAll(async () => {

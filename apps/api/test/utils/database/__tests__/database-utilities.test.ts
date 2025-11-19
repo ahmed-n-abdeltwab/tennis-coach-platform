@@ -84,7 +84,7 @@ describe('Database Utilities', () => {
     it('should cleanup test database properly', async () => {
       const testName = `${testSuiteName}-cleanup`;
 
-      const connection = await testDatabaseManager.createTestDatabase(testName);
+      await testDatabaseManager.createTestDatabase(testName);
       expect(testDatabaseManager.getTestDatabase(testName)).toBeDefined();
 
       await testDatabaseManager.cleanupTestDatabase(testName);

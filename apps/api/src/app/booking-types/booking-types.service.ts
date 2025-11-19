@@ -1,8 +1,8 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 
 import { PrismaService } from '../prisma/prisma.service';
 
-import { plainToInstance } from 'class-transformer';
 import {
   BookingTypeResponseDto,
   CreateBookingTypeDto,
@@ -73,7 +73,7 @@ export class BookingTypesService {
       where: { id },
     });
 
-    if (!bookingType || !bookingType.isActive) {
+    if (!bookingType?.isActive) {
       throw new NotFoundException('Booking type not found');
     }
 

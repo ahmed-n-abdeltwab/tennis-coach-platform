@@ -28,7 +28,7 @@ export class HealthService {
       // Test database connection
       await this.prisma.$queryRaw`SELECT 1`;
       checks.database = 'connected';
-    } catch (error) {
+    } catch {
       checks.database = 'disconnected';
       checks.status = 'error';
     }
@@ -45,7 +45,7 @@ export class HealthService {
       // Check if database is ready
       await this.prisma.$queryRaw`SELECT 1`;
       return { status: 'ready', timestamp: new Date().toISOString() };
-    } catch (error) {
+    } catch {
       return { status: 'not ready', timestamp: new Date().toISOString() };
     }
   }

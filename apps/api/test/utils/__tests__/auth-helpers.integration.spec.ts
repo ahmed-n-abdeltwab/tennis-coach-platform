@@ -11,15 +11,13 @@ import { Role } from '@prisma/client';
 import { parseJwtTime } from '@utils';
 
 import { AuthTestHelper } from '../auth';
-import { TypeSafeHttpClient } from '../http';
 import { UserRoleHelper } from '../roles';
-import { ProtectedRouteTester } from '../security';
 
 describe('Auth Helpers Integration Tests', () => {
   let app: INestApplication;
   let authHelper: AuthTestHelper;
-  let httpHelper: TypeSafeHttpClient;
-  let protectedRouteHelper: ProtectedRouteTester;
+  // let httpHelper: TypeSafeHttpClient;
+  // let protectedRouteHelper: ProtectedRouteTester;
   let userRoleHelper: UserRoleHelper;
 
   beforeAll(async () => {
@@ -40,8 +38,8 @@ describe('Auth Helpers Integration Tests', () => {
 
     // Initialize helpers
     authHelper = new AuthTestHelper();
-    httpHelper = new TypeSafeHttpClient(app);
-    protectedRouteHelper = new ProtectedRouteTester(app);
+    // httpHelper = new TypeSafeHttpClient(app);
+    // protectedRouteHelper = new ProtectedRouteTester(app);
     userRoleHelper = new UserRoleHelper();
   });
 
@@ -162,7 +160,7 @@ describe('Auth Helpers Integration Tests', () => {
   });
 
   describe('Token Compatibility', () => {
-    it('should create tokens compatible with NestJS JWT service', () => {
+    it('should create tokens compatible with NestJS JWT service', async () => {
       const testPayload = {
         sub: 'test-user-456',
         email: 'compatibility@example.com',
@@ -179,7 +177,7 @@ describe('Auth Helpers Integration Tests', () => {
       expect(decodedPayload?.role).toBe(testPayload.role);
 
       // Token should be verifiable (not expired)
-      const verifiedPayload = authHelper.verifyToken(token);
+      const verifiedPayload = await authHelper.verifyToken(token);
       expect(verifiedPayload).toBeDefined();
       expect(verifiedPayload?.sub).toBe(testPayload.sub);
     });

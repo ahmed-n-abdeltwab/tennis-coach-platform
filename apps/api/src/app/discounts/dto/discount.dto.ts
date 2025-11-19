@@ -11,6 +11,7 @@ import {
   IsString,
   Min,
 } from 'class-validator';
+
 import { CoachSummaryDto } from '../../time-slots/dto/time-slot.dto';
 export class ValidateDiscountResponseDto {
   code: string;

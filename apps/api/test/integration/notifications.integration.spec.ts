@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Integration tests for Notifications module
  * Tests notification delivery workflows and email service integration
@@ -5,7 +6,6 @@
 
 import { todo } from 'node:test';
 
-import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 
@@ -28,7 +28,6 @@ jest.mock('mailtrap', () => ({
 }));
 
 describe('Notifications Integration', () => {
-  let app: INestApplication;
   let notificationFactory: NotificationMockFactory;
 
   class NotificationsIntegrationTest extends BaseIntegrationTest {
@@ -58,7 +57,6 @@ describe('Notifications Integration', () => {
     testHelper = new NotificationsIntegrationTest();
     await testHelper.setupTestApp();
 
-    // app = testHelper.app;
     notificationFactory = new NotificationMockFactory();
   });
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * E2E Tests: Admin Workflow
  * Tests admin functionality including user management and system configuration

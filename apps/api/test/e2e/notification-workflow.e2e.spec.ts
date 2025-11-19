@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * E2E Tests: Notification Workflow
  * Tests notification flow including email, SMS, and in-app notifications
@@ -11,8 +12,8 @@ import { ApiContractTester, coachFactory, TypeSafeHttpClient, userFactory } from
 import { AuthTestHelper } from '../utils/auth';
 
 describe('Notification Workflow (E2E)', () => {
-  let authHelper: AuthTestHelper;
   let httpHelper: TypeSafeHttpClient;
+  let authHelper: AuthTestHelper;
   let contractHelper: ApiContractTester;
   let userToken: string;
   let coachToken: string;

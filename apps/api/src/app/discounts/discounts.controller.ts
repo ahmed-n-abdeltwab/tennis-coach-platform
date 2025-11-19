@@ -1,8 +1,8 @@
+import { CurrentUser, Roles } from '@common';
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-
-import { CurrentUser, Roles } from '@common';
 import { Role } from '@prisma/client';
+
 import { DiscountsService } from './discounts.service';
 import {
   CreateDiscountDto,

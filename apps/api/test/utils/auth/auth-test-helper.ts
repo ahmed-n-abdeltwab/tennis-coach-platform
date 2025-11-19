@@ -1,6 +1,8 @@
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
 
+import { AuthenticatedHttpClient } from '../auth/authenticated-client';
+
 /**
  * JWT payload structure
  */
@@ -429,15 +431,11 @@ export class AuthTestHelper {
   createAuthenticatedClient<E extends Record<string, any> = Record<string, Record<string, any>>>(
     app: any,
     token?: string
-  ): import('../auth/authenticated-client').AuthenticatedHttpClient<E> {
+  ): AuthenticatedHttpClient<E> {
     // Import dynamically to avoid circular dependencies
-    const { AuthenticatedHttpClient } = require('../auth/authenticated-client');
     const authToken = token || this.createUserToken();
     // Type assertion needed because require() returns untyped module
-    return new AuthenticatedHttpClient(
-      app,
-      authToken
-    ) as import('../auth/authenticated-client').AuthenticatedHttpClient<E>;
+    return new AuthenticatedHttpClient(app, authToken) as AuthenticatedHttpClient<E>;
   }
 
   /**

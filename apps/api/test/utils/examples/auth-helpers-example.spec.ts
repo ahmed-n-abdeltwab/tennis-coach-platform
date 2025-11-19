@@ -154,7 +154,7 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       };
 
       const postResponse = await httpClient.authenticatedPost(
-        '/api/authentication/user/login',
+        '/api/authentication/login',
         userToken,
         postData,
         {
@@ -415,7 +415,7 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
     it('should demonstrate role-based testing workflow', async () => {
       // Create different role users
       const { users, coaches } = userRoleHelper.createMultipleRoleUsers(2);
-      const { userHeaders, coachHeaders } = userRoleHelper.createMultipleRoleAuthHeaders(2);
+      // const { userHeaders, coachHeaders } = userRoleHelper.createMultipleRoleAuthHeaders(2);
 
       // Test that users can access user-specific endpoints
       for (let i = 0; i < users.length; i++) {

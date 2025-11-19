@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Middleware Pipeline Integration Tests
  * Tests middleware integration and request/response pipeline across modules
@@ -45,6 +46,7 @@ describe('Middleware Pipeline Integration Tests', () => {
       await this.app.init();
 
       this.prisma = this.module.get<PrismaService>(PrismaService);
+      this.module = this.module;
     }
 
     getTestModules(): any[] {
@@ -72,10 +74,6 @@ describe('Middleware Pipeline Integration Tests', () => {
   beforeAll(async () => {
     testHelper = new MiddlewarePipelineIntegrationTest();
     await testHelper.setupTestApp();
-    // comment because it's not implemented popery
-    // app = testHelper.app;
-    // prisma = testHelper.prisma;
-    // module = testHelper.module;
   });
 
   afterAll(async () => {

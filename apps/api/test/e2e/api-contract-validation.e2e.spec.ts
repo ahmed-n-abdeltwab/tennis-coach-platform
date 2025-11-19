@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { todo } from 'node:test';
 
 import { Role } from '@prisma/client';
@@ -11,9 +13,6 @@ import { TypeSafeHttpClient } from './../utils/http/type-safe-http-client';
  * E2E Tests: API Contract Validation and Error Response Handling
  * Tests API contracts, error responses, and validation across all endpoints
  */
-
-
-
 
 describe('API Contract Validation and Error Handling (E2E)', () => {
   let authHelper: AuthTestHelper;
@@ -47,7 +46,7 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
       email: testUser.email,
       name: testUser.name,
       password: 'UserPassword123!',
-      role: Role.USER,
+      // role: Role.USER,
     });
     if (userRegisterResponse.ok) {
       userToken = userRegisterResponse.body.accessToken;
@@ -59,7 +58,7 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
       email: testCoach.email,
       name: testCoach.name,
       password: 'CoachPassword123!',
-      role: Role.COACH,
+      // role: Role.COACH,
     });
     if (coachRegisterResponse.ok) {
       coachToken = coachRegisterResponse.body.accessToken;

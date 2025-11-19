@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Integration tests for Calendar module
  * Tests calendar synchronization, management, and database interactions

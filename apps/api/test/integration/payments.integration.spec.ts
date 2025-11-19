@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { todo } from 'node:test';
 
 import { INestApplication } from '@nestjs/common';

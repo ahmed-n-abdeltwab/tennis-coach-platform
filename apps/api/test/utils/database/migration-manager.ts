@@ -9,7 +9,7 @@
  */
 
 import { execSync } from 'child_process';
-import { existsSync, readFileSync } from 'fs';
+import fs, { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 import { PrismaClient } from '@prisma/client';
@@ -417,7 +417,6 @@ export class MigrationManager {
       return [];
     }
 
-    const fs = require('fs');
     return fs
       .readdirSync(this.migrationsPath)
       .filter((item: string) => {

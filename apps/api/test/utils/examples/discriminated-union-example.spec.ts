@@ -133,8 +133,7 @@ describe('Discriminated Union Pattern Examples', () => {
 
     if (response.ok) {
       // response.body is Array<BookingType>
-      const bookingTypes = response.body;
-
+      // const bookingTypes = response.body;
       // bookingTypes.forEach(type => {
       //   console.log(type.id); // string
       //   console.log(type.name); // string
@@ -172,7 +171,7 @@ describe('Discriminated Union Pattern Examples', () => {
    */
   it('should chain operations with proper error handling', async () => {
     // Step 1: Login
-    const loginResponse = await client.post('/api/authentication/user/login', {
+    const loginResponse = await client.post('/api/authentication/login', {
       email: 'user@example.com',
       password: 'password123',
     });
@@ -215,7 +214,6 @@ describe('Discriminated Union Pattern Examples', () => {
       email: 'invalid',
       password: '',
       name: '',
-      role: Role.USER,
     });
 
     expect(validationResponse.ok).toBe(false);

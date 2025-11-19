@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsBoolean, IsEmail, IsOptional, IsString } from 'class-validator';
+
 import { createTypedApiDecorators } from '../../../common';
 
 export class SendBookingConfirmationDto {

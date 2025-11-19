@@ -11,12 +11,6 @@ import {
 import { AuthTestHelper } from '../auth/auth-test-helper';
 import { TypeSafeHttpClient, TypedResponse } from '../http/type-safe-http-client';
 
-
-/**
- * HTTP methods supported by the API
- */
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-
 /**
  * Configuration for role-based access testing
  */

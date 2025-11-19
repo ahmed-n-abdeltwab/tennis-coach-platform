@@ -335,7 +335,7 @@ export class TestDatabaseManager {
     try {
       const url = new URL(fullUrl);
       return `${url.protocol}//${url.username}:${url.password}@${url.host}`;
-    } catch (error) {
+    } catch {
       throw new Error(`Invalid database URL: ${fullUrl}`);
     }
   }
@@ -412,18 +412,18 @@ export class TestDatabaseManager {
     await client.account.deleteMany();
   }
 
-  private async insertSeedData(client: PrismaClient, seedData: any[]): Promise<void> {
+  private async insertSeedData(_client: PrismaClient, _seedData: any[]): Promise<void> {
     // Implementation depends on the structure of seedData
     // This is a placeholder for custom seed data insertion
-    for (const data of seedData) {
-      // Insert data based on type
-      // This would need to be implemented based on specific requirements
-    }
+    // for (const data of seedData) {
+    //   // Insert data based on type
+    //   // This would need to be implemented based on specific requirements
+    // }
   }
 
   private async insertDefaultSeedData(client: PrismaClient): Promise<void> {
     // Create default test users
-    const users = await Promise.all([
+    await Promise.all([
       client.account.create({
         data: {
           email: 'testuser1@example.com',

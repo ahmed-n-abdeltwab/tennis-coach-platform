@@ -15,7 +15,7 @@ export default class JestCustomReporter implements Reporter {
     this.testReporter = TestReporter.getInstance();
   }
 
-  onRunStart(results: AggregatedResult, options: ReporterOnStartOptions): void {
+  onRunStart(_results: AggregatedResult, _options: ReporterOnStartOptions): void {
     this.startTime = Date.now();
     console.log('🚀 Starting test execution...');
   }

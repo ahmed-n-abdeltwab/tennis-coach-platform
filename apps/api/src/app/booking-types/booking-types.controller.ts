@@ -15,6 +15,7 @@ import { Role } from '@prisma/client';
 
 import { Auth } from '../iam/authentication/decorators/auth.decorator';
 import { AuthType } from '../iam/authentication/enums/auth-type.enum';
+
 import { BookingTypesService } from './booking-types.service';
 import {
   BookingTypeApiResponses,

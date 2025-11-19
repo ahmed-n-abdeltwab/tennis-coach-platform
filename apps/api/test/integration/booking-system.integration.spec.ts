@@ -171,10 +171,13 @@ describe('Booking System Integration', () => {
 
       expect(response.ok).toBe(true);
       if (response.ok) {
-        expect(Array.isArray(response.body)).toBe(true);
-        expect(response.body.length).toBeGreaterThan(0);
-        expect(response.body[0]).toHaveProperty('id');
-        expect(response.body[0]?.userId).toBe(testInstance.testUser.id);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(response.body.data).toBeDefined();
+        if (Array.isArray(response.body.data)) {
+          expect(response.body.data.length).toBeGreaterThan(0);
+          expect(response.body[0]).toHaveProperty('id');
+          expect(response.body[0]?.userId).toBe(testInstance.testUser.id);
+        }
       }
     });
 
@@ -186,9 +189,11 @@ describe('Booking System Integration', () => {
 
       expect(response.ok).toBe(true);
       if (response.ok) {
-        expect(Array.isArray(response.body)).toBe(true);
-        expect(response.body.length).toBeGreaterThan(0);
-        expect(response.body[0]?.coachId).toBe(testInstance.testCoach.id);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        if (Array.isArray(response.body.data)) {
+          expect(response.body.data.length).toBeGreaterThan(0);
+          expect(response.body[0]?.coachId).toBe(testInstance.testCoach.id);
+        }
       }
     });
 

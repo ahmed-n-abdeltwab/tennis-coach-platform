@@ -85,14 +85,14 @@ class TestResourceController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete resource with response' })
   @TestResourceController.decorators.Deleted('Resource deleted')
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id') _id: string) {
     return { message: 'Deleted' };
   }
 
   @Delete('no-content/:id')
   @ApiOperation({ summary: 'Delete resource with no content' })
   @TestResourceController.decorators.NoContent('Resource deleted with no content')
-  async deleteNoContent(@Param('id') id: string): Promise<void> {
+  async deleteNoContent(@Param('id') _id: string): Promise<void> {
     // No return
   }
 
@@ -134,7 +134,7 @@ class TestResourceController {
   @Post('async')
   @ApiOperation({ summary: 'Start async operation' })
   @TestResourceController.decorators.Accepted('Operation accepted for processing')
-  async startAsync(@Body() data: any) {
+  async startAsync(@Body() _data: any) {
     return {
       operationId: 'op-123',
       status: 'pending' as const,
@@ -145,7 +145,7 @@ class TestResourceController {
   @Post('async-custom')
   @ApiOperation({ summary: 'Start async operation with custom status' })
   @TestResourceController.decorators.Accepted('Custom async operation started', CustomStatusDto)
-  async startAsyncCustom(@Body() data: any) {
+  async startAsyncCustom(@Body() _data: any) {
     return {
       jobId: 'job-456',
       progress: 0,

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Integration tests for Messages module
  * Tests message sending workflows and database interactions
@@ -39,6 +40,7 @@ describe('Messages Integration', () => {
       await this.app.init();
 
       this.prisma = moduleFixture.get<PrismaService>(PrismaService);
+      this.module = moduleFixture;
     }
   }
 
@@ -48,8 +50,6 @@ describe('Messages Integration', () => {
     testHelper = new MessagesIntegrationTest();
     await testHelper.setupTestApp();
 
-    // app = testHelper.app;
-    // prisma = testHelper.prisma;
     messageFactory = new MessageMockFactory();
     sessionFactory = new SessionMockFactory();
     userFactory = new UserMockFactory();

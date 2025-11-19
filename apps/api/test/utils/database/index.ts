@@ -45,7 +45,7 @@ export async function setupTestDatabaseEnvironment(
     type = 'integration',
     seedData = true,
     seedOptions = {},
-    migrationOptions = {},
+    // migrationOptions = {},
     verbose = false,
   } = options;
 

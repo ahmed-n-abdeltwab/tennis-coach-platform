@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Cross-Module Integration Tests
  * Tests service-to-service interactions, module communication, and dependency injection
@@ -40,6 +41,7 @@ describe('Cross-Module Integration Tests', () => {
       await this.app.init();
 
       this.prisma = this.module.get<PrismaService>(PrismaService);
+      this.module = this.module;
     }
 
     getTestModules(): any[] {
@@ -72,21 +74,6 @@ describe('Cross-Module Integration Tests', () => {
   beforeAll(async () => {
     testHelper = new CrossModuleIntegrationTest();
     await testHelper.setupTestApp();
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        CalendarModule,
-        PrismaModule,
-        JwtModule.register({
-          secret: process.env.JWT_SECRET || 'test-secret',
-          signOptions: { expiresIn: '1h' },
-        }),
-      ],
-    }).compile();
-    app = moduleFixture.createNestApplication();
-    app.setGlobalPrefix('api');
-    await app.init();
-
-    prisma = moduleFixture.get<PrismaService>(PrismaService);
   });
 
   afterAll(async () => {

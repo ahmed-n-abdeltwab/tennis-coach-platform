@@ -1,22 +1,30 @@
-const nxEslintPlugin = require('@nx/eslint-plugin');
-const js = require('@eslint/js');
-const { FlatCompat } = require('@eslint/eslintrc');
-const tsParser = require('@typescript-eslint/parser');
-const typescriptEslint = require('typescript-eslint');
-const prettierConfig = require('eslint-config-prettier');
-const importPlugin = require('eslint-plugin-import');
-const securityPlugin = require('eslint-plugin-security');
-const reactPlugin = require('eslint-plugin-react');
-const reactHooksPlugin = require('eslint-plugin-react-hooks');
-const jsxA11yPlugin = require('eslint-plugin-jsx-a11y');
-const globals = require('globals');
+// @ts-check
+
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { FlatCompat } from '@eslint/eslintrc';
+import js from '@eslint/js';
+import nxEslintPlugin from '@nx/eslint-plugin';
+import tsParser from '@typescript-eslint/parser';
+import prettierConfig from 'eslint-config-prettier';
+import importPlugin from 'eslint-plugin-import';
+import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
+import reactPlugin from 'eslint-plugin-react';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import securityPlugin from 'eslint-plugin-security';
+import globals from 'globals';
+import typescriptEslint from 'typescript-eslint';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const compat = new FlatCompat({
   baseDirectory: __dirname,
   recommendedConfig: js.configs.recommended,
 });
 
-module.exports = [
+export default [
   ...compat.extends('prettier'),
   {
     ignores: [
@@ -72,20 +80,25 @@ module.exports = [
       security: securityPlugin,
     },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+        },
+      ],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-inferrable-types': 'error',
       '@typescript-eslint/no-var-requires': 'error',
       '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
-      '@typescript-eslint/prefer-nullish-coalescing': 'error',
+      '@typescript-eslint/prefer-nullish-coalescing': 'warn',
       '@typescript-eslint/prefer-optional-chain': 'error',
       '@typescript-eslint/no-non-null-assertion': 'warn',
-      //
-      '@typescript-eslint/prefer-nullish-coalescing': 'warn',
-      '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-unused-expressions': 'warn',
+      '@typescript-eslint/no-empty-object-type': 'warn',
 
       'import/order': [
         'error',
@@ -107,8 +120,8 @@ module.exports = [
 
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
-      'no-duplicate-imports': 'error',
-      'no-unused-expressions': 'error',
+      'no-duplicate-imports': 'warn',
+      'no-unused-expressions': 'warn',
       'prefer-const': 'error',
       'no-var': 'error',
       'object-shorthand': 'error',

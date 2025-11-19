@@ -1,13 +1,14 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import { MailtrapTransport } from 'mailtrap';
-import { createTransport } from 'nodemailer';
-import { SessionsService } from './../sessions/sessions.service';
-
 import { Role } from '@prisma/client';
+import { MailtrapTransport } from 'mailtrap';
+import { MailtrapTransporter, MailtrapResponse } from 'mailtrap/dist/types/transport';
+import { createTransport } from 'nodemailer';
+
+import { SessionsService } from './../sessions/sessions.service';
 import notificationsConfig from './config/notifications.config';
 import { MailResponse, SendEmailDto } from './dto/notification.dto';
-import { MailtrapTransporter, MailtrapResponse } from 'mailtrap/dist/types/transport';
+
 
 @Injectable()
 export class NotificationsService {
@@ -32,7 +33,7 @@ export class NotificationsService {
     this.senderEmail = senderEmail;
   }
 
-  async sendEmail(emailDto: SendEmailDto, userId: string, role: Role): Promise<MailResponse> {
+  async sendEmail(emailDto: SendEmailDto, _userId: string, _role: Role): Promise<MailResponse> {
     const { to, subject, html, text } = emailDto;
 
     const info: MailtrapResponse = await this.transporter.sendMail({

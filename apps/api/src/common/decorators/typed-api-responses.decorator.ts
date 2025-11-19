@@ -5,7 +5,6 @@ import {
   BulkOperationResultDto,
   ErrorResponseDto,
   OperationStatusDto,
-  PaginatedResponseDto,
   ValidationErrorResponseDto,
 } from '../dto/base-response.dto';
 
@@ -27,9 +26,10 @@ import {
  * TypeScript interface defining all decorator methods returned by createTypedApiDecorators
  * Provides compile-time type safety and IDE autocomplete for all decorator methods
  *
- * @template T - The response DTO type that decorators will be bound to
+ * @template _T - The response DTO type that decorators will be bound to
  */
-export interface TypedApiDecorators<T extends Type<any>> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface TypedApiDecorators<_T extends Type<any>> {
   /**
    * Composable error decorator methods
    * Use these to add specific error responses to endpoints
@@ -350,7 +350,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
     BadRequest: (description?: string) =>
       ApiResponse({
         status: 400,
-        description: description || 'Bad Request - Validation failed',
+        description: description ?? 'Bad Request - Validation failed',
         type: ValidationErrorResponseDto,
       }),
 
@@ -367,7 +367,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
     Unauthorized: (description?: string) =>
       ApiResponse({
         status: 401,
-        description: description || 'Unauthorized - Invalid or missing token',
+        description: description ?? 'Unauthorized - Invalid or missing token',
         type: ErrorResponseDto,
       }),
 
@@ -397,7 +397,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
     Forbidden: (description?: string) =>
       ApiResponse({
         status: 403,
-        description: description || 'Forbidden - Insufficient permissions',
+        description: description ?? 'Forbidden - Insufficient permissions',
         type: ErrorResponseDto,
       }),
 
@@ -408,7 +408,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
     NotFound: (description?: string) =>
       ApiResponse({
         status: 404,
-        description: description || 'Resource not found',
+        description: description ?? 'Resource not found',
         type: ErrorResponseDto,
       }),
 
@@ -419,7 +419,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
     Conflict: (description?: string) =>
       ApiResponse({
         status: 409,
-        description: description || 'Conflict - Resource already exists or cannot be modified',
+        description: description ?? 'Conflict - Resource already exists or cannot be modified',
         type: ErrorResponseDto,
       }),
 
@@ -430,7 +430,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
     UnprocessableEntity: (description?: string) =>
       ApiResponse({
         status: 422,
-        description: description || 'Unprocessable Entity - Validation failed',
+        description: description ?? 'Unprocessable Entity - Validation failed',
         type: ValidationErrorResponseDto,
       }),
 
@@ -441,7 +441,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
     TooManyRequests: (description?: string) =>
       ApiResponse({
         status: 429,
-        description: description || 'Too Many Requests - Rate limit exceeded',
+        description: description ?? 'Too Many Requests - Rate limit exceeded',
         type: ErrorResponseDto,
       }),
 
@@ -452,7 +452,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
     InternalServerError: (description?: string) =>
       ApiResponse({
         status: 500,
-        description: description || 'Internal Server Error',
+        description: description ?? 'Internal Server Error',
         type: ErrorResponseDto,
       }),
 
@@ -463,7 +463,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
     ServiceUnavailable: (description?: string) =>
       ApiResponse({
         status: 503,
-        description: description || 'Service Unavailable - Temporarily unavailable',
+        description: description ?? 'Service Unavailable - Temporarily unavailable',
         type: ErrorResponseDto,
       }),
   };
@@ -477,7 +477,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
       applyDecorators(
         ApiResponse({
           status: 200,
-          description: description || 'Authentication successful',
+          description: description ?? 'Authentication successful',
           type: responseType,
         }),
         errors.Unauthorized('Invalid credentials'),
@@ -503,30 +503,25 @@ export function createTypedApiDecorators<T extends Type<any>>(
       applyDecorators(
         ApiResponse({
           status: 200,
-          description: description || 'Paginated resources retrieved successfully',
+          description: description ?? 'Paginated resources retrieved successfully',
           schema: {
-            allOf: [
-              // { $ref: getSchemaPath(PaginatedResponseDto<typeof responseType>) },
-              {
+            properties: {
+              data: {
+                type: 'array',
+                items: { $ref: getSchemaPath(responseType) },
+              },
+              meta: {
+                type: 'object',
                 properties: {
-                  data: {
-                    type: 'array',
-                    items: { $ref: getSchemaPath(responseType) },
-                  },
-                  meta: {
-                    type: 'object',
-                    properties: {
-                      page: { type: 'number' },
-                      limit: { type: 'number' },
-                      total: { type: 'number' },
-                      totalPages: { type: 'number' },
-                      hasNext: { type: 'boolean' },
-                      hasPrev: { type: 'boolean' },
-                    },
-                  },
+                  page: { type: 'number' },
+                  limit: { type: 'number' },
+                  total: { type: 'number' },
+                  totalPages: { type: 'number' },
+                  hasNext: { type: 'boolean' },
+                  hasPrev: { type: 'boolean' },
                 },
               },
-            ],
+            },
           },
         }),
         errors.BadRequest('Invalid query parameters'),
@@ -538,7 +533,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
       applyDecorators(
         ApiResponse({
           status: 201,
-          description: description || 'Resource created successfully',
+          description: description ?? 'Resource created successfully',
           type: responseType,
         }),
         errors.BadRequest(),
@@ -549,7 +544,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
       applyDecorators(
         ApiResponse({
           status: 200,
-          description: description || 'Resource retrieved successfully',
+          description: description ?? 'Resource retrieved successfully',
           type: responseType,
         }),
         errors.NotFound()
@@ -559,7 +554,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
       applyDecorators(
         ApiResponse({
           status: 200,
-          description: description || 'Resources retrieved successfully',
+          description: description ?? 'Resources retrieved successfully',
           type: [responseType], // Array type
         }),
         errors.BadRequest('Invalid query parameters')
@@ -569,7 +564,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
       applyDecorators(
         ApiResponse({
           status: 200,
-          description: description || 'Resource updated successfully',
+          description: description ?? 'Resource updated successfully',
           type: responseType,
         }),
         errors.BadRequest(),
@@ -610,7 +605,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
       applyDecorators(
         ApiResponse({
           status: 200,
-          description: description || 'Resource partially updated successfully',
+          description: description ?? 'Resource partially updated successfully',
           type: responseType,
         }),
         errors.BadRequest(),
@@ -623,7 +618,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
       applyDecorators(
         ApiResponse({
           status: 200,
-          description: description || 'Resource deleted successfully',
+          description: description ?? 'Resource deleted successfully',
         }),
         errors.Unauthorized(),
         errors.NotFound(),
@@ -653,7 +648,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
       applyDecorators(
         ApiResponse({
           status: 204,
-          description: description || 'Operation completed successfully with no content',
+          description: description ?? 'Operation completed successfully with no content',
         }),
         errors.Unauthorized(),
         errors.NotFound(),
@@ -813,7 +808,7 @@ export function createTypedApiDecorators<T extends Type<any>>(
         ApiResponse({
           status: 202,
           description: description || 'Operation accepted for processing',
-          type: statusType || OperationStatusDto,
+          type: statusType ?? OperationStatusDto,
         }),
         errors.BadRequest(),
         errors.Unauthorized(),

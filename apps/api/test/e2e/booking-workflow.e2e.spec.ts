@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * E2E Tests: Booking Workflow
  * Tests complete booking workflow including coach selection, time slot booking, and payment

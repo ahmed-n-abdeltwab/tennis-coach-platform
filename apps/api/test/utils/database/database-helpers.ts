@@ -444,7 +444,7 @@ export async function resetSequences(prisma: PrismaService): Promise<void> {
         END LOOP;
       END $$;
     `);
-  } catch (error) {
+  } catch  {
     // Ignore errors if not using PostgreSQL or sequences don't exist
   }
 }

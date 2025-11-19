@@ -28,7 +28,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   constructor(private messagesService: MessagesService) {}
 
-  handleConnection(client: Socket) {
+  handleConnection(_client: Socket) {
     // Client connected
   }
 

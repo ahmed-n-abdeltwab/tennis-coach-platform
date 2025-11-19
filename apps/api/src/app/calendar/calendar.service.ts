@@ -1,16 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Role } from '@prisma/client';
+
 import { SessionsService } from './../sessions/sessions.service';
-
-import { PrismaService } from '../prisma/prisma.service';
-
 import { CalendarEventResponse, CreateCalendarEventDto } from './dto/calendar.dto';
 
 @Injectable()
 export class CalendarService {
-  constructor(
-    private sessionsService: SessionsService
-  ) {}
+  constructor(private sessionsService: SessionsService) {}
 
   async createEvent(
     createDto: CreateCalendarEventDto,
@@ -74,7 +70,7 @@ export class CalendarService {
     await this.sessionsService.update(session.id, { calendarEventId: undefined }, userId, role);
 
     return {
-      eventId: eventId,
+      eventId,
       summary: `The calender event successfully deleted`,
     };
   }

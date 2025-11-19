@@ -238,7 +238,7 @@ export class TestReporter {
     const statusIcon = reportData.summary.success ? '✅' : '❌';
     const duration = (reportData.summary.duration / 1000).toFixed(2);
 
-    console.log(`\n${  '='.repeat(60)}`);
+    console.log(`\n${'='.repeat(60)}`);
     console.log(`${statusIcon} TEST SUMMARY - ${reportData.testType.toUpperCase()}`);
     console.log('='.repeat(60));
     console.log(`📊 Total Tests: ${reportData.summary.total}`);
@@ -256,7 +256,7 @@ export class TestReporter {
       console.log(`Branches: ${reportData.coverage.branches.pct.toFixed(1)}%`);
     }
 
-    console.log(`${'='.repeat(60)  }\n`);
+    console.log(`${'='.repeat(60)}\n`);
   }
 
   private extractCoverageData(coverageMap: ReportData): CoverageReport | null {
@@ -367,12 +367,12 @@ export class TestReporter {
     console.log('📱 Slack notification payload:', JSON.stringify(payload, null, 2));
   }
 
-  private sendEmailNotification(reportData: ReportData): void {
+  private sendEmailNotification(_reportData: ReportData): void {
     // Email notification implementation would go here
     console.log('📧 Email notification would be sent with test results');
   }
 
-  private sendWebhookNotification(reportData: ReportData): void {
+  private sendWebhookNotification(_reportData: ReportData): void {
     const webhookUrl = process.env.TEST_WEBHOOK_URL;
     if (!webhookUrl) return;
 

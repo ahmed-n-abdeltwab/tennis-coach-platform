@@ -36,7 +36,7 @@ export interface Endpoints {
   };
 
   "/api/authentication/signup": {
-    POST: (body: { email: string; password: string; name: string }) => { accessToken: string; refreshToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" } };
+    POST: (body: { email: string; password: string; name: string; role?: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" }) => { accessToken: string; refreshToken: string; account: { id: string; email: string; role: "USER" | "PREMIUM_USER" | "ADMIN" | "COACH" } };
   };
 
   "/api/booking-types": {

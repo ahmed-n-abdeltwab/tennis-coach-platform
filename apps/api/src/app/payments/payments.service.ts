@@ -1,9 +1,9 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
+import { Role } from '@prisma/client';
+
 import { SessionsService } from './../sessions/sessions.service';
 import { TimeSlotsService } from './../time-slots/time-slots.service';
-
-import { Role } from '@prisma/client';
 import paymentsConfig from './config/payments.config';
 import {
   CapturePaymentDto,

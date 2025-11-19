@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * E2E Tests: User Registration and Authentication Flow
  * Tests complete user registration, login, and profile management workflows
@@ -13,13 +14,13 @@ import { AuthTestHelper } from '../utils/auth';
 
 describe('User Registration and Authentication Flow (E2E)', () => {
   let authHelper: AuthTestHelper;
-  let httpClient: TypeSafeHttpClient<Endpoints>;
   let contractHelper: ApiContractTester;
+  let httpClient: TypeSafeHttpClient<Endpoints>;
 
   beforeAll(() => {
     authHelper = new AuthTestHelper();
-    httpClient = new TypeSafeHttpClient<Endpoints>(global.testApp);
     contractHelper = new ApiContractTester(global.testApp);
+    httpClient = new TypeSafeHttpClient<Endpoints>(global.testApp);
   });
 
   describe('User Registration Flow', () => {

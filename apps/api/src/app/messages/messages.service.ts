@@ -1,9 +1,9 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Message, Role } from '@prisma/client';
-import { SessionsService } from './../sessions/sessions.service';
 
 import { PrismaService } from '../prisma/prisma.service';
 
+import { SessionsService } from './../sessions/sessions.service';
 import { CreateMessageDto, GetMessagesQuery, MessageResponseDto } from './dto/message.dto';
 
 type MessageWithRelations = Message & {
@@ -237,7 +237,7 @@ export class MessagesService {
     sessionId: string,
     userId: string,
     role: Role,
-    query: GetMessagesQuery
+    _query: GetMessagesQuery
   ): Promise<MessageResponseDto[]> {
     // Verify user has access to this session
     const session = await this.sessionsService.findUnique(sessionId);

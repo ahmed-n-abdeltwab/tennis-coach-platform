@@ -5,10 +5,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Discount, Role, Session } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 
 import { PrismaService } from '../prisma/prisma.service';
 
-import { Decimal } from '@prisma/client/runtime/library';
 import {
   CreateSessionDto,
   GetSessionsQuery,
@@ -170,7 +170,7 @@ export class SessionsService {
 
   async findUnique(id: string) {
     return this.prisma.session.findUnique({
-      where: { id: id },
+      where: { id },
       include: {
         user: true,
         coach: true,

@@ -24,7 +24,7 @@ export class AccountsService {
    * Transforms Date objects to ISO strings
    */
   private toResponseDto(account: Account): AccountResponseDto {
-    const { passwordHash, ...safeData } = account;
+    const { passwordHash: _passwordHash, ...safeData } = account;
     return {
       ...safeData,
       createdAt: account.createdAt.toISOString(),
@@ -123,7 +123,7 @@ export class AccountsService {
   /**
    * Find all users with optional filters
    */
-  async findUsers(isActive: boolean = true): Promise<AccountResponseDto[]> {
+  async findUsers(isActive = true): Promise<AccountResponseDto[]> {
     const accounts = await this.prisma.account.findMany({
       where: {
         role: { in: [Role.USER, Role.PREMIUM_USER] },
@@ -158,7 +158,7 @@ export class AccountsService {
         email: data.email,
         name: data.name,
         passwordHash,
-        role: data.role || Role.USER,
+        role: data.role ?? Role.USER,
         gender: data.gender,
         age: data.age,
         height: data.height,

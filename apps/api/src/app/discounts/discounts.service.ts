@@ -4,10 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 
 import { PrismaService } from '../prisma/prisma.service';
 
-import { plainToInstance } from 'class-transformer';
 import {
   CreateDiscountDto,
   DiscountResponseDto,
@@ -99,7 +99,7 @@ export class DiscountsService {
       where: { code },
     });
 
-    if (!discount || !discount.isActive) {
+    if (!discount?.isActive) {
       throw new NotFoundException('Discount not found');
     }
 

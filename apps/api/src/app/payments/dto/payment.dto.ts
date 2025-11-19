@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsNumber, IsString, Min } from 'class-validator';
+
 import { createTypedApiDecorators } from '../../../common';
 
 export class CreatePaymentDto {

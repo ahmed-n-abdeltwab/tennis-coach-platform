@@ -1,16 +1,17 @@
+import { randomUUID } from 'crypto';
+
 import { JwtPayload } from '@common';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Account, Role } from '@prisma/client';
-import { RedisService } from './../../redis/redis.service';
+import { parseJwtTime } from '@utils';
 
 import { PrismaService } from '../../prisma/prisma.service';
 import jwtConfig from '../config/jwt.config';
 import { HashingService } from '../hashing/hashing.service';
 
-import { parseJwtTime } from '@utils';
-import { randomUUID } from 'crypto';
+import { RedisService } from './../../redis/redis.service';
 import { AuthResponseDto, LoginDto, RefreshResponseDto, SignUpDto } from './dto';
 
 @Injectable()
@@ -43,11 +44,15 @@ export class AuthenticationService {
         name: signupDto.name,
         passwordHash: await this.hashingService.hash(signupDto.password),
         isOnline: true,
-        role: Role.USER,
+        role: signupDto.role ?? Role.USER,
       },
     });
 
-    return this.generateTokens({ sub: newAccount.id, email: newAccount.email, role: newAccount.role });
+    return this.generateTokens({
+      sub: newAccount.id,
+      email: newAccount.email,
+      role: newAccount.role,
+    });
   }
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {

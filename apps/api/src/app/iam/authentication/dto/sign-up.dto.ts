@@ -5,6 +5,7 @@ import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsEmail,
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -23,6 +24,10 @@ export class SignUpDto extends BaseAuthDto {
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @ApiPropertyOptional({ enum: Role, example: Role.USER })
+  @IsEnum(Role)
+  role?: Role;
 }
 
 // ===========================================
