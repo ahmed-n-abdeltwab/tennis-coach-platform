@@ -11,16 +11,31 @@ import { Endpoints } from '@routes-helpers';
 import { ApiContractTester, TypeSafeHttpClient, userFactory } from '@test-utils';
 
 import { AuthTestHelper } from '../utils/auth';
+import { BaseE2ETest } from '../utils/base/base-e2e.test';
+
+class UserRegistrationAuthE2ETest extends BaseE2ETest {
+  async setupTestApp(): Promise<void> {
+    // Use default AppModule setup from BaseE2ETest
+  }
+}
 
 describe('User Registration and Authentication Flow (E2E)', () => {
+  let testInstance: UserRegistrationAuthE2ETest;
   let authHelper: AuthTestHelper;
   let contractHelper: ApiContractTester;
   let httpClient: TypeSafeHttpClient<Endpoints>;
 
-  beforeAll(() => {
+  beforeAll(async () => {
+    testInstance = new UserRegistrationAuthE2ETest();
+    await testInstance.setup();
+
     authHelper = new AuthTestHelper();
-    contractHelper = new ApiContractTester(global.testApp);
-    httpClient = new TypeSafeHttpClient<Endpoints>(global.testApp);
+    contractHelper = new ApiContractTester(testInstance.app);
+    httpClient = new TypeSafeHttpClient<Endpoints>(testInstance.app);
+  });
+
+  afterAll(async () => {
+    await testInstance.cleanup();
   });
 
   describe('User Registration Flow', () => {
@@ -70,29 +85,6 @@ describe('User Registration and Authentication Flow (E2E)', () => {
   });
 
   describe('User Login Flow', () => {
-    let registeredUser: any;
-
-    beforeEach(async () => {
-      // Register a user for login tests
-      const userData = userFactory.createWithMinimalData({
-        email: 'logintest@example.com',
-        name: 'Login Test User',
-      });
-
-      const registerResponse = await httpClient.post('/api/authentication/signup', {
-        email: userData.email,
-        name: userData.name,
-        password: 'TestPassword123!',
-      });
-      if (registerResponse.ok) {
-        registeredUser = {
-          name: userData.name,
-          password: 'TestPassword123!',
-          ...registerResponse.body.account,
-        };
-      }
-    });
-
     todo('should complete successful login workflow');
 
     todo('should reject invalid credentials');

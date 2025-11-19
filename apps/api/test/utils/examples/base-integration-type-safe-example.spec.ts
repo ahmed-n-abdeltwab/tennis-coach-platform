@@ -315,7 +315,7 @@ describe('BaseIntegrationTest Type-Safe Methods Examples', () => {
     // 403 Forbidden - Wrong role
     const userToken = test.createTestJwtToken({ role: Role.USER });
     const forbiddenResponse = await test.typeSafeAuthenticatedGet(
-      '/api/admin/users' as any,
+      '/api/booking-types',
       userToken
     );
     if (!forbiddenResponse.ok) {

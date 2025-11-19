@@ -69,12 +69,21 @@ export abstract class BaseIntegrationTest {
   abstract getTestModules(): any[];
 
   /**
+   * Gets test controllers for the test module
+   * Can be overridden by concrete test classes
+   */
+  getTestControllers(): any[] {
+    return [];
+  }
+
+  /**
    * Setup method called before each test
    * Creates the test application and sets up the database
    */
   async setup(): Promise<void> {
     this.module = await Test.createTestingModule({
       imports: this.getTestModules(),
+      controllers: this.getTestControllers(),
       providers: this.getTestProviders(),
     }).compile();
 

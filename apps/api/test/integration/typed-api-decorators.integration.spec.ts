@@ -14,16 +14,16 @@ import { ApiOperation, ApiTags, DocumentBuilder, SwaggerModule } from '@nestjs/s
  * Test DTO for decorator testing
  */
 class TestResourceDto extends BaseResponseDto {
-  name!: string;
-  description!: string;
+  name: string;
+  description: string;
 }
 
 /**
  * Custom status DTO for async operations
  */
 class CustomStatusDto {
-  jobId!: string;
-  progress!: number;
+  jobId: string;
+  progress: number;
 }
 
 /**
@@ -156,7 +156,7 @@ import { BaseIntegrationTest } from '../utils/base/base-integration.test';
 class TypedApiDecoratorsTest extends BaseIntegrationTest {
   document: any;
 
-  async setupTestApp(): Promise<void> {
+  override async setupTestApp(): Promise<void> {
     // Generate OpenAPI document
     const config = new DocumentBuilder()
       .setTitle('Test API')
@@ -178,7 +178,11 @@ class TypedApiDecoratorsTest extends BaseIntegrationTest {
     });
   }
 
-  getTestModules(): any[] {
+  override getTestModules(): any[] {
+    return [];
+  }
+
+  override getTestControllers(): any[] {
     return [TestResourceController];
   }
 
