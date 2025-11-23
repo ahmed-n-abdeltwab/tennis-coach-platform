@@ -1,75 +1,16 @@
+import { JwtPayload } from '@common';
+import { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
+import { parseJwtTime } from '@utils';
 
 import { AuthenticatedHttpClient } from '../auth/authenticated-client';
-
-/**
- * JWT payload structure
- */
-export interface JwtPayload {
-  sub: string;
-  email: string;
-  role: Role;
-  iat?: number;
-  exp?: number;
-}
-
-/**
- * Test user structure
- */
-export interface TestUser {
-  id: string;
-  email: string;
-  role: Role;
-}
 
 /**
  * Authentication headers structure
  */
 export interface AuthHeaders {
   Authorization: string;
-}
-
-/**
- * Parse JWT time string to seconds
- * Supports formats like '1h', '24h', '7d', '30d'
- *
- * @param timeStr - Time string (e.g., '1h', '7d')
- * @param defaultValue - Default value if parsing fails
- * @returns Time in seconds
- *
- * @example
- * ```typescript
- * parseJwtTime('1h') // returns 3600
- * parseJwtTime('7d') // returns 604800
- * parseJwtTime('invalid', '24h') // returns 86400
- * ```
- */
-function parseJwtTime(timeStr: string | undefined, defaultValue: string): number {
-  const str = timeStr ?? defaultValue;
-  const match = str.match(/^(\d+)([smhd])$/);
-
-  if (!match) {
-    // If no match, try to parse as number (seconds)
-    const num = parseInt(str, 10);
-    return isNaN(num) ? parseJwtTime(defaultValue, '3600') : num;
-  }
-
-  const [, value, unit] = match;
-  const numValue = parseInt(value ?? '10', 10);
-
-  switch (unit) {
-    case 's':
-      return numValue;
-    case 'm':
-      return numValue * 60;
-    case 'h':
-      return numValue * 60 * 60;
-    case 'd':
-      return numValue * 60 * 60 * 24;
-    default:
-      return parseJwtTime(defaultValue, '3600');
-  }
 }
 
 /**
@@ -113,7 +54,7 @@ export class AuthTestHelper {
   constructor(jwtSecret?: string) {
     this.jwtService = new JwtService({
       secret: jwtSecret ?? process.env.JWT_SECRET ?? 'test-secret',
-      signOptions: { expiresIn: parseJwtTime(process.env.JWT_EXPIRES_IN, '24h') },
+      signOptions: { expiresIn: parseJwtTime(process.env.JWT_EXPIRES_IN, '1h') },
     });
   }
 
@@ -132,14 +73,14 @@ export class AuthTestHelper {
    * });
    * ```
    */
-  createToken(payload: Partial<JwtPayload>): string {
+  async createToken(payload: Partial<JwtPayload>): Promise<string> {
     const defaultPayload: JwtPayload = {
       sub: 'test-user-id',
       email: 'test@example.com',
       role: Role.USER,
       ...payload,
     };
-    return this.jwtService.sign(defaultPayload);
+    return await this.jwtService.signAsync(defaultPayload);
   }
 
   /**
@@ -152,19 +93,19 @@ export class AuthTestHelper {
    * ```typescript
    * const token = authHelper.createUserToken();
    * const customToken = authHelper.createUserToken({
-   *   id: 'custom-id',
+   *   sub: 'custom-id',
    *   email: 'custom@user.com'
    * });
    * ```
    */
-  createUserToken(overrides?: Partial<TestUser>): string {
-    const user: TestUser = {
-      id: 'test-user-id',
+  async createUserToken(payload?: Partial<JwtPayload>): Promise<string> {
+    const user: JwtPayload = {
+      sub: 'test-user-id',
       email: 'user@example.com',
       role: Role.USER,
-      ...overrides,
+      ...payload,
     };
-    return this.createToken({ sub: user.id, email: user.email, role: user.role });
+    return await this.createToken(user);
   }
 
   /**
@@ -177,19 +118,19 @@ export class AuthTestHelper {
    * ```typescript
    * const token = authHelper.createCoachToken();
    * const customToken = authHelper.createCoachToken({
-   *   id: 'coach-123',
+   *   sub: 'coach-123',
    *   email: 'coach@example.com'
    * });
    * ```
    */
-  createCoachToken(overrides?: Partial<TestUser>): string {
-    const coach: TestUser = {
-      id: 'test-coach-id',
-      email: 'coach@example.com',
+  async createCoachToken(payload?: Partial<JwtPayload>): Promise<string> {
+    const user: JwtPayload = {
+      sub: 'test-user-id',
+      email: 'user@example.com',
       role: Role.COACH,
-      ...overrides,
+      ...payload,
     };
-    return this.createToken({ sub: coach.id, email: coach.email, role: coach.role });
+    return await this.createToken(user);
   }
 
   /**
@@ -203,14 +144,14 @@ export class AuthTestHelper {
    * const token = authHelper.createAdminToken();
    * ```
    */
-  createAdminToken(overrides?: Partial<TestUser>): string {
-    const admin: TestUser = {
-      id: 'test-admin-id',
-      email: 'admin@example.com',
+  async createAdminToken(payload?: Partial<JwtPayload>): Promise<string> {
+    const user: JwtPayload = {
+      sub: 'test-user-id',
+      email: 'user@example.com',
       role: Role.ADMIN,
-      ...overrides,
+      ...payload,
     };
-    return this.createToken({ sub: admin.id, email: admin.email, role: admin.role });
+    return await this.createToken(user);
   }
 
   /**
@@ -224,18 +165,14 @@ export class AuthTestHelper {
    * const token = authHelper.createPremiumUserToken();
    * ```
    */
-  createPremiumUserToken(overrides?: Partial<TestUser>): string {
-    const premiumUser: TestUser = {
-      id: 'test-premium-user-id',
-      email: 'premium@example.com',
+  async createPremiumUserToken(payload?: Partial<JwtPayload>): Promise<string> {
+    const user: JwtPayload = {
+      sub: 'test-user-id',
+      email: 'user@example.com',
       role: Role.PREMIUM_USER,
-      ...overrides,
+      ...payload,
     };
-    return this.createToken({
-      sub: premiumUser.id,
-      email: premiumUser.email,
-      role: premiumUser.role,
-    });
+    return await this.createToken(user);
   }
 
   /**
@@ -250,7 +187,7 @@ export class AuthTestHelper {
    * // Use this to test that endpoints reject expired tokens
    * ```
    */
-  createExpiredToken(payload?: Partial<JwtPayload>): string {
+  async createExpiredToken(payload?: Partial<JwtPayload>): Promise<string> {
     const expiredJwtService = new JwtService({
       secret: process.env.JWT_SECRET ?? 'test-secret',
       signOptions: { expiresIn: '-1h' },
@@ -261,7 +198,7 @@ export class AuthTestHelper {
       role: Role.USER,
       ...payload,
     };
-    return expiredJwtService.sign(defaultPayload);
+    return expiredJwtService.signAsync(defaultPayload);
   }
 
   /**
@@ -278,8 +215,8 @@ export class AuthTestHelper {
    * const customHeaders = authHelper.createAuthHeaders(customToken);
    * ```
    */
-  createAuthHeaders(token?: string): AuthHeaders {
-    const authToken = token ?? this.createUserToken();
+  async createAuthHeaders(token?: string): Promise<AuthHeaders> {
+    const authToken = token ?? (await this.createUserToken());
     return { Authorization: `Bearer ${authToken}` };
   }
 
@@ -294,9 +231,9 @@ export class AuthTestHelper {
    * const headers = authHelper.createUserAuthHeaders();
    * ```
    */
-  createUserAuthHeaders(overrides?: Partial<TestUser>): AuthHeaders {
-    const token = this.createUserToken(overrides);
-    return this.createAuthHeaders(token);
+  async createUserAuthHeaders(payload?: Partial<JwtPayload>): Promise<AuthHeaders> {
+    const token = await this.createUserToken(payload);
+    return await this.createAuthHeaders(token);
   }
 
   /**
@@ -310,9 +247,9 @@ export class AuthTestHelper {
    * const headers = authHelper.createCoachAuthHeaders();
    * ```
    */
-  createCoachAuthHeaders(overrides?: Partial<TestUser>): AuthHeaders {
-    const token = this.createCoachToken(overrides);
-    return this.createAuthHeaders(token);
+  async createCoachAuthHeaders(payload?: Partial<JwtPayload>): Promise<AuthHeaders> {
+    const token = await this.createCoachToken(payload);
+    return await this.createAuthHeaders(token);
   }
 
   /**
@@ -326,9 +263,9 @@ export class AuthTestHelper {
    * const headers = authHelper.createAdminAuthHeaders();
    * ```
    */
-  createAdminAuthHeaders(overrides?: Partial<TestUser>): AuthHeaders {
-    const token = this.createAdminToken(overrides);
-    return this.createAuthHeaders(token);
+  async createAdminAuthHeaders(payload?: Partial<JwtPayload>): Promise<AuthHeaders> {
+    const token = await this.createAdminToken(payload);
+    return await this.createAuthHeaders(token);
   }
 
   /**
@@ -342,9 +279,9 @@ export class AuthTestHelper {
    * const headers = authHelper.createPremiumUserAuthHeaders();
    * ```
    */
-  createPremiumUserAuthHeaders(overrides?: Partial<TestUser>): AuthHeaders {
-    const token = this.createPremiumUserToken(overrides);
-    return this.createAuthHeaders(token);
+  async createPremiumUserAuthHeaders(payload?: Partial<JwtPayload>): Promise<AuthHeaders> {
+    const token = await this.createPremiumUserToken(payload);
+    return await this.createAuthHeaders(token);
   }
 
   /**
@@ -359,9 +296,9 @@ export class AuthTestHelper {
    * // Use to test that endpoints reject expired tokens
    * ```
    */
-  createExpiredAuthHeaders(payload?: Partial<JwtPayload>): AuthHeaders {
-    const token = this.createExpiredToken(payload);
-    return this.createAuthHeaders(token);
+  async createExpiredAuthHeaders(payload?: Partial<JwtPayload>): Promise<AuthHeaders> {
+    const token = await this.createExpiredToken(payload);
+    return await this.createAuthHeaders(token);
   }
 
   /**
@@ -376,9 +313,9 @@ export class AuthTestHelper {
    * console.log(payload.email); // 'user@example.com'
    * ```
    */
-  decodeToken(token: string): JwtPayload | null {
+  async decodeToken(token: string): Promise<JwtPayload | null> {
     try {
-      return this.jwtService.decode(token) as JwtPayload;
+      return this.jwtService.decode(token);
     } catch {
       return null;
     }
@@ -402,7 +339,7 @@ export class AuthTestHelper {
    */
   async verifyToken(token: string): Promise<JwtPayload | null> {
     try {
-      return (await this.jwtService.verifyAsync(token)) as JwtPayload;
+      return await this.jwtService.verifyAsync<JwtPayload>(token);
     } catch {
       return null;
     }
@@ -428,14 +365,14 @@ export class AuthTestHelper {
    * const profile = await client.get('/api/accounts/me');
    * ```
    */
-  createAuthenticatedClient<E extends Record<string, any> = Record<string, Record<string, any>>>(
-    app: any,
+  async createAuthenticatedClient<E extends Record<string, any>>(
+    app: INestApplication,
     token?: string
-  ): AuthenticatedHttpClient<E> {
+  ): Promise<AuthenticatedHttpClient<E>> {
     // Import dynamically to avoid circular dependencies
-    const authToken = token ?? this.createUserToken();
+    const authToken = token ?? (await this.createUserToken());
     // Type assertion needed because require() returns untyped module
-    return new AuthenticatedHttpClient(app, authToken) as AuthenticatedHttpClient<E>;
+    return new AuthenticatedHttpClient(app, authToken);
   }
 
   /**
@@ -453,10 +390,10 @@ export class AuthTestHelper {
    * );
    * ```
    */
-  createTokenWithExpiry(payload: Partial<JwtPayload>, expiresIn: string): string {
+  async createTokenWithExpiry(payload?: Partial<JwtPayload>, expiresIn?: string): Promise<string> {
     const customJwtService = new JwtService({
       secret: process.env.JWT_SECRET ?? 'test-secret',
-      signOptions: { expiresIn: expiresIn as any },
+      signOptions: { expiresIn: parseJwtTime(expiresIn, '1hr') },
     });
     const fullPayload: JwtPayload = {
       sub: 'test-user-id',
@@ -464,7 +401,7 @@ export class AuthTestHelper {
       role: Role.USER,
       ...payload,
     };
-    return customJwtService.sign(fullPayload);
+    return await customJwtService.signAsync(fullPayload);
   }
 
   /**
@@ -480,8 +417,11 @@ export class AuthTestHelper {
    * // Wait a few seconds and test token refresh logic
    * ```
    */
-  createSoonToExpireToken(payload?: Partial<JwtPayload>, secondsUntilExpiry = 5): string {
-    return this.createTokenWithExpiry(payload ?? {}, `${secondsUntilExpiry}s`);
+  async createSoonToExpireToken(
+    payload?: Partial<JwtPayload>,
+    secondsUntilExpiry = 5
+  ): Promise<string> {
+    return await this.createTokenWithExpiry(payload, `${secondsUntilExpiry}s`);
   }
 
   /**
@@ -496,14 +436,14 @@ export class AuthTestHelper {
    * const token = authHelper.createRoleToken(Role.COACH);
    * ```
    */
-  createRoleToken(role: Role, overrides?: Partial<TestUser>): string {
-    const user: TestUser = {
-      id: `test-${role.toLowerCase()}-id`,
+  async createRoleToken(role: Role, payload?: Partial<JwtPayload>): Promise<string> {
+    const user: JwtPayload = {
+      sub: `test-${role.toLowerCase()}-id`,
       email: `${role.toLowerCase()}@example.com`,
       role,
-      ...overrides,
+      ...payload,
     };
-    return this.createToken({ sub: user.id, email: user.email, role: user.role });
+    return await this.createToken(user);
   }
 
   /**
@@ -518,9 +458,9 @@ export class AuthTestHelper {
    * const headers = authHelper.createRoleAuthHeaders(Role.ADMIN);
    * ```
    */
-  createRoleAuthHeaders(role: Role, overrides?: Partial<TestUser>): AuthHeaders {
-    const token = this.createRoleToken(role, overrides);
-    return this.createAuthHeaders(token);
+  async createRoleAuthHeaders(role: Role, payload?: Partial<JwtPayload>): Promise<AuthHeaders> {
+    const token = await this.createRoleToken(role, payload);
+    return await this.createAuthHeaders(token);
   }
 
   /**
@@ -534,50 +474,11 @@ export class AuthTestHelper {
    * const token = authHelper.extractTokenFromHeader('Bearer eyJhbGc...');
    * ```
    */
-  extractTokenFromHeader(authHeader: string): string | null {
+  async extractTokenFromHeader(authHeader: string): Promise<string | null> {
     if (!authHeader?.startsWith('Bearer ')) {
       return null;
     }
     return authHeader.substring(7);
-  }
-
-  /**
-   * Check if a token is expired
-   *
-   * @param token - JWT token to check
-   * @returns True if token is expired, false otherwise
-   *
-   * @example
-   * ```typescript
-   * const isExpired = authHelper.isTokenExpired(token);
-   * ```
-   */
-  isTokenExpired(token: string): boolean {
-    const payload = this.decodeToken(token);
-    if (!payload?.exp) {
-      return true;
-    }
-    return payload.exp * 1000 < Date.now();
-  }
-
-  /**
-   * Get token expiration time
-   *
-   * @param token - JWT token
-   * @returns Expiration date or null if token is invalid
-   *
-   * @example
-   * ```typescript
-   * const expiresAt = authHelper.getTokenExpiration(token);
-   * console.log(`Token expires at: ${expiresAt}`);
-   * ```
-   */
-  getTokenExpiration(token: string): Date | null {
-    const payload = this.decodeToken(token);
-    if (!payload?.exp) {
-      return null;
-    }
-    return new Date(payload.exp * 1000);
   }
 
   /**
@@ -594,8 +495,8 @@ export class AuthTestHelper {
    */
   createMultipleRoleTokens(roles: Role[]): Map<Role, string> {
     const tokens = new Map<Role, string>();
-    roles.forEach(role => {
-      tokens.set(role, this.createRoleToken(role));
+    roles.forEach(async role => {
+      tokens.set(role, await this.createRoleToken(role));
     });
     return tokens;
   }
@@ -614,8 +515,8 @@ export class AuthTestHelper {
    */
   createMultipleRoleHeaders(roles: Role[]): Map<Role, AuthHeaders> {
     const headers = new Map<Role, AuthHeaders>();
-    roles.forEach(role => {
-      headers.set(role, this.createRoleAuthHeaders(role));
+    roles.forEach(async role => {
+      headers.set(role, await this.createRoleAuthHeaders(role));
     });
     return headers;
   }

@@ -4,13 +4,14 @@ import type {
   DeepPartial,
   ExtractMethods,
   ExtractPaths,
-  ExtractRequestType,
+  ExtractRequestBody,
+  ExtractRequestParams,
   ExtractResponseType,
+  HttpMethod,
   PathsWithMethod,
 } from '@test-utils';
 import { Endpoints } from '@test-utils';
 import request from 'supertest';
-
 /**
  * Standard error response structure from NestJS
  */
@@ -38,7 +39,7 @@ export interface ValidationErrorResponse {
  */
 export interface RequestOptions {
   /** Additional headers to include in the request */
-  headers?: Record<string, string>;
+  headers?: Record<string, any>;
   /** Expected HTTP status code (will assert if provided) */
   expectedStatus?: number;
   /** Request timeout in milliseconds */
@@ -86,6 +87,19 @@ export interface FailureResponse {
 export type TypedResponse<T> = SuccessResponse<T> | FailureResponse;
 
 /**
+ * Typed Request from an API endpoint
+ *
+ */
+export interface RequestType<
+  E extends Record<string, any>,
+  P extends keyof E,
+  M extends HttpMethod,
+> {
+  body?: DeepPartial<ExtractRequestBody<E, P, M>>;
+  params?: DeepPartial<ExtractRequestParams<E, P, M>>;
+}
+
+/**
  * Type-safe HTTP client for testing API endpoints
  *
  * Provides compile-time validation of:
@@ -101,10 +115,10 @@ export type TypedResponse<T> = SuccessResponse<T> | FailureResponse;
  * const client = new TypeSafeHttpClient(app);
  *
  * // ✅ Valid: TypeScript validates path, method, and request body
- * const response = await client.post('/api/authentication/user/login', {
+ * const response = await client.post('/api/authentication/user/login', { body: {
  *   email: 'user@example.com',
  *   password: 'password123'
- * });
+ * }});
  *
  * // ❌ Compile error: Invalid path
  * await client.get('/api/invalid-path');
@@ -141,6 +155,13 @@ export type TypedResponse<T> = SuccessResponse<T> | FailureResponse;
  * // Option 2: Use buildPath helper
  * const path = buildPath('/api/sessions/{id}', { id: sessionId });
  * const response2 = await client.get(path as '/api/sessions/{id}');
+ *
+ * // Option 3: Use the params props
+ * const response3 = await client.get('/api/sessions/{id}', {
+ *    params: {
+ *      id: sessionId
+ *    }
+ * })
  * ```
  *
  * @example Authenticated Requests
@@ -151,10 +172,10 @@ export type TypedResponse<T> = SuccessResponse<T> | FailureResponse;
  * const sessions = await client.authenticatedGet('/api/sessions', token);
  *
  * // Authenticated POST
- * const newSession = await client.authenticatedPost('/api/sessions', token, {
+ * const newSession = await client.authenticatedPost('/api/sessions', token, { body: {
  *   bookingTypeId: 'booking-123',
  *   timeSlotId: 'slot-456'
- * });
+ * }});
  * ```
  *
  * @example Request Options
@@ -195,38 +216,31 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   async request<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
-    data?: DeepPartial<ExtractRequestType<E, P, M>>,
-    options: RequestOptions = {}
+    payload?: RequestType<E, P, M>,
+    options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
-    // Build path with parameters if needed
-    const builtPath = this.buildPathWithParams(path, data);
+    const { body, params } = payload ?? {};
 
-    // Create supertest request
+    // Build path with params
+    const builtPath = this.buildPathWithParams(path, params as Record<string, any>);
+
+    // Build request
     const normalizedMethod = method.toLowerCase() as Lowercase<M>;
     let req = request(this.app.getHttpServer())[normalizedMethod](builtPath);
 
-    // Add headers
-    if (options.headers) {
-      Object.entries(options.headers).forEach(([key, value]) => {
-        req = req.set(key, value);
-      });
+    // headers
+    if (options?.headers) {
+      for (const [k, v] of Object.entries(options.headers)) {
+        req = req.set(k, v);
+      }
     }
 
-    // Add data for requests
-    if (data != null) {
-      if (method === 'GET') req = req.query(data);
-      else req = req.send(data);
-    }
+    // body/query
+    if (params) req = req.query(params);
+    if (body) req = req.send(body);
 
-    // Set timeout
-    if (options.timeout) {
-      req = req.timeout(options.timeout);
-    }
-
-    // Set expected status
-    if (options.expectedStatus) {
-      req = req.expect(options.expectedStatus);
-    }
+    if (options?.timeout) req = req.timeout(options.timeout);
+    if (options?.expectedStatus) req = req.expect(options.expectedStatus);
 
     const response = await req;
 
@@ -277,10 +291,10 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
    */
   async get<P extends PathsWithMethod<E, 'GET'>>(
     path: P,
-    params?: DeepPartial<ExtractRequestType<E, P, 'GET'>>,
+    payload?: RequestType<E, P, 'GET'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
-    return this.request(path, 'GET', params, options);
+    return this.request(path, 'GET', payload, options);
   }
 
   /**
@@ -309,10 +323,10 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
    */
   async post<P extends PathsWithMethod<E, 'POST'>>(
     path: P,
-    body?: DeepPartial<ExtractRequestType<E, P, 'POST'>>,
+    payload?: RequestType<E, P, 'POST'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
-    return this.request(path, 'POST', body, options);
+    return this.request(path, 'POST', payload, options);
   }
 
   /**
@@ -320,10 +334,10 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
    */
   async put<P extends PathsWithMethod<E, 'PUT'>>(
     path: P,
-    body?: DeepPartial<ExtractRequestType<E, P, 'PUT'>>,
+    payload?: RequestType<E, P, 'PUT'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
-    return this.request(path, 'PUT', body, options);
+    return this.request(path, 'PUT', payload, options);
   }
 
   /**
@@ -331,10 +345,10 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
    */
   async delete<P extends PathsWithMethod<E, 'DELETE'>>(
     path: P,
-    params?: DeepPartial<ExtractRequestType<E, P, 'DELETE'>>,
+    payload?: RequestType<E, P, 'DELETE'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
-    return this.request(path, 'DELETE', params, options);
+    return this.request(path, 'DELETE', payload, options);
   }
 
   /**
@@ -342,19 +356,19 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
    */
   async patch<P extends PathsWithMethod<E, 'PATCH'>>(
     path: P,
-    body?: DeepPartial<ExtractRequestType<E, P, 'PATCH'>>,
+    payload?: RequestType<E, P, 'PATCH'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
-    return this.request(path, 'PATCH', body, options);
+    return this.request(path, 'PATCH', payload, options);
   }
 
   async authenticatedGet<P extends PathsWithMethod<E, 'GET'>>(
     path: P,
     token: string,
-    params?: DeepPartial<ExtractRequestType<E, P, 'GET'>>,
+    payload?: RequestType<E, P, 'GET'>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
-    return this.get(path, params, {
+    return this.get(path, payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -363,10 +377,10 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   async authenticatedPost<P extends PathsWithMethod<E, 'POST'>>(
     path: P,
     token: string,
-    body?: DeepPartial<ExtractRequestType<E, P, 'POST'>>,
+    payload?: RequestType<E, P, 'POST'>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
-    return this.post(path, body, {
+    return this.post(path, payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -375,10 +389,10 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   async authenticatedPut<P extends PathsWithMethod<E, 'PUT'>>(
     path: P,
     token: string,
-    body?: DeepPartial<ExtractRequestType<E, P, 'PUT'>>,
+    payload?: RequestType<E, P, 'PUT'>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
-    return this.put(path, body, {
+    return this.put(path, payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -387,10 +401,10 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   async authenticatedDelete<P extends PathsWithMethod<E, 'DELETE'>>(
     path: P,
     token: string,
-    params?: DeepPartial<ExtractRequestType<E, P, 'DELETE'>>,
+    payload?: RequestType<E, P, 'DELETE'>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
-    return this.delete(path, params, {
+    return this.delete(path, payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -402,10 +416,10 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   async authenticatedPatch<P extends PathsWithMethod<E, 'PATCH'>>(
     path: P,
     token: string,
-    body?: DeepPartial<ExtractRequestType<E, P, 'PATCH'>>,
+    payload?: RequestType<E, P, 'DELETE'>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
-    return this.patch(path, body, {
+    return this.patch(path, payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
     });

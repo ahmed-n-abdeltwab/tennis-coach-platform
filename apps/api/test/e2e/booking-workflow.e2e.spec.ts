@@ -48,9 +48,7 @@ describe('Booking Workflow (E2E)', () => {
 
     // Register user
     const userRegisterResponse = await httpHelper.post('/api/authentication/signup', {
-      email: testUser.email,
-      name: testUser.name,
-      password: 'UserPassword123!',
+      body: { email: testUser.email, name: testUser.name, password: 'UserPassword123!' },
     });
     if (userRegisterResponse.ok) {
       userToken = userRegisterResponse.body.accessToken;
@@ -59,9 +57,7 @@ describe('Booking Workflow (E2E)', () => {
 
     // Register coach
     const coachRegisterResponse = await httpHelper.post('/api/authentication/signup', {
-      email: testCoach.email,
-      name: testCoach.name,
-      password: 'CoachPassword123!',
+      body: { email: testCoach.email, name: testCoach.name, password: 'CoachPassword123!' },
     });
     if (coachRegisterResponse.ok) {
       coachToken = coachRegisterResponse.body.accessToken;
@@ -147,9 +143,11 @@ describe('Booking Workflow (E2E)', () => {
       const createSessionResponse = await httpHelper.post(
         '/api/sessions',
         {
-          bookingTypeId: bookingType.id,
-          timeSlotId: timeSlot.id,
-          notes: 'Test session for management',
+          body: {
+            bookingTypeId: bookingType.id,
+            timeSlotId: timeSlot.id,
+            notes: 'Test session for management',
+          },
         },
         {
           headers: { Authorization: `Bearer ${userToken}` },
@@ -199,8 +197,7 @@ describe('Booking Workflow (E2E)', () => {
       const createSessionResponse = await httpHelper.post(
         '/api/sessions',
         {
-          bookingTypeId: scenario.bookingType.id,
-          timeSlotId: scenario.timeSlot.id,
+          body: { bookingTypeId: scenario.bookingType.id, timeSlotId: scenario.timeSlot.id },
         },
         {
           headers: { Authorization: `Bearer ${userToken}` },

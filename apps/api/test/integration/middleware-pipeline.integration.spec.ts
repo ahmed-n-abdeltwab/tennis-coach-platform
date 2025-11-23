@@ -6,10 +6,10 @@
 
 import { todo } from 'node:test';
 
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 
 import { AccountsModule } from '../../src/app/accounts/accounts.module';
 import { BookingTypesModule } from '../../src/app/booking-types/booking-types.module';
@@ -20,55 +20,51 @@ import { PrismaService } from '../../src/app/prisma/prisma.service';
 import { SessionsModule } from '../../src/app/sessions/sessions.module';
 import { BaseIntegrationTest } from '../utils';
 
-describe('Middleware Pipeline Integration Tests', () => {
-  let app: INestApplication;
-  let prisma: PrismaService;
-  let module: TestingModule;
+class MiddlewarePipelineIntegrationTest extends BaseIntegrationTest {
+  async setupTestApp(): Promise<void> {
+    this.module = await Test.createTestingModule({
+      imports: this.getTestModules(),
+    }).compile();
 
-  class MiddlewarePipelineIntegrationTest extends BaseIntegrationTest {
-    async setupTestApp(): Promise<void> {
-      this.module = await Test.createTestingModule({
-        imports: this.getTestModules(),
-      }).compile();
+    this.app = this.module.createNestApplication();
 
-      this.app = this.module.createNestApplication();
+    // Setup global middleware and pipes
+    this.app.setGlobalPrefix('api');
+    this.app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      })
+    );
 
-      // Setup global middleware and pipes
-      this.app.setGlobalPrefix('api');
-      this.app.useGlobalPipes(
-        new ValidationPipe({
-          whitelist: true,
-          forbidNonWhitelisted: true,
-          transform: true,
-        })
-      );
+    await this.app.init();
 
-      await this.app.init();
-
-      this.prisma = this.module.get<PrismaService>(PrismaService);
-      this.module = this.module;
-    }
-
-    getTestModules(): any[] {
-      return [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          envFilePath: ['.env.test', '.env'],
-        }),
-        JwtModule.register({
-          secret: 'test-secret',
-          signOptions: { expiresIn: '1h' },
-        }),
-        PrismaModule,
-        IamModule,
-        AccountsModule,
-        BookingTypesModule,
-        SessionsModule,
-        MessagesModule,
-      ];
-    }
+    this.prisma = this.module.get<PrismaService>(PrismaService);
+    this.module = this.module;
   }
 
+  getTestModules(): any[] {
+    return [
+      ConfigModule.forRoot({
+        isGlobal: true,
+        envFilePath: ['.env.test', '.env'],
+      }),
+      JwtModule.register({
+        secret: 'test-secret',
+        signOptions: { expiresIn: '1h' },
+      }),
+      PrismaModule,
+      IamModule,
+      AccountsModule,
+      BookingTypesModule,
+      SessionsModule,
+      MessagesModule,
+    ];
+  }
+}
+
+describe('Middleware Pipeline Integration Tests', () => {
   let testHelper: MiddlewarePipelineIntegrationTest;
 
   beforeAll(async () => {

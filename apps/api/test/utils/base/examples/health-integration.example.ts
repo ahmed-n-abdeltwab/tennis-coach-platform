@@ -3,7 +3,6 @@
  * Demonstrates how to use the base class for integration testing
  */
 
-
 import { Provider } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
@@ -29,7 +28,7 @@ export class HealthIntegrationTest extends BaseIntegrationTest {
   // Example test methods that would use the base class functionality
   async testHealthEndpointIntegration(): Promise<void> {
     // Use base class HTTP methods for integration testing
-    const response = await this.get('/health');
+    const response = await this.get('/api/health');
 
     // Use base class assertion methods
     this.assertSuccessResponse(response, 200);
@@ -42,7 +41,7 @@ export class HealthIntegrationTest extends BaseIntegrationTest {
     expect(userCount).toBeGreaterThanOrEqual(0);
 
     // Test the health endpoint with real database
-    const response = await this.get('/health/database');
+    const response = await this.get('/api/health/liveness');
     this.assertSuccessResponse(response, 200);
     this.assertResponseStructure(response, ['database', 'status']);
   }
@@ -55,12 +54,12 @@ export class HealthIntegrationTest extends BaseIntegrationTest {
     });
 
     // Create JWT token for the test user
-    const token = this.createTestJwtToken({ sub: testUser.id, email: testUser.email });
+    const token = await this.createTestJwtToken({ sub: testUser.id, email: testUser.email });
 
     // Use authenticated request methods from base class
-    const response = await this.authenticatedGet('/health/user', token);
+    const response = await this.authenticatedGet('/api/health', token);
 
     this.assertSuccessResponse(response, 200);
-    this.assertResponseStructure(response, ['user', 'status']);
+    this.assertResponseStructure(response, ['status']);
   }
 }

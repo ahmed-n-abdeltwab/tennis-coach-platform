@@ -6,7 +6,6 @@
 
 import { todo } from 'node:test';
 
-import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { MessagesModule } from '../../src/app/messages/messages.module';
@@ -17,32 +16,29 @@ import { CoachMockFactory } from '../utils/factories/coach.factory';
 import { MessageMockFactory } from '../utils/factories/message.factory';
 import { SessionMockFactory } from '../utils/factories/session.factory';
 import { UserMockFactory } from '../utils/factories/user.factory';
+class MessagesIntegrationTest extends BaseIntegrationTest {
+  override getTestModules(): any[] {
+    return [MessagesModule, PrismaModule];
+  }
+  async setupTestApp(): Promise<void> {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [MessagesModule, PrismaModule],
+    }).compile();
+
+    this.app = moduleFixture.createNestApplication();
+    this.app.setGlobalPrefix('api');
+    await this.app.init();
+
+    this.prisma = moduleFixture.get<PrismaService>(PrismaService);
+    this.module = moduleFixture;
+  }
+}
 
 describe('Messages Integration', () => {
-  let app: INestApplication;
-  let prisma: PrismaService;
   let messageFactory: MessageMockFactory;
   let sessionFactory: SessionMockFactory;
   let userFactory: UserMockFactory;
   let coachFactory: CoachMockFactory;
-
-  class MessagesIntegrationTest extends BaseIntegrationTest {
-    override getTestModules(): any[] {
-      return [MessagesModule, PrismaModule];
-    }
-    async setupTestApp(): Promise<void> {
-      const moduleFixture: TestingModule = await Test.createTestingModule({
-        imports: [MessagesModule, PrismaModule],
-      }).compile();
-
-      this.app = moduleFixture.createNestApplication();
-      this.app.setGlobalPrefix('api');
-      await this.app.init();
-
-      this.prisma = moduleFixture.get<PrismaService>(PrismaService);
-      this.module = moduleFixture;
-    }
-  }
 
   let testHelper: MessagesIntegrationTest;
 

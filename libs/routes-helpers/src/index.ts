@@ -38,16 +38,20 @@ export type {
   ExtractMethods,
   ExtractPathParams,
   ExtractPaths,
+  ExtractRequestBody,
+  ExtractRequestParams,
   ExtractRequestType,
   ExtractResponseType,
   FlexiblePath,
   MatchPathTemplate,
   PathPattern,
-  PathWithValues,
   PathsWithMethod,
+  PathWithValues,
   RequiresParams,
   UnwrappedPath,
 } from './utils/type-utils';
 
 // Export runtime helper function
 export { buildPath } from './utils/type-utils';
+
+export type { HttpMethod } from './interfaces/IRoutes';

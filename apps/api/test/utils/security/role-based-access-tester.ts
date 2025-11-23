@@ -4,8 +4,8 @@ import {
   Endpoints,
   ExtractMethods,
   ExtractPaths,
-  ExtractRequestType,
   ExtractResponseType,
+  RequestType,
 } from '@test-utils';
 
 import { AuthTestHelper } from '../auth/auth-test-helper';
@@ -115,11 +115,11 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     path: P,
     method: M,
     config: RoleAccessConfig,
-    data?: ExtractRequestType<E, P, M>
+    data?: RequestType<E, P, M>
   ): Promise<RoleAccessTestResult[]> {
     const { allowedRoles, deniedRoles = [], successStatus, deniedStatus = 403 } = config;
     const defaultSuccessStatus = method === 'POST' ? 201 : 200;
-    const expectedSuccessStatus = successStatus || defaultSuccessStatus;
+    const expectedSuccessStatus = successStatus ?? defaultSuccessStatus;
 
     const results: RoleAccessTestResult[] = [];
 
@@ -166,7 +166,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     path: P,
     method: M,
     allowedRoles: Role[],
-    data?: ExtractRequestType<E, P, M>
+    data?: RequestType<E, P, M>
   ): Promise<RoleAccessTestResult[]> {
     const allRoles = [Role.USER, Role.COACH, Role.ADMIN, Role.PREMIUM_USER];
     const deniedRoles = allRoles.filter(role => !allowedRoles.includes(role));
@@ -201,7 +201,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     path: P,
     method: M,
     allowedRoles: Role[],
-    data?: ExtractRequestType<E, P, M>
+    data?: RequestType<E, P, M>
   ): Promise<void> {
     const results = await this.testAllRoles(path, method, allowedRoles, data);
 
@@ -240,9 +240,9 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     path: P,
     method: M,
     role: Role,
-    data?: ExtractRequestType<E, P, M>
+    data?: RequestType<E, P, M>
   ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
-    const token = this.createTokenForRole(role);
+    const token = await this.createTokenForRole(role);
     const expectedStatus = method === 'POST' ? 201 : 200;
 
     return this.httpClient.request(path, method, data, {
@@ -275,10 +275,10 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     path: P,
     method: M,
     role: Role,
-    data?: ExtractRequestType<E, P, M>,
+    data?: RequestType<E, P, M>,
     expectedStatus = 403
   ): Promise<void> {
-    const token = this.createTokenForRole(role);
+    const token = await this.createTokenForRole(role);
 
     await this.httpClient.request(path, method, data, {
       headers: { Authorization: `Bearer ${token}` },
@@ -295,7 +295,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     method: M,
     role: Role,
     expectedStatus: number,
-    data?: ExtractRequestType<E, P, M>
+    data?: RequestType<E, P, M>
   ): Promise<RoleAccessTestResult> {
     const token = this.createTokenForRole(role);
 
@@ -326,7 +326,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
    * Create a token for a specific role
    * @private
    */
-  private createTokenForRole(role: Role): string {
+  private async createTokenForRole(role: Role): Promise<string> {
     switch (role) {
       case Role.USER:
         return this.authHelper.createUserToken();

@@ -110,17 +110,17 @@ export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {
 
   createLoginDto(overrides?: { email?: string; password?: string }) {
     return {
-      email: overrides?.email || this.generateEmail('test'),
-      password: overrides?.password || 'testPassword123',
+      email: overrides?.email ?? this.generateEmail('test'),
+      password: overrides?.password ?? 'testPassword123',
     };
   }
 
   createRegisterDto(overrides?: { email?: string; password?: string; name?: string }) {
     const id = this.generateId();
     return {
-      email: overrides?.email || this.generateEmail('test'),
-      password: overrides?.password || 'testPassword123',
-      name: overrides?.name || `Test User ${id.slice(-8)}`,
+      email: overrides?.email ?? this.generateEmail('test'),
+      password: overrides?.password ?? 'testPassword123',
+      name: overrides?.name ?? `Test User ${id.slice(-8)}`,
     };
   }
 

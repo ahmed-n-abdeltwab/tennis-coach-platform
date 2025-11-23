@@ -1,16 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { Role } from '@prisma/client';
-import {
-  Endpoints,
-  ExtractMethods,
-  ExtractPaths,
-  ExtractRequestType,
-  ExtractResponseType,
-} from '@test-utils';
+import { Endpoints, ExtractMethods, ExtractPaths, ExtractResponseType } from '@test-utils';
 
 import { AuthTestHelper } from '../auth/auth-test-helper';
-import { TypeSafeHttpClient, TypedResponse } from '../http/type-safe-http-client';
-
+import { RequestType, TypeSafeHttpClient, TypedResponse } from '../http/type-safe-http-client';
 
 /**
  * Helper class for testing protected routes
@@ -84,9 +77,9 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
   async testRequiresAuth<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
-    data?: ExtractRequestType<E, P, M>
+    payload?: RequestType<E, P, M>
   ): Promise<void> {
-    await this.httpClient.request(path, method, data, {
+    await this.httpClient.request(path, method, payload, {
       expectedStatus: 401,
     });
   }
@@ -110,11 +103,11 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
   async testRejectsExpiredToken<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
-    data?: ExtractRequestType<E, P, M>
+    payload?: RequestType<E, P, M>
   ): Promise<void> {
     const expiredToken = this.authHelper.createExpiredToken();
 
-    await this.httpClient.request(path, method, data, {
+    await this.httpClient.request(path, method, payload, {
       headers: { Authorization: `Bearer ${expiredToken}` },
       expectedStatus: 401,
     });
@@ -142,15 +135,15 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
   async testAcceptsUserToken<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
-    data?: ExtractRequestType<E, P, M>,
+    payload?: RequestType<E, P, M>,
     expectedStatus?: number
   ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
     const userToken = this.authHelper.createUserToken();
     const defaultStatus = method === 'POST' ? 201 : 200;
 
-    return this.httpClient.request(path, method, data, {
+    return this.httpClient.request(path, method, payload, {
       headers: { Authorization: `Bearer ${userToken}` },
-      expectedStatus: expectedStatus || defaultStatus,
+      expectedStatus: expectedStatus ?? defaultStatus,
     });
   }
 
@@ -176,15 +169,15 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
   async testAcceptsCoachToken<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
-    data?: ExtractRequestType<E, P, M>,
+    payload?: RequestType<E, P, M>,
     expectedStatus?: number
   ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
     const coachToken = this.authHelper.createCoachToken();
     const defaultStatus = method === 'POST' ? 201 : 200;
 
-    return this.httpClient.request(path, method, data, {
+    return this.httpClient.request(path, method, payload, {
       headers: { Authorization: `Bearer ${coachToken}` },
-      expectedStatus: expectedStatus || defaultStatus,
+      expectedStatus: expectedStatus ?? defaultStatus,
     });
   }
 
@@ -210,15 +203,15 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
   async testAcceptsAdminToken<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
-    data?: ExtractRequestType<E, P, M>,
+    payload?: RequestType<E, P, M>,
     expectedStatus?: number
   ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
     const adminToken = this.authHelper.createAdminToken();
     const defaultStatus = method === 'POST' ? 201 : 200;
 
-    return this.httpClient.request(path, method, data, {
+    return this.httpClient.request(path, method, payload, {
       headers: { Authorization: `Bearer ${adminToken}` },
-      expectedStatus: expectedStatus || defaultStatus,
+      expectedStatus: expectedStatus ?? defaultStatus,
     });
   }
 
@@ -257,17 +250,17 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
     path: P,
     allowedRoles: Role[],
     method: M,
-    data?: ExtractRequestType<E, P, M>
+    payload?: RequestType<E, P, M>
   ): Promise<void> {
     const roles = [Role.USER, Role.COACH, Role.ADMIN, Role.PREMIUM_USER] as const;
 
     for (const role of roles) {
-      const token = this.createTokenForRole(role);
+      const token = await this.createTokenForRole(role);
 
       const isAllowed = allowedRoles.includes(role);
       const expectedStatus = isAllowed ? (method === 'POST' ? 201 : 200) : 403;
 
-      await this.httpClient.request(path, method, data, {
+      await this.httpClient.request(path, method, payload, {
         headers: { Authorization: `Bearer ${token}` },
         expectedStatus,
       });
@@ -278,7 +271,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
    * Create a token for a specific role
    * @private
    */
-  private createTokenForRole(role: Role): string {
+  private async createTokenForRole(role: Role): Promise<string> {
     switch (role) {
       case Role.USER:
         return this.authHelper.createUserToken();

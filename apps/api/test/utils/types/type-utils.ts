@@ -28,40 +28,6 @@ export type DeepPartial<T> = T extends object
   : T;
 
 /**
- * Mock HTTP request object for testing
- * Provides a type-safe mock request object with common properties
- */
-export interface MockRequest<TBody = any, TUser = any, TParams = any, TQuery = any> {
-  /** Request body */
-  body: TBody;
-  /**ticated user object */
-  user: TUser;
-  /** Request headers */
-  headers: Record<string, string>;
-  /** Query parameters */
-  query: TQuery;
-  /** Path parameters */
-  params: TParams;
-}
-
-/**
- * Mock HTTP response object for testing
- * Provides a type-safe mock response object with common methods
- */
-export interface MockResponse<TBody = any> {
-  /** Set HTTP status code */
-  status: jest.Mock<MockResponse<TBody>, [number]>;
-  /** Send JSON response */
-  json: jest.Mock<MockResponse<TBody>, [TBody]>;
-  /** Send response */
-  send: jest.Mock<MockResponse<TBody>, [any]>;
-  /** Set cookie */
-  cookie: jest.Mock<MockResponse<TBody>, [string, string, any?]>;
-  /** Set header */
-  header: jest.Mock<MockResponse<TBody>, [string, string]>;
-}
-
-/**
  * Extract the return type of a function, unwrapping Promises
  *
  * @example
@@ -273,3 +239,37 @@ export function isNumber(value: unknown): value is number {
 export function isBoolean(value: unknown): value is boolean {
   return typeof value === 'boolean';
 }
+
+// ============================================================================
+// Re-exports from libraries for convenience
+// ============================================================================
+
+/**
+ * Endpoints interface and utility types (re-exported from @routes-helpers)
+ *
+ * Use these for type-safe endpoint definitions and type extraction.
+ *
+ * @example
+ * ```typescript
+ * import { Endpoints, ExtractPaths, ExtractResponseType } from '@test-utils';
+ *
+ * type AllPaths = ExtractPaths<Endpoints>;
+ * type SessionsResponse = ExtractResponseType<Endpoints, '/api/sessions', 'GET'>;
+ * ```
+ */
+export { buildPath } from '@routes-helpers';
+export type {
+  AcceptPath,
+  Endpoints,
+  ExtractMethods,
+  ExtractPathParams,
+  ExtractPaths,
+  ExtractRequestBody,
+  ExtractRequestParams,
+  ExtractRequestType,
+  ExtractResponseType,
+  HttpMethod,
+  PathsWithMethod,
+  PathWithValues,
+  RequiresParams,
+} from '@routes-helpers';

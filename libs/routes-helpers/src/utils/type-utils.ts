@@ -61,26 +61,49 @@ export type ExtractMethods<E extends Record<string, any>, P extends ExtractPaths
 
 /**
  * Extract request type for a specific path and method
- * Returns an object with params and body properties
+ * Returns a tuple [params, body] where both are always present
  *
  * @example GET Request (Query Parameters)
  * ```typescript
  * import { ExtractRequestType, Endpoints } from '@routes-helpers';
  *
  * type SessionRequest = ExtractRequestType<Endpoints, "/api/sessions", "GET">;
- * // Result: { params: { status?: string; startDate?: string; endDate?: string }; body: never }
+ * // Result: {
+ * //    params: {
+ * //        status?: string | undefined;
+ * //        startDate?: string | undefined;
+ * //        endDate?: string | undefined;
+ * //    };
+ * //    body: undefined;
+ * //}
  * ```
  *
  * @example POST Request (Body only)
  * ```typescript
  * type LoginRequest = ExtractRequestType<Endpoints, "/api/authentication/login", "POST">;
- * // Result: { params: never; body: { email: string; password: string } }
+ * // Result: {
+ * //    params: undefined;
+ * //    body: {
+ * //        email: string;
+ * //        password: string;
+ * //    };
+ * //}
  * ```
  *
  * @example PATCH with Path Parameters and Body
  * ```typescript
  * type UpdateBookingRequest = ExtractRequestType<Endpoints, "/api/booking-types/{id}", "PATCH">;
- * // Result: { params: { id: string }; body: { name?: string; description?: string; ... } }
+ * // Result: {
+ * //    params: {
+ * //        id: string;
+ * //    };
+ * //    body: {
+ * //        name?: string | undefined;
+ * //        description?: string | undefined;
+ * //        basePrice?: number | undefined;
+ * //        isActive?: boolean | undefined;
+ * //    };
+ * //}
  * ```
  *
  * @example In Function Signature
@@ -94,7 +117,7 @@ export type ExtractMethods<E extends Record<string, any>, P extends ExtractPaths
  *   request: ExtractRequestType<Endpoints, P, M>
  * ) {
  *   // TypeScript validates request structure matches endpoint requirements
- *   const { params, body } = request;
+ *   const {params, body} = request;
  * }
  * ```
  */
@@ -106,11 +129,62 @@ export type ExtractRequestType<
 > =
   E[P] extends Record<string, any>
     ? M extends keyof E[P]
-      ? E[P][M] extends (...args: infer Args) => any
-        ? Args
+      ? E[P][M] extends (params: infer Params, body: infer Body) => any
+        ? {
+            readonly params: Params;
+            readonly body: Body;
+          }
         : never
       : never
     : never;
+
+/**
+ * Extract params type from request tuple
+ * Use this to get the first element (params) from ExtractRequestType
+ *
+ * @example GET Request
+ * ```typescript
+ * import { ExtractRequestParams, Endpoints } from '@routes-helpers';
+ *
+ * type SessionParams = ExtractRequestParams<Endpoints, "/api/sessions", "GET">;
+ * // Result: { status?: string; startDate?: string; endDate?: string }
+ * ```
+ *
+ * @example PATCH with Path Parameters
+ * ```typescript
+ * type UpdateParams = ExtractRequestParams<Endpoints, "/api/booking-types/{id}", "PATCH">;
+ * // Result: { id: string }
+ * ```
+ */
+export type ExtractRequestParams<
+  E extends Record<string, any>,
+  P extends keyof E,
+  M extends HttpMethod,
+> = ExtractRequestType<E, P, M>['params'];
+
+/**
+ * Extract body type from request tuple
+ * Use this to get the second element (body) from ExtractRequestType
+ *
+ * @example POST Request
+ * ```typescript
+ * import { ExtractRequestBody, Endpoints } from '@routes-helpers';
+ *
+ * type LoginBody = ExtractRequestBody<Endpoints, "/api/authentication/login", "POST">;
+ * // Result: { email: string; password: string }
+ * ```
+ *
+ * @example GET Request (no body)
+ * ```typescript
+ * type SessionBody = ExtractRequestBody<Endpoints, "/api/sessions", "GET">;
+ * // Result: undefined | never
+ * ```
+ */
+export type ExtractRequestBody<
+  E extends Record<string, any>,
+  P extends keyof E,
+  M extends HttpMethod,
+> = ExtractRequestType<E, P, M>['body'];
 
 /**
  * Extract response type for a specific path and method
@@ -205,7 +279,7 @@ export type ExtractResponseType<
  * }
  * ```
  */
-export type PathsWithMethod<E extends Record<string, any>, M extends HttpMethod> = Extract<
+export type PathsWithMethod<E extends Record<string, unknown>, M extends HttpMethod> = Extract<
   {
     [P in ExtractPaths<E>]: M extends keyof E[P] ? P : never;
   }[ExtractPaths<E>],
@@ -415,9 +489,9 @@ export type AcceptPath<E extends Record<string, unknown>> = ExtractPaths<E> | Fl
  * // Result: "/api/posts/42"
  * ```
  *
- * @example No Parameters
+ * @example No Parameters (undefined | never)
  * ```typescript
- * const path = buildPath("/api/sessions");
+ * const path = buildPath("/api/sessions", undefined);
  * // Result: "/api/sessions"
  * ```
  *
@@ -434,11 +508,17 @@ export type AcceptPath<E extends Record<string, unknown>> = ExtractPaths<E> | Fl
  * ```
  *
  * @param path - The path template with parameters in {braces}
- * @param params - Object containing parameter values
+ * @param params - Object containing parameter values, or undefined/never if no params needed
  * @returns The path with parameters replaced
  */
-export function buildPath(path: string, params?: Record<string, string | number>): string {
-  if (!params || typeof params !== 'object') return path;
+export function buildPath(
+  path: string,
+  params?: Record<string, string | number> | undefined | never
+): string {
+  // Handle undefined, never, null, or non-object params
+  if (!params || typeof params !== 'object' || Object.keys(params).length === 0) {
+    return path;
+  }
 
   let result = path;
   Object.entries(params).forEach(([key, value]) => {

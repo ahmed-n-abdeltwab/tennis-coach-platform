@@ -56,10 +56,12 @@ describe('Admin Workflow (E2E)', () => {
 
     // Register admin coach
     const adminRegisterResponse = await httpHelper.post('/api/authentication/signup', {
-      email: adminCoach.email,
-      name: adminCoach.name,
-      password: 'AdminPassword123!',
-      role: Role.ADMIN,
+      body: {
+        email: adminCoach.email,
+        name: adminCoach.name,
+        password: 'AdminPassword123!',
+        role: Role.ADMIN,
+      },
     });
 
     if (!adminRegisterResponse.ok) {
@@ -77,10 +79,12 @@ describe('Admin Workflow (E2E)', () => {
 
     // Register regular coach
     const coachRegisterResponse = await httpHelper.post('/api/authentication/signup', {
-      email: regularCoach.email,
-      name: regularCoach.name,
-      password: 'CoachPassword123!',
-      role: Role.COACH,
+      body: {
+        email: regularCoach.email,
+        name: regularCoach.name,
+        password: 'CoachPassword123!',
+        role: Role.COACH,
+      },
     });
 
     if (!coachRegisterResponse.ok) {
@@ -92,10 +96,12 @@ describe('Admin Workflow (E2E)', () => {
 
     // Register regular user
     const userRegisterResponse = await httpHelper.post('/api/authentication/signup', {
-      email: testUser.email,
-      name: testUser.name,
-      password: 'UserPassword123!',
-      role: Role.USER,
+      body: {
+        email: testUser.email,
+        name: testUser.name,
+        password: 'UserPassword123!',
+        role: Role.USER,
+      },
     });
     if (!userRegisterResponse.ok) {
       throw Error(`[Admin Workflow (E2E)] status: ${adminRegisterResponse.status}`);

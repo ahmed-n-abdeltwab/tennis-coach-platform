@@ -7,6 +7,7 @@ import { Test } from '@nestjs/testing';
 
 import { AppModule } from '../../../src/app/app.module';
 import { PrismaService } from '../../../src/app/prisma/prisma.service';
+
 import { BaseIntegrationTest } from './base-integration.test';
 
 export abstract class BaseE2ETest extends BaseIntegrationTest {
@@ -29,7 +30,7 @@ export abstract class BaseE2ETest extends BaseIntegrationTest {
   /**
    * Override setup to use AppModule
    */
-  async setup(): Promise<void> {
+  override async setup(): Promise<void> {
     this.module = await Test.createTestingModule({
       imports: this.getTestModules(),
     }).compile();

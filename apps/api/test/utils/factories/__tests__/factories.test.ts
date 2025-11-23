@@ -46,8 +46,8 @@ describe('Mock Factory System', () => {
       const users = userFactory.createMany(3);
 
       expect(users).toHaveLength(3);
-      expect(users[0]!.id).not.toBe(users[1]!.id);
-      expect(users[1]!.id).not.toBe(users[2]!.id);
+      expect(users[0]?.id).not.toBe(users[1]?.id);
+      expect(users[1]?.id).not.toBe(users[2]?.id);
     });
 
     it('should create minimal user data', () => {
@@ -295,14 +295,14 @@ describe('Mock Factory System', () => {
       expect(messages).toHaveLength(4);
 
       // Check alternating senders
-      expect(messages[0]!.senderType).toBe(Role.USER);
-      expect(messages[1]!.senderType).toBe(Role.COACH);
-      expect(messages[2]!.senderType).toBe(Role.USER);
-      expect(messages[3]!.senderType).toBe(Role.COACH);
+      expect(messages[0]?.senderType).toBe(Role.USER);
+      expect(messages[1]?.senderType).toBe(Role.COACH);
+      expect(messages[2]?.senderType).toBe(Role.USER);
+      expect(messages[3]?.senderType).toBe(Role.COACH);
 
       // Check chronological order
-      expect(messages[0]!.sentAt.getTime()).toBeLessThan(messages[1]!.sentAt.getTime());
-      expect(messages[1]!.sentAt.getTime()).toBeLessThan(messages[2]!.sentAt.getTime());
+      expect(messages[0]?.sentAt.getTime()).toBeLessThan(messages[1]!.sentAt.getTime());
+      expect(messages[1]?.sentAt.getTime()).toBeLessThan(messages[2]!.sentAt.getTime());
     });
   });
 });

@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-
 import { todo } from 'node:test';
 
 import { Role } from '@prisma/client';
@@ -43,10 +42,12 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
 
     // Register user
     const userRegisterResponse = await httpClient.post('/api/authentication/signup', {
-      email: testUser.email,
-      name: testUser.name,
-      password: 'UserPassword123!',
-      // role: Role.USER,
+      body: {
+        email: testUser.email,
+        name: testUser.name,
+        password: 'UserPassword123!',
+        role: Role.USER,
+      },
     });
     if (userRegisterResponse.ok) {
       userToken = userRegisterResponse.body.accessToken;
@@ -55,10 +56,12 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
 
     // Register coach
     const coachRegisterResponse = await httpClient.post('/api/authentication/signup', {
-      email: testCoach.email,
-      name: testCoach.name,
-      password: 'CoachPassword123!',
-      // role: Role.COACH,
+      body: {
+        email: testCoach.email,
+        name: testCoach.name,
+        password: 'CoachPassword123!',
+        role: Role.COACH,
+      },
     });
     if (coachRegisterResponse.ok) {
       coachToken = coachRegisterResponse.body.accessToken;

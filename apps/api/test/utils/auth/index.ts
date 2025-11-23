@@ -7,7 +7,7 @@
 
 // Export AuthTestHelper and related types
 export { AuthTestHelper } from './auth-test-helper';
-export type { AuthHeaders, JwtPayload, TestUser } from './auth-test-helper';
+export type { AuthHeaders } from './auth-test-helper';
 
 // Export AuthenticatedHttpClient
 export { AuthenticatedHttpClient } from './authenticated-client';

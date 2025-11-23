@@ -6,10 +6,9 @@
 
 import { todo } from 'node:test';
 
-import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 
 import { AccountsModule } from '../../src/app/accounts/accounts.module';
 import { BookingTypesModule } from '../../src/app/booking-types/booking-types.module';
@@ -24,51 +23,46 @@ import { PrismaService } from '../../src/app/prisma/prisma.service';
 import { SessionsModule } from '../../src/app/sessions/sessions.module';
 import { TimeSlotsModule } from '../../src/app/time-slots/time-slots.module';
 import { BaseIntegrationTest } from '../utils';
+class CrossModuleIntegrationTest extends BaseIntegrationTest {
+  async setupTestApp(): Promise<void> {
+    this.module = await Test.createTestingModule({
+      imports: this.getTestModules(),
+    }).compile();
 
-describe('Cross-Module Integration Tests', () => {
-  let app: INestApplication;
-  let prisma: PrismaService;
-  let module: TestingModule;
+    this.app = this.module.createNestApplication();
+    this.app.setGlobalPrefix('api');
+    await this.app.init();
 
-  class CrossModuleIntegrationTest extends BaseIntegrationTest {
-    async setupTestApp(): Promise<void> {
-      this.module = await Test.createTestingModule({
-        imports: this.getTestModules(),
-      }).compile();
-
-      this.app = this.module.createNestApplication();
-      this.app.setGlobalPrefix('api');
-      await this.app.init();
-
-      this.prisma = this.module.get<PrismaService>(PrismaService);
-      this.module = this.module;
-    }
-
-    getTestModules(): any[] {
-      return [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          envFilePath: ['.env.test', '.env'],
-        }),
-        JwtModule.register({
-          secret: 'test-secret',
-          signOptions: { expiresIn: '1h' },
-        }),
-        PrismaModule,
-        IamModule,
-        AccountsModule,
-        BookingTypesModule,
-        SessionsModule,
-        TimeSlotsModule,
-        DiscountsModule,
-        MessagesModule,
-        PaymentsModule,
-        CalendarModule,
-        NotificationsModule,
-      ];
-    }
+    this.prisma = this.module.get<PrismaService>(PrismaService);
+    this.module = this.module;
   }
 
+  getTestModules(): any[] {
+    return [
+      ConfigModule.forRoot({
+        isGlobal: true,
+        envFilePath: ['.env.test', '.env'],
+      }),
+      JwtModule.register({
+        secret: 'test-secret',
+        signOptions: { expiresIn: '1h' },
+      }),
+      PrismaModule,
+      IamModule,
+      AccountsModule,
+      BookingTypesModule,
+      SessionsModule,
+      TimeSlotsModule,
+      DiscountsModule,
+      MessagesModule,
+      PaymentsModule,
+      CalendarModule,
+      NotificationsModule,
+    ];
+  }
+}
+
+describe('Cross-Module Integration Tests', () => {
   let testHelper: CrossModuleIntegrationTest;
 
   beforeAll(async () => {

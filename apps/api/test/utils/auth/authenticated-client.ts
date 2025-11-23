@@ -1,12 +1,12 @@
 import { INestApplication } from '@nestjs/common';
-import type {
-  Endpoints,
-  ExtractRequestType,
-  ExtractResponseType,
-  PathsWithMethod,
-} from '@routes-helpers';
+import type { ExtractResponseType, PathsWithMethod } from '@routes-helpers';
 
-import { RequestOptions, TypeSafeHttpClient, TypedResponse } from '../http/type-safe-http-client';
+import {
+  RequestOptions,
+  RequestType,
+  TypeSafeHttpClient,
+  TypedResponse,
+} from '../http/type-safe-http-client';
 
 /**
  * HTTP client with authentication built-in
@@ -86,7 +86,7 @@ import { RequestOptions, TypeSafeHttpClient, TypedResponse } from '../http/type-
  * const response2 = await client.get(path as '/api/sessions/{id}');
  * ```
  */
-export class AuthenticatedHttpClient<E extends Record<string, any> = Endpoints> {
+export class AuthenticatedHttpClient<E extends Record<string, any>> {
   private client: TypeSafeHttpClient<E>;
 
   /**
@@ -107,10 +107,10 @@ export class AuthenticatedHttpClient<E extends Record<string, any> = Endpoints> 
    */
   async get<P extends PathsWithMethod<E, 'GET'>>(
     path: P,
-    params?: ExtractRequestType<E, P, 'GET'>,
+    payload?: RequestType<E, P, 'GET'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
-    return this.client.authenticatedGet(path, this.token, params, options);
+    return this.client.authenticatedGet(path, this.token, payload, options);
   }
 
   /**
@@ -118,10 +118,10 @@ export class AuthenticatedHttpClient<E extends Record<string, any> = Endpoints> 
    */
   async post<P extends PathsWithMethod<E, 'POST'>>(
     path: P,
-    body?: ExtractRequestType<E, P, 'POST'>,
+    payload?: RequestType<E, P, 'POST'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
-    return this.client.authenticatedPost(path, this.token, body, options);
+    return this.client.authenticatedPost(path, this.token, payload, options);
   }
 
   /**
@@ -129,10 +129,10 @@ export class AuthenticatedHttpClient<E extends Record<string, any> = Endpoints> 
    */
   async put<P extends PathsWithMethod<E, 'PUT'>>(
     path: P,
-    body?: ExtractRequestType<E, P, 'PUT'>,
+    payload?: RequestType<E, P, 'PUT'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
-    return this.client.authenticatedPut(path, this.token, body, options);
+    return this.client.authenticatedPut(path, this.token, payload, options);
   }
 
   /**
@@ -140,10 +140,10 @@ export class AuthenticatedHttpClient<E extends Record<string, any> = Endpoints> 
    */
   async delete<P extends PathsWithMethod<E, 'DELETE'>>(
     path: P,
-    params?: ExtractRequestType<E, P, 'DELETE'>,
+    payload?: RequestType<E, P, 'DELETE'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
-    return this.client.authenticatedDelete(path, this.token, params, options);
+    return this.client.authenticatedDelete(path, this.token, payload, options);
   }
 
   /**
@@ -151,10 +151,10 @@ export class AuthenticatedHttpClient<E extends Record<string, any> = Endpoints> 
    */
   async patch<P extends PathsWithMethod<E, 'PATCH'>>(
     path: P,
-    body?: ExtractRequestType<E, P, 'PATCH'>,
+    payload?: RequestType<E, P, 'PATCH'>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
-    return this.client.authenticatedPatch(path, this.token, body, options);
+    return this.client.authenticatedPatch(path, this.token, payload, options);
   }
 
   /**

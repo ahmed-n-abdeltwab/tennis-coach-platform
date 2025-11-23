@@ -76,14 +76,6 @@ describe.skip('Factory Pattern Examples', () => {
       expect(user.passwordHash).toBeDefined();
       expect(user.createdAt).toBeInstanceOf(Date);
       expect(user.updatedAt).toBeInstanceOf(Date);
-
-      // Optional fields may or may not be populated
-      console.log('Generated user:', {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      });
     });
 
     /**
@@ -100,13 +92,6 @@ describe.skip('Factory Pattern Examples', () => {
       expect(coach.bio).toBeDefined();
       expect(coach.credentials).toBeDefined();
       expect(coach.philosophy).toBeDefined();
-
-      console.log('Generated coach:', {
-        id: coach.id,
-        email: coach.email,
-        name: coach.name,
-        bio: coach.bio,
-      });
     });
 
     /**
@@ -514,13 +499,6 @@ describe.skip('Factory Pattern Examples', () => {
       expect(scenario.session.coachId).toBe(scenario.coach.id);
       expect(scenario.session.bookingTypeId).toBe(scenario.bookingType.id);
       expect(scenario.session.timeSlotId).toBe(scenario.timeSlot.id);
-
-      console.log('Test scenario created:', {
-        user: scenario.user.name,
-        coach: scenario.coach.name,
-        bookingType: scenario.bookingType.name,
-        sessionStatus: scenario.session.status,
-      });
     });
 
     /**
@@ -605,13 +583,6 @@ describe.skip('Factory Pattern Examples', () => {
       const users = userFactory.createMany(3);
       const coaches = coachFactory.createMany(2);
 
-      // Persist to database (in real tests, you'd use Prisma to create these)
-      // This is just a demonstration of the pattern
-      console.log('Would persist to database:', {
-        userCount: users.length,
-        coachCount: coaches.length,
-      });
-
       // Verify data structure before persisting
       users.forEach(user => {
         expect(user.email).toBeDefined();
@@ -644,16 +615,6 @@ describe.skip('Factory Pattern Examples', () => {
       expect(seededData.sessions.length).toBeGreaterThan(0);
       expect(seededData.discounts.length).toBeGreaterThan(0);
       expect(seededData.messages.length).toBeGreaterThan(0);
-
-      console.log('Seeded data counts:', {
-        users: seededData.users.length,
-        coaches: seededData.coaches.length,
-        bookingTypes: seededData.bookingTypes.length,
-        timeSlots: seededData.timeSlots.length,
-        sessions: seededData.sessions.length,
-        discounts: seededData.discounts.length,
-        messages: seededData.messages.length,
-      });
     });
 
     /**
@@ -673,8 +634,6 @@ describe.skip('Factory Pattern Examples', () => {
       expect(seededData.bookingTypes.length).toBeGreaterThan(0);
       expect(seededData.timeSlots.length).toBeGreaterThan(0);
       expect(seededData.sessions.length).toBeGreaterThan(0);
-
-      console.log('Minimal seed data created for fast tests');
     });
 
     /**
@@ -690,12 +649,6 @@ describe.skip('Factory Pattern Examples', () => {
 
       // Select specific users to persist
       const activeUsers = users.slice(0, 3);
-
-      // In real tests, persist to database
-      console.log('Would persist selected users:', {
-        total: users.length,
-        persisted: activeUsers.length,
-      });
 
       // Verify selection
       expect(activeUsers).toHaveLength(3);

@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Role } from '@prisma/client';
 import { Endpoints } from '@routes-helpers';
 
 import { AppModule } from '../../../src/app/app.module';
@@ -45,10 +46,12 @@ describe.skip('TypeSafeHttpClient Examples', () => {
 
     // Create a test user and get auth token
     const signupResponse = await client.post('/api/authentication/signup', {
-      email: 'test@example.com',
-      password: 'password123',
-      name: 'Test User',
-      role: 'USER',
+      body: {
+        email: 'test@example.com',
+        password: 'password123',
+        name: 'Test User',
+        role: 'USER',
+      },
     });
 
     if (signupResponse.ok) {
@@ -63,9 +66,11 @@ describe.skip('TypeSafeHttpClient Examples', () => {
   describe('Basic Usage - Public Endpoints', () => {
     it('should make a type-safe POST request to login', async () => {
       // TypeScript ensures the request body matches the expected type
-      const response = await client.post('/api/authentication/user/login', {
-        email: 'test@example.com',
-        password: 'password123',
+      const response = await client.post('/api/authentication/login', {
+        body: {
+          email: 'test@example.com',
+          password: 'password123',
+        },
       });
 
       // Use discriminated union to narrow the type
@@ -80,7 +85,7 @@ describe.skip('TypeSafeHttpClient Examples', () => {
     });
 
     it('should make a type-safe GET request to health endpoint', async () => {
-      const response = await client.get('/api/health', undefined);
+      const response = await client.get('/api/health');
 
       expect(response.status).toBe(200);
     });
@@ -95,7 +100,10 @@ describe.skip('TypeSafeHttpClient Examples', () => {
 
   describe('Authenticated Requests', () => {
     it('should make authenticated GET request to /api/accounts/me', async () => {
-      const authenticatedClient = authHelper.createAuthenticatedClient<Endpoints>(app, accessToken);
+      const authenticatedClient = await authHelper.createAuthenticatedClient<Endpoints>(
+        app,
+        accessToken
+      );
 
       // GET request with no parameters (undefined is optional)
       const response = await authenticatedClient.get('/api/accounts/me');
@@ -115,13 +123,16 @@ describe.skip('TypeSafeHttpClient Examples', () => {
     });
 
     it('should make authenticated PATCH request to update account', async () => {
-      const authenticatedClient = authHelper.createAuthenticatedClient<Endpoints>(app, accessToken);
+      const authenticatedClient = await authHelper.createAuthenticatedClient<Endpoints>(
+        app,
+        accessToken
+      );
 
       // Get current account
       const accountResponse = await authenticatedClient.get('/api/accounts/me');
 
       if (!accountResponse.ok) {
-        throw new Error('Failed to get account');
+        throw new Error('Failed to get accounts');
       }
 
       const accountId = accountResponse.body.id;
@@ -129,13 +140,15 @@ describe.skip('TypeSafeHttpClient Examples', () => {
       // Update account with type-safe request
       // For endpoints with path parameters, include the parameter in the body
       // The client will extract it and build the correct path
-      const response = await authenticatedClient.patch(
-        `/api/accounts/${accountId}` as '/api/accounts/{id}',
-        {
+      const response = await authenticatedClient.patch('/api/accounts/{id}', {
+        body: {
           name: 'Updated Name',
           bio: 'This is my bio',
-        }
-      );
+        },
+        params: {
+          id: accountId,
+        },
+      });
 
       expect(response.ok).toBe(true);
       if (response.ok) {
@@ -156,10 +169,12 @@ describe.skip('TypeSafeHttpClient Examples', () => {
     it('demonstrates compile-time type checking for request bodies', async () => {
       // ✅ Valid request - TypeScript is happy
       const validRequest = await client.post('/api/authentication/signup', {
-        email: 'newuser@example.com',
-        password: 'securepass',
-        name: 'New User',
-        role: 'USER', // Only valid roles are allowed
+        body: {
+          email: 'newuser@example.com',
+          password: 'securepass',
+          name: 'New User',
+          role: Role.USER,
+        },
       });
 
       expect(validRequest.ok).toBe(true);
@@ -170,9 +185,11 @@ describe.skip('TypeSafeHttpClient Examples', () => {
     });
 
     it('demonstrates compile-time type checking for response types', async () => {
-      const response = await client.post('/api/authentication/user/login', {
-        email: 'test@example.com',
-        password: 'password123',
+      const response = await client.post('/api/authentication/login', {
+        body: {
+          email: 'test@example.com',
+          password: 'password123',
+        },
       });
       if (response.ok) {
         const account = response.body.account;
@@ -185,13 +202,18 @@ describe.skip('TypeSafeHttpClient Examples', () => {
 
   describe('Best Practices', () => {
     it('shows how to handle GET requests with query parameters', async () => {
-      const authenticatedClient = authHelper.createAuthenticatedClient<Endpoints>(app, accessToken);
+      const authenticatedClient = await authHelper.createAuthenticatedClient<Endpoints>(
+        app,
+        accessToken
+      );
 
       // GET requests with query parameters
       const response = await authenticatedClient.get('/api/time-slots', {
-        startDate: '2024-01-01',
-        endDate: '2024-12-31',
-        coachId: 'some-coach-id',
+        params: {
+          startDate: '2024-01-01',
+          endDate: '2024-12-31',
+          coachId: 'some-coach-id',
+        },
       });
 
       if (response.ok) {
@@ -202,7 +224,10 @@ describe.skip('TypeSafeHttpClient Examples', () => {
     });
 
     it('shows how to handle GET requests with path parameters', async () => {
-      const authenticatedClient = authHelper.createAuthenticatedClient<Endpoints>(app, accessToken);
+      const authenticatedClient = await authHelper.createAuthenticatedClient<Endpoints>(
+        app,
+        accessToken
+      );
 
       // Get current account to get the ID
       const accountResponse = await authenticatedClient.get('/api/accounts/me');
@@ -227,13 +252,18 @@ describe.skip('TypeSafeHttpClient Examples', () => {
     });
 
     it('shows how to handle POST requests with request bodies', async () => {
-      const authenticatedClient = authHelper.createAuthenticatedClient<Endpoints>(app, accessToken);
+      const authenticatedClient = await authHelper.createAuthenticatedClient<Endpoints>(
+        app,
+        accessToken
+      );
 
       // POST request with typed body
       const response = await authenticatedClient.post('/api/time-slots', {
-        dateTime: new Date().toISOString(),
-        durationMin: 60,
-        isAvailable: true,
+        body: {
+          dateTime: new Date().toISOString(),
+          durationMin: 60,
+          isAvailable: true,
+        },
       });
 
       // Use discriminated union to narrow the type

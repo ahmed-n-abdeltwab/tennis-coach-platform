@@ -63,9 +63,9 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
   });
 
   describe('AuthTestHelper Examples', () => {
-    it('should create JWT tokens for different user types', () => {
+    it('should create JWT tokens for different user types', async () => {
       // Create basic token
-      const basicToken = authHelper.createToken({
+      const basicToken = await authHelper.createToken({
         sub: 'user-123',
         email: 'user@example.com',
         role: Role.USER,
@@ -74,31 +74,31 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       expect(typeof basicToken).toBe('string');
 
       // Create user token
-      const userToken = authHelper.createUserToken({
-        id: 'user-456',
+      const userToken = await authHelper.createUserToken({
+        sub: 'user-456',
         email: 'testuser@example.com',
         role: Role.USER,
       });
       expect(userToken).toBeDefined();
 
       // Create coach token
-      const coachToken = authHelper.createCoachToken({
-        id: 'coach-789',
+      const coachToken = await authHelper.createCoachToken({
+        sub: 'coach-789',
         email: 'testcoach@example.com',
         role: Role.COACH,
       });
       expect(coachToken).toBeDefined();
 
       // Verify tokens have different payloads
-      const userPayload = authHelper.decodeToken(userToken);
-      const coachPayload = authHelper.decodeToken(coachToken);
+      const userPayload = await authHelper.decodeToken(userToken);
+      const coachPayload = await authHelper.decodeToken(coachToken);
 
       expect(userPayload?.role).toBe(Role.USER);
       expect(coachPayload?.role).toBe(Role.COACH);
     });
 
     it('should create expired tokens for testing', async () => {
-      const expiredToken = authHelper.createExpiredToken({
+      const expiredToken = await authHelper.createExpiredToken({
         sub: 'user-123',
         email: 'user@example.com',
         role: Role.USER,
@@ -111,10 +111,10 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       expect(payload).toBeNull();
     });
 
-    it('should create Authorization headers', () => {
-      const userHeaders = authHelper.createUserAuthHeaders();
-      const coachHeaders = authHelper.createCoachAuthHeaders();
-      const expiredHeaders = authHelper.createExpiredAuthHeaders();
+    it('should create Authorization headers', async () => {
+      const userHeaders = await authHelper.createUserAuthHeaders();
+      const coachHeaders = await authHelper.createCoachAuthHeaders();
+      const expiredHeaders = await authHelper.createExpiredAuthHeaders();
 
       expect(userHeaders.Authorization).toMatch(/^Bearer /);
       expect(coachHeaders.Authorization).toMatch(/^Bearer /);
@@ -131,7 +131,7 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       expect(getResponse.status).toBe(200);
 
       // Test authenticated requests
-      const userToken = authHelper.createUserToken();
+      const userToken = await authHelper.createUserToken();
 
       const authResponse = await httpClient.authenticatedGet(
         '/api/accounts/me',
@@ -145,12 +145,14 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
     });
 
     it('should handle different HTTP methods', async () => {
-      const userToken = authHelper.createUserToken();
+      const userToken = await authHelper.createUserToken();
 
       // Test POST request
       const postData = {
-        email: 'test@example.com',
-        password: 'password123',
+        body: {
+          email: 'test@example.com',
+          password: 'password123',
+        },
       };
 
       const postResponse = await httpClient.authenticatedPost(
@@ -164,11 +166,11 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       expect(postResponse.status).toBe(201);
 
       // Test PUT request
-      const putData = { amount: 10, maxUsage: 1, isActive: true };
+      // const putData =
       const putResponse = await httpClient.authenticatedPut(
-        '/api/discounts/123' as '/api/discounts/{code}',
+        '/api/discounts/{code}',
         userToken,
-        putData,
+        { body: { amount: 10, maxUsage: 1, isActive: true }, params: { code: '123' } },
         {
           expectedStatus: 200,
         }
@@ -177,9 +179,9 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
 
       // Test DELETE request
       const deleteResponse = await httpClient.authenticatedDelete(
-        '/api/accounts/123' as '/api/accounts/{id}',
+        '/api/accounts/{id}',
         userToken,
-        undefined,
+        { params: { id: '123' } },
         {
           expectedStatus: 200,
         }
@@ -239,8 +241,8 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       expect(coachData.email).toBe('coach@example.com');
     });
 
-    it('should create multiple users with different roles', () => {
-      const { users, coaches } = userRoleHelper.createMultipleRoleUsers(3);
+    it('should create multiple users with different roles', async () => {
+      const { users, coaches } = await userRoleHelper.createMultipleRoleUsers(3);
 
       expect(users).toHaveLength(3);
       expect(coaches).toHaveLength(3);
@@ -249,8 +251,8 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       coaches.forEach(coach => expect(coach.role).toBe(Role.COACH));
     });
 
-    it('should create auth headers for multiple users', () => {
-      const { userHeaders, coachHeaders } = userRoleHelper.createMultipleRoleAuthHeaders(2);
+    it('should create auth headers for multiple users', async () => {
+      const { userHeaders, coachHeaders } = await userRoleHelper.createMultipleRoleAuthHeaders(2);
 
       expect(userHeaders).toHaveLength(2);
       expect(coachHeaders).toHaveLength(2);
@@ -301,17 +303,17 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
       const validationCases = [
         {
           name: 'Missing email',
-          data: { password: 'test123' },
+          payload: { body: { password: 'test123' } },
           expectedErrors: ['email'],
         },
         {
           name: 'Invalid email format',
-          data: { email: 'invalid-email', password: 'test123' },
+          payload: { body: { email: 'invalid-email', password: 'test123' } },
           expectedErrors: ['email'],
         },
         {
           name: 'Short password',
-          data: { email: 'test@example.com', password: '123' },
+          payload: { body: { email: 'test@example.com', password: '123' } },
           expectedErrors: ['password'],
         },
       ];
@@ -330,10 +332,12 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
         request: {
           headers: { 'Content-Type': 'application/json' },
           payload: {
-            email: 'test@example.com',
-            password: 'password123',
-            name: 'Test User',
-            role: Role.USER,
+            body: {
+              email: 'test@example.com',
+              password: 'password123',
+              name: 'Test User',
+              role: Role.USER,
+            },
           },
         },
         response: {
@@ -368,9 +372,11 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
     it('should demonstrate complete authentication flow testing', async () => {
       // 1. Test user registration
       const registerData = {
-        email: 'integration@example.com',
-        password: 'password123',
-        name: 'Integration Test User',
+        body: {
+          email: 'integration@example.com',
+          password: 'password123',
+          name: 'Integration Test User',
+        },
       };
 
       const registerResponse = await httpClient.post('/api/authentication/signup', registerData, {
@@ -382,8 +388,10 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
 
       // 2. Test login with registered user
       const loginData = {
-        email: registerData.email,
-        password: registerData.password,
+        body: {
+          email: registerData.body.email,
+          password: registerData.body.password,
+        },
       };
 
       const loginResponse = await httpClient.post('/api/authentication/login', loginData, {
@@ -406,20 +414,20 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
         );
 
         if (profileResponse.ok) {
-          expect(profileResponse.body.email).toBe(registerData.email);
-          expect(profileResponse.body.name).toBe(registerData.name);
+          expect(profileResponse.body.email).toBe(registerData.body.email);
+          expect(profileResponse.body.name).toBe(registerData.body.name);
         }
       }
     });
 
     it('should demonstrate role-based testing workflow', async () => {
       // Create different role users
-      const { users, coaches } = userRoleHelper.createMultipleRoleUsers(2);
+      const { users, coaches } = await userRoleHelper.createMultipleRoleUsers(2);
       // const { userHeaders, coachHeaders } = userRoleHelper.createMultipleRoleAuthHeaders(2);
 
       // Test that users can access user-specific endpoints
       for (let i = 0; i < users.length; i++) {
-        const token = authHelper.createUserToken(users[i]);
+        const token = await authHelper.createUserToken(users[i]);
         const response = await httpClient.authenticatedGet('/api/accounts/me', token, undefined, {
           expectedStatus: 200,
         });
@@ -428,7 +436,7 @@ describe.skip('Authentication and HTTP Testing Helpers Examples', () => {
 
       // Test that coaches can access coach-specific endpoints
       for (let i = 0; i < coaches.length; i++) {
-        const token = authHelper.createCoachToken(coaches[i]);
+        const token = await authHelper.createCoachToken(coaches[i]);
         const response = await httpClient.authenticatedGet('/api/accounts/me', token, undefined, {
           expectedStatus: 200,
         });

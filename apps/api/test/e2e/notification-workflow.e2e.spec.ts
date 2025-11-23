@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * E2E Tests: Notification Workflow
  * Tests notification flow including email, SMS, and in-app notifications
@@ -13,17 +12,15 @@ import { AuthTestHelper } from '../utils/auth';
 
 describe('Notification Workflow (E2E)', () => {
   let httpHelper: TypeSafeHttpClient;
-  let authHelper: AuthTestHelper;
-  let contractHelper: ApiContractTester;
-  let userToken: string;
-  let coachToken: string;
+  let _authHelper: AuthTestHelper;
+  let _contractHelper: ApiContractTester;
   let testUser: any;
   let testCoach: any;
 
   beforeAll(() => {
-    authHelper = new AuthTestHelper();
+    _authHelper = new AuthTestHelper();
     httpHelper = new TypeSafeHttpClient(global.testApp);
-    contractHelper = new ApiContractTester(global.testApp);
+    _contractHelper = new ApiContractTester(global.testApp);
   });
 
   beforeEach(async () => {
@@ -40,10 +37,12 @@ describe('Notification Workflow (E2E)', () => {
 
     // Register user
     const userRegisterResponse = await httpHelper.post('/api/authentication/signup', {
-      email: testUser.email,
-      name: testUser.name,
-      password: 'UserPassword123!',
-      role: Role.USER,
+      body: {
+        email: testUser.email,
+        name: testUser.name,
+        password: 'UserPassword123!',
+        role: Role.USER,
+      },
     });
     if (userRegisterResponse.ok) {
       userToken = userRegisterResponse.body.accessToken;
@@ -52,10 +51,12 @@ describe('Notification Workflow (E2E)', () => {
 
     // Register coach
     const coachRegisterResponse = await httpHelper.post('/api/authentication/signup', {
-      email: testCoach.email,
-      name: testCoach.name,
-      password: 'CoachPassword123!',
-      role: Role.COACH,
+      body: {
+        email: testCoach.email,
+        name: testCoach.name,
+        password: 'CoachPassword123!',
+        role: Role.COACH,
+      },
     });
     if (coachRegisterResponse.ok) {
       coachToken = coachRegisterResponse.body.accessToken;

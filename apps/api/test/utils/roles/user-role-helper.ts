@@ -1,6 +1,7 @@
+import { JwtPayload } from '@common';
 import { Role } from '@prisma/client';
 
-import { AuthHeaders, AuthTestHelper, TestUser } from '../auth/auth-test-helper';
+import { AuthHeaders, AuthTestHelper } from '../auth/auth-test-helper';
 
 /**
  * Helper class for creating test users with different roles
@@ -57,9 +58,9 @@ export class UserRoleHelper {
    * });
    * ```
    */
-  createUserTestData(role: Role, overrides?: Partial<TestUser>): TestUser {
-    const baseData: TestUser = {
-      id: `test-${role.toLowerCase()}-id`,
+  createUserTestData(role: Role, overrides?: Partial<JwtPayload>): JwtPayload {
+    const baseData: JwtPayload = {
+      sub: `test-${role.toLowerCase()}-id`,
       email: `${role.toLowerCase()}@example.com`,
       role,
       ...overrides,
@@ -81,9 +82,9 @@ export class UserRoleHelper {
    * const adminHeaders = roleHelper.createRoleAuthHeaders(Role.ADMIN);
    * ```
    */
-  createRoleAuthHeaders(role: Role, overrides?: Partial<TestUser>): AuthHeaders {
+  async createRoleAuthHeaders(role: Role, overrides?: Partial<JwtPayload>): Promise<AuthHeaders> {
     const userData = this.createUserTestData(role, overrides);
-    return this.createAuthHeadersForTestUser(userData);
+    return this.createAuthHeadersForJwtPayload(userData);
   }
 
   /**
@@ -101,42 +102,42 @@ export class UserRoleHelper {
    * // premiumUsers: [premiumUsers0, premiumUsers1, premiumUsers2]
    * ```
    */
-  createMultipleRoleUsers(count = 2): {
-    users: TestUser[];
-    coaches: TestUser[];
-    admins: TestUser[];
-    premiumUsers: TestUser[];
-  } {
-    const users: TestUser[] = [];
-    const coaches: TestUser[] = [];
-    const admins: TestUser[] = [];
-    const premiumUsers: TestUser[] = [];
+  async createMultipleRoleUsers(count = 2): Promise<{
+    users: JwtPayload[];
+    coaches: JwtPayload[];
+    admins: JwtPayload[];
+    premiumUsers: JwtPayload[];
+  }> {
+    const users: JwtPayload[] = [];
+    const coaches: JwtPayload[] = [];
+    const admins: JwtPayload[] = [];
+    const premiumUsers: JwtPayload[] = [];
 
     for (let i = 0; i < count; i++) {
       users.push(
         this.createUserTestData(Role.USER, {
-          id: `test-user-${i}`,
+          sub: `test-user-${i}`,
           email: `user${i}@example.com`,
         })
       );
 
       coaches.push(
         this.createUserTestData(Role.COACH, {
-          id: `test-coach-${i}`,
+          sub: `test-coach-${i}`,
           email: `coach${i}@example.com`,
         })
       );
 
       admins.push(
         this.createUserTestData(Role.ADMIN, {
-          id: `test-admin-${i}`,
+          sub: `test-admin-${i}`,
           email: `admin${i}@example.com`,
         })
       );
 
       premiumUsers.push(
         this.createUserTestData(Role.PREMIUM_USER, {
-          id: `test-premium-user-${i}`,
+          sub: `test-premium-user-${i}`,
           email: `premium${i}@example.com`,
         })
       );
@@ -159,19 +160,25 @@ export class UserRoleHelper {
    * await client.get('/api/sessions', undefined, { headers: userHeaders[1] });
    * ```
    */
-  createMultipleRoleAuthHeaders(count = 2): {
+  async createMultipleRoleAuthHeaders(count = 2): Promise<{
     userHeaders: AuthHeaders[];
     coachHeaders: AuthHeaders[];
     adminHeaders: AuthHeaders[];
     premiumUserHeaders: AuthHeaders[];
-  } {
-    const { users, coaches, admins, premiumUsers } = this.createMultipleRoleUsers(count);
+  }> {
+    const { users, coaches, admins, premiumUsers } = await this.createMultipleRoleUsers(count);
 
-    const userHeaders = users.map(user => this.authHelper.createUserAuthHeaders(user));
-    const coachHeaders = coaches.map(coach => this.authHelper.createCoachAuthHeaders(coach));
-    const adminHeaders = admins.map(admin => this.authHelper.createAdminAuthHeaders(admin));
-    const premiumUserHeaders = premiumUsers.map(user =>
-      this.authHelper.createPremiumUserAuthHeaders(user)
+    const userHeaders = await Promise.all(
+      users.map(async user => await this.authHelper.createUserAuthHeaders(user))
+    );
+    const coachHeaders = await Promise.all(
+      coaches.map(async coach => await this.authHelper.createCoachAuthHeaders(coach))
+    );
+    const adminHeaders = await Promise.all(
+      admins.map(async admin => await this.authHelper.createAdminAuthHeaders(admin))
+    );
+    const premiumUserHeaders = await Promise.all(
+      premiumUsers.map(async user => await this.authHelper.createPremiumUserAuthHeaders(user))
     );
 
     return { userHeaders, coachHeaders, adminHeaders, premiumUserHeaders };
@@ -181,7 +188,7 @@ export class UserRoleHelper {
    * Create an Auth Headers for a specific Test User
    * @private
    */
-  private createAuthHeadersForTestUser(userData: TestUser): AuthHeaders {
+  private async createAuthHeadersForJwtPayload(userData: JwtPayload): Promise<AuthHeaders> {
     switch (userData.role) {
       case Role.USER:
         return this.authHelper.createUserAuthHeaders(userData);
@@ -206,7 +213,7 @@ export class UserRoleHelper {
    * const user = roleHelper.createStandardUser();
    * ```
    */
-  createStandardUser(): TestUser {
+  async createStandardUser(): Promise<JwtPayload> {
     return this.createUserTestData(Role.USER);
   }
 
@@ -220,7 +227,7 @@ export class UserRoleHelper {
    * const premiumUser = roleHelper.createPremiumUser();
    * ```
    */
-  createPremiumUser(): TestUser {
+  async createPremiumUser(): Promise<JwtPayload> {
     return this.createUserTestData(Role.PREMIUM_USER);
   }
 
@@ -234,7 +241,7 @@ export class UserRoleHelper {
    * const coach = roleHelper.createCoach();
    * ```
    */
-  createCoach(): TestUser {
+  async createCoach(): Promise<JwtPayload> {
     return this.createUserTestData(Role.COACH);
   }
 
@@ -248,7 +255,7 @@ export class UserRoleHelper {
    * const admin = roleHelper.createAdmin();
    * ```
    */
-  createAdmin(): TestUser {
+  async createAdmin(): Promise<JwtPayload> {
     return this.createUserTestData(Role.ADMIN);
   }
 
@@ -262,7 +269,7 @@ export class UserRoleHelper {
    * const headers = roleHelper.createStandardUserHeaders();
    * ```
    */
-  createStandardUserHeaders(): AuthHeaders {
+  async createStandardUserHeaders(): Promise<AuthHeaders> {
     return this.createRoleAuthHeaders(Role.USER);
   }
 
@@ -276,7 +283,7 @@ export class UserRoleHelper {
    * const headers = roleHelper.createPremiumUserHeaders();
    * ```
    */
-  createPremiumUserHeaders(): AuthHeaders {
+  async createPremiumUserHeaders(): Promise<AuthHeaders> {
     return this.createRoleAuthHeaders(Role.PREMIUM_USER);
   }
 
@@ -290,7 +297,7 @@ export class UserRoleHelper {
    * const headers = roleHelper.createCoachHeaders();
    * ```
    */
-  createCoachHeaders(): AuthHeaders {
+  async createCoachHeaders(): Promise<AuthHeaders> {
     return this.createRoleAuthHeaders(Role.COACH);
   }
 
@@ -304,7 +311,7 @@ export class UserRoleHelper {
    * const headers = roleHelper.createAdminHeaders();
    * ```
    */
-  createAdminHeaders(): AuthHeaders {
+  async createAdminHeaders(): Promise<AuthHeaders> {
     return this.createRoleAuthHeaders(Role.ADMIN);
   }
 
@@ -319,7 +326,7 @@ export class UserRoleHelper {
    * const customToken = authHelper.createToken({ sub: 'custom-id' });
    * ```
    */
-  getAuthHelper(): AuthTestHelper {
+  async getAuthHelper(): Promise<AuthTestHelper> {
     return this.authHelper;
   }
 }

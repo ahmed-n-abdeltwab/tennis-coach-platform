@@ -56,9 +56,9 @@ describe('Type Safety Verification', () => {
   });
 
   describe('AuthTestHelper Type Safety', () => {
-    it('should return properly typed AuthenticatedHttpClient', () => {
+    it('should return properly typed AuthenticatedHttpClient', async () => {
       // ✅ This should compile - createAuthenticatedClient returns typed client
-      const client = testInstance.authHelper.createAuthenticatedClient<Endpoints>(
+      const client = await testInstance.authHelper.createAuthenticatedClient<Endpoints>(
         testInstance.getApp()
       );
 
@@ -73,17 +73,17 @@ describe('Type Safety Verification', () => {
       expect(typeof client.patch).toBe('function');
     });
 
-    it('should allow default Endpoints type parameter', () => {
+    it('should allow default Endpoints type parameter', async () => {
       // ✅ This should compile - type parameter is optional
-      const client = testInstance.authHelper.createAuthenticatedClient(testInstance.getApp());
+      const client = await testInstance.authHelper.createAuthenticatedClient(testInstance.getApp());
 
       expect(client).toBeInstanceOf(AuthenticatedHttpClient);
     });
 
-    it('should allow custom token', () => {
+    it('should allow custom token', async () => {
       // ✅ This should compile - token parameter is optional
-      const customToken = testInstance.authHelper.createUserToken();
-      const client = testInstance.authHelper.createAuthenticatedClient<Endpoints>(
+      const customToken = await testInstance.authHelper.createUserToken();
+      const client = await testInstance.authHelper.createAuthenticatedClient<Endpoints>(
         testInstance.getApp(),
         customToken
       );
@@ -94,8 +94,8 @@ describe('Type Safety Verification', () => {
   });
 
   describe('AuthenticatedHttpClient Type Safety', () => {
-    it('should provide type-safe methods', () => {
-      const token = testInstance.authHelper.createUserToken();
+    it('should provide type-safe methods', async () => {
+      const token = await testInstance.authHelper.createUserToken();
       const client = new AuthenticatedHttpClient<Endpoints>(testInstance.getApp(), token);
 
       // ✅ TypeScript should know about all methods
@@ -110,7 +110,7 @@ describe('Type Safety Verification', () => {
     });
 
     it('should accept valid endpoint paths at compile time', async () => {
-      const token = testInstance.authHelper.createUserToken();
+      const token = await testInstance.authHelper.createUserToken();
       const client = new AuthenticatedHttpClient<Endpoints>(testInstance.getApp(), token);
 
       expect(typeof client.get).toBe('function');
@@ -204,8 +204,8 @@ describe('Type Safety Verification', () => {
   });
 
   describe('Compile-Time Type Checking Examples', () => {
-    it('demonstrates proper type inference', () => {
-      const token = testInstance.authHelper.createUserToken();
+    it('demonstrates proper type inference', async () => {
+      const token = await testInstance.authHelper.createUserToken();
       const client = new AuthenticatedHttpClient<Endpoints>(testInstance.getApp(), token);
       expect(client).toBeDefined();
     });

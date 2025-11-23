@@ -150,7 +150,6 @@ export async function generateApiRoutes(
   console.log('🚀 Generating API routes from Swagger metadata...');
   console.log(`   - Inline DTOs: ${config.inlineDTOs}`);
   console.log(`   - Generate Utility Types: ${config.generateUtilityTypes}`);
-  console.log(`   - Generate Schemas: ${config.generateSchemas}\n`);
 
   // Extract routes from Swagger paths
   const routes = extractRoutesFromSwaggerDoc(document);
@@ -164,8 +163,6 @@ export async function generateApiRoutes(
 
   // Write to file
   fs.writeFileSync(config.outputPath, code);
-
-  console.log(`✅ Generated ${routes.length} routes`);
 }
 
 /**
@@ -225,25 +222,26 @@ function generateCode(
     pathRoutes.forEach(route => {
       const { method, operation } = route;
 
-      if (method === 'GET') {
-        const paramType = extractParams(document, operation.parameters);
-        const response = extractResponseType(operation, document);
-        methodEntries.push(`    ${method}: (params: ${paramType}) => ${response};`);
-      } else {
-        // For non-GET: extract both path params and body
-        const pathParams = extractPathParams(document, operation.parameters);
-        const bodyType = extractBody(operation.requestBody, document);
-        const response = extractResponseType(operation, document);
+      // Always return both params and body as a tuple
+      let paramsType: string;
+      let bodyType: string;
 
-        // If there are path parameters, include them in the signature
-        if (pathParams !== 'undefined | never') {
-          methodEntries.push(
-            `    ${method}: (params: ${pathParams}, body: ${bodyType}) => ${response};`
-          );
-        } else {
-          methodEntries.push(`    ${method}: (body: ${bodyType}) => ${response};`);
-        }
+      if (method === 'GET') {
+        // For GET: params contains query/path params, body is undefined | never
+        paramsType = extractParams(document, operation.parameters);
+        bodyType = 'undefined | never';
+      } else {
+        // For non-GET: params contains path params, body contains request body
+        paramsType = extractPathParams(document, operation.parameters);
+        bodyType = extractBody(operation.requestBody, document);
       }
+
+      const response = extractResponseType(operation, document);
+
+      // Always use tuple signature: (params, body) => response
+      methodEntries.push(
+        `    ${method}: (params: ${paramsType}, body: ${bodyType}) => ${response};`
+      );
     });
 
     interfaceEntries.push(`  "${path}": {\n${methodEntries.join('\n')}\n  };`);
@@ -375,11 +373,11 @@ function extractParams(
 
 /**
  * Extracts body for POST/PUT/PATCH/DELETE requests
- * Returns undefined if no body exists
+ * Returns undefined | never if no body exists
  */
 function extractBody(requestBody: unknown, document: OpenAPIObject): string {
   if (!requestBody || typeof requestBody !== 'object') {
-    return 'undefined';
+    return 'undefined | never';
   }
 
   const body = requestBody as {
@@ -387,7 +385,7 @@ function extractBody(requestBody: unknown, document: OpenAPIObject): string {
   };
   const schema = body.content?.['application/json']?.schema;
   if (!schema) {
-    return 'undefined';
+    return 'undefined | never';
   }
 
   const bodyType = schemaToTypeScript(schema, document);

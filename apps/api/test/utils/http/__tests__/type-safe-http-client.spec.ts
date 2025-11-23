@@ -28,7 +28,7 @@ describe('TypeSafeHttpClient - Type Inference (Compile-Time Tests)', () => {
     type SignupResponseType = ExtractResponseType<Endpoints, '/api/authentication/signup', 'POST'>;
     type LoginResponseType = ExtractResponseType<
       Endpoints,
-      '/api/authentication/user/login',
+      '/api/authentication/login',
       'POST'
     >;
 
@@ -112,7 +112,7 @@ describe('TypeSafeHttpClient - Type Inference (Compile-Time Tests)', () => {
     // This test proves that response.body has proper typing
     // If response.body was unknown, these type assertions would fail to compile
 
-    type LoginResponse = ExtractResponseType<Endpoints, '/api/authentication/user/login', 'POST'>;
+    type LoginResponse = ExtractResponseType<Endpoints, '/api/authentication/login', 'POST'>;
 
     // These should all compile without errors
     const accessTokenIsString: (response: LoginResponse) => string = response =>
@@ -136,9 +136,9 @@ describe('TypeSafeHttpClient - Type Inference (Compile-Time Tests)', () => {
 
     // Optional fields should be typed as T | undefined
     const assertOptionalFields: (response: AccountResponse) => {
-      bio: string | undefined;
+      bio: string | undefined | null;
       age: number | undefined;
-      profileImage: string | undefined;
+      profileImage: string | undefined | null;
     } = response => ({
       bio: response.bio,
       age: response.age,

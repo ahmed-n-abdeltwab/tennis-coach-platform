@@ -9,8 +9,8 @@ import type {
   DeepPartial,
   ExtractMethods,
   ExtractPaths,
-  ExtractRequestType,
   ExtractResponseType,
+  RequestType,
   TypedResponse,
 } from '@test-utils';
 import { Endpoints } from '@test-utils';
@@ -100,10 +100,10 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
   async testApiContract<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
-    contract: {
+    contract?: {
       request?: {
         headers?: Record<string, string>;
-        payload?: ExtractRequestType<E, P, M>;
+        payload?: RequestType<E, P, M>;
       };
       response: {
         status: number;
@@ -111,31 +111,24 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
         body?: DeepPartial<ExtractResponseType<E, P, M>>;
       };
     },
-    options: RequestOptions = {}
+    options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
-    // Prepare request options
-    const requestOptions: RequestOptions = {
-      ...options,
-      headers: { ...options.headers, ...contract.request?.headers },
-      expectedStatus: contract.response.status,
-    };
-
     // Prepare request data
-    const requestData = contract.request?.payload;
+    const payload = contract?.request?.payload ?? {};
 
     // Make request
-    const response = await this.httpClient.request(path, method, requestData, requestOptions);
+    const response = await this.httpClient.request(path, method, payload, options);
 
     // Validate response status
-    expect(response.status).toBe(contract.response.status);
+    expect(response.status).toBe(contract?.response.status);
 
     // Validate response headers
-    if (contract.response.headers) {
+    if (contract?.response.headers) {
       expect(response.headers).toMatchObject(contract.response.headers);
     }
 
     // Validate response body structure
-    if (contract.response.body) {
+    if (contract?.response.body) {
       expect(response.body).toStrictEqual(contract.response.body);
     }
 
@@ -170,10 +163,10 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
       name: string;
       endpoint: P;
       method: M;
-      contract: {
+      contract?: {
         request?: {
           headers?: Record<string, string>;
-          payload?: ExtractRequestType<E, P, M>;
+          payload?: RequestType<E, P, M>;
         };
         response: {
           status: number;
@@ -225,11 +218,11 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
     path: P,
     method: M,
     errorCases: HttpErrorTestCase[],
-    data?: DeepPartial<ExtractRequestType<E, P, M>>,
-    options: RequestOptions = {}
+    payload?: RequestType<E, P, M>,
+    options?: RequestOptions
   ): Promise<void> {
     for (const errorCase of errorCases) {
-      const response = await this.httpClient.request(path, method, data, {
+      const response = await this.httpClient.request(path, method, payload, {
         ...options,
         expectedStatus: errorCase.statusCode,
       });
@@ -283,10 +276,10 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
     method: M,
     validationCases: Array<{
       name: string;
-      data: DeepPartial<ExtractRequestType<E, P, M>>;
+      payload: RequestType<E, P, M>;
       expectedErrors: string[];
     }>,
-    options: RequestOptions = {}
+    options?: RequestOptions
   ): Promise<void> {
     for (const testCase of validationCases) {
       // Create a corresponding HttpErrorTestCase that matches testErrorScenarios signature
@@ -297,7 +290,7 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
       };
 
       // Call testErrorScenarios with this single error case and pass the data per case
-      await this.testErrorScenarios(path, method, [errorCase], testCase.data, options);
+      await this.testErrorScenarios(path, method, [errorCase], testCase.payload, options);
     }
   }
 

@@ -95,7 +95,7 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
       session: this.createMockRepository(),
       bookingType: this.createMockRepository(),
       timeSlot: this.createMockRepository(),
-      refreshToken: this.createMockRepository(),
+      // refreshToken: this.createMockRepository(),
       discount: this.createMockRepository(),
       message: this.createMockRepository(),
     };

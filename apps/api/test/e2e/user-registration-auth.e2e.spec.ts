@@ -7,14 +7,13 @@
 import { todo } from 'node:test';
 
 import { Role } from '@prisma/client';
-import { Endpoints } from '@routes-helpers';
 import { ApiContractTester, TypeSafeHttpClient, userFactory } from '@test-utils';
 
 import { AuthTestHelper } from '../utils/auth';
 import { BaseE2ETest } from '../utils/base/base-e2e.test';
 
 class UserRegistrationAuthE2ETest extends BaseE2ETest {
-  async setupTestApp(): Promise<void> {
+  override async setupTestApp(): Promise<void> {
     // Use default AppModule setup from BaseE2ETest
   }
 }
@@ -23,15 +22,15 @@ describe('User Registration and Authentication Flow (E2E)', () => {
   let testInstance: UserRegistrationAuthE2ETest;
   let authHelper: AuthTestHelper;
   let contractHelper: ApiContractTester;
-  let httpClient: TypeSafeHttpClient<Endpoints>;
+  let httpClient: TypeSafeHttpClient;
 
   beforeAll(async () => {
     testInstance = new UserRegistrationAuthE2ETest();
     await testInstance.setup();
 
     authHelper = new AuthTestHelper();
-    contractHelper = new ApiContractTester(testInstance.app);
-    httpClient = new TypeSafeHttpClient<Endpoints>(testInstance.app);
+    contractHelper = new ApiContractTester(testInstance.getApp());
+    httpClient = new TypeSafeHttpClient(testInstance.getApp());
   });
 
   afterAll(async () => {
@@ -49,10 +48,12 @@ describe('User Registration and Authentication Flow (E2E)', () => {
       const registerResponse = await httpClient.post(
         '/api/authentication/signup',
         {
-          email: userData.email,
-          name: userData.name,
-          password: 'TestPassword123!',
-          role: Role.USER,
+          body: {
+            email: userData.email,
+            name: userData.name,
+            password: 'TestPassword123!',
+            role: Role.USER,
+          },
         },
         { expectedStatus: 201 }
       );

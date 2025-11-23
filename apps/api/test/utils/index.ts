@@ -132,34 +132,3 @@ export * from './mocks';
  * ```
  */
 export * from './types';
-
-// ============================================================================
-// Re-exports from libraries for convenience
-// ============================================================================
-
-/**
- * Endpoints interface and utility types (re-exported from @routes-helpers)
- *
- * Use these for type-safe endpoint definitions and type extraction.
- *
- * @example
- * ```typescript
- * import { Endpoints, ExtractPaths, ExtractResponseType } from '@test-utils';
- *
- * type AllPaths = ExtractPaths<Endpoints>;
- * type SessionsResponse = ExtractResponseType<Endpoints, '/api/sessions', 'GET'>;
- * ```
- */
-export { buildPath } from '@routes-helpers';
-export type {
-  AcceptPath,
-  Endpoints,
-  ExtractMethods,
-  ExtractPathParams,
-  ExtractPaths,
-  ExtractRequestType,
-  ExtractResponseType,
-  PathWithValues,
-  PathsWithMethod,
-  RequiresParams,
-} from '@routes-helpers';

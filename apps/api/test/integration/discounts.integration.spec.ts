@@ -1,11 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { todo } from 'node:test';
 
-import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { Test, TestingModule } from '@nestjs/testing';
-import { TestDatabaseManager } from '@test/utils/database/test-database-manager';
+import { Test } from '@nestjs/testing';
 
 import { DiscountsModule } from '../../src/app/discounts/discounts.module';
 import { DiscountsService } from '../../src/app/discounts/discounts.service';
@@ -14,47 +12,52 @@ import { PrismaService } from '../../src/app/prisma/prisma.service';
 import { BaseIntegrationTest } from '../utils';
 
 class DiscountsIntegrationTest extends BaseIntegrationTest {
+  discountsService: DiscountsService;
   // Test data
+  async setupTestApp(): Promise<void> {
+    this.module = await Test.createTestingModule({
+      imports: this.getTestModules(),
+    }).compile();
+
+    this.app = this.module.createNestApplication();
+    this.app.setGlobalPrefix('api');
+    await this.app.init();
+
+    this.prisma = this.module.get<PrismaService>(PrismaService);
+    this.discountsService = this.module.get<DiscountsService>(DiscountsService);
+
+    this.module = this.module;
+  }
+
+  getTestModules(): any[] {
+    return [
+      ConfigModule.forRoot({
+        isGlobal: true,
+      }),
+      PrismaModule,
+      DiscountsModule,
+      JwtModule.register({
+        secret: 'test-secret',
+        signOptions: { expiresIn: '1h' },
+      }),
+    ];
+  }
 }
 
 describe('Discounts Integration', () => {
-  let app: INestApplication;
-  let discountsService: DiscountsService;
-  let prisma: PrismaService;
-  let dbManager: TestDatabaseManager;
+  let testHelper: DiscountsIntegrationTest;
 
   beforeAll(async () => {
-    dbManager = TestDatabaseManager.getInstance();
-    await dbManager.createTestDatabase('discounts-integration');
-
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-        }),
-        PrismaModule,
-        DiscountsModule,
-        JwtModule.register({
-          secret: 'test-secret',
-          signOptions: { expiresIn: '1h' },
-        }),
-      ],
-    }).compile();
-
-    app = module.createNestApplication();
-    await app.init();
-
-    discountsService = module.get<DiscountsService>(DiscountsService);
-    prisma = module.get<PrismaService>(PrismaService);
+    testHelper = new DiscountsIntegrationTest();
+    await testHelper.setupTestApp();
   });
 
   afterAll(async () => {
-    await app.close();
-    await dbManager.cleanupTestDatabase('discounts-integration');
+    await testHelper.cleanup();
   });
 
   beforeEach(async () => {
-    await dbManager.cleanupAllTestDatabases();
+    await testHelper.cleanupDatabase();
   });
 
   describe('Discount Validation Workflow', () => {

@@ -38,7 +38,8 @@ export class TransactionManager {
     options: TransactionOptions = {}
   ): Promise<T> {
     const transactionId = this.generateTransactionId();
-    let result: T;
+    let result: T | undefined;
+    let resultAssigned = false;
 
     try {
       await client.$transaction(
@@ -55,6 +56,7 @@ export class TransactionManager {
           try {
             // Execute the callback
             result = await callback(tx);
+            resultAssigned = true;
 
             // For test purposes, we want to rollback even on success
             // This is achieved by throwing an error that we catch and ignore
@@ -65,8 +67,8 @@ export class TransactionManager {
           }
         },
         {
-          timeout: options.timeout || 30000,
-          maxWait: options.maxWait || 5000,
+          timeout: options.timeout ?? 30000,
+          maxWait: options.maxWait ?? 5000,
         }
       );
     } catch (error) {
@@ -82,7 +84,11 @@ export class TransactionManager {
       this.activeTransactions.delete(transactionId);
     }
 
-    return result!;
+    if (!resultAssigned) {
+      throw new Error('Transaction completed without assigning result');
+    }
+
+    return result as T;
   }
 
   /**
@@ -116,8 +122,8 @@ export class TransactionManager {
         }
       },
       {
-        timeout: options.timeout || 30000,
-        maxWait: options.maxWait || 5000,
+        timeout: options.timeout ?? 30000,
+        maxWait: options.maxWait ?? 5000,
       }
     );
   }
@@ -272,26 +278,40 @@ export function createTransactionManager(): TransactionManager {
 export const transactionManager = createTransactionManager();
 
 /**
+ * Interface for test classes that can use the WithTransaction decorator
+ */
+interface TransactionalTestContext {
+  prisma?: PrismaClient | Prisma.TransactionClient;
+  client?: PrismaClient | Prisma.TransactionClient;
+}
+
+/**
  * Decorator for test methods that should run within a transaction
  */
 export function WithTransaction(options: TransactionOptions = {}) {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
-    const method = descriptor.value;
+  return function (
+    target: unknown,
+    propertyName: string,
+    descriptor: PropertyDescriptor
+  ): PropertyDescriptor {
+    const method = descriptor.value as (...args: unknown[]) => Promise<unknown>;
 
-    descriptor.value = async function (...args: any[]) {
-      const client = this.prisma || this.client;
+    descriptor.value = async function (this: TransactionalTestContext, ...args: unknown[]) {
+      const client = this.prisma ?? this.client;
       if (!client) {
         throw new Error(
           'No Prisma client found. Ensure your test class has a "prisma" or "client" property.'
         );
       }
 
+      // Type guard to ensure we have a PrismaClient
+      const prismaClient = client as PrismaClient;
+
       return transactionManager.withTransaction(
-        client,
+        prismaClient,
         async tx => {
           // Replace the client with the transaction client for the duration of the test
-          // TODO: fix this error.
-          const originalClient = this.prisma || this.client;
+          const originalClient = this.prisma ?? this.client;
           if (this.prisma) this.prisma = tx;
           if (this.client) this.client = tx;
 

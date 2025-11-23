@@ -99,6 +99,7 @@ export class BaseHttpMockFactory extends BaseMockFactory<Request> {
       422: 'Unprocessable Entity',
       500: 'Internal Server Error',
     };
+
     return map[statusCode] ?? 'Error';
   }
 }

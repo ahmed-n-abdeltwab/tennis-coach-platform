@@ -67,13 +67,13 @@ class BookingSystemIntegrationTest extends BaseIntegrationTest {
     });
 
     // Create auth tokens using base class helper
-    this.userToken = this.createTestJwtToken({
+    this.userToken = await this.createTestJwtToken({
       sub: this.testUser.id,
       email: this.testUser.email,
       role: this.testUser.role,
     });
 
-    this.coachToken = this.createTestJwtToken({
+    this.coachToken = await this.createTestJwtToken({
       sub: this.testCoach.id,
       email: this.testCoach.email,
       role: this.testCoach.role,
@@ -111,7 +111,7 @@ describe('Booking System Integration', () => {
   describe('Complete Booking Workflow', () => {
     it('should complete full booking workflow from time slot creation to session booking', async () => {
       // Step 1: Coach creates a time slot (already created in setup)
-      const timeSlotsResponse = await testInstance.typeSafeAuthenticatedGet(
+      const timeSlotsResponse = await testInstance.authenticatedGet(
         '/api/time-slots',
         testInstance.coachToken
       );
@@ -123,7 +123,7 @@ describe('Booking System Integration', () => {
       }
 
       // Step 2: User views available booking types
-      const bookingTypesResponse = await testInstance.typeSafeAuthenticatedGet(
+      const bookingTypesResponse = await testInstance.authenticatedGet(
         '/api/booking-types',
         testInstance.userToken
       );
@@ -135,13 +135,15 @@ describe('Booking System Integration', () => {
       }
 
       // Step 3: User creates a session booking
-      const createSessionResponse = await testInstance.typeSafeAuthenticatedPost(
+      const createSessionResponse = await testInstance.authenticatedPost(
         '/api/sessions',
         testInstance.userToken,
         {
-          bookingTypeId: testInstance.testBookingType.id,
-          timeSlotId: testInstance.testTimeSlot.id,
-          discountCode: testInstance.testSession.discountCode ?? undefined,
+          body: {
+            bookingTypeId: testInstance.testBookingType.id,
+            timeSlotId: testInstance.testTimeSlot.id,
+            discountCode: testInstance.testSession.discountCode ?? undefined,
+          },
         }
       );
 
@@ -164,10 +166,7 @@ describe('Booking System Integration', () => {
     });
 
     it('should allow user to view their sessions', async () => {
-      const response = await testInstance.typeSafeAuthenticatedGet(
-        '/api/sessions',
-        testInstance.userToken
-      );
+      const response = await testInstance.authenticatedGet('/api/sessions', testInstance.userToken);
 
       expect(response.ok).toBe(true);
       if (response.ok) {
@@ -182,7 +181,7 @@ describe('Booking System Integration', () => {
     });
 
     it('should allow coach to view their sessions', async () => {
-      const response = await testInstance.typeSafeAuthenticatedGet(
+      const response = await testInstance.authenticatedGet(
         '/api/sessions',
         testInstance.coachToken
       );
@@ -231,13 +230,15 @@ describe('Booking System Integration', () => {
         { isAvailable: false }
       );
 
-      const response = await testInstance.typeSafeAuthenticatedPost(
+      const response = await testInstance.authenticatedPost(
         '/api/sessions',
         testInstance.userToken,
         {
-          bookingTypeId: testInstance.testBookingType.id,
-          timeSlotId: testInstance.testTimeSlot.id,
-          discountCode: testInstance.testSession.discountCode ?? undefined,
+          body: {
+            bookingTypeId: testInstance.testBookingType.id,
+            timeSlotId: testInstance.testTimeSlot.id,
+            discountCode: testInstance.testSession.discountCode ?? undefined,
+          },
         }
       );
 
@@ -252,15 +253,15 @@ describe('Booking System Integration', () => {
       const otherUser = await testInstance.createTestUser({
         email: 'otheruser@example.com',
       });
-      const otherUserToken = testInstance.createTestJwtToken({
+      const otherUserToken = await testInstance.createTestJwtToken({
         sub: otherUser.id,
         email: otherUser.email,
         role: otherUser.role,
       });
 
       // Try to access the test session with different user token
-      const response = await testInstance.typeSafeAuthenticatedGet(
-        `/api/sessions/${testInstance.testSession.id}` as any,
+      const response = await testInstance.authenticatedGet(
+        `/api/sessions/${testInstance.testSession.id}` as '/api/sessions/{id}',
         otherUserToken
       );
 

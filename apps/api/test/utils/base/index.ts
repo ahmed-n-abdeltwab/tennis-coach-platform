@@ -4,6 +4,7 @@
  */
 
 export { BaseControllerTest } from './base-controller.test';
+export { BaseE2ETest } from './base-e2e.test';
 export { BaseIntegrationTest } from './base-integration.test';
 export { BaseServiceTest } from './base-service.test';
 
