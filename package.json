@@ -128,7 +128,7 @@
     "@nx/nest": "22.0.2",
     "@nx/node": "22.0.2",
     "@nx/react": "22.0.2",
-    "@nx/vite": "22.0.2",
+    "@nx/vite": "22.1.1",
     "@nx/webpack": "22.0.2",
     "@nx/workspace": "22.0.2",
     "@swc-node/register": "~1.9.1",
