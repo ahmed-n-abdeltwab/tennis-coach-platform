@@ -72,6 +72,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
       - name: Set up Nx SHAs for affected detection
         uses: nrwl/nx-set-shas@v4
 
@@ -86,8 +89,14 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test
           REDIS_HOST: localhost
           REDIS_PORT: 6379
-          JWT_SECRET: test-secret-key-for-ci
+          REDIS_DB: 0
+          JWT_SECRET: test-secret-key-for-ci-minimum-32-chars
+          JWT_REFRESH_SECRET: test-refresh-secret-key-for-ci-minimum-32-chars
+          JWT_EXPIRES_IN: 15m
+          JWT_REFRESH_EXPIRES_IN: 24h
           NODE_ENV: test
+          PORT: 3333
+          FRONTEND_URL: http://localhost:4200
 
       # Nx Cloud self-healing CI - recommends fixes for failures
       - name: Fix CI issues
@@ -126,15 +135,25 @@ jobs:
         with:
           scan-type: "fs"
           scan-ref: "."
-          format: "sarif"
-          output: "trivy-results.sarif"
+          format: "table"
           severity: "CRITICAL,HIGH"
+          exit-code: "1"
 
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: "trivy-results.sarif"
+      # Uncomment when GitHub Code Scanning is enabled in repository settings
+      # - name: Run Trivy for SARIF report
+      #   uses: aquasecurity/trivy-action@master
+      #   with:
+      #     scan-type: "fs"
+      #     scan-ref: "."
+      #     format: "sarif"
+      #     output: "trivy-results.sarif"
+      #     severity: "CRITICAL,HIGH"
+      #
+      # - name: Upload Trivy results to GitHub Security
+      #   uses: github/codeql-action/upload-sarif@v4
+      #   if: always()
+      #   with:
+      #     sarif_file: "trivy-results.sarif"
 
   # Deploy API to staging (only when ready)
   # deploy-api-staging:
