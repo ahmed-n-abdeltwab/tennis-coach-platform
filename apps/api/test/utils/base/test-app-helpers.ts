@@ -192,7 +192,7 @@ export async function retry<T>(
 ): Promise<T> {
   const { maxAttempts = 3, delay = 1000, backoff = false, onRetry } = options;
 
-  let lastError: Error;
+  let lastError: Error | undefined;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -211,9 +211,11 @@ export async function retry<T>(
     }
   }
 
-  throw new Error(
-    `Operation failed after ${maxAttempts} attempts. Last error: ${lastError!.message}`
-  );
+  const errorMessage = lastError
+    ? `Operation failed after ${maxAttempts} attempts. Last error: ${lastError.message}`
+    : `Operation failed after ${maxAttempts} attempts.`;
+
+  throw new Error(errorMessage);
 }
 
 /**
@@ -243,7 +245,11 @@ export async function parallelLimit<T, R>(
   const executing: Promise<void>[] = [];
 
   for (let i = 0; i < items.length; i++) {
-    const item = items[i]!; // Safe because we're iterating within bounds
+    const item = items[i];
+    if (item === undefined) {
+      continue;
+    }
+
     const promise = operation(item, i).then(result => {
       results[i] = result;
     });
@@ -264,6 +270,18 @@ export async function parallelLimit<T, R>(
 }
 
 /**
+ * Mock logger interface for testing
+ */
+export interface MockLogger {
+  log: jest.Mock;
+  error: jest.Mock;
+  warn: jest.Mock;
+  debug: jest.Mock;
+  verbose: jest.Mock;
+  info: jest.Mock;
+}
+
+/**
  * Creates a mock logger for testing
  *
  * @returns Mock logger object with common logging methods
@@ -277,7 +295,7 @@ export async function parallelLimit<T, R>(
  * expect(logger.info).toHaveBeenCalledWith('Expected message');
  * ```
  */
-export function createMockLogger(): any {
+export function createMockLogger(): MockLogger {
   return {
     log: jest.fn(),
     error: jest.fn(),
@@ -286,6 +304,21 @@ export function createMockLogger(): any {
     verbose: jest.fn(),
     info: jest.fn(),
   };
+}
+
+/**
+ * Mock configuration interface for testing
+ */
+export interface MockConfig {
+  port: number;
+  database: {
+    url: string;
+  };
+  jwt: {
+    secret: string;
+    expiresIn: string;
+  };
+  [key: string]: unknown;
 }
 
 /**
@@ -301,7 +334,7 @@ export function createMockLogger(): any {
  * });
  * ```
  */
-export function createMockConfig(overrides: Record<string, any> = {}): any {
+export function createMockConfig(overrides: Record<string, unknown> = {}): MockConfig {
   return {
     port: 3000,
     database: {
@@ -342,16 +375,16 @@ export async function captureConsole(
   let stdout = '';
   let stderr = '';
 
-  console.log = (...args: any[]) => {
-    stdout += `${args.join(' ')  }\n`;
+  console.log = (...args: unknown[]) => {
+    stdout += `${args.join(' ')}\n`;
   };
 
-  console.error = (...args: any[]) => {
-    stderr += `${args.join(' ')  }\n`;
+  console.error = (...args: unknown[]) => {
+    stderr += `${args.join(' ')}\n`;
   };
 
-  console.warn = (...args: any[]) => {
-    stderr += `${args.join(' ')  }\n`;
+  console.warn = (...args: unknown[]) => {
+    stderr += `${args.join(' ')}\n`;
   };
 
   try {

@@ -4,8 +4,6 @@
  * Tests complete booking workflow including coach selection, time slot booking, and payment
  */
 
-import { todo } from 'node:test';
-
 import {
   bookingTypeFactory,
   coachFactory,
@@ -66,9 +64,9 @@ describe('Booking Workflow (E2E)', () => {
   });
 
   describe('Coach Discovery and Selection', () => {
-    todo('should allow users to browse and select coaches');
+    it.todo('should allow users to browse and select coaches');
 
-    todo('should display coach profile information');
+    it.todo('should display coach profile information');
   });
 
   describe('Time Slot Selection and Booking', () => {
@@ -102,11 +100,11 @@ describe('Booking Workflow (E2E)', () => {
       });
     });
 
-    todo('should complete full booking workflow');
+    it.todo('should complete full booking workflow');
 
-    todo('should handle booking conflicts and validation');
+    it.todo('should handle booking conflicts and validation');
 
-    todo('should validate booking input data');
+    it.todo('should validate booking input data');
   });
 
   describe('Session Management', () => {
@@ -157,11 +155,11 @@ describe('Booking Workflow (E2E)', () => {
       session = createSessionResponse.body;
     });
 
-    todo('should allow users to update session details');
+    it.todo('should allow users to update session details');
 
-    todo('should allow users to cancel sessions');
+    it.todo('should allow users to cancel sessions');
 
-    todo('should allow coaches to view and manage their sessions');
+    it.todo('should allow coaches to view and manage their sessions');
   });
 
   describe('Payment Integration', () => {
@@ -207,9 +205,9 @@ describe('Booking Workflow (E2E)', () => {
       session = createSessionResponse.body;
     });
 
-    todo('should handle payment workflow');
+    it.todo('should handle payment workflow');
 
-    todo('should handle payment failures gracefully');
+    it.todo('should handle payment failures gracefully');
   });
 
   describe('Discount Application', () => {
@@ -255,12 +253,12 @@ describe('Booking Workflow (E2E)', () => {
       });
     });
 
-    todo('should apply discount codes during booking');
+    it.todo('should apply discount codes during booking');
 
-    todo('should validate discount codes');
+    it.todo('should validate discount codes');
   });
 
   describe('API Contract Validation', () => {
-    todo('should validate session creation API contract');
+    it.todo('should validate session creation API contract');
   });
 });

@@ -4,20 +4,18 @@
  * Tests notification delivery workflows and email service integration
  */
 
-import { todo } from 'node:test';
-
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import notificationsConfig from '../../src/app/notifications/config/notifications.config';
 import { NotificationsModule } from '../../src/app/notifications/notifications.module';
-import { BaseIntegrationTest } from '../utils/base/base-integration.test';
+import { BaseIntegrationTest } from '../utils/base/base-integration';
 import { NotificationMockFactory } from '../utils/factories/notification.factory';
 
 // Mock nodemailer
 const mockSendMail = jest.fn();
 jest.mock('nodemailer', () => ({
-  createTransporter: jest.fn(() => ({
+  createTransport: jest.fn(() => ({
     sendMail: mockSendMail,
   })),
 }));
@@ -70,24 +68,24 @@ describe('Notifications Integration', () => {
   });
 
   describe('POST /api/notifications/email', () => {
-    todo('should send email successfully');
+    it.todo('should send email successfully');
 
-    todo('should handle email sending failure');
+    it.todo('should handle email sending failure');
 
-    todo('should send email with only text content');
+    it.todo('should send email with only text content');
 
-    todo('should send email with only HTML content');
+    it.todo('should send email with only HTML content');
 
-    todo('should handle coach sending email');
+    it.todo('should handle coach sending email');
 
-    todo('should return 401 when not authenticated');
+    it.todo('should return 401 when not authenticated');
 
-    todo('should validate email DTO');
+    it.todo('should validate email DTO');
 
-    todo('should require subject field');
+    it.todo('should require subject field');
 
-    todo('should handle different user types');
+    it.todo('should handle different user types');
 
-    todo('should handle network timeout errors');
+    it.todo('should handle network timeout errors');
   });
 });

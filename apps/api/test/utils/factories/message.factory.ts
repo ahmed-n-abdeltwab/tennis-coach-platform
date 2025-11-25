@@ -12,7 +12,7 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
   create(overrides?: Partial<MockMessage>): MockMessage {
     const id = this.generateId();
 
-    return {
+    const message = {
       id,
       content: this.randomContent(),
       sentAt: new Date(),
@@ -22,6 +22,19 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
       receiverId: this.generateId(),
       ...overrides,
     };
+
+    // Validate required fields
+    this.validateRequired(message.content, 'content');
+    this.validateRequired(message.sentAt, 'sentAt');
+    this.validateRequired(message.senderType, 'senderType');
+    this.validateRequired(message.receiverType, 'receiverType');
+
+    // Validate that content is not empty
+    if (message.content.trim().length === 0) {
+      throw new Error('[Factory] Invalid message: content cannot be empty');
+    }
+
+    return message;
   }
 
   createUserToCoach(

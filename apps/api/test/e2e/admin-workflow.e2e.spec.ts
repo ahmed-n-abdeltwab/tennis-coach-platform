@@ -4,8 +4,6 @@
  * Tests admin functionality including user management and system configuration
  */
 
-import { todo } from 'node:test';
-
 import { Role } from '@prisma/client';
 
 import {
@@ -111,21 +109,21 @@ describe('Admin Workflow (E2E)', () => {
   });
 
   describe('User Management', () => {
-    todo('should allow admin to view all users');
+    it.todo('should allow admin to view all users');
 
-    todo('should allow admin to view user details');
+    it.todo('should allow admin to view user details');
 
-    todo('should allow admin to update user information');
+    it.todo('should allow admin to update user information');
 
-    todo('should prevent non-admin users from accessing admin endpoints');
+    it.todo('should prevent non-admin users from accessing admin endpoints');
   });
 
   describe('Coach Management', () => {
-    todo('should allow admin to view all coaches');
+    it.todo('should allow admin to view all coaches');
 
-    todo('should allow admin to update coach permissions');
+    it.todo('should allow admin to update coach permissions');
 
-    todo('should allow admin to manage coach profiles');
+    it.todo('should allow admin to manage coach profiles');
   });
 
   describe('Session Management', () => {
@@ -168,40 +166,40 @@ describe('Admin Workflow (E2E)', () => {
       testSession = createdSession;
     });
 
-    todo('should allow admin to view all sessions');
+    it.todo('should allow admin to view all sessions');
 
-    todo('should allow admin to update session status');
+    it.todo('should allow admin to update session status');
 
-    todo('should allow admin to cancel sessions');
+    it.todo('should allow admin to cancel sessions');
 
-    todo('should allow admin to view session analytics');
+    it.todo('should allow admin to view session analytics');
 
     describe('System Configuration', () => {
-      todo('should allow admin to manage booking types');
+      it.todo('should allow admin to manage booking types');
 
-      todo('should allow admin to manage discounts');
+      it.todo('should allow admin to manage discounts');
 
-      todo('should allow admin to view system health and metrics');
+      it.todo('should allow admin to view system health and metrics');
 
-      todo('should allow admin to manage system settings');
+      it.todo('should allow admin to manage system settings');
     });
 
     describe('Audit and Logging', () => {
-      todo('should allow admin to view audit logs');
+      it.todo('should allow admin to view audit logs');
 
-      todo('should allow admin to export system data');
+      it.todo('should allow admin to export system data');
     });
 
     describe('Access Control and Security', () => {
-      todo('should enforce admin-only access to sensitive endpoints');
+      it.todo('should enforce admin-only access to sensitive endpoints');
 
-      todo('should validate admin permissions on sensitive operations');
+      it.todo('should validate admin permissions on sensitive operations');
     });
 
     describe('API Contract Validation', () => {
-      todo('should validate admin user management API contract');
+      it.todo('should validate admin user management API contract');
 
-      todo('should validate admin settings API contract');
+      it.todo('should validate admin settings API contract');
     });
   });
 });

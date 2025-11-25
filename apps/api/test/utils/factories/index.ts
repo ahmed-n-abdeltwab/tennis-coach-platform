@@ -4,6 +4,7 @@
 
 import { MockDiscount } from '../mocks';
 
+import { AccountMockFactory } from './account.factory';
 import { AuthMockFactory } from './auth.factory';
 import { BookingTypeMockFactory } from './booking-type.factory';
 import { CoachMockFactory } from './coach.factory';
@@ -15,6 +16,23 @@ import { SessionMockFactory } from './session.factory';
 import { TimeSlotMockFactory } from './time-slot.factory';
 import { UserMockFactory } from './user.factory';
 
+// Export factory classes
+export {
+  AccountMockFactory,
+  AuthMockFactory,
+  BookingTypeMockFactory,
+  CoachMockFactory,
+  DiscountMockFactory,
+  HttpMockFactory,
+  MessageMockFactory,
+  PaymentMockFactory,
+  SessionMockFactory,
+  TimeSlotMockFactory,
+  UserMockFactory,
+};
+
+// Export factory instances for convenience
+export const accountFactory = new AccountMockFactory();
 export const userFactory = new UserMockFactory();
 export const coachFactory = new CoachMockFactory();
 export const bookingTypeFactory = new BookingTypeMockFactory();

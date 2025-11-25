@@ -13,6 +13,24 @@ import { randomUUID } from 'crypto';
 
 import { Prisma, PrismaClient, Role } from '@prisma/client';
 
+import {
+  DATABASE_CONSTANTS,
+  ERROR_MESSAGES,
+  SECURITY_CONSTANTS,
+  SEED_DATA_CONSTANTS,
+  TEST_ENV_CONSTANTS,
+} from '../constants/test-constants';
+import { createDatabaseError } from '../errors/test-infrastructure-errors';
+import {
+  generateUniqueId,
+  getFutureDate,
+  sanitizeForDatabaseName,
+  truncateString,
+} from '../helpers/common-helpers';
+
+import { batchCleanupManager } from './batch-cleanup-manager';
+import { connectionPoolManager } from './connection-pool-manager';
+
 export interface TestDatabaseConfig {
   type: 'unit' | 'integration' | 'e2e';
   isolationLevel: 'database' | 'transaction' | 'none';
@@ -57,8 +75,11 @@ export class TestDatabaseManager {
     }
 
     // Ensure we're in test environment
-    if (process.env.NODE_ENV !== 'test') {
-      throw new Error('TestDatabaseManager can only be used in test environment');
+    if (process.env.NODE_ENV !== TEST_ENV_CONSTANTS.REQUIRED_ENV) {
+      throw createDatabaseError('initialize', ERROR_MESSAGES.INVALID_ENVIRONMENT, {
+        currentEnvironment: process.env.NODE_ENV ?? 'undefined',
+        expectedEnvironment: TEST_ENV_CONSTANTS.REQUIRED_ENV,
+      });
     }
 
     this.isInitialized = true;
@@ -90,17 +111,8 @@ export class TestDatabaseManager {
       // Create the database
       await this.createDatabase(dbName);
 
-      // Create Prisma client for the test database
-      const client = new PrismaClient({
-        datasources: {
-          db: {
-            url: dbUrl,
-          },
-        },
-      });
-
-      // Connect to the database
-      await client.$connect();
+      // Get or create Prisma client from connection pool
+      const client = await connectionPoolManager.getConnection(dbUrl);
 
       // Run migrations
       await this.runMigrations(dbUrl);
@@ -121,10 +133,18 @@ export class TestDatabaseManager {
 
       return connection;
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Failed to create test database for ${testSuite}: ${error.message}`);
-      }
-      throw new Error(`Failed to create test database for ${testSuite}: ${String(error)}`);
+      throw createDatabaseError(
+        'create test database',
+        error instanceof Error ? error.message : String(error),
+        {
+          testSuite,
+          databaseName: dbName,
+          databaseUrl: dbUrl,
+          configType: config.type,
+          isolationLevel: config.isolationLevel,
+        },
+        error instanceof Error ? error : undefined
+      );
     }
   }
 
@@ -135,6 +155,9 @@ export class TestDatabaseManager {
     return this.testDatabases.get(testSuite);
   }
 
+  public getBaseUrl() {
+    return this.baseUrl;
+  }
   /**
    * Clean up a specific test database
    */
@@ -148,21 +171,29 @@ export class TestDatabaseManager {
       // Clean up any active transactions
       await this.rollbackActiveTransactions(testSuite);
 
-      // Disconnect the client
-      await connection.client.$disconnect();
+      // Release connection back to pool
+      connectionPoolManager.releaseConnection(connection.url);
 
       // Drop the database
       await this.dropDatabase(connection.name);
 
+      // Remove connection from pool
+      await connectionPoolManager.removeConnection(connection.url);
+
       // Remove from tracking
       this.testDatabases.delete(testSuite);
     } catch (error) {
-      if (error instanceof Error) {
-        console.warn(
-          `Warning: Failed to cleanup test database ${connection.name}: ${error.message}`
-        );
-      }
-      console.warn(`Warning: Failed to cleanup test database ${connection.name}: ${String(error)}`);
+      const dbError = createDatabaseError(
+        'cleanup test database',
+        error instanceof Error ? error.message : String(error),
+        {
+          testSuite,
+          databaseName: connection.name,
+          databaseUrl: connection.url,
+        },
+        error instanceof Error ? error : undefined
+      );
+      console.warn(dbError.toLogFormat());
     }
   }
 
@@ -185,7 +216,10 @@ export class TestDatabaseManager {
   public async seedDatabase(testSuite: string, seedData?: any[]): Promise<void> {
     const connection = this.testDatabases.get(testSuite);
     if (!connection) {
-      throw new Error(`No test database found for ${testSuite}`);
+      throw createDatabaseError('seed database', ERROR_MESSAGES.NO_DATABASE_CONNECTION, {
+        testSuite,
+        availableDatabases: Array.from(this.testDatabases.keys()),
+      });
     }
 
     try {
@@ -199,10 +233,17 @@ export class TestDatabaseManager {
         await this.insertDefaultSeedData(connection.client);
       }
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Failed to seed database for ${testSuite}: ${error.message}`);
-      }
-      throw new Error(`Failed to seed database for ${testSuite}: ${String(error)}`);
+      throw createDatabaseError(
+        'seed database',
+        error instanceof Error ? error.message : String(error),
+        {
+          testSuite,
+          databaseName: connection.name,
+          seedDataProvided: !!seedData,
+          seedDataCount: seedData?.length ?? 0,
+        },
+        error instanceof Error ? error : undefined
+      );
     }
   }
 
@@ -212,7 +253,10 @@ export class TestDatabaseManager {
   public async startTransaction(testSuite: string): Promise<any> {
     const connection = this.testDatabases.get(testSuite);
     if (!connection) {
-      throw new Error(`No test database found for ${testSuite}`);
+      throw createDatabaseError('start transaction', ERROR_MESSAGES.NO_DATABASE_CONNECTION, {
+        testSuite,
+        availableDatabases: Array.from(this.testDatabases.keys()),
+      });
     }
 
     // For Prisma, we'll use the interactive transaction API
@@ -247,10 +291,17 @@ export class TestDatabaseManager {
       // Remove from active transactions
       this.activeTransactions.delete(transactionKey);
     } catch (error) {
-      if (error instanceof Error) {
-        console.warn(`Warning: Failed to rollback transaction ${transactionId}: ${error.message}`);
-      }
-      console.warn(`Warning: Failed to rollback transaction ${transactionId}: ${String(error)}`);
+      const dbError = createDatabaseError(
+        'rollback transaction',
+        error instanceof Error ? error.message : String(error),
+        {
+          testSuite,
+          transactionId,
+          transactionKey,
+        },
+        error instanceof Error ? error : undefined
+      );
+      console.warn(dbError.toLogFormat());
     }
   }
 
@@ -277,27 +328,42 @@ export class TestDatabaseManager {
   ): Promise<T> {
     const connection: DatabaseConnection | undefined = this.testDatabases.get(testSuite);
     if (!connection) {
-      throw new Error(`No test database found for ${testSuite}`);
+      throw createDatabaseError('execute transaction', ERROR_MESSAGES.NO_DATABASE_CONNECTION, {
+        testSuite,
+        availableDatabases: Array.from(this.testDatabases.keys()),
+      });
     }
 
-    return connection.client.$transaction(callback);
+    try {
+      return await connection.client.$transaction(callback);
+    } catch (error) {
+      throw createDatabaseError(
+        'execute transaction',
+        error instanceof Error ? error.message : String(error),
+        {
+          testSuite,
+          databaseName: connection.name,
+        },
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   /**
    * Run database migrations on a test database
    */
   public async runMigrations(databaseUrl: string): Promise<void> {
+    const originalUrl = process.env.DATABASE_URL;
     try {
       // Set the database URL for migration
-      const originalUrl = process.env.DATABASE_URL;
       process.env.DATABASE_URL = databaseUrl;
 
       // Run Prisma migrations with timeout and explicit schema path
-      execSync('npx prisma migrate deploy --schema=./apps/api/prisma/schema.prisma', {
+      execSync(`npx prisma migrate deploy --schema=${DATABASE_CONSTANTS.SCHEMA_PATH}`, {
         cwd: process.cwd(),
         stdio: 'pipe',
         env: { ...process.env, DATABASE_URL: databaseUrl },
-        timeout: 30000, // 30 second timeout
+        timeout: DATABASE_CONSTANTS.MIGRATION_TIMEOUT_MS,
       });
 
       // Restore original URL
@@ -305,11 +371,21 @@ export class TestDatabaseManager {
         process.env.DATABASE_URL = originalUrl;
       }
     } catch (error) {
-      if (error instanceof Error) {
-        console.error(`Failed to run migrations on ${databaseUrl}:`, error.message);
-        throw new Error(`Failed to run migrations: ${error.message}`);
+      // Restore original URL even on error
+      if (originalUrl) {
+        process.env.DATABASE_URL = originalUrl;
       }
-      throw new Error(`Failed to run migrations: ${String(error)}`);
+
+      throw createDatabaseError(
+        'run migrations',
+        error instanceof Error ? error.message : String(error),
+        {
+          databaseUrl,
+          schemaPath: DATABASE_CONSTANTS.SCHEMA_PATH,
+          timeout: DATABASE_CONSTANTS.MIGRATION_TIMEOUT_MS,
+        },
+        error instanceof Error ? error : undefined
+      );
     }
   }
 
@@ -324,36 +400,60 @@ export class TestDatabaseManager {
         env: { ...process.env, DATABASE_URL: databaseUrl },
       });
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Failed to generate Prisma client: ${error.message}`);
-      }
-      throw new Error(`Failed to generate Prisma client: ${String(error)}`);
+      throw createDatabaseError(
+        'generate Prisma client',
+        error instanceof Error ? error.message : String(error),
+        {
+          databaseUrl,
+          workingDirectory: process.cwd(),
+        },
+        error instanceof Error ? error : undefined
+      );
     }
   }
 
   // Private helper methods
 
-  private extractBaseUrl(fullUrl: string): string {
+  extractBaseUrl(fullUrl: string): string {
+    // Validate input
+    if (!fullUrl || typeof fullUrl !== 'string' || fullUrl.trim() === '') {
+      throw createDatabaseError('parse database URL', ERROR_MESSAGES.INVALID_DATABASE_URL, {
+        providedUrl: truncateString(fullUrl, SECURITY_CONSTANTS.URL_TRUNCATE_LENGTH),
+      });
+    }
+
     try {
       const url = new URL(fullUrl);
+
+      // Additional validation for database URLs
+      if (!url.protocol || !url.host) {
+        throw new Error('Missing protocol or host');
+      }
+
       return `${url.protocol}//${url.username}:${url.password}@${url.host}`;
-    } catch {
-      throw new Error(`Invalid database URL: ${fullUrl}`);
+    } catch (error) {
+      throw createDatabaseError(
+        'parse database URL',
+        ERROR_MESSAGES.INVALID_DATABASE_URL,
+        {
+          providedUrl: truncateString(fullUrl, SECURITY_CONSTANTS.URL_TRUNCATE_LENGTH),
+        },
+        error instanceof Error ? error : undefined
+      );
     }
   }
 
-  private generateTestDatabaseName(testSuite: string, type: string): string {
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(7);
-    return `test_${type}_${testSuite.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}_${random}`;
+  generateTestDatabaseName(testSuite: string, type: string): string {
+    const sanitizedSuite = sanitizeForDatabaseName(testSuite);
+    return `test_${type}_${sanitizedSuite}_${generateUniqueId('')}`.replace(/__/g, '_');
   }
 
-  private buildDatabaseUrl(dbName: string): string {
+  buildDatabaseUrl(dbName: string): string {
     return `${this.baseUrl}/${dbName}`;
   }
 
-  private async createDatabase(dbName: string): Promise<void> {
-    const adminUrl = `${this.baseUrl}/postgres?connect_timeout=10`;
+  async createDatabase(dbName: string): Promise<void> {
+    const adminUrl = `${this.baseUrl}/${DATABASE_CONSTANTS.ADMIN_DATABASE}?connect_timeout=${DATABASE_CONSTANTS.CONNECTION_TIMEOUT_MS / 1000}`;
     const adminClient = new PrismaClient({
       datasources: {
         db: {
@@ -365,16 +465,37 @@ export class TestDatabaseManager {
     try {
       // Add timeout to connection attempt
       const connectPromise = adminClient.$connect();
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Database connection timeout after 10s')), 10000)
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () =>
+            reject(
+              createDatabaseError(
+                'connect to admin database',
+                `${ERROR_MESSAGES.CONNECTION_TIMEOUT} after ${DATABASE_CONSTANTS.CONNECTION_TIMEOUT_MS / 1000}s`,
+                {
+                  adminUrl,
+                  databaseName: dbName,
+                  timeout: DATABASE_CONSTANTS.CONNECTION_TIMEOUT_MS,
+                }
+              )
+            ),
+          DATABASE_CONSTANTS.CONNECTION_TIMEOUT_MS
+        )
       );
 
       await Promise.race([connectPromise, timeoutPromise]);
       await adminClient.$executeRawUnsafe(`CREATE DATABASE "${dbName}"`);
     } catch (error) {
       if (error instanceof Error && !error.message.includes('already exists')) {
-        console.error(`Failed to create database ${dbName} with URL ${adminUrl}:`, error.message);
-        throw error;
+        throw createDatabaseError(
+          'create database',
+          error.message,
+          {
+            databaseName: dbName,
+            adminUrl,
+          },
+          error
+        );
       }
     } finally {
       await adminClient.$disconnect();
@@ -382,10 +503,11 @@ export class TestDatabaseManager {
   }
 
   private async dropDatabase(dbName: string): Promise<void> {
+    const adminUrl = `${this.baseUrl}/${DATABASE_CONSTANTS.ADMIN_DATABASE}`;
     const adminClient = new PrismaClient({
       datasources: {
         db: {
-          url: `${this.baseUrl}/postgres`, // Connect to default postgres database
+          url: adminUrl,
         },
       },
     });
@@ -403,23 +525,24 @@ export class TestDatabaseManager {
       // Drop the database
       await adminClient.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${dbName}"`);
     } catch (error) {
-      if (error instanceof Error) {
-        console.warn(`Warning: Failed to drop database ${dbName}: ${error.message}`);
-      }
-      console.warn(`Warning: Failed to drop database ${dbName}: ${String(error)}`);
+      const dbError = createDatabaseError(
+        'drop database',
+        error instanceof Error ? error.message : String(error),
+        {
+          databaseName: dbName,
+          adminUrl,
+        },
+        error instanceof Error ? error : undefined
+      );
+      console.warn(dbError.toLogFormat());
     } finally {
       await adminClient.$disconnect();
     }
   }
 
   private async clearDatabaseData(client: PrismaClient): Promise<void> {
-    // Delete in reverse order of dependencies to avoid foreign key constraints
-    await client.message.deleteMany();
-    await client.session.deleteMany();
-    await client.discount.deleteMany();
-    await client.timeSlot.deleteMany();
-    await client.bookingType.deleteMany();
-    await client.account.deleteMany();
+    // Use optimized batch cleanup
+    await batchCleanupManager.cleanDatabase(client, { parallel: true });
   }
 
   private async insertSeedData(_client: PrismaClient, _seedData: any[]): Promise<void> {
@@ -432,101 +555,71 @@ export class TestDatabaseManager {
   }
 
   private async insertDefaultSeedData(client: PrismaClient): Promise<void> {
-    // Create default test users
-    await Promise.all([
-      client.account.create({
-        data: {
-          email: 'testuser1@example.com',
-          name: 'Test User 1',
-          passwordHash: '$2b$10$test.hash.for.user1',
-          gender: 'male',
-          age: 25,
-          country: 'US',
-          role: Role.USER,
-        },
-      }),
-      client.account.create({
-        data: {
-          email: 'testuser2@example.com',
-          name: 'Test User 2',
-          passwordHash: '$2b$10$test.hash.for.user2',
-          gender: 'female',
-          age: 30,
-          country: 'US',
-          role: Role.USER,
-        },
-      }),
-    ]);
+    // Create default test users using seed data constants
+    await Promise.all(
+      SEED_DATA_CONSTANTS.DEFAULT_USERS.map(userData =>
+        client.account.create({
+          data: {
+            ...userData,
+            role: Role.USER,
+          },
+        })
+      )
+    );
 
-    // Create default test coaches
-    const coaches = await Promise.all([
-      client.account.create({
-        data: {
-          email: 'testcoach1@example.com',
-          name: 'Test Coach 1',
-          passwordHash: '$2b$10$test.hash.for.coach1',
-          bio: 'Experienced tennis coach with 10+ years',
-          credentials: 'USPTA Certified',
-          role: Role.COACH,
-        },
-      }),
-      client.account.create({
-        data: {
-          email: 'testcoach2@example.com',
-          name: 'Test Coach 2',
-          passwordHash: '$2b$10$test.hash.for.coach2',
-          bio: 'Professional tennis instructor',
-          credentials: 'PTR Certified',
-          role: Role.COACH,
-        },
-      }),
-    ]);
+    // Create default test coaches using seed data constants
+    const coaches = await Promise.all(
+      SEED_DATA_CONSTANTS.DEFAULT_COACHES.map(coachData =>
+        client.account.create({
+          data: {
+            ...coachData,
+            role: Role.COACH,
+          },
+        })
+      )
+    );
 
-    // Create default booking types
-    await Promise.all([
-      client.bookingType.create({
-        data: {
-          name: 'Individual Lesson',
-          description: 'One-on-one tennis coaching session',
-          basePrice: 75.0,
-          coachId: coaches[0].id,
-          isActive: true,
-        },
-      }),
-      client.bookingType.create({
-        data: {
-          name: 'Group Lesson',
-          description: 'Small group tennis coaching session',
-          basePrice: 50.0,
-          coachId: coaches[0].id,
-          isActive: true,
-        },
-      }),
-    ]);
+    // Create default booking types using seed data constants
+    const firstCoach = coaches[0];
+    if (firstCoach) {
+      await Promise.all(
+        SEED_DATA_CONSTANTS.DEFAULT_BOOKING_TYPES.map(bookingTypeData =>
+          client.bookingType.create({
+            data: {
+              ...bookingTypeData,
+              coachId: firstCoach.id,
+              isActive: true,
+            },
+          })
+        )
+      );
 
-    // Create default time slots
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(10, 0, 0, 0);
+      // Create default time slots using helper function
+      const baseTime = getFutureDate(SEED_DATA_CONSTANTS.DEFAULT_TIME_SLOT_OFFSET_HOURS);
+      baseTime.setMinutes(0, 0, 0);
 
-    await Promise.all([
-      client.timeSlot.create({
-        data: {
-          dateTime: tomorrow,
-          durationMin: 60,
-          isAvailable: true,
-          coachId: coaches[0].id,
-        },
-      }),
-      client.timeSlot.create({
-        data: {
-          dateTime: new Date(tomorrow.getTime() + 2 * 60 * 60 * 1000), // 2 hours later
-          durationMin: 60,
-          isAvailable: true,
-          coachId: coaches[0].id,
-        },
-      }),
-    ]);
+      await Promise.all([
+        client.timeSlot.create({
+          data: {
+            dateTime: baseTime,
+            durationMin: SEED_DATA_CONSTANTS.DEFAULT_TIME_SLOT_DURATION_MIN,
+            isAvailable: true,
+            coachId: firstCoach.id,
+          },
+        }),
+        client.timeSlot.create({
+          data: {
+            dateTime: getFutureDate(
+              SEED_DATA_CONSTANTS.DEFAULT_TIME_SLOT_OFFSET_HOURS +
+                SEED_DATA_CONSTANTS.DEFAULT_TIME_SLOT_INTERVAL_HOURS
+            ),
+            durationMin: SEED_DATA_CONSTANTS.DEFAULT_TIME_SLOT_DURATION_MIN,
+            isAvailable: true,
+            coachId: firstCoach.id,
+          },
+        }),
+      ]);
+    }
   }
 }
 

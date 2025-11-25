@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * MigrationManager - Utilities for managing database migrations in test environments
  *

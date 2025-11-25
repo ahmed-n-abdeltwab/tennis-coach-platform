@@ -5,6 +5,7 @@ import { Role } from '@prisma/client';
 import { parseJwtTime } from '@utils';
 
 import { AuthenticatedHttpClient } from '../auth/authenticated-client';
+import { DEFAULT_TEST_USER, HTTP_CONSTANTS, JWT_CONSTANTS } from '../constants';
 
 /**
  * Authentication headers structure
@@ -49,12 +50,14 @@ export class AuthTestHelper {
   /**
    * Create a new AuthTestHelper instance
    *
-   * @param jwtSecret - Optional JWT secret (defaults to process.env.JWT_SECRET or 'test-secret')
+   * @param jwtSecret - Optional JWT secret (defaults to process.env.JWT_SECRET or JWT_CONSTANTS.DEFAULT_SECRET)
    */
   constructor(jwtSecret?: string) {
     this.jwtService = new JwtService({
-      secret: jwtSecret ?? process.env.JWT_SECRET ?? 'test-secret',
-      signOptions: { expiresIn: parseJwtTime(process.env.JWT_EXPIRES_IN, '1h') },
+      secret: jwtSecret ?? process.env.JWT_SECRET ?? JWT_CONSTANTS.DEFAULT_SECRET,
+      signOptions: {
+        expiresIn: parseJwtTime(process.env.JWT_EXPIRES_IN, JWT_CONSTANTS.DEFAULT_EXPIRY),
+      },
     });
   }
 
@@ -75,8 +78,8 @@ export class AuthTestHelper {
    */
   async createToken(payload: Partial<JwtPayload>): Promise<string> {
     const defaultPayload: JwtPayload = {
-      sub: 'test-user-id',
-      email: 'test@example.com',
+      sub: DEFAULT_TEST_USER.ID,
+      email: DEFAULT_TEST_USER.EMAIL,
       role: Role.USER,
       ...payload,
     };
@@ -99,13 +102,7 @@ export class AuthTestHelper {
    * ```
    */
   async createUserToken(payload?: Partial<JwtPayload>): Promise<string> {
-    const user: JwtPayload = {
-      sub: 'test-user-id',
-      email: 'user@example.com',
-      role: Role.USER,
-      ...payload,
-    };
-    return await this.createToken(user);
+    return this.createRoleToken(Role.USER, payload);
   }
 
   /**
@@ -124,13 +121,7 @@ export class AuthTestHelper {
    * ```
    */
   async createCoachToken(payload?: Partial<JwtPayload>): Promise<string> {
-    const user: JwtPayload = {
-      sub: 'test-user-id',
-      email: 'user@example.com',
-      role: Role.COACH,
-      ...payload,
-    };
-    return await this.createToken(user);
+    return this.createRoleToken(Role.COACH, payload);
   }
 
   /**
@@ -145,13 +136,7 @@ export class AuthTestHelper {
    * ```
    */
   async createAdminToken(payload?: Partial<JwtPayload>): Promise<string> {
-    const user: JwtPayload = {
-      sub: 'test-user-id',
-      email: 'user@example.com',
-      role: Role.ADMIN,
-      ...payload,
-    };
-    return await this.createToken(user);
+    return this.createRoleToken(Role.ADMIN, payload);
   }
 
   /**
@@ -166,13 +151,7 @@ export class AuthTestHelper {
    * ```
    */
   async createPremiumUserToken(payload?: Partial<JwtPayload>): Promise<string> {
-    const user: JwtPayload = {
-      sub: 'test-user-id',
-      email: 'user@example.com',
-      role: Role.PREMIUM_USER,
-      ...payload,
-    };
-    return await this.createToken(user);
+    return this.createRoleToken(Role.PREMIUM_USER, payload);
   }
 
   /**
@@ -189,12 +168,12 @@ export class AuthTestHelper {
    */
   async createExpiredToken(payload?: Partial<JwtPayload>): Promise<string> {
     const expiredJwtService = new JwtService({
-      secret: process.env.JWT_SECRET ?? 'test-secret',
-      signOptions: { expiresIn: '-1h' },
+      secret: process.env.JWT_SECRET ?? JWT_CONSTANTS.DEFAULT_SECRET,
+      signOptions: { expiresIn: JWT_CONSTANTS.EXPIRED_TOKEN_EXPIRY },
     });
     const defaultPayload: JwtPayload = {
-      sub: 'test-user-id',
-      email: 'test@example.com',
+      sub: DEFAULT_TEST_USER.ID,
+      email: DEFAULT_TEST_USER.EMAIL,
       role: Role.USER,
       ...payload,
     };
@@ -217,7 +196,7 @@ export class AuthTestHelper {
    */
   async createAuthHeaders(token?: string): Promise<AuthHeaders> {
     const authToken = token ?? (await this.createUserToken());
-    return { Authorization: `Bearer ${authToken}` };
+    return { [HTTP_CONSTANTS.AUTHORIZATION_HEADER]: `${HTTP_CONSTANTS.BEARER_PREFIX}${authToken}` };
   }
 
   /**
@@ -392,12 +371,12 @@ export class AuthTestHelper {
    */
   async createTokenWithExpiry(payload?: Partial<JwtPayload>, expiresIn?: string): Promise<string> {
     const customJwtService = new JwtService({
-      secret: process.env.JWT_SECRET ?? 'test-secret',
-      signOptions: { expiresIn: parseJwtTime(expiresIn, '1hr') },
+      secret: process.env.JWT_SECRET ?? JWT_CONSTANTS.DEFAULT_SECRET,
+      signOptions: { expiresIn: parseJwtTime(expiresIn, JWT_CONSTANTS.DEFAULT_EXPIRY) },
     });
     const fullPayload: JwtPayload = {
-      sub: 'test-user-id',
-      email: 'test@example.com',
+      sub: DEFAULT_TEST_USER.ID,
+      email: DEFAULT_TEST_USER.EMAIL,
       role: Role.USER,
       ...payload,
     };
@@ -408,7 +387,7 @@ export class AuthTestHelper {
    * Create a token that expires soon (useful for testing token refresh)
    *
    * @param payload - Optional payload overrides
-   * @param secondsUntilExpiry - Seconds until token expires (default: 5)
+   * @param secondsUntilExpiry - Seconds until token expires (default: JWT_CONSTANTS.SHORT_LIVED_EXPIRY_SECONDS)
    * @returns JWT token that expires soon
    *
    * @example
@@ -419,7 +398,7 @@ export class AuthTestHelper {
    */
   async createSoonToExpireToken(
     payload?: Partial<JwtPayload>,
-    secondsUntilExpiry = 5
+    secondsUntilExpiry: number = JWT_CONSTANTS.SHORT_LIVED_EXPIRY_SECONDS
   ): Promise<string> {
     return await this.createTokenWithExpiry(payload, `${secondsUntilExpiry}s`);
   }
@@ -475,10 +454,10 @@ export class AuthTestHelper {
    * ```
    */
   async extractTokenFromHeader(authHeader: string): Promise<string | null> {
-    if (!authHeader?.startsWith('Bearer ')) {
+    if (!authHeader?.startsWith(HTTP_CONSTANTS.BEARER_PREFIX)) {
       return null;
     }
-    return authHeader.substring(7);
+    return authHeader.substring(HTTP_CONSTANTS.BEARER_PREFIX.length);
   }
 
   /**

@@ -5,7 +5,7 @@
 
 import { HealthController } from '../../../../src/app/health/health.controller';
 import { HealthService } from '../../../../src/app/health/health.service';
-import { BaseControllerTest } from '../base-controller.test';
+import { BaseControllerTest } from '../base-controller';
 
 export class HealthControllerTest extends BaseControllerTest<HealthController, HealthService> {
   async setupController(): Promise<void> {

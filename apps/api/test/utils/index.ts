@@ -132,3 +132,80 @@ export * from './mocks';
  * ```
  */
 export * from './types';
+
+/**
+ * Property-based testing utilities
+ *
+ * Provides configuration, generators (arbitraries), and helpers for
+ * property-based testing using fast-check library.
+ *
+ * Property-based testing validates that properties hold true across
+ * many randomly generated inputs, providing stronger correctness guarantees
+ * than example-based tests.
+ *
+ * @example
+ * ```typescript
+ * import { defaultPropertyTestConfig, jwtPayloadArbitrary } from '@test-utils';
+ * import * as fc from 'fast-check';
+ *
+ * it('should maintain token round-trip consistency', () => {
+ *   fc.assert(
+ *     fc.property(jwtPayloadArbitrary(), async (payload) => {
+ *       const token = await authHelper.createToken(payload);
+ *       const decoded = await authHelper.decodeToken(token);
+ *       expect(decoded).toMatchObject(payload);
+ *     }),
+ *     defaultPropertyTestConfig
+ *   );
+ * });
+ * ```
+ */
+export * from './property-testing';
+
+/**
+ * Performance monitoring utilities
+ *
+ * Provides tools for tracking and reporting test performance including:
+ * - Test execution time tracking
+ * - Database operation timing
+ * - Slow test detection
+ * - Performance warnings and reports
+ *
+ * @example
+ * ```typescript
+ * import { performanceMonitor } from '@test-utils';
+ *
+ * await performanceMonitor.trackDatabaseOperation('create-user', async () => {
+ *   return await prisma.account.create({ data: userData });
+ * });
+ *
+ * const report = performanceMonitor.generateReport();
+ * console.log(report);
+ * ```
+ */
+export * from './performance';
+
+/**
+ * Cache utilities
+ *
+ * Provides caching for frequently used test data to improve performance:
+ * - User and coach caching
+ * - Booking type caching
+ * - Automatic cache invalidation
+ * - Cache statistics
+ *
+ * @example
+ * ```typescript
+ * import { testDataCache } from '@test-utils';
+ *
+ * // Cache a user
+ * testDataCache.cacheUser(user);
+ *
+ * // Get cached user
+ * const cachedUser = testDataCache.getUser(userId);
+ *
+ * // Get cache stats
+ * const stats = testDataCache.getStats();
+ * ```
+ */
+export * from './cache';

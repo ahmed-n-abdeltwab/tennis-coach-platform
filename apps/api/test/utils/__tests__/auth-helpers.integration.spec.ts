@@ -9,7 +9,7 @@ import { Role } from '@prisma/client';
 import { parseJwtTime } from '@utils';
 
 import { AuthTestHelper } from '../auth';
-import { BaseIntegrationTest } from '../base/base-integration.test';
+import { BaseIntegrationTest } from '../base/base-integration';
 import { UserRoleHelper } from '../roles';
 
 class AuthHelpersIntegrationTest extends BaseIntegrationTest {

@@ -8,7 +8,13 @@
  * - Transaction-based test utilities
  */
 
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+
+import { ERROR_MESSAGES, TRANSACTION_CONSTANTS } from '../constants';
+import { createTransactionError } from '../errors';
+import { generateUniqueId } from '../helpers';
+
+import { PrismaClient } from './database-helpers';
 
 export interface TransactionContext {
   id: string;
@@ -76,8 +82,18 @@ export class TransactionManager {
       if (error instanceof TestTransactionRollback) {
         // Transaction was rolled back successfully
       } else {
-        // Re-throw actual errors
-        throw error;
+        // Re-throw actual errors with context
+        throw createTransactionError(
+          'execute transaction with rollback',
+          transactionId,
+          error instanceof Error ? error.message : String(error),
+          {
+            timeout: options.timeout ?? TRANSACTION_CONSTANTS.DEFAULT_TIMEOUT_MS,
+            maxWait: options.maxWait ?? TRANSACTION_CONSTANTS.DEFAULT_MAX_WAIT_MS,
+            isolationLevel: options.isolationLevel,
+          },
+          error instanceof Error ? error : undefined
+        );
       }
     } finally {
       // Clean up transaction tracking
@@ -85,7 +101,12 @@ export class TransactionManager {
     }
 
     if (!resultAssigned) {
-      throw new Error('Transaction completed without assigning result');
+      throw createTransactionError(
+        'complete transaction',
+        transactionId,
+        ERROR_MESSAGES.TRANSACTION_NO_RESULT,
+        {}
+      );
     }
 
     return result as T;
@@ -102,30 +123,44 @@ export class TransactionManager {
   ): Promise<T> {
     const transactionId = this.generateTransactionId();
 
-    return client.$transaction(
-      async tx => {
-        // Register the transaction
-        const context: TransactionContext = {
-          id: transactionId,
-          client: tx,
-          startTime: new Date(),
-          isActive: true,
-        };
-        this.activeTransactions.set(transactionId, context);
+    try {
+      return await client.$transaction(
+        async tx => {
+          // Register the transaction
+          const context: TransactionContext = {
+            id: transactionId,
+            client: tx,
+            startTime: new Date(),
+            isActive: true,
+          };
+          this.activeTransactions.set(transactionId, context);
 
-        try {
-          const result = await callback(tx);
-          context.isActive = false;
-          return result;
-        } finally {
-          this.activeTransactions.delete(transactionId);
+          try {
+            const result = await callback(tx);
+            context.isActive = false;
+            return result;
+          } finally {
+            this.activeTransactions.delete(transactionId);
+          }
+        },
+        {
+          timeout: options.timeout ?? TRANSACTION_CONSTANTS.DEFAULT_TIMEOUT_MS,
+          maxWait: options.maxWait ?? TRANSACTION_CONSTANTS.DEFAULT_MAX_WAIT_MS,
         }
-      },
-      {
-        timeout: options.timeout ?? 30000,
-        maxWait: options.maxWait ?? 5000,
-      }
-    );
+      );
+    } catch (error) {
+      throw createTransactionError(
+        'execute committed transaction',
+        transactionId,
+        error instanceof Error ? error.message : String(error),
+        {
+          timeout: options.timeout ?? TRANSACTION_CONSTANTS.DEFAULT_TIMEOUT_MS,
+          maxWait: options.maxWait ?? TRANSACTION_CONSTANTS.DEFAULT_MAX_WAIT_MS,
+          isolationLevel: options.isolationLevel,
+        },
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   /**
@@ -182,7 +217,12 @@ export class TransactionManager {
   getActiveTransactions(): TransactionContext[] {
     return Array.from(this.activeTransactions.values());
   }
-
+  /**
+   * Clear Active transactions
+   */
+  clearActiveTransactions() {
+    return this.activeTransactions.clear();
+  }
   /**
    * Get a specific transaction context
    */
@@ -202,6 +242,13 @@ export class TransactionManager {
    */
   getActiveTransactionCount(): number {
     return this.activeTransactions.size;
+  }
+
+  /**
+   * Get the count of transactions
+   */
+  getTransactionCounter(): number {
+    return this.transactionCounter;
   }
 
   /**
@@ -249,9 +296,9 @@ export class TransactionManager {
     };
   }
 
-  private generateTransactionId(): string {
+  generateTransactionId(): string {
     this.transactionCounter++;
-    return `tx_${Date.now()}_${this.transactionCounter}`;
+    return generateUniqueId('tx');
   }
 }
 
@@ -290,8 +337,8 @@ interface TransactionalTestContext {
  */
 export function WithTransaction(options: TransactionOptions = {}) {
   return function (
-    target: unknown,
-    propertyName: string,
+    _target: unknown,
+    _propertyName: string,
     descriptor: PropertyDescriptor
   ): PropertyDescriptor {
     const method = descriptor.value as (...args: unknown[]) => Promise<unknown>;
@@ -299,8 +346,15 @@ export function WithTransaction(options: TransactionOptions = {}) {
     descriptor.value = async function (this: TransactionalTestContext, ...args: unknown[]) {
       const client = this.prisma ?? this.client;
       if (!client) {
-        throw new Error(
-          'No Prisma client found. Ensure your test class has a "prisma" or "client" property.'
+        throw createTransactionError(
+          'decorator initialization',
+          'unknown',
+          ERROR_MESSAGES.NO_PRISMA_CLIENT,
+          {
+            hasThisContext: !!this,
+            hasPrismaProperty: !!(this as any).prisma,
+            hasClientProperty: !!(this as any).client,
+          }
         );
       }
 

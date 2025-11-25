@@ -1,10 +1,10 @@
-/* eslint-disable no-duplicate-imports */
 /**
  * Abstract base class for integration testing
  * Provides database setup, cleanup, and common integration testing patterns
  * Enhanced with type-safe HTTP methods using routes-helpers type utilities
  */
 
+import { JwtPayload } from '@common';
 import { INestApplication, Provider } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -18,20 +18,31 @@ import {
   Session,
   TimeSlot,
 } from '@prisma/client';
-import type {
-  AuthHeaders,
-  Endpoints,
-  ExtractMethods,
-  ExtractPaths,
-  PathsWithMethod,
-} from '@test-utils';
-import { buildPath } from '@test-utils';
 import request from 'supertest';
 
 import { PrismaService } from '../../../src/app/prisma/prisma.service';
-import { JwtPayload } from '../../../src/common';
-import { cleanDatabase, seedTestDatabase } from '../database/database-helpers';
+import type { AuthHeaders } from '../auth/auth-test-helper';
+import { testDataCache } from '../cache/test-data-cache';
+import {
+  DEFAULT_TEST_BOOKING_TYPE,
+  DEFAULT_TEST_COACH,
+  DEFAULT_TEST_DISCOUNT,
+  DEFAULT_TEST_MESSAGE,
+  DEFAULT_TEST_SESSION,
+  DEFAULT_TEST_TIME_SLOT,
+  DEFAULT_TEST_USER,
+  ERROR_MESSAGES,
+  HTTP_CONSTANTS,
+  JWT_CONSTANTS,
+  TEST_ENV_CONSTANTS,
+} from '../constants/test-constants';
+import { batchCleanupManager } from '../database/batch-cleanup-manager';
+import { seedTestDatabase } from '../database/database-helpers';
+import { generateUniqueEmail, getFutureDate, getFutureDateByDays } from '../helpers/common-helpers';
 import type { RequestOptions, RequestType } from '../http/type-safe-http-client';
+import { performanceMonitor } from '../performance/test-performance-monitor';
+import type { Endpoints, ExtractMethods, ExtractPaths, PathsWithMethod } from '../types/type-utils';
+import { buildPath } from '../types/type-utils';
 
 export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoints> {
   protected app: INestApplication;
@@ -42,12 +53,40 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
   private cachedUser?: Account;
 
   async getCachedCoach(): Promise<Account> {
-    this.cachedCoach ??= await this.createTestCoach();
+    // Try to get from cache first
+    if (this.cachedCoach) {
+      return this.cachedCoach;
+    }
+
+    // Check global cache
+    const cachedCoach = testDataCache.getCoachByEmail(DEFAULT_TEST_COACH.NAME);
+    if (cachedCoach) {
+      this.cachedCoach = cachedCoach;
+      return cachedCoach;
+    }
+
+    // Create new coach and cache it
+    this.cachedCoach = await this.createTestCoach();
+    testDataCache.cacheCoach(this.cachedCoach);
     return this.cachedCoach;
   }
 
   async getCachedUser(): Promise<Account> {
-    this.cachedUser ??= await this.createTestUser();
+    // Try to get from cache first
+    if (this.cachedUser) {
+      return this.cachedUser;
+    }
+
+    // Check global cache
+    const cachedUser = testDataCache.getUserByEmail(DEFAULT_TEST_USER.EMAIL);
+    if (cachedUser) {
+      this.cachedUser = cachedUser;
+      return cachedUser;
+    }
+
+    // Create new user and cache it
+    this.cachedUser = await this.createTestUser();
+    testDataCache.cacheUser(this.cachedUser);
     return this.cachedUser;
   }
 
@@ -87,40 +126,49 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
    * Creates the test application and sets up the database
    */
   async setup(): Promise<void> {
-    this.module = await Test.createTestingModule({
-      imports: this.getTestModules(),
-      controllers: this.getTestControllers(),
-      providers: this.getTestProviders(),
-    }).compile();
+    await performanceMonitor.trackSetup(async () => {
+      this.module = await Test.createTestingModule({
+        imports: this.getTestModules(),
+        controllers: this.getTestControllers(),
+        providers: this.getTestProviders(),
+      }).compile();
 
-    await this.setupTestApp();
+      this.app = this.module.createNestApplication();
+      this.app.setGlobalPrefix('api');
+      await this.app.init();
 
-    this.app = this.module.createNestApplication();
-    this.app.setGlobalPrefix('api');
-    await this.app.init();
+      // Call setupTestApp after app is initialized
+      await this.setupTestApp();
 
-    // Only get PrismaService if it's available in the module
-    try {
-      this.prisma = this.module.get<PrismaService>(PrismaService, { strict: false });
-    } catch {
-      // PrismaService not available, skip database setup
-    }
+      // Only get PrismaService if it's available in the module
+      try {
+        this.prisma = this.module.get<PrismaService>(PrismaService, { strict: false });
+      } catch {
+        // PrismaService not available, skip database setup
+      }
 
-    await this.setupDatabase();
+      await this.setupDatabase();
+    });
   }
 
   /**
    * Cleanup method called after each test
    */
   async cleanup(): Promise<void> {
-    await this.cleanupDatabase();
+    await performanceMonitor.trackCleanup(async () => {
+      await this.cleanupDatabase();
 
-    if (this.app) {
-      await this.app.close();
-    }
-    if (this.module) {
-      await this.module.close();
-    }
+      if (this.app) {
+        await this.app.close();
+      }
+      if (this.module) {
+        await this.module.close();
+      }
+
+      // Clear local caches
+      this.cachedCoach = undefined;
+      this.cachedUser = undefined;
+    });
   }
 
   /**
@@ -146,7 +194,15 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
    */
   async cleanupDatabase(): Promise<void> {
     if (this.prisma) {
-      await cleanDatabase(this.prisma);
+      // Use optimized batch cleanup with sequential mode to avoid foreign key issues
+      await batchCleanupManager.cleanDatabase(this.prisma, { parallel: false });
+
+      // Clear local caches after database cleanup
+      this.cachedCoach = undefined;
+      this.cachedUser = undefined;
+
+      // Clear global cache
+      testDataCache.clear();
     }
   }
 
@@ -163,14 +219,14 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
    */
   async createTestJwtToken(
     payload: Partial<JwtPayload> = {
-      sub: 'test-user-id',
-      email: 'test@example.com',
+      sub: DEFAULT_TEST_USER.ID,
+      email: DEFAULT_TEST_USER.EMAIL,
       role: Role.USER,
     }
   ): Promise<string> {
     const jwtService = new JwtService({
-      secret: process.env.JWT_SECRET ?? 'test-secret',
-      signOptions: { expiresIn: '1h' },
+      secret: process.env.JWT_SECRET ?? JWT_CONSTANTS.DEFAULT_SECRET,
+      signOptions: { expiresIn: JWT_CONSTANTS.DEFAULT_EXPIRY },
     });
     return jwtService.signAsync(payload);
   }
@@ -181,7 +237,7 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
   async createAuthHeaders(token?: string): Promise<AuthHeaders> {
     const authToken = token ?? (await this.createTestJwtToken());
     return {
-      Authorization: `Bearer ${authToken}`,
+      [HTTP_CONSTANTS.AUTHORIZATION_HEADER]: `${HTTP_CONSTANTS.BEARER_PREFIX}${authToken}`,
     };
   }
 
@@ -275,7 +331,7 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
     const authHeaders = await this.createAuthHeaders(token);
     return this.request(endpoint, method, payload, {
       ...options,
-      headers: authHeaders,
+      headers: { ...authHeaders, ...options?.headers },
     });
   }
 
@@ -351,16 +407,16 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
    */
   async createTestUser(overrides: Partial<Account> = {}): Promise<Account> {
     const userData = {
-      email: `test-user-${Date.now()}@example.com`,
-      name: 'Test User',
-      passwordHash: 'hashed-password',
+      email: generateUniqueEmail('test-user'),
+      name: DEFAULT_TEST_USER.NAME,
+      passwordHash: DEFAULT_TEST_USER.PASSWORD_HASH,
       role: Role.USER,
-      gender: 'OTHER',
-      age: 30,
-      height: 170,
-      weight: 70,
-      country: 'Test User Country',
-      address: '123 Test St, Test City',
+      gender: DEFAULT_TEST_USER.GENDER,
+      age: DEFAULT_TEST_USER.AGE,
+      height: DEFAULT_TEST_USER.HEIGHT,
+      weight: DEFAULT_TEST_USER.WEIGHT,
+      country: DEFAULT_TEST_USER.COUNTRY,
+      address: DEFAULT_TEST_USER.ADDRESS,
       isActive: true,
       isOnline: true,
       createdAt: new Date(),
@@ -379,14 +435,14 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
    */
   async createTestCoach(overrides: Partial<Account> = {}): Promise<Account> {
     const coachData = {
-      email: `test-coach-${Date.now()}@example.com`,
-      name: 'Test Coach',
-      bio: 'Test coach bio',
-      passwordHash: 'hashed-password',
+      email: generateUniqueEmail('test-coach'),
+      name: DEFAULT_TEST_COACH.NAME,
+      bio: DEFAULT_TEST_COACH.BIO,
+      passwordHash: DEFAULT_TEST_USER.PASSWORD_HASH,
       role: Role.COACH,
-      credentials: 'Certified Coach',
-      philosophy: 'Coaching Philosophy',
-      profileImage: 'http://example.com/profile.jpg',
+      credentials: DEFAULT_TEST_COACH.CREDENTIALS,
+      philosophy: DEFAULT_TEST_COACH.PHILOSOPHY,
+      profileImage: DEFAULT_TEST_COACH.PROFILE_IMAGE,
       isActive: true,
       isOnline: true,
       createdAt: new Date(),
@@ -409,9 +465,9 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
 
     const bookingTypeData = {
       coachId,
-      name: 'Test Booking Type',
-      description: 'Test booking type description',
-      basePrice: 75.0,
+      name: DEFAULT_TEST_BOOKING_TYPE.NAME,
+      description: DEFAULT_TEST_BOOKING_TYPE.DESCRIPTION,
+      basePrice: DEFAULT_TEST_BOOKING_TYPE.BASE_PRICE,
       createdAt: new Date(),
       updatedAt: new Date(),
       isActive: true,
@@ -431,19 +487,37 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
   async createTestSession(overrides: Partial<Session> = {}): Promise<Session> {
     const coachId = overrides.coachId ?? (await this.getCachedCoach()).id;
     const userId = overrides.userId ?? (await this.getCachedUser()).id;
-    const bookingTypeId =
-      overrides.bookingTypeId ?? (await this.createTestBookingType({ coachId })).id;
-    const timeSlotId = overrides.timeSlotId ?? (await this.createTestTimeSlot({ coachId })).id;
+
+    // Create bookingType and timeSlot first, ensuring they exist before session creation
+    let bookingTypeId = overrides.bookingTypeId;
+    if (!bookingTypeId) {
+      const bookingType = await this.createTestBookingType({ coachId });
+      bookingTypeId = bookingType.id;
+
+      // Verify bookingType exists
+      const verifyBookingType = await this.prisma.bookingType.findUnique({
+        where: { id: bookingTypeId },
+      });
+      if (!verifyBookingType) {
+        throw new Error(`BookingType ${bookingTypeId} was not found after creation`);
+      }
+    }
+
+    let timeSlotId = overrides.timeSlotId;
+    if (!timeSlotId) {
+      const timeSlot = await this.createTestTimeSlot({ coachId });
+      timeSlotId = timeSlot.id;
+    }
 
     const sessionData = {
       coachId,
       userId,
-      notes: 'Test session notes',
-      dateTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-      durationMin: 60,
-      status: 'SCHEDULED',
-      price: 75.0,
-      isPaid: false,
+      notes: DEFAULT_TEST_SESSION.NOTES,
+      dateTime: getFutureDate(DEFAULT_TEST_SESSION.FUTURE_OFFSET_HOURS),
+      durationMin: DEFAULT_TEST_SESSION.DURATION_MIN,
+      status: DEFAULT_TEST_SESSION.STATUS,
+      price: DEFAULT_TEST_SESSION.PRICE,
+      isPaid: DEFAULT_TEST_SESSION.IS_PAID,
       bookingTypeId,
       timeSlotId,
       createdAt: new Date(),
@@ -466,9 +540,9 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
 
     const timeSlotData = {
       coachId,
-      dateTime: new Date(Date.now() + 48 * 60 * 60 * 1000), // Day after tomorrow
-      durationMin: 60,
-      isAvailable: true,
+      dateTime: getFutureDate(DEFAULT_TEST_TIME_SLOT.FUTURE_OFFSET_HOURS),
+      durationMin: DEFAULT_TEST_TIME_SLOT.DURATION_MIN,
+      isAvailable: DEFAULT_TEST_TIME_SLOT.IS_AVAILABLE,
       createdAt: new Date(),
       updatedAt: new Date(),
       ...overrides,
@@ -490,11 +564,11 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
     const discountedData = {
       coachId,
       code: `DISCOUNT${Date.now()}`,
-      amount: 10.0,
-      isActive: true,
-      expiry: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-      useCount: 0,
-      maxUsage: 100,
+      amount: DEFAULT_TEST_DISCOUNT.AMOUNT,
+      isActive: DEFAULT_TEST_DISCOUNT.IS_ACTIVE,
+      expiry: getFutureDateByDays(DEFAULT_TEST_DISCOUNT.EXPIRY_OFFSET_DAYS),
+      useCount: DEFAULT_TEST_DISCOUNT.USE_COUNT,
+      maxUsage: DEFAULT_TEST_DISCOUNT.MAX_USAGE,
       createdAt: new Date(),
       updatedAt: new Date(),
       ...overrides,
@@ -519,7 +593,7 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
       senderId,
       receiverId,
       sessionId,
-      content: 'Test message content',
+      content: DEFAULT_TEST_MESSAGE.CONTENT,
       sentAt: overrides.sentAt ?? new Date(),
       senderType: overrides.senderType ?? Role.USER,
       receiverType: overrides.receiverType ?? Role.COACH,
@@ -723,10 +797,10 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
   /**
    * Creates a token for a specific role
    */
-  protected async createRoleToken(role: Role, overrides?: Partial<JwtPayload>): Promise<string> {
+  async createRoleToken(role: Role, overrides?: Partial<JwtPayload>): Promise<string> {
     return this.createTestJwtToken({
-      sub: `test-${role.toLowerCase()}-id`,
-      email: `test-${role.toLowerCase()}@example.com`,
+      sub: generateUniqueEmail(`test-${role.toLowerCase()}`),
+      email: generateUniqueEmail(`test-${role.toLowerCase()}`),
       role,
       ...overrides,
     });
@@ -735,14 +809,14 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
   /**
    * Creates an expired JWT token for testing authentication failures
    */
-  protected async createExpiredToken(payload?: Partial<JwtPayload>): Promise<string> {
+  async createExpiredToken(payload?: Partial<JwtPayload>): Promise<string> {
     const jwtService = new JwtService({
-      secret: process.env.JWT_SECRET ?? 'test-secret',
-      signOptions: { expiresIn: '-1h' }, // Expired 1 hour ago
+      secret: process.env.JWT_SECRET ?? JWT_CONSTANTS.DEFAULT_SECRET,
+      signOptions: { expiresIn: JWT_CONSTANTS.EXPIRED_TOKEN_EXPIRY },
     });
     return jwtService.signAsync({
-      sub: 'test-user-id',
-      email: 'test@example.com',
+      sub: DEFAULT_TEST_USER.ID,
+      email: DEFAULT_TEST_USER.EMAIL,
       role: Role.USER,
       ...payload,
     });
@@ -751,12 +825,12 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
   /**
    * Creates multiple test users with different roles
    */
-  protected async createTestUsers(count = 3): Promise<Account[]> {
+  async createTestUsers(count = 3): Promise<Account[]> {
     const users: Account[] = [];
     for (let i = 0; i < count; i++) {
       users.push(
         await this.createTestUser({
-          email: `test-user-${Date.now()}-${i}@example.com`,
+          email: generateUniqueEmail(`test-user-${i}`),
         })
       );
     }
@@ -766,12 +840,12 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
   /**
    * Creates multiple test coaches
    */
-  protected async createTestCoaches(count = 3): Promise<Account[]> {
+  async createTestCoaches(count = 3): Promise<Account[]> {
     const coaches: Account[] = [];
     for (let i = 0; i < count; i++) {
       coaches.push(
         await this.createTestCoach({
-          email: `test-coach-${Date.now()}-${i}@example.com`,
+          email: generateUniqueEmail(`test-coach-${i}`),
         })
       );
     }
@@ -783,8 +857,8 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
    */
   protected async waitForCondition(
     condition: () => boolean | Promise<boolean>,
-    timeout = 5000,
-    interval = 100
+    timeout: number = TEST_ENV_CONSTANTS.CONDITION_TIMEOUT_MS,
+    interval: number = TEST_ENV_CONSTANTS.CONDITION_INTERVAL_MS
   ): Promise<void> {
     const startTime = Date.now();
     while (Date.now() - startTime < timeout) {
@@ -793,20 +867,24 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
       }
       await new Promise(resolve => setTimeout(resolve, interval));
     }
-    throw new Error('Condition not met within timeout');
+    throw new Error(ERROR_MESSAGES.CONDITION_NOT_MET_TIMEOUT);
   }
 
   /**
    * Waits for a database record to exist
    */
-  protected async waitForRecord(model: string, where: any, timeout = 5000): Promise<any> {
+  protected async waitForRecord(
+    model: string,
+    where: any,
+    timeout: number = TEST_ENV_CONSTANTS.CONDITION_TIMEOUT_MS
+  ): Promise<any> {
     const startTime = Date.now();
     while (Date.now() - startTime < timeout) {
       const record = await this.findRecord(model, where);
       if (record) {
         return record;
       }
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, TEST_ENV_CONSTANTS.CONDITION_INTERVAL_MS));
     }
     throw new Error(`Record not found in ${model} within timeout`);
   }

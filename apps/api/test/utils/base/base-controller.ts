@@ -236,7 +236,7 @@ export abstract class BaseControllerTest<
     const authHeaders = await this.createAuthHeaders(token);
     return this.request(endpoint, method, payload, {
       ...options,
-      headers: authHeaders,
+      headers: { ...authHeaders, ...options?.headers },
     });
   }
 

@@ -13,7 +13,7 @@ import { Endpoints } from '@routes-helpers';
 
 import { AuthTestHelper } from '../auth/auth-test-helper';
 import { AuthenticatedHttpClient } from '../auth/authenticated-client';
-import { BaseIntegrationTest } from '../base/base-integration.test';
+import { BaseIntegrationTest } from '../base/base-integration';
 import { TypeSafeHttpClient } from '../http/type-safe-http-client';
 import { ProtectedRouteTester } from '../security/protected-route-tester';
 import { RoleBasedAccessTester } from '../security/role-based-access-tester';
@@ -38,7 +38,7 @@ class TypeSafetyVerificationTest extends BaseIntegrationTest {
   }
 
   // Expose app for testing purposes
-  getApp() {
+  override getApp() {
     return this.app;
   }
 }

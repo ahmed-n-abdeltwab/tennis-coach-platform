@@ -11,7 +11,7 @@ export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
     const id = this.generateId();
     const now = new Date();
 
-    return {
+    const bookingType = {
       id,
       name: this.randomBookingTypeName(),
       description: this.randomDescription(),
@@ -22,6 +22,13 @@ export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
       updatedAt: now,
       ...overrides,
     };
+
+    // Validate required fields
+    this.validateRequired(bookingType.name, 'name');
+    this.validateRequired(bookingType.coachId, 'coachId');
+    this.validatePositive(bookingType.basePrice, 'basePrice');
+
+    return bookingType;
   }
 
   createActive(overrides?: Partial<MockBookingType>): MockBookingType {

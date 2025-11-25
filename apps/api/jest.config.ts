@@ -62,6 +62,9 @@ const config: Config = {
   // Timeout for long-running database tests
   testTimeout: 30000,
 
+  // Run integration tests sequentially to avoid database conflicts
+  maxWorkers: 1,
+
   // Custom reporters
   reporters: ['default', ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }]],
 };

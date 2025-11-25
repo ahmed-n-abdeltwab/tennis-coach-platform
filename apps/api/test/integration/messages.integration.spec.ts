@@ -4,18 +4,17 @@
  * Tests message sending workflows and database interactions
  */
 
-import { todo } from 'node:test';
-
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { MessagesModule } from '../../src/app/messages/messages.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
 import { PrismaService } from '../../src/app/prisma/prisma.service';
-import { BaseIntegrationTest } from '../utils/base/base-integration.test';
+import { BaseIntegrationTest } from '../utils/base/base-integration';
 import { CoachMockFactory } from '../utils/factories/coach.factory';
 import { MessageMockFactory } from '../utils/factories/message.factory';
 import { SessionMockFactory } from '../utils/factories/session.factory';
 import { UserMockFactory } from '../utils/factories/user.factory';
+
 class MessagesIntegrationTest extends BaseIntegrationTest {
   override getTestModules(): any[] {
     return [MessagesModule, PrismaModule];
@@ -61,28 +60,28 @@ describe('Messages Integration', () => {
   });
 
   describe('POST /api/messages', () => {
-    todo('should create a message from user to coach');
+    it.todo('should create a message from user to coach');
 
-    todo('should create a message from coach to user');
+    it.todo('should create a message from coach to user');
 
-    todo('should return 404 when session does not exist');
+    it.todo('should return 404 when session does not exist');
 
-    todo('should return 403 when user has no access to session');
+    it.todo('should return 403 when user has no access to session');
 
-    todo('should return 401 when not authenticated');
+    it.todo('should return 401 when not authenticated');
   });
 
   describe('GET /api/messages/session/:sessionId', () => {
-    todo('should return messages for a session with user access');
+    it.todo('should return messages for a session with user access');
 
-    todo('should return messages for a session with coach access');
+    it.todo('should return messages for a session with coach access');
 
-    todo('should handle pagination correctly');
+    it.todo('should handle pagination correctly');
 
-    todo('should return 404 when session does not exist');
+    it.todo('should return 404 when session does not exist');
 
-    todo('should return 403 when user has no access to session');
+    it.todo('should return 403 when user has no access to session');
 
-    todo('should return 401 when not authenticated');
+    it.todo('should return 401 when not authenticated');
   });
 });

@@ -6,12 +6,10 @@
  * type validation and discriminated union responses.
  */
 
-import { todo } from 'node:test';
-
 import { Role } from '@prisma/client';
 
 import { AppModule } from '../../../src/app/app.module';
-import { BaseIntegrationTest } from '../base/base-integration.test';
+import { BaseIntegrationTest } from '../base/base-integration';
 
 /**
  * Example integration test class extending BaseIntegrationTest
@@ -194,23 +192,7 @@ describe.skip('BaseIntegrationTest Type-Safe Methods Examples', () => {
    * - Resource deletion
    * - 204 No Content responses
    */
-  todo('should use type-safe DELETE', async () => {
-    const token = await test.createTestJwtToken({ role: Role.ADMIN });
-    const timeSlot = await test.createTestTimeSlot();
-    // Type-safe DELETE
-    // TODO: add Endpoint '/api/sessions/{id}' to delete Sessions
-    const response = await test.authenticatedDelete('/api/time-slots/{id}', token, {
-      params: { id: timeSlot.id },
-    });
-    if (response.ok) {
-      expect([200, 204]).toContain(response.status);
-      // Verify deletion
-      const record = await test.findRecord('timeSlot', { id: timeSlot.id });
-      expect(record).toBeNull();
-    } else {
-      fail(`Expected success but got error: ${response.body.message}`);
-    }
-  });
+  it.todo('should use type-safe DELETE');
 
   /**
    * Example 7: Multiple Requests with Type Safety

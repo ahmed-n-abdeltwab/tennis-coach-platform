@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { buildPath } from '@routes-helpers';
 import type {
   DeepPartial,
+  Endpoints,
   ExtractMethods,
   ExtractPaths,
   ExtractRequestBody,
@@ -10,7 +11,6 @@ import type {
   HttpMethod,
   PathsWithMethod,
 } from '@test-utils';
-import { Endpoints } from '@test-utils';
 import request from 'supertest';
 /**
  * Standard error response structure from NestJS
@@ -39,7 +39,7 @@ export interface ValidationErrorResponse {
  */
 export interface RequestOptions {
   /** Additional headers to include in the request */
-  headers?: Record<string, any>;
+  headers?: Record<string, string>;
   /** Expected HTTP status code (will assert if provided) */
   expectedStatus?: number;
   /** Request timeout in milliseconds */
@@ -222,7 +222,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
     const { body, params } = payload ?? {};
 
     // Build path with params
-    const builtPath = this.buildPathWithParams(path, params as Record<string, any>);
+    const builtPath = this.buildPathWithParams(path, params as Record<string, string | number>);
 
     // Build request
     const normalizedMethod = method.toLowerCase() as Lowercase<M>;
@@ -416,7 +416,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   async authenticatedPatch<P extends PathsWithMethod<E, 'PATCH'>>(
     path: P,
     token: string,
-    payload?: RequestType<E, P, 'DELETE'>,
+    payload?: RequestType<E, P, 'PATCH'>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
     return this.patch(path, payload, {
@@ -429,7 +429,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
    * Build path with parameters (replace {id} with actual values)
    * @private
    */
-  private buildPathWithParams(path: string, data?: Record<string, any>): string {
+  private buildPathWithParams(path: string, data?: Record<string, string | number>): string {
     if (!data || typeof data !== 'object') return path;
 
     return buildPath(path, data);

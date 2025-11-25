@@ -11,7 +11,7 @@ export class TimeSlotMockFactory extends BaseMockFactory<MockTimeSlot> {
     const id = this.generateId();
     const now = new Date();
 
-    return {
+    const timeSlot = {
       id,
       dateTime: this.generateFutureDate(14), // Within next 2 weeks
       durationMin: this.randomDuration(),
@@ -21,6 +21,13 @@ export class TimeSlotMockFactory extends BaseMockFactory<MockTimeSlot> {
       updatedAt: now,
       ...overrides,
     };
+
+    // Validate required fields
+    this.validateRequired(timeSlot.coachId, 'coachId');
+    this.validateRequired(timeSlot.dateTime, 'dateTime');
+    this.validatePositive(timeSlot.durationMin, 'durationMin');
+
+    return timeSlot;
   }
 
   createAvailable(overrides?: Partial<MockTimeSlot>): MockTimeSlot {

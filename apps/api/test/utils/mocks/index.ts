@@ -1,3 +1,8 @@
+/**
+ * Test Mocks
+ * Centralized exports for all test mocks
+ */
+
 export * from './account.mock';
 export * from './auth.mock';
 export * from './booking-type.mock';
@@ -7,6 +12,7 @@ export * from './http.mock';
 export * from './message.mock';
 export * from './notification.mock';
 export * from './payment.mock';
+export * from './redis.mock';
 export * from './session.mock';
 export * from './time-slot.mock';
 export * from './user.mock';

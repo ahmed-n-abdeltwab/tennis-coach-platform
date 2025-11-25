@@ -8,7 +8,7 @@ import { Test } from '@nestjs/testing';
 import { AppModule } from '../../../src/app/app.module';
 import { PrismaService } from '../../../src/app/prisma/prisma.service';
 
-import { BaseIntegrationTest } from './base-integration.test';
+import { BaseIntegrationTest } from './base-integration';
 
 export abstract class BaseE2ETest extends BaseIntegrationTest {
   /**
@@ -23,7 +23,7 @@ export abstract class BaseE2ETest extends BaseIntegrationTest {
   /**
    * Gets the full application module for E2E testing
    */
-  getTestModules(): any[] {
+  getTestModules(): [typeof AppModule] {
     return [AppModule];
   }
 
@@ -31,12 +31,24 @@ export abstract class BaseE2ETest extends BaseIntegrationTest {
    * Override setup to use AppModule
    */
   override async setup(): Promise<void> {
+    const { ValidationPipe } = await import('@nestjs/common');
+
     this.module = await Test.createTestingModule({
       imports: this.getTestModules(),
     }).compile();
 
     this.app = this.module.createNestApplication();
     this.app.setGlobalPrefix('api');
+
+    // Apply global pipes like in main.ts
+    this.app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      })
+    );
+
     await this.app.init();
 
     // Get PrismaService

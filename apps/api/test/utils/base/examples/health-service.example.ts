@@ -3,11 +3,9 @@
  * Demonstrates how to use the base class for testing services
  */
 
-
-
 import { HealthService } from '../../../../src/app/health/health.service';
 import { PrismaService } from '../../../../src/app/prisma/prisma.service';
-import { BaseServiceTest } from '../base-service.test';
+import { BaseServiceTest } from '../base-service';
 
 export class HealthServiceTest extends BaseServiceTest<HealthService, PrismaService> {
   async setupService(): Promise<void> {
@@ -26,8 +24,8 @@ export class HealthServiceTest extends BaseServiceTest<HealthService, PrismaServ
     ];
   }
 
-  getServiceClass() {
-    return HealthService;
+  getServiceClass(): new (...args: unknown[]) => HealthService {
+    return HealthService as new (...args: unknown[]) => HealthService;
   }
 
   override getProviders(): any[] {

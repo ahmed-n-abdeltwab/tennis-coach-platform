@@ -1,4 +1,5 @@
-import { OperationObject } from "@nestjs/swagger/dist/interfaces/open-api-spec.interface";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { OperationObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
 
 export interface ExtractedRoute {
   method: string;

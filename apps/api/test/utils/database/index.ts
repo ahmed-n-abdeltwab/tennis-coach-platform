@@ -21,6 +21,13 @@ import { createTransactionManager, TransactionManager } from './transaction-mana
 export * from './database-helpers';
 
 /**
+ * Performance optimization utilities
+ * For improved test performance through connection pooling and batch operations
+ */
+export * from './batch-cleanup-manager';
+export * from './connection-pool-manager';
+
+/**
  * Convenience function to setup a complete test database environment
  *
  * This function combines all the utilities to create a fully configured

@@ -1,10 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Cross-Module Integration Tests
  * Tests service-to-service interactions, module communication, and dependency injection
  */
-
-import { todo } from 'node:test';
 
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
@@ -23,6 +20,7 @@ import { PrismaService } from '../../src/app/prisma/prisma.service';
 import { SessionsModule } from '../../src/app/sessions/sessions.module';
 import { TimeSlotsModule } from '../../src/app/time-slots/time-slots.module';
 import { BaseIntegrationTest } from '../utils';
+
 class CrossModuleIntegrationTest extends BaseIntegrationTest {
   async setupTestApp(): Promise<void> {
     this.module = await Test.createTestingModule({
@@ -79,40 +77,40 @@ describe('Cross-Module Integration Tests', () => {
   });
 
   describe('Service-to-Service Interactions', () => {
-    todo('should handle session creation with discount service interaction');
+    it.todo('should handle session creation with discount service interaction');
 
-    todo('should handle message creation with session service validation');
+    it.todo('should handle message creation with session service validation');
 
-    todo('should handle payment processing with session and discount services');
+    it.todo('should handle payment processing with session and discount services');
   });
 
   describe('Module Communication and Dependency Injection', () => {
-    todo('should properly inject dependencies across modules');
+    it.todo('should properly inject dependencies across modules');
 
-    todo('should handle complex workflow with multiple module interactions');
+    it.todo('should handle complex workflow with multiple module interactions');
   });
 
   describe('Database Transaction Handling Across Modules', () => {
-    todo('should handle transaction rollback when cross-module operation fails');
+    it.todo('should handle transaction rollback when cross-module operation fails');
 
-    todo('should handle concurrent session bookings with proper transaction isolation');
+    it.todo('should handle concurrent session bookings with proper transaction isolation');
 
-    todo('should handle complex transaction with multiple table updates');
+    it.todo('should handle complex transaction with multiple table updates');
   });
 
   describe('Event Handling and Message Passing', () => {
-    todo('should handle session status changes triggering notifications');
+    it.todo('should handle session status changes triggering notifications');
 
-    todo('should handle message creation triggering real-time updates');
+    it.todo('should handle message creation triggering real-time updates');
   });
 
   describe('Middleware Integration and Request/Response Pipeline', () => {
-    todo('should handle authentication middleware across all modules');
+    it.todo('should handle authentication middleware across all modules');
 
-    todo('should handle Authorization middleware for role-based access');
+    it.todo('should handle Authorization middleware for role-based access');
 
-    todo('should handle validation middleware across modules');
+    it.todo('should handle validation middleware across modules');
 
-    todo('should handle error handling middleware consistently');
+    it.todo('should handle error handling middleware consistently');
   });
 });

@@ -7,7 +7,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from '../../../src/app/prisma/prisma.service';
 
-export abstract class BaseServiceTest<TService, TRepository = any> {
+export abstract class BaseServiceTest<TService, TRepository> {
   protected service: TService;
   protected repository: TRepository;
   protected prisma: PrismaService;
@@ -23,7 +23,7 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
    * Abstract method to setup mocks for the service's dependencies
    * Must be implemented by concrete test classes
    */
-  abstract setupMocks(): any;
+  abstract setupMocks(): any[];
 
   /**
    * Setup method called before each test
@@ -52,20 +52,20 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
    * Abstract method to get the service class
    * Must be implemented by concrete test classes
    */
-  abstract getServiceClass(): any;
+  abstract getServiceClass(): new (...args: unknown[]) => TService;
 
   /**
    * Abstract method to get additional providers
    * Can be overridden by concrete test classes
    */
-  getProviders(): any[] {
+  getProviders(): unknown[] {
     return [];
   }
 
   /**
    * Creates a mock repository with common CRUD operations
    */
-  protected createMockRepository(): any {
+  protected createMockRepository(): Record<string, jest.Mock> {
     return {
       create: jest.fn(),
       findMany: jest.fn(),
@@ -84,7 +84,7 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Creates a mock PrismaService
    */
-  protected createMockPrismaService(): Partial<PrismaService> {
+  protected createMockPrismaService() {
     return {
       $connect: jest.fn() as jest.Mock,
       $disconnect: jest.fn() as jest.Mock,
@@ -105,7 +105,7 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
    * Creates test data for the service
    * Can be overridden by concrete test classes
    */
-  protected createTestData(): any {
+  protected createTestData(): Record<string, unknown> {
     return {
       id: 'test-id',
       createdAt: new Date(),
@@ -116,7 +116,7 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Creates multiple test data items
    */
-  protected createTestDataArray(count = 3): any[] {
+  protected createTestDataArray(count = 3): Record<string, unknown>[] {
     return Array.from({ length: count }, (_, index) => ({
       ...this.createTestData(),
       id: `test-id-${index + 1}`,
@@ -127,8 +127,8 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
    * Asserts that a service method was called with expected arguments
    */
   protected assertMethodCalledWith(
-    mockMethod: jest.Mock | jest.MockInstance<any, any>,
-    expectedArgs: any[]
+    mockMethod: jest.Mock | jest.MockInstance<unknown, unknown[]>,
+    expectedArgs: unknown[]
   ): void {
     expect(mockMethod).toHaveBeenCalledWith(...expectedArgs);
   }
@@ -137,7 +137,7 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
    * Asserts that a service method was called a specific number of times
    */
   protected assertMethodCalledTimes(
-    mockMethod: jest.Mock | jest.MockInstance<any, any>,
+    mockMethod: jest.Mock | jest.MockInstance<any, any[]>,
     expectedTimes: number
   ): void {
     expect(mockMethod).toHaveBeenCalledTimes(expectedTimes);
@@ -146,7 +146,7 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Asserts that a service method returns expected data
    */
-  protected assertMethodReturns(result: any, expectedData: any): void {
+  protected assertMethodReturns<T>(result: T, expectedData: T): void {
     expect(result).toEqual(expectedData);
   }
 
@@ -163,9 +163,9 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Sets up a mock method to return specific data
    */
-  protected mockMethodToReturn(
-    mockMethod: jest.Mock | jest.MockInstance<any, any>,
-    returnValue: any
+  protected mockMethodToReturn<T>(
+    mockMethod: jest.Mock | jest.MockInstance<any, any[]>,
+    returnValue: T
   ): void {
     mockMethod.mockResolvedValue(returnValue);
   }
@@ -174,7 +174,7 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
    * Sets up a mock method to throw an error
    */
   protected mockMethodToThrow(
-    mockMethod: jest.Mock | jest.MockInstance<any, any>,
+    mockMethod: jest.Mock | jest.MockInstance<any, any[]>,
     error: Error | string
   ): void {
     const errorToThrow = typeof error === 'string' ? new Error(error) : error;
@@ -191,7 +191,7 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Creates a partial object for testing updates
    */
-  protected createPartialData(overrides: any = {}): any {
+  protected createPartialData(overrides: Record<string, any> = {}): Record<string, any> {
     return {
       updatedAt: new Date(),
       ...overrides,
@@ -201,7 +201,7 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Creates pagination parameters for testing
    */
-  protected createPaginationParams(page = 1, limit = 10): any {
+  protected createPaginationParams(page = 1, limit = 10): { skip: number; take: number } {
     return {
       skip: (page - 1) * limit,
       take: limit,
@@ -211,7 +211,9 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Creates filter parameters for testing
    */
-  protected createFilterParams(filters: any = {}): any {
+  protected createFilterParams(filters: Record<string, any> = {}): {
+    where: Record<string, any>;
+  } {
     return {
       where: filters,
     };
@@ -220,7 +222,10 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Creates sorting parameters for testing
    */
-  protected createSortParams(field: string, order: 'asc' | 'desc' = 'asc'): any {
+  protected createSortParams(
+    field: string,
+    order: 'asc' | 'desc' = 'asc'
+  ): { orderBy: Record<string, string> } {
     return {
       orderBy: {
         [field]: order,
@@ -231,10 +236,15 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Creates include parameters for testing relations
    */
-  protected createIncludeParams(relations: string[] | Record<string, any>): any {
+  protected createIncludeParams(relations: string[] | Record<string, any>): {
+    include: Record<string, any>;
+  } {
     if (Array.isArray(relations)) {
       return {
-        include: relations.reduce((acc, rel) => ({ ...acc, [rel]: true }), {}),
+        include: relations.reduce(
+          (acc, rel) => ({ ...acc, [rel]: true }),
+          {} as Record<string, boolean>
+        ),
       };
     }
     return {
@@ -245,14 +255,16 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Asserts that a mock was not called
    */
-  protected assertMethodNotCalled(mockMethod: jest.Mock | jest.MockInstance<any, any>): void {
+  protected assertMethodNotCalled(
+    mockMethod: jest.Mock | jest.MockInstance<any, any[]>
+  ): void {
     expect(mockMethod).not.toHaveBeenCalled();
   }
 
   /**
    * Asserts that a service method returns an array
    */
-  protected assertReturnsArray(result: any, minLength = 0): void {
+  protected assertReturnsArray<T>(result: T[], minLength = 0): void {
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThanOrEqual(minLength);
   }
@@ -274,7 +286,7 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Asserts that a result has specific properties
    */
-  protected assertHasProperties(result: any, properties: string[]): void {
+  protected assertHasProperties(result: Record<string, any>, properties: string[]): void {
     expect(result).toBeDefined();
     properties.forEach(prop => {
       expect(result).toHaveProperty(prop);
@@ -284,7 +296,10 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Asserts that a result matches a partial object
    */
-  protected assertMatchesPartial(result: any, partial: any): void {
+  protected assertMatchesPartial<T extends Record<string, any>>(
+    result: T,
+    partial: Partial<T>
+  ): void {
     expect(result).toBeDefined();
     expect(result).toMatchObject(partial);
   }
@@ -292,9 +307,9 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Creates a mock that returns different values on successive calls
    */
-  protected mockMethodToReturnSequence(
-    mockMethod: jest.Mock | jest.MockInstance<any, any>,
-    values: any[]
+  protected mockMethodToReturnSequence<T>(
+    mockMethod: jest.Mock | jest.MockInstance<any, any[]>,
+    values: T[]
   ): void {
     values.forEach(value => {
       mockMethod.mockResolvedValueOnce(value);
@@ -304,10 +319,10 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Creates a mock that throws on first call then succeeds
    */
-  protected mockMethodToFailThenSucceed(
-    mockMethod: jest.Mock | jest.MockInstance<any, any>,
+  protected mockMethodToFailThenSucceed<T>(
+    mockMethod: jest.Mock | jest.MockInstance<any, any[]>,
     error: Error | string,
-    successValue: any
+    successValue: T
   ): void {
     const errorToThrow = typeof error === 'string' ? new Error(error) : error;
     mockMethod.mockRejectedValueOnce(errorToThrow);
@@ -318,15 +333,16 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
    * Verifies that a mock was called with partial arguments
    */
   protected assertMethodCalledWithPartial(
-    mockMethod: jest.Mock | jest.MockInstance<any, any>,
-    partialArgs: any
+    mockMethod: jest.Mock | jest.MockInstance<any, any[]>,
+    partialArgs: Record<string, any>
   ): void {
     expect(mockMethod).toHaveBeenCalled();
     const calls = mockMethod.mock.calls;
     const matchingCall = calls.find((call: any[]) =>
       call.some((arg: any) => {
         if (typeof arg === 'object' && arg !== null) {
-          return Object.keys(partialArgs).every(key => arg[key] === partialArgs[key]);
+          const argRecord = arg as Record<string, any>;
+          return Object.keys(partialArgs).every(key => argRecord[key] === partialArgs[key]);
         }
         return false;
       })
@@ -337,16 +353,22 @@ export abstract class BaseServiceTest<TService, TRepository = any> {
   /**
    * Gets the last call arguments of a mock
    */
-  protected getLastCallArgs(mockMethod: jest.Mock | jest.MockInstance<any, any>): any[] {
+  protected getLastCallArgs(
+    mockMethod: jest.Mock | jest.MockInstance<any, any[]>
+  ): any[] {
     expect(mockMethod).toHaveBeenCalled();
-    return mockMethod.mock.calls[mockMethod.mock.calls.length - 1];
+    const lastCall = mockMethod.mock.calls[mockMethod.mock.calls.length - 1];
+    return lastCall ?? [];
   }
 
   /**
    * Gets the first call arguments of a mock
    */
-  protected getFirstCallArgs(mockMethod: jest.Mock | jest.MockInstance<any, any>): any[] {
+  protected getFirstCallArgs(
+    mockMethod: jest.Mock | jest.MockInstance<any, any[]>
+  ): any[] {
     expect(mockMethod).toHaveBeenCalled();
-    return mockMethod.mock.calls[0];
+    const firstCall = mockMethod.mock.calls[0];
+    return firstCall ?? [];
   }
 }

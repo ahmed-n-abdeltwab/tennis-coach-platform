@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { todo } from 'node:test';
 
 import { Role } from '@prisma/client';
 import { coachFactory, userFactory } from '@test-utils';
@@ -70,80 +69,80 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
   });
 
   describe('Authentication API Contracts', () => {
-    todo('should validate user registration contract');
+    it.todo('should validate user registration contract');
 
-    todo('should validate login contract');
+    it.todo('should validate login contract');
 
-    todo('should validate profile endpoint contract');
+    it.todo('should validate profile endpoint contract');
   });
 
   describe('User Management API Contracts', () => {
-    todo('should validate user profile update contract');
+    it.todo('should validate user profile update contract');
 
-    todo('should validate coaches listing contract');
+    it.todo('should validate coaches listing contract');
 
-    todo('should validate individual coach contract');
+    it.todo('should validate individual coach contract');
   });
 
   describe('Session Management API Contracts', () => {
-    todo('should validate sessions listing contract');
+    it.todo('should validate sessions listing contract');
 
-    todo('should validate booking types contract');
+    it.todo('should validate booking types contract');
 
-    todo('should validate time slots contract');
+    it.todo('should validate time slots contract');
   });
 
   describe('Error Response Validation', () => {
-    todo('should return consistent 400 error format for validation errors');
+    it.todo('should return consistent 400 error format for validation errors');
 
-    todo('should return consistent 401 error format for authentication errors');
+    it.todo('should return consistent 401 error format for authentication errors');
 
-    todo('should return consistent 403 error format for Authorization errors');
+    it.todo('should return consistent 403 error format for Authorization errors');
 
-    todo('should return consistent 404 error format for not found errors');
+    it.todo('should return consistent 404 error format for not found errors');
 
-    todo('should return consistent 409 error format for conflict errors');
+    it.todo('should return consistent 409 error format for conflict errors');
 
-    todo('should return consistent 500 error format for server errors');
+    it.todo('should return consistent 500 error format for server errors');
   });
 
   describe('HTTP Headers and CORS Validation', () => {
-    todo('should include proper CORS headers');
+    it.todo('should include proper CORS headers');
 
-    todo('should include security headers');
+    it.todo('should include security headers');
 
-    todo('should handle content-type validation');
+    it.todo('should handle content-type validation');
   });
 
   describe('Request Validation and Sanitization', () => {
-    todo('should validate and sanitize input data');
+    it.todo('should validate and sanitize input data');
 
-    todo('should enforce request size limits');
+    it.todo('should enforce request size limits');
 
-    todo('should validate request rate limiting');
+    it.todo('should validate request rate limiting');
   });
 
   describe('Pagination and Query Parameter Validation', () => {
-    todo('should validate pagination parameters');
+    it.todo('should validate pagination parameters');
 
-    todo('should validate query parameter types and formats');
+    it.todo('should validate query parameter types and formats');
   });
 
   describe('API Versioning and Backward Compatibility', () => {
-    it('should handle API version headers');
+    it.todo('should handle API version headers');
 
-    it('should maintain backward compatibility');
+    it.todo('should maintain backward compatibility');
   });
 
   describe('Performance and Load Testing', () => {
-    todo('should handle concurrent requests gracefully');
+    it.todo('should handle concurrent requests gracefully');
 
-    todo('should handle timeout scenarios');
+    it.todo('should handle timeout scenarios');
   });
 
   describe('Security Testing', () => {
-    todo('should prevent common security vulnerabilities');
+    it.todo('should prevent common security vulnerabilities');
 
-    todo('should validate JWT token security');
+    it.todo('should validate JWT token security');
   });
 });

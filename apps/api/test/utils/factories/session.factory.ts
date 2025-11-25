@@ -11,7 +11,7 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
     const id = this.generateId();
     const now = new Date();
 
-    return {
+    const session = {
       id,
       dateTime: this.generateFutureDate(14),
       durationMin: this.randomDuration(),
@@ -27,6 +27,16 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
       updatedAt: now,
       ...overrides,
     };
+
+    // Validate required fields
+    this.validateRequired(session.userId, 'userId');
+    this.validateRequired(session.coachId, 'coachId');
+    this.validateRequired(session.bookingTypeId, 'bookingTypeId');
+    this.validateRequired(session.timeSlotId, 'timeSlotId');
+    this.validatePositive(session.durationMin, 'durationMin');
+    this.validateNonNegative(session.price, 'price');
+
+    return session;
   }
 
   createScheduled(overrides?: Partial<MockSession>): MockSession {

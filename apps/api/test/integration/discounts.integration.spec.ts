@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { todo } from 'node:test';
-
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
@@ -61,48 +58,48 @@ describe('Discounts Integration', () => {
   });
 
   describe('Discount Validation Workflow', () => {
-    todo('should validate active discount codes successfully');
+    it.todo('should validate active discount codes successfully');
 
-    todo('should reject expired discount codes');
+    it.todo('should reject expired discount codes');
 
-    todo('should reject inactive discount codes');
+    it.todo('should reject inactive discount codes');
 
-    todo('should reject discount codes that have reached usage limit');
+    it.todo('should reject discount codes that have reached usage limit');
 
-    todo('should reject non-existent discount codes');
+    it.todo('should reject non-existent discount codes');
   });
 
   describe('Discount Management Workflow', () => {
-    todo('should create discount successfully');
+    it.todo('should create discount successfully');
 
-    todo('should prevent duplicate discount codes');
+    it.todo('should prevent duplicate discount codes');
 
-    todo('should update discount successfully');
+    it.todo('should update discount successfully');
 
-    todo('should prevent unauthorized discount updates');
+    it.todo('should prevent unauthorized discount updates');
 
-    todo('should soft delete discount successfully');
+    it.todo('should soft delete discount successfully');
 
-    todo('should prevent unauthorized discount deletion');
+    it.todo('should prevent unauthorized discount deletion');
   });
 
   describe('Coach Discount Retrieval', () => {
-    todo('should retrieve all discounts for a coach');
+    it.todo('should retrieve all discounts for a coach');
 
-    todo('should return empty array when coach has no discounts');
+    it.todo('should return empty array when coach has no discounts');
 
-    todo('should return discounts ordered by creation date (newest first)');
+    it.todo('should return discounts ordered by creation date (newest first)');
   });
 
   describe('Discount Calculation and Application Logic', () => {
-    todo('should validate discount amounts correctly');
+    it.todo('should validate discount amounts correctly');
 
-    todo('should handle edge cases in usage counting');
+    it.todo('should handle edge cases in usage counting');
   });
 
   describe('Error Handling in Discount Operations', () => {
-    todo('should handle database errors gracefully');
+    it.todo('should handle database errors gracefully');
 
-    todo('should handle concurrent discount code creation');
+    it.todo('should handle concurrent discount code creation');
   });
 });

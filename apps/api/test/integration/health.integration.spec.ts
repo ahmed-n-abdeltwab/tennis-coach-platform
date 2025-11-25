@@ -1,11 +1,9 @@
-import { todo } from 'node:test';
-
 import { ConfigModule } from '@nestjs/config';
 
 import healthConfig from '../../src/app/health/config/health.config';
 import { HealthModule } from '../../src/app/health/health.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
-import { BaseIntegrationTest } from '../utils/base/base-integration.test';
+import { BaseIntegrationTest } from '../utils/base/base-integration';
 
 /**
  * Health Endpoints Integration Tests
@@ -60,19 +58,19 @@ describe('Health Endpoints Integration', () => {
       }
     });
 
-    todo('should return positive uptime');
+    it.todo('should return positive uptime');
 
-    todo('should return valid memory usage information');
+    it.todo('should return valid memory usage information');
 
-    todo('should return configuration information');
+    it.todo('should return configuration information');
 
-    todo('should return database connection status');
+    it.todo('should return database connection status');
 
-    todo('should handle multiple concurrent requests');
+    it.todo('should handle multiple concurrent requests');
 
-    todo('should return consistent structure across multiple calls');
+    it.todo('should return consistent structure across multiple calls');
 
-    todo('should have reasonable response time');
+    it.todo('should have reasonable response time');
   });
 
   describe('GET /api/health/liveness', () => {
@@ -97,13 +95,13 @@ describe('Health Endpoints Integration', () => {
       }
     });
 
-    todo('should always return alive status');
+    it.todo('should always return alive status');
 
-    todo('should be very fast');
+    it.todo('should be very fast');
 
-    todo('should handle high frequency requests');
+    it.todo('should handle high frequency requests');
 
-    todo('should return different timestamps for consecutive calls');
+    it.todo('should return different timestamps for consecutive calls');
   });
 
   describe('GET /api/health/readiness', () => {
@@ -128,30 +126,30 @@ describe('Health Endpoints Integration', () => {
       }
     });
 
-    todo('should verify database connectivity');
+    it.todo('should verify database connectivity');
 
-    todo('should handle multiple readiness checks');
+    it.todo('should handle multiple readiness checks');
 
-    todo('should have reasonable response time');
+    it.todo('should have reasonable response time');
 
-    todo('should return consistent results');
+    it.todo('should return consistent results');
   });
 
   describe('Error handling scenarios', () => {
-    todo('should handle invalid endpoints gracefully');
+    it.todo('should handle invalid endpoints gracefully');
 
-    todo('should handle malformed requests');
+    it.todo('should handle malformed requests');
 
-    todo('should return proper content-type headers');
+    it.todo('should return proper content-type headers');
 
-    todo('should handle concurrent requests without errors');
+    it.todo('should handle concurrent requests without errors');
   });
 
   describe('Performance and reliability', () => {
-    todo('should maintain performance under load');
+    it.todo('should maintain performance under load');
 
-    todo('should handle stress testing of liveness endpoint');
+    it.todo('should handle stress testing of liveness endpoint');
 
-    todo('should maintain database connectivity during multiple readiness checks');
+    it.todo('should maintain database connectivity during multiple readiness checks');
   });
 });

@@ -11,6 +11,22 @@
 import { Account, BookingType, Prisma, Role } from '@prisma/client';
 
 import { PrismaService } from '../../../src/app/prisma/prisma.service';
+import {
+  DATABASE_CONSTANTS,
+  ERROR_MESSAGES,
+  SEED_DATA_CONSTANTS,
+} from '../constants/test-constants';
+import { createDatabaseError } from '../errors/test-infrastructure-errors';
+
+/**
+ * Type representing the minimal Prisma client interface needed for database helpers
+ * This allows for easier mocking in unit tests by accepting any object with string keys
+ */
+export type PrismaClient =
+  | PrismaService
+  | {
+      [key: string]: any;
+    };
 
 /**
  * Cleans all data from the test database
@@ -26,7 +42,7 @@ import { PrismaService } from '../../../src/app/prisma/prisma.service';
  * });
  * ```
  */
-export async function cleanDatabase(prisma: PrismaService): Promise<void> {
+export async function cleanDatabase(prisma: PrismaClient): Promise<void> {
   // Delete in reverse order of dependencies to avoid foreign key constraints
   await prisma.message.deleteMany();
   await prisma.session.deleteMany();
@@ -54,67 +70,92 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
  * });
  * ```
  */
-export async function seedTestDatabase(prisma: PrismaService): Promise<{
+export async function seedTestDatabase(prisma: PrismaClient): Promise<{
   users: Account[];
   coaches: Account[];
   bookingTypes: BookingType[];
 }> {
-  // Create test users
-  const users = await Promise.all([
-    prisma.account.create({
-      data: {
-        email: 'user1@test.com',
-        name: 'Test User 1',
-        passwordHash: '$2b$10$test.hash.for.user1',
-        role: Role.USER,
-      },
-    }),
-    prisma.account.create({
-      data: {
-        email: 'user2@test.com',
-        name: 'Test User 2',
-        passwordHash: '$2b$10$test.hash.for.user2',
-        role: Role.USER,
-      },
-    }),
-  ]);
+  try {
+    // Create test users using seed data constants
+    const users = await Promise.all(
+      SEED_DATA_CONSTANTS.DEFAULT_USERS.map(userData =>
+        prisma.account.create({
+          data: {
+            ...userData,
+            role: Role.USER,
+          },
+        })
+      )
+    );
 
-  // Create test coaches
-  const coaches = await Promise.all([
-    prisma.account.create({
-      data: {
-        email: 'testcoach1@test.com',
-        name: 'Test Coach 1',
-        passwordHash: '$2b$10$test.hash.for.coach1',
-        bio: 'Experienced tennis coach',
-        role: Role.COACH,
-      },
-    }),
-  ]);
+    // Create test coaches using seed data constants
+    const coaches = await Promise.all(
+      SEED_DATA_CONSTANTS.DEFAULT_COACHES.map(coachData =>
+        prisma.account.create({
+          data: {
+            ...coachData,
+            role: Role.COACH,
+          },
+        })
+      )
+    );
 
-  // Create test booking types
-  const bookingTypes = await Promise.all([
-    prisma.bookingType.create({
-      data: {
-        name: 'Individual Lesson',
-        description: 'One-on-one tennis lesson',
-        basePrice: 75.0,
-        coachId: coaches[0].id,
-        isActive: true,
-      },
-    }),
-    prisma.bookingType.create({
-      data: {
-        name: 'Group Lesson',
-        description: 'Group tennis lesson',
-        basePrice: 50.0,
-        coachId: coaches[0].id,
-        isActive: true,
-      },
-    }),
-  ]);
+    // Ensure at least one coach exists before creating booking types
+    if (coaches.length === 0) {
+      throw createDatabaseError(
+        'seed test database',
+        'No coaches were created. Cannot create booking types without a coach.',
+        {
+          operation: 'seedTestDatabase',
+          coachesCount: coaches.length,
+        }
+      );
+    }
 
-  return { users, coaches, bookingTypes };
+    // Extract the first coach for booking types (safe because we checked length above)
+    const firstCoach = coaches[0] as Account;
+
+    // Verify the coach exists in the database before creating booking types
+    const verifyCoach = await prisma.account.findUnique({
+      where: { id: firstCoach.id },
+    });
+
+    if (!verifyCoach) {
+      throw createDatabaseError(
+        'seed test database',
+        `Coach with id ${firstCoach.id} was not found in database after creation`,
+        {
+          operation: 'seedTestDatabase',
+          coachId: firstCoach.id,
+        }
+      );
+    }
+
+    // Create test booking types using seed data constants sequentially to avoid race conditions
+    const bookingTypes: BookingType[] = [];
+    for (const bookingTypeData of SEED_DATA_CONSTANTS.DEFAULT_BOOKING_TYPES) {
+      const bookingType = await prisma.bookingType.create({
+        data: {
+          ...bookingTypeData,
+          coachId: firstCoach.id,
+          isActive: true,
+        },
+      });
+      bookingTypes.push(bookingType);
+    }
+
+    return { users, coaches, bookingTypes };
+  } catch (error) {
+    throw createDatabaseError(
+      'seed test database',
+      error instanceof Error ? error.message : String(error),
+      {
+        operation: 'seedTestDatabase',
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+      },
+      error instanceof Error ? error : undefined
+    );
+  }
 }
 
 /**
@@ -137,7 +178,7 @@ export async function seedTestDatabase(prisma: PrismaService): Promise<{
  * ```
  */
 export async function withTransaction<T>(
-  prisma: PrismaService,
+  prisma: PrismaClient,
   callback: (tx: Prisma.TransactionClient) => Promise<T>
 ): Promise<T> {
   return prisma.$transaction(callback);
@@ -154,11 +195,26 @@ export async function withTransaction<T>(
  * await cleanTable(prisma, 'session');
  * ```
  */
-export async function cleanTable(prisma: PrismaService, tableName: string): Promise<void> {
+export async function cleanTable(prisma: PrismaClient, tableName: string): Promise<void> {
   if (prisma[tableName]) {
-    await prisma[tableName].deleteMany();
+    try {
+      await prisma[tableName].deleteMany();
+    } catch (error) {
+      throw createDatabaseError(
+        'clean table',
+        error instanceof Error ? error.message : String(error),
+        {
+          tableName,
+          operation: 'deleteMany',
+        },
+        error instanceof Error ? error : undefined
+      );
+    }
   } else {
-    throw new Error(`Table ${tableName} not found in Prisma schema`);
+    throw createDatabaseError('clean table', 'Table not found in Prisma schema', {
+      tableName,
+      availableTables: Object.keys(prisma).filter(key => typeof prisma[key] === 'object'),
+    });
   }
 }
 
@@ -176,14 +232,29 @@ export async function cleanTable(prisma: PrismaService, tableName: string): Prom
  * ```
  */
 export async function countRecords(
-  prisma: PrismaService,
+  prisma: PrismaClient,
   tableName: string,
   where: any = {}
 ): Promise<number> {
   if (prisma[tableName]) {
-    return prisma[tableName].count({ where });
+    try {
+      return await prisma[tableName].count({ where });
+    } catch (error) {
+      throw createDatabaseError(
+        'count records',
+        error instanceof Error ? error.message : String(error),
+        {
+          tableName,
+          whereConditions: where,
+          operation: 'count',
+        },
+        error instanceof Error ? error : undefined
+      );
+    }
   }
-  throw new Error(`Table ${tableName} not found in Prisma schema`);
+  throw createDatabaseError('count records', ERROR_MESSAGES.TABLE_NOT_FOUND, {
+    tableName,
+  });
 }
 
 /**
@@ -200,14 +271,29 @@ export async function countRecords(
  * ```
  */
 export async function findRecord(
-  prisma: PrismaService,
+  prisma: PrismaClient,
   tableName: string,
   where: any
 ): Promise<any> {
   if (prisma[tableName]) {
-    return prisma[tableName].findFirst({ where });
+    try {
+      return await prisma[tableName].findFirst({ where });
+    } catch (error) {
+      throw createDatabaseError(
+        'find record',
+        error instanceof Error ? error.message : String(error),
+        {
+          tableName,
+          whereConditions: where,
+          operation: 'findFirst',
+        },
+        error instanceof Error ? error : undefined
+      );
+    }
   }
-  throw new Error(`Table ${tableName} not found in Prisma schema`);
+  throw createDatabaseError('find record', ERROR_MESSAGES.TABLE_NOT_FOUND, {
+    tableName,
+  });
 }
 
 /**
@@ -224,14 +310,29 @@ export async function findRecord(
  * ```
  */
 export async function findRecords(
-  prisma: PrismaService,
+  prisma: PrismaClient,
   tableName: string,
   where: any = {}
 ): Promise<any[]> {
   if (prisma[tableName]) {
-    return prisma[tableName].findMany({ where });
+    try {
+      return await prisma[tableName].findMany({ where });
+    } catch (error) {
+      throw createDatabaseError(
+        'find records',
+        error instanceof Error ? error.message : String(error),
+        {
+          tableName,
+          whereConditions: where,
+          operation: 'findMany',
+        },
+        error instanceof Error ? error : undefined
+      );
+    }
   }
-  throw new Error(`Table ${tableName} not found in Prisma schema`);
+  throw createDatabaseError('find records', ERROR_MESSAGES.TABLE_NOT_FOUND, {
+    tableName,
+  });
 }
 
 /**
@@ -253,14 +354,29 @@ export async function findRecords(
  * ```
  */
 export async function createRecord(
-  prisma: PrismaService,
+  prisma: PrismaClient,
   tableName: string,
   data: any
 ): Promise<any> {
   if (prisma[tableName]) {
-    return prisma[tableName].create({ data });
+    try {
+      return await prisma[tableName].create({ data });
+    } catch (error) {
+      throw createDatabaseError(
+        'create record',
+        error instanceof Error ? error.message : String(error),
+        {
+          tableName,
+          operation: 'create',
+          dataKeys: Object.keys(data),
+        },
+        error instanceof Error ? error : undefined
+      );
+    }
   }
-  throw new Error(`Table ${tableName} not found in Prisma schema`);
+  throw createDatabaseError('create record', ERROR_MESSAGES.TABLE_NOT_FOUND, {
+    tableName,
+  });
 }
 
 /**
@@ -281,15 +397,31 @@ export async function createRecord(
  * ```
  */
 export async function updateRecord(
-  prisma: PrismaService,
+  prisma: PrismaClient,
   tableName: string,
   where: any,
   data: any
 ): Promise<any> {
   if (prisma[tableName]) {
-    return prisma[tableName].update({ where, data });
+    try {
+      return await prisma[tableName].update({ where, data });
+    } catch (error) {
+      throw createDatabaseError(
+        'update record',
+        error instanceof Error ? error.message : String(error),
+        {
+          tableName,
+          whereConditions: where,
+          dataKeys: Object.keys(data),
+          operation: 'update',
+        },
+        error instanceof Error ? error : undefined
+      );
+    }
   }
-  throw new Error(`Table ${tableName} not found in Prisma schema`);
+  throw createDatabaseError('update record', ERROR_MESSAGES.TABLE_NOT_FOUND, {
+    tableName,
+  });
 }
 
 /**
@@ -306,14 +438,29 @@ export async function updateRecord(
  * ```
  */
 export async function deleteRecord(
-  prisma: PrismaService,
+  prisma: PrismaClient,
   tableName: string,
   where: any
 ): Promise<any> {
   if (prisma[tableName]) {
-    return prisma[tableName].delete({ where });
+    try {
+      return await prisma[tableName].delete({ where });
+    } catch (error) {
+      throw createDatabaseError(
+        'delete record',
+        error instanceof Error ? error.message : String(error),
+        {
+          tableName,
+          whereConditions: where,
+          operation: 'delete',
+        },
+        error instanceof Error ? error : undefined
+      );
+    }
   }
-  throw new Error(`Table ${tableName} not found in Prisma schema`);
+  throw createDatabaseError('delete record', ERROR_MESSAGES.TABLE_NOT_FOUND, {
+    tableName,
+  });
 }
 
 /**
@@ -330,14 +477,29 @@ export async function deleteRecord(
  * ```
  */
 export async function deleteRecords(
-  prisma: PrismaService,
+  prisma: PrismaClient,
   tableName: string,
   where: any = {}
 ): Promise<any> {
   if (prisma[tableName]) {
-    return prisma[tableName].deleteMany({ where });
+    try {
+      return await prisma[tableName].deleteMany({ where });
+    } catch (error) {
+      throw createDatabaseError(
+        'delete records',
+        error instanceof Error ? error.message : String(error),
+        {
+          tableName,
+          whereConditions: where,
+          operation: 'deleteMany',
+        },
+        error instanceof Error ? error : undefined
+      );
+    }
   }
-  throw new Error(`Table ${tableName} not found in Prisma schema`);
+  throw createDatabaseError('delete records', ERROR_MESSAGES.TABLE_NOT_FOUND, {
+    tableName,
+  });
 }
 
 /**
@@ -354,7 +516,7 @@ export async function deleteRecords(
  * ```
  */
 export async function recordExists(
-  prisma: PrismaService,
+  prisma: PrismaClient,
   tableName: string,
   where: any
 ): Promise<boolean> {
@@ -381,11 +543,11 @@ export async function recordExists(
  * ```
  */
 export async function waitForRecord(
-  prisma: PrismaService,
+  prisma: PrismaClient,
   tableName: string,
   where: any,
-  timeout = 5000,
-  interval = 100
+  timeout: number = DATABASE_CONSTANTS.WAIT_FOR_RECORD_TIMEOUT_MS,
+  interval: number = DATABASE_CONSTANTS.WAIT_FOR_RECORD_INTERVAL_MS
 ): Promise<any> {
   const startTime = Date.now();
 
@@ -397,7 +559,13 @@ export async function waitForRecord(
     await new Promise(resolve => setTimeout(resolve, interval));
   }
 
-  throw new Error(`Record not found in ${tableName} within ${timeout}ms`);
+  throw createDatabaseError('wait for record', ERROR_MESSAGES.RECORD_NOT_FOUND_TIMEOUT, {
+    tableName,
+    whereConditions: where,
+    timeout,
+    interval,
+    elapsedTime: Date.now() - startTime,
+  });
 }
 
 /**
@@ -414,7 +582,7 @@ export async function waitForRecord(
  * ```
  */
 export async function executeRawQuery(
-  prisma: PrismaService,
+  prisma: PrismaClient,
   query: string,
   ...params: any[]
 ): Promise<any> {
@@ -431,7 +599,7 @@ export async function executeRawQuery(
  * await resetSequences(prisma);
  * ```
  */
-export async function resetSequences(prisma: PrismaService): Promise<void> {
+export async function resetSequences(prisma: PrismaClient): Promise<void> {
   // This is PostgreSQL specific
   try {
     await prisma.$executeRawUnsafe(`
@@ -444,7 +612,7 @@ export async function resetSequences(prisma: PrismaService): Promise<void> {
         END LOOP;
       END $$;
     `);
-  } catch  {
+  } catch {
     // Ignore errors if not using PostgreSQL or sequences don't exist
   }
 }

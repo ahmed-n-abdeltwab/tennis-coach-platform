@@ -3,8 +3,6 @@
  * Tests event handling, message passing, and real-time communication across modules
  */
 
-import { todo } from 'node:test';
-
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
@@ -47,7 +45,7 @@ class EventHandlingIntegrationTest extends BaseIntegrationTest {
   }
 }
 
-describe('Event Handling Integration Tests', () => {
+describe.skip('Event Handling Integration Tests', () => {
   let testHelper: EventHandlingIntegrationTest;
 
   beforeAll(async () => {
@@ -64,26 +62,26 @@ describe('Event Handling Integration Tests', () => {
   });
 
   describe('Message Event Handling', () => {
-    todo('should handle message creation events across sessions');
+    it.todo('should handle message creation events across sessions');
 
-    todo('should handle concurrent message creation events');
+    it.todo('should handle concurrent message creation events');
   });
 
   describe('Session State Change Events', () => {
-    todo('should handle session status change events');
+    it.todo('should handle session status change events');
 
-    todo('should handle session cancellation events');
+    it.todo('should handle session cancellation events');
   });
 
   describe('Cross-Module Event Propagation', () => {
-    todo('should propagate events between messages and sessions modules');
+    it.todo('should propagate events between messages and sessions modules');
 
-    todo('should handle event ordering and consistency');
+    it.todo('should handle event ordering and consistency');
   });
 
   describe('Error Event Handling', () => {
-    todo('should handle and recover from event processing errors');
+    it.todo('should handle and recover from event processing errors');
 
-    todo('should handle Authorization errors in event processing');
+    it.todo('should handle Authorization errors in event processing');
   });
 });

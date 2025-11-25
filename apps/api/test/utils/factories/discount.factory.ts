@@ -11,7 +11,7 @@ export class DiscountMockFactory extends BaseMockFactory<MockDiscount> {
     const id = this.generateId();
     const now = new Date();
 
-    return {
+    const discount = {
       id,
       code: this.randomDiscountCode(),
       amount: this.randomAmount(),
@@ -24,6 +24,23 @@ export class DiscountMockFactory extends BaseMockFactory<MockDiscount> {
       updatedAt: now,
       ...overrides,
     };
+
+    // Validate required fields
+    this.validateRequired(discount.code, 'code');
+    this.validateRequired(discount.coachId, 'coachId');
+    this.validateRequired(discount.expiry, 'expiry');
+    this.validatePositive(discount.amount, 'amount');
+    this.validateNonNegative(discount.useCount, 'useCount');
+    this.validatePositive(discount.maxUsage, 'maxUsage');
+
+    // Validate business logic
+    if (discount.useCount > discount.maxUsage) {
+      throw new Error(
+        `[Factory] Invalid discount: useCount (${discount.useCount}) cannot exceed maxUsage (${discount.maxUsage})`
+      );
+    }
+
+    return discount;
   }
 
   createActive(overrides?: Partial<MockDiscount>): MockDiscount {

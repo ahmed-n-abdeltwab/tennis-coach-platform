@@ -1,10 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Middleware Pipeline Integration Tests
  * Tests middleware integration and request/response pipeline across modules
  */
-
-import { todo } from 'node:test';
 
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -81,46 +78,46 @@ describe('Middleware Pipeline Integration Tests', () => {
   });
 
   describe('Authentication Middleware Pipeline', () => {
-    todo('should enforce authentication across all protected endpoints');
+    it.todo('should enforce authentication across all protected endpoints');
 
-    todo('should handle invalid JWT tokens consistently');
+    it.todo('should handle invalid JWT tokens consistently');
 
-    todo('should handle valid JWT tokens across modules');
+    it.todo('should handle valid JWT tokens across modules');
   });
 
   describe('Authorization Middleware Pipeline', () => {
-    todo('should enforce role-based access control');
+    it.todo('should enforce role-based access control');
 
-    todo('should enforce resource ownership Authorization');
+    it.todo('should enforce resource ownership Authorization');
   });
 
   describe('Validation Middleware Pipeline', () => {
-    todo('should validate request bodies across modules');
+    it.todo('should validate request bodies across modules');
 
-    todo('should transform and sanitize request data');
+    it.todo('should transform and sanitize request data');
 
-    todo('should handle validation errors consistently across modules');
+    it.todo('should handle validation errors consistently across modules');
   });
 
   describe('Error Handling Middleware Pipeline', () => {
-    todo('should handle 404 errors consistently across modules');
+    it.todo('should handle 404 errors consistently across modules');
 
-    todo('should handle database errors gracefully');
+    it.todo('should handle database errors gracefully');
 
-    todo('should handle concurrent request errors');
+    it.todo('should handle concurrent request errors');
   });
 
   describe('Request/Response Transformation Pipeline', () => {
-    todo('should handle request transformation across modules');
+    it.todo('should handle request transformation across modules');
 
-    todo('should handle response serialization consistently');
+    it.todo('should handle response serialization consistently');
 
-    todo('should handle content-type headers correctly');
+    it.todo('should handle content-type headers correctly');
   });
 
   describe('Performance and Reliability Pipeline', () => {
-    todo('should handle high-frequency requests without degradation');
+    it.todo('should handle high-frequency requests without degradation');
 
-    todo('should maintain middleware order under load');
+    it.todo('should maintain middleware order under load');
   });
 });

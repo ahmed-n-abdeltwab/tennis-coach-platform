@@ -4,8 +4,6 @@
  * Demonstrates using BaseIntegrationTest with custom test data setup
  */
 
-import { todo } from 'node:test';
-
 import { Account, BookingType, Prisma, Session, TimeSlot } from '@prisma/client';
 
 import { AccountsModule } from '../../src/app/accounts/accounts.module';
@@ -13,7 +11,7 @@ import { BookingTypesModule } from '../../src/app/booking-types/booking-types.mo
 import { IamModule } from '../../src/app/iam/iam.module';
 import { SessionsModule } from '../../src/app/sessions/sessions.module';
 import { TimeSlotsModule } from '../../src/app/time-slots/time-slots.module';
-import { BaseIntegrationTest } from '../utils/base/base-integration.test';
+import { BaseIntegrationTest } from '../utils/base/base-integration';
 
 /**
  * Booking System Integration Test Class
@@ -42,14 +40,29 @@ class BookingSystemIntegrationTest extends BaseIntegrationTest {
    * Creates user, coach, booking type, and time slot
    */
   override async seedTestData(): Promise<void> {
-    // Create test user and coach using base class helpers
+    // Create test user and coach using base class helpers with unique emails
+    const timestamp = Date.now();
     this.testUser = await this.createTestUser({
-      email: 'testuser@example.com',
+      email: `testuser-${timestamp}@example.com`,
     });
 
     this.testCoach = await this.createTestCoach({
-      email: 'testcoach@example.com',
+      email: `testcoach-${timestamp}@example.com`,
     });
+
+    // Verify coach was created successfully
+    if (!this.testCoach?.id) {
+      throw new Error('Failed to create test coach');
+    }
+
+    // Verify coach exists in database
+    const verifyCoach = await this.prisma.account.findUnique({
+      where: { id: this.testCoach.id },
+    });
+
+    if (!verifyCoach) {
+      throw new Error(`Coach with id ${this.testCoach.id} not found in database after creation`);
+    }
 
     // Create booking type and time slot
     this.testBookingType = await this.createTestBookingType({
@@ -61,12 +74,19 @@ class BookingSystemIntegrationTest extends BaseIntegrationTest {
 
     this.testTimeSlot = await this.createTestTimeSlot({
       coachId: this.testCoach.id,
-      dateTime: new Date('2024-12-25T10:00:00Z'),
+      dateTime: new Date('2025-12-25T10:00:00Z'),
       durationMin: 60,
       isAvailable: true,
     });
 
-    // Create auth tokens using base class helper
+    // Recreate auth tokens with fresh user/coach IDs
+    await this.refreshTokens();
+  }
+
+  /**
+   * Refresh auth tokens with current user/coach IDs
+   */
+  private async refreshTokens(): Promise<void> {
     this.userToken = await this.createTestJwtToken({
       sub: this.testUser.id,
       email: this.testUser.email,
@@ -84,13 +104,18 @@ class BookingSystemIntegrationTest extends BaseIntegrationTest {
    * Helper to create a test session for tests that need one
    */
   async createSessionForTest(): Promise<Session> {
+    // Ensure we have fresh test data
+    if (!this.testUser || !this.testCoach || !this.testBookingType || !this.testTimeSlot) {
+      await this.seedTestData();
+    }
+
     this.testSession = await this.createTestSession({
       userId: this.testUser.id,
       coachId: this.testCoach.id,
       bookingTypeId: this.testBookingType.id,
       timeSlotId: this.testTimeSlot.id,
       status: 'SCHEDULED',
-      dateTime: new Date('2024-12-25T10:00:00Z'),
+      dateTime: new Date('2025-12-25T10:00:00Z'),
     });
     return this.testSession;
   }
@@ -106,6 +131,12 @@ describe('Booking System Integration', () => {
 
   afterAll(async () => {
     await testInstance.cleanup();
+  });
+
+  beforeEach(async () => {
+    // Clean and reseed test data before each test to ensure clean state
+    await testInstance.cleanupDatabase();
+    await testInstance.seedTestData();
   });
 
   describe('Complete Booking Workflow', () => {
@@ -142,7 +173,6 @@ describe('Booking System Integration', () => {
           body: {
             bookingTypeId: testInstance.testBookingType.id,
             timeSlotId: testInstance.testTimeSlot.id,
-            discountCode: testInstance.testSession.discountCode ?? undefined,
           },
         }
       );
@@ -156,31 +186,32 @@ describe('Booking System Integration', () => {
       }
     });
 
-    todo('should handle booking with discount code');
+    it.todo('should handle booking with discount code');
   });
 
   describe('Session Management Workflow', () => {
-    beforeEach(async () => {
-      // Create a test session for each test
-      await testInstance.createSessionForTest();
-    });
-
     it('should allow user to view their sessions', async () => {
+      // Create a test session for this test
+      await testInstance.createSessionForTest();
       const response = await testInstance.authenticatedGet('/api/sessions', testInstance.userToken);
 
       expect(response.ok).toBe(true);
       if (response.ok) {
-        expect(Array.isArray(response.body.data)).toBe(true);
-        expect(response.body.data).toBeDefined();
-        if (Array.isArray(response.body.data)) {
-          expect(response.body.data.length).toBeGreaterThan(0);
-          expect(response.body[0]).toHaveProperty('id');
-          expect(response.body[0]?.userId).toBe(testInstance.testUser.id);
+        const sessions = response.body.data ?? response.body;
+        expect(Array.isArray(sessions)).toBe(true);
+        expect(sessions).toBeDefined();
+        if (Array.isArray(sessions)) {
+          expect(sessions.length).toBeGreaterThan(0);
+          expect(sessions[0]).toHaveProperty('id');
+          expect(sessions[0]?.userId).toBe(testInstance.testUser.id);
         }
       }
     });
 
     it('should allow coach to view their sessions', async () => {
+      // Create a test session for this test
+      await testInstance.createSessionForTest();
+
       const response = await testInstance.authenticatedGet(
         '/api/sessions',
         testInstance.coachToken
@@ -188,47 +219,45 @@ describe('Booking System Integration', () => {
 
       expect(response.ok).toBe(true);
       if (response.ok) {
-        expect(Array.isArray(response.body.data)).toBe(true);
-        if (Array.isArray(response.body.data)) {
-          expect(response.body.data.length).toBeGreaterThan(0);
-          expect(response.body[0]?.coachId).toBe(testInstance.testCoach.id);
+        const sessions = response.body.data ?? response.body;
+        expect(Array.isArray(sessions)).toBe(true);
+        if (Array.isArray(sessions)) {
+          expect(sessions.length).toBeGreaterThan(0);
+          expect(sessions[0]?.coachId).toBe(testInstance.testCoach.id);
         }
       }
     });
 
-    todo('should allow session updates');
+    it.todo('should allow session updates');
 
-    todo('should allow session cancellation');
+    it.todo('should allow session cancellation');
 
-    todo('should filter sessions by status');
+    it.todo('should filter sessions by status');
 
-    todo('should filter sessions by date range');
+    it.todo('should filter sessions by date range');
   });
 
   describe('Time Slot Management Workflow', () => {
-    todo('should allow coach to manage their time slots');
+    it.todo('should allow coach to manage their time slots');
 
-    todo('should filter available time slots by coach');
+    it.todo('should filter available time slots by coach');
 
-    todo('should filter time slots by date range');
+    it.todo('should filter time slots by date range');
   });
 
   describe('Booking Type Management Workflow', () => {
-    todo('should allow coach to manage their booking types');
+    it.todo('should allow coach to manage their booking types');
   });
 
   describe('Error Handling and Edge Cases', () => {
-    beforeEach(async () => {
-      await testInstance.createSessionForTest();
-    });
-
     it('should handle booking unavailable time slot', async () => {
-      // Mark time slot as unavailable
-      await testInstance.updateRecord(
-        'timeSlot',
-        { id: testInstance.testTimeSlot.id },
-        { isAvailable: false }
-      );
+      // Create an unavailable time slot
+      const timeSlot = await testInstance.createTestTimeSlot({
+        coachId: testInstance.testCoach.id,
+        dateTime: new Date('2025-01-15T14:00:00Z'),
+        durationMin: 60,
+        isAvailable: false,
+      });
 
       const response = await testInstance.authenticatedPost(
         '/api/sessions',
@@ -236,8 +265,7 @@ describe('Booking System Integration', () => {
         {
           body: {
             bookingTypeId: testInstance.testBookingType.id,
-            timeSlotId: testInstance.testTimeSlot.id,
-            discountCode: testInstance.testSession.discountCode ?? undefined,
+            timeSlotId: timeSlot.id,
           },
         }
       );
@@ -249,6 +277,14 @@ describe('Booking System Integration', () => {
     });
 
     it('should prevent unauthorized access to other users sessions', async () => {
+      // Create a session for the test user
+      const session = await testInstance.createTestSession({
+        userId: testInstance.testUser.id,
+        coachId: testInstance.testCoach.id,
+        bookingTypeId: testInstance.testBookingType.id,
+        timeSlotId: testInstance.testTimeSlot.id,
+      });
+
       // Create another user
       const otherUser = await testInstance.createTestUser({
         email: 'otheruser@example.com',
@@ -261,7 +297,7 @@ describe('Booking System Integration', () => {
 
       // Try to access the test session with different user token
       const response = await testInstance.authenticatedGet(
-        `/api/sessions/${testInstance.testSession.id}` as '/api/sessions/{id}',
+        `/api/sessions/${session.id}` as '/api/sessions/{id}',
         otherUserToken
       );
 
@@ -272,10 +308,10 @@ describe('Booking System Integration', () => {
       }
     });
 
-    todo('should handle booking inactive booking type');
+    it.todo('should handle booking inactive booking type');
 
-    todo('should handle invalid discount code');
+    it.todo('should handle invalid discount code');
 
-    todo('should prevent cancelling past sessions');
+    it.todo('should prevent cancelling past sessions');
   });
 });

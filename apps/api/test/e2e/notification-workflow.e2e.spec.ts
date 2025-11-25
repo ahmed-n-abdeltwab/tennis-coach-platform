@@ -3,8 +3,6 @@
  * Tests notification flow including email, SMS, and in-app notifications
  */
 
-import { todo } from 'node:test';
-
 import { Role } from '@prisma/client';
 import { ApiContractTester, coachFactory, TypeSafeHttpClient, userFactory } from '@test-utils';
 
@@ -14,6 +12,8 @@ describe('Notification Workflow (E2E)', () => {
   let httpHelper: TypeSafeHttpClient;
   let _authHelper: AuthTestHelper;
   let _contractHelper: ApiContractTester;
+  let _userToken: string;
+  let _coachToken: string;
   let testUser: any;
   let testCoach: any;
 
@@ -45,7 +45,7 @@ describe('Notification Workflow (E2E)', () => {
       },
     });
     if (userRegisterResponse.ok) {
-      userToken = userRegisterResponse.body.accessToken;
+      _userToken = userRegisterResponse.body.accessToken;
       testUser.id = userRegisterResponse.body.account.id;
     }
 
@@ -59,62 +59,62 @@ describe('Notification Workflow (E2E)', () => {
       },
     });
     if (coachRegisterResponse.ok) {
-      coachToken = coachRegisterResponse.body.accessToken;
+      _coachToken = coachRegisterResponse.body.accessToken;
       testCoach.id = coachRegisterResponse.body.account.id;
     }
   });
 
   describe('In-App Notifications', () => {
-    todo('should create and deliver in-app notifications');
+    it.todo('should create and deliver in-app notifications');
 
-    todo('should filter notifications by type and status');
+    it.todo('should filter notifications by type and status');
 
-    todo('should handle bulk notification operations');
+    it.todo('should handle bulk notification operations');
   });
 
   describe('Email Notifications', () => {
-    todo('should send email notifications for session bookings');
+    it.todo('should send email notifications for session bookings');
 
-    todo('should send email notifications for session reminders');
+    it.todo('should send email notifications for session reminders');
 
-    todo('should handle email notification preferences');
+    it.todo('should handle email notification preferences');
   });
 
   describe('SMS Notifications', () => {
-    todo('should send SMS notifications for urgent updates');
+    it.todo('should send SMS notifications for urgent updates');
 
-    todo('should handle SMS notification preferences and opt-outs');
+    it.todo('should handle SMS notification preferences and opt-outs');
 
-    todo('should validate phone numbers for SMS delivery');
+    it.todo('should validate phone numbers for SMS delivery');
   });
 
   describe('Real-time Messaging', () => {
-    todo('should handle real-time message delivery');
+    it.todo('should handle real-time message delivery');
 
-    todo('should handle message attachments and media');
+    it.todo('should handle message attachments and media');
 
-    todo('should handle message delivery status and read receipts');
+    it.todo('should handle message delivery status and read receipts');
   });
 
   describe('Notification Analytics and Reporting', () => {
-    todo('should provide notification delivery analytics');
+    it.todo('should provide notification delivery analytics');
 
-    todo('should track notification engagement metrics');
+    it.todo('should track notification engagement metrics');
   });
 
   describe('API Contract Validation', () => {
-    todo('should validate notification creation API contract');
+    it.todo('should validate notification creation API contract');
 
-    todo('should validate message sending API contract');
+    it.todo('should validate message sending API contract');
 
-    todo('should validate notification preferences API contract');
+    it.todo('should validate notification preferences API contract');
   });
 
   describe('Error Handling and Edge Cases', () => {
-    todo('should handle notification delivery failures gracefully');
+    it.todo('should handle notification delivery failures gracefully');
 
-    todo('should handle message sending failures');
+    it.todo('should handle message sending failures');
 
-    todo('should handle rate limiting for notifications');
+    it.todo('should handle rate limiting for notifications');
   });
 });
