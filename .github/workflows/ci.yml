@@ -87,6 +87,7 @@ jobs:
         run: pnpm exec nx affected -t lint test build --exclude=web
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test
+          DATABASE: tennis_coach_test
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           REDIS_DB: 0
@@ -94,9 +95,20 @@ jobs:
           JWT_REFRESH_SECRET: test-refresh-secret-key-for-ci-minimum-32-chars
           JWT_EXPIRES_IN: 15m
           JWT_REFRESH_EXPIRES_IN: 24h
+          BCRYPT_SALT_ROUNDS: 10
+          PAYPAL_CLIENT_ID: test-paypal-client-id
+          PAYPAL_CLIENT_SECRET: test-paypal-client-secret
+          PAYPAL_ENVIRONMENT: sandbox
+          GOOGLE_CLIENT_ID: test-google-client-id
+          GOOGLE_CLIENT_SECRET: test-google-client-secret
+          GOOGLE_REDIRECT_URI: http://localhost:3333/auth/google/callback
+          SMTP_SENDER_EMAIL: test@example.com
+          SMTP_TOKEN: test-smtp-token
           NODE_ENV: test
           PORT: 3333
           FRONTEND_URL: http://localhost:4200
+          npm_package_version: 1.0.0
+          LOG_LEVEL: error
 
       # Nx Cloud self-healing CI - recommends fixes for failures
       - name: Fix CI issues
