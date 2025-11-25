@@ -17,7 +17,7 @@ permissions:
 
 env:
   NODE_VERSION: "20"
-  PNPM_VERSION: "9.8.0"
+  PNPM_VERSION: "10"
 
 jobs:
   # Main CI job - lint, test, and build affected projects
