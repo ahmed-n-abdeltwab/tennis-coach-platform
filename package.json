@@ -71,10 +71,6 @@
     "deps:update": "pnpm update --interactive --latest",
     "deps:check": "pnpm outdated"
   },
-  "workspaces": [
-    "apps/*",
-    "libs/*"
-  ],
   "dependencies": {
     "@nestjs/common": "^11.1.6",
     "@nestjs/config": "^4.0.2",
