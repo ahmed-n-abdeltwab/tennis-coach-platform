@@ -5,9 +5,21 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { generateApiRoutes } from '@routes-helpers';
 
 import { AppModule } from './app/app.module';
+import { AppLoggerService } from './app/logger/app-logger.service';
+import { HttpLoggingInterceptor } from './app/logger/http-logging.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Configure logger with environment-based log levels before application initialization
+  const app = await NestFactory.create(AppModule, {
+    logger: AppLoggerService.getLogLevels(),
+  });
+
+  // Use custom AppLoggerService
+  const appLogger = app.get(AppLoggerService);
+  app.useLogger(appLogger);
+
+  // Register HTTP logging interceptor globally
+  app.useGlobalInterceptors(new HttpLoggingInterceptor(appLogger));
 
   // Global prefix
   app.setGlobalPrefix('api');

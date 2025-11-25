@@ -2,6 +2,8 @@ import { Inject, Injectable, OnApplicationBootstrap, OnApplicationShutdown } fro
 import { ConfigType } from '@nestjs/config';
 import Redis from 'ioredis';
 
+import { AppLoggerService } from '../logger';
+
 import redisConfig from './config/redis.config';
 
 @Injectable()
@@ -10,7 +12,8 @@ export class RedisService implements OnApplicationBootstrap, OnApplicationShutdo
 
   constructor(
     @Inject(redisConfig.KEY)
-    private config: ConfigType<typeof redisConfig>
+    private config: ConfigType<typeof redisConfig>,
+    private readonly logger: AppLoggerService
   ) {
     this.client = new Redis({
       host: this.config.host,
@@ -23,9 +26,12 @@ export class RedisService implements OnApplicationBootstrap, OnApplicationShutdo
   async onApplicationBootstrap() {
     try {
       await this.client.ping();
-      console.log('Redis connection OK');
-    } catch (e) {
-      console.error('Redis connection failed', e);
+    } catch (error) {
+      this.logger.error(
+        'Redis connection failed',
+        error instanceof Error ? error.stack : undefined,
+        RedisService.name
+      );
     }
   }
 

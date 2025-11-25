@@ -1,7 +1,8 @@
-import { logger } from '@config/logging.config';
 import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { Prisma, PrismaClient } from '@prisma/client';
+
+import { AppLoggerService } from '../logger/app-logger.service';
 
 import prismaConfig from './config/prisma.config';
 
@@ -11,7 +12,8 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor(
-    @Inject(prismaConfig.KEY) private readonly prismaConfiguration: ConfigType<typeof prismaConfig>
+    @Inject(prismaConfig.KEY) private readonly prismaConfiguration: ConfigType<typeof prismaConfig>,
+    private readonly logger: AppLoggerService
   ) {
     super({
       datasources: {
@@ -22,8 +24,8 @@ export class PrismaService
     });
 
     this.$on('query', queryEvent => {
-      logger.info(
-        `[Prisma] Query took ${queryEvent.duration}ms\nSQL: ${queryEvent.query}\nParams: ${queryEvent.params}`
+      this.logger.log(
+        `Query took ${queryEvent.duration}ms\nSQL: ${queryEvent.query}\nParams: ${queryEvent.params}`
       );
     });
   }

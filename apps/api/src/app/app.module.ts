@@ -8,6 +8,7 @@ import { CalendarModule } from './calendar/calendar.module';
 import { DiscountsModule } from './discounts/discounts.module';
 import { HealthModule } from './health/health.module';
 import { IamModule } from './iam/iam.module';
+import { LoggerModule } from './logger/logger.module';
 import { MessagesModule } from './messages/messages.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PaymentsModule } from './payments/payments.module';
@@ -24,6 +25,7 @@ import { TimeSlotsModule } from './time-slots/time-slots.module';
       envFilePath: ['.env.local', '.env'],
       ignoreEnvFile: process.env.NODE_ENV === 'production',
     }),
+    LoggerModule,
     PrismaModule,
     IamModule,
     BookingTypesModule,
