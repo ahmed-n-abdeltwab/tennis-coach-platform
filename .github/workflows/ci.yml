@@ -145,9 +145,14 @@ jobs:
         uses: codecov/codecov-action@v4
         if: always()
         with:
-          files: ./coverage/lcov.info
+          files: |
+            coverage/apps/api/unit/lcov.info
+            coverage/apps/api/integration/lcov.info
+            coverage/apps/api/e2e/lcov.info
           flags: unittests
           name: codecov-umbrella
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
         continue-on-error: true
 
       - name: Upload build artifacts
