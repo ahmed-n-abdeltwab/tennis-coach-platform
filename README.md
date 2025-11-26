@@ -1,5 +1,8 @@
 # 🎾 Tennis Coach Booking Platform
 
+[![codecov](https://codecov.io/gh/ahmed-n-abdeltwab/tennis-coach-platform/branch/main/graph/badge.svg)](https://codecov.io/gh/ahmed-n-abdeltwab/tennis-coach-platform)
+[![CI](https://github.com/ahmed-n-abdeltwab/tennis-coach-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmed-n-abdeltwab/tennis-coach-platform/actions/workflows/ci.yml)
+
 A modern, full-stack web application for tennis coaches to manage their business and for clients to book sessions.
 
 ## Features
@@ -103,15 +106,81 @@ A modern, full-stack web application for tennis coaches to manage their business
 ```
 tennis-coach-platform/
 ├── apps/
-│   ├── api/          # NestJS backend
-│   └── web/          # React frontend
-├── libs/
-│   ├── domain/       # Shared types and DTOs
-│   ├── ui/           # Shared UI components
-│   └── utils/        # Shared utilities
-├── tests/
-│   └── e2e/          # TestCafe tests
-└── docker-compose.dev.yml
+│   ├── api/                          # NestJS Backend API
+│   │   ├── prisma/
+│   │   │   ├── migrations/           # Database migrations
+│   │   │   ├── schema.prisma         # Prisma schema definition
+│   │   │   └── seed.ts               # Database seeding script
+│   │   ├── src/
+│   │   │   ├── app/
+│   │   │   │   ├── accounts/         # User account management
+│   │   │   │   ├── booking-types/    # Booking type CRUD operations
+│   │   │   │   ├── calendar/         # Google Calendar integration
+│   │   │   │   ├── discounts/        # Discount code management
+│   │   │   │   ├── health/           # Health check endpoints
+│   │   │   │   ├── iam/              # Identity & Access Management
+│   │   │   │   │   ├── authentication/  # Auth guards & strategies
+│   │   │   │   │   ├── hashing/      # Password hashing utilities
+│   │   │   │   │   └── strategies/   # Passport strategies (JWT, Local)
+│   │   │   │   ├── messages/         # Real-time messaging (WebSocket)
+│   │   │   │   ├── notifications/    # Email notifications
+│   │   │   │   ├── payments/         # PayPal payment integration
+│   │   │   │   ├── prisma/           # Prisma service & configuration
+│   │   │   │   ├── sessions/         # Booking session management
+│   │   │   │   └── time-slots/       # Availability time slot management
+│   │   │   ├── common/
+│   │   │   │   ├── controllers/      # Base controller classes
+│   │   │   │   ├── decorators/       # Custom decorators (Auth, Roles, API docs)
+│   │   │   │   ├── dto/              # Shared DTOs
+│   │   │   │   └── guards/           # Auth & role guards
+│   │   │   ├── config/               # Configuration modules
+│   │   │   └── main.ts               # Application entry point
+│   │   ├── test/
+│   │   │   ├── e2e/                  # End-to-end tests
+│   │   │   ├── integration/          # Integration tests
+│   │   │   ├── setup/                # Test setup & utilities
+│   │   │   └── utils/                # Test helper functions
+│   │   └── scripts/                  # Build & test scripts
+│   │
+│   └── web/                          # React Frontend Application
+│       └── src/
+│           └── app/
+│               ├── components/       # Reusable UI components
+│               │   ├── Auth/         # Authentication components
+│               │   └── Layout/       # Layout components
+│               ├── contexts/         # React contexts (Auth, Notifications)
+│               ├── pages/            # Page components
+│               │   ├── Home.tsx
+│               │   ├── Login.tsx
+│               │   ├── Register.tsx
+│               │   ├── CoachProfile.tsx
+│               │   ├── BookingTypes.tsx
+│               │   ├── Book.tsx
+│               │   ├── Dashboard.tsx
+│               │   ├── AdminDashboard.tsx
+│               │   └── Chat.tsx
+│               └── services/         # API client & services
+│
+├── libs/                             # Shared Libraries
+│   ├── routes-helpers/               # Route utilities & helpers
+│   └── utils/                        # Shared utility functions
+│
+├── k8s/                              # Kubernetes Deployment
+│   ├── namespace.yaml
+│   ├── configmap.yaml
+│   └── deployment.yaml
+│
+├── docs/                             # Documentation
+│   ├── Project Overview.md
+│   └── diagrams/                     # Architecture diagrams
+│
+├── .github/                          # GitHub Actions CI/CD
+├── .husky/                           # Git hooks
+├── docker-compose.dev.yml            # Development environment
+├── docker-compose.prod.yml           # Production environment
+├── Dockerfile.api                    # API Docker image
+├── Dockerfile.web                    # Web Docker image
+└── nx.json                           # Nx workspace configuration
 ```
 
 ## Available Scripts
