@@ -50,7 +50,7 @@ const config: Config = {
   setupFilesAfterEnv: ['<rootDir>/test/setup/integration.setup.ts'],
 
   // Coverage configuration
-  collectCoverage: false,
+  collectCoverage: true,
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.spec.ts',

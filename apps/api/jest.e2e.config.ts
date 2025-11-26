@@ -49,8 +49,8 @@ const config: Config = {
   // Setup files for e2e testing
   setupFilesAfterEnv: ['<rootDir>/test/setup/e2e.setup.ts'],
 
-  // Coverage configuration (optional for e2e)
-  collectCoverage: false,
+  // Coverage configuration
+  collectCoverage: true,
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.spec.ts',

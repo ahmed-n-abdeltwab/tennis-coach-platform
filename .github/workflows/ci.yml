@@ -88,8 +88,81 @@ jobs:
       # - name: Start Nx Cloud CI run
       #   run: pnpm dlx nx-cloud start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="build"
 
-      - name: Run affected tasks (lint, test, build)
-        run: pnpm exec nx affected -t lint test build --exclude=web
+      - name: Run affected tasks (lint, build)
+        run: pnpm exec nx affected -t lint build --exclude=web
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test
+          DATABASE: tennis_coach_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          REDIS_DB: 0
+          JWT_SECRET: test-secret-key-for-ci-minimum-32-chars
+          JWT_REFRESH_SECRET: test-refresh-secret-key-for-ci-minimum-32-chars
+          JWT_EXPIRES_IN: 15m
+          JWT_REFRESH_EXPIRES_IN: 24h
+          BCRYPT_SALT_ROUNDS: 10
+          PAYPAL_CLIENT_ID: test-paypal-client-id
+          PAYPAL_CLIENT_SECRET: test-paypal-client-secret
+          PAYPAL_ENVIRONMENT: sandbox
+          GOOGLE_CLIENT_ID: test-google-client-id
+          GOOGLE_CLIENT_SECRET: test-google-client-secret
+          GOOGLE_REDIRECT_URI: http://localhost:3333/auth/google/callback
+          SMTP_SENDER_EMAIL: test@example.com
+          SMTP_TOKEN: test-smtp-token
+          NODE_ENV: test
+          PORT: 3333
+          FRONTEND_URL: http://localhost:4200
+          npm_package_version: 1.0.0
+          LOG_LEVEL: error
+
+      - name: Run Unit Tests
+        run: pnpm exec nx run api:test:unit --coverage
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test
+          DATABASE: tennis_coach_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          REDIS_DB: 0
+          JWT_SECRET: test-secret-key-for-ci-minimum-32-chars
+          JWT_REFRESH_SECRET: test-refresh-secret-key-for-ci-minimum-32-chars
+          JWT_EXPIRES_IN: 15m
+          JWT_REFRESH_EXPIRES_IN: 24h
+          BCRYPT_SALT_ROUNDS: 10
+          NODE_ENV: test
+          PORT: 3333
+          FRONTEND_URL: http://localhost:4200
+          npm_package_version: 1.0.0
+          LOG_LEVEL: error
+
+      - name: Run Integration Tests
+        run: pnpm exec nx run api:test:integration --coverage
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test
+          DATABASE: tennis_coach_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          REDIS_DB: 0
+          JWT_SECRET: test-secret-key-for-ci-minimum-32-chars
+          JWT_REFRESH_SECRET: test-refresh-secret-key-for-ci-minimum-32-chars
+          JWT_EXPIRES_IN: 15m
+          JWT_REFRESH_EXPIRES_IN: 24h
+          BCRYPT_SALT_ROUNDS: 10
+          PAYPAL_CLIENT_ID: test-paypal-client-id
+          PAYPAL_CLIENT_SECRET: test-paypal-client-secret
+          PAYPAL_ENVIRONMENT: sandbox
+          GOOGLE_CLIENT_ID: test-google-client-id
+          GOOGLE_CLIENT_SECRET: test-google-client-secret
+          GOOGLE_REDIRECT_URI: http://localhost:3333/auth/google/callback
+          SMTP_SENDER_EMAIL: test@example.com
+          SMTP_TOKEN: test-smtp-token
+          NODE_ENV: test
+          PORT: 3333
+          FRONTEND_URL: http://localhost:4200
+          npm_package_version: 1.0.0
+          LOG_LEVEL: error
+
+      - name: Run E2E Tests
+        run: pnpm exec nx run api:test:e2e --coverage
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test
           DATABASE: tennis_coach_test
