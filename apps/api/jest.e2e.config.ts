@@ -50,7 +50,6 @@ const config: Config = {
   setupFilesAfterEnv: ['<rootDir>/test/setup/e2e.setup.ts'],
 
   // Coverage configuration
-  collectCoverage: true,
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.spec.ts',
@@ -80,7 +79,6 @@ const config: Config = {
   globalSetup: '<rootDir>/test/setup/e2e-global.setup.ts',
   globalTeardown: '<rootDir>/test/setup/e2e-global.teardown.ts',
 
-  forceExit: true,
   detectOpenHandles: true,
 
   // Additional e2e specific configurations

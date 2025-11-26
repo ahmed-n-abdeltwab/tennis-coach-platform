@@ -8,7 +8,8 @@ const config: Config = {
   testMatch: ['<rootDir>/src/**/__tests__/**/*.spec.ts', '<rootDir>/src/**/*.spec.ts'],
   testPathIgnorePatterns: ['/node_modules/', '\\.integration\\.spec\\.ts$', '\\.e2e\\.spec\\.ts$'],
 
-  // Setup files
+  // Setup files - override base config to use unit-specific setup
+  setupFiles: ['<rootDir>/test/setup.ts'],
   setupFilesAfterEnv: ['<rootDir>/test/setup/unit.setup.ts'],
 
   // Coverage configuration

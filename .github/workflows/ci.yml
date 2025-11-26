@@ -116,7 +116,7 @@ jobs:
           LOG_LEVEL: error
 
       - name: Run Unit Tests
-        run: pnpm exec nx run api:test:unit --coverage
+        run: pnpm exec nx run api:test:unit -- --coverage
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test
           DATABASE: tennis_coach_test
@@ -143,7 +143,7 @@ jobs:
           LOG_LEVEL: error
 
       - name: Run Integration Tests
-        run: pnpm exec nx run api:test:integration --coverage
+        run: pnpm exec nx run api:test:integration -- --coverage
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test
           DATABASE: tennis_coach_test
@@ -170,7 +170,7 @@ jobs:
           LOG_LEVEL: error
 
       - name: Run E2E Tests
-        run: pnpm exec nx run api:test:e2e --coverage
+        run: pnpm exec nx run api:test:e2e -- --coverage
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test
           DATABASE: tennis_coach_test

@@ -50,7 +50,6 @@ const config: Config = {
   setupFilesAfterEnv: ['<rootDir>/test/setup/integration.setup.ts'],
 
   // Coverage configuration
-  collectCoverage: true,
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.spec.ts',
@@ -88,7 +87,6 @@ const config: Config = {
   globalSetup: '<rootDir>/test/setup/integration-global.setup.ts',
   globalTeardown: '<rootDir>/test/setup/integration-global.teardown.ts',
 
-  forceExit: true,
   detectOpenHandles: true,
 
   // Custom reporters
