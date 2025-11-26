@@ -128,6 +128,14 @@ jobs:
           JWT_EXPIRES_IN: 15m
           JWT_REFRESH_EXPIRES_IN: 24h
           BCRYPT_SALT_ROUNDS: 10
+          PAYPAL_CLIENT_ID: test-paypal-client-id
+          PAYPAL_CLIENT_SECRET: test-paypal-client-secret
+          PAYPAL_ENVIRONMENT: sandbox
+          GOOGLE_CLIENT_ID: test-google-client-id
+          GOOGLE_CLIENT_SECRET: test-google-client-secret
+          GOOGLE_REDIRECT_URI: http://localhost:3333/auth/google/callback
+          SMTP_SENDER_EMAIL: test@example.com
+          SMTP_TOKEN: test-smtp-token
           NODE_ENV: test
           PORT: 3333
           FRONTEND_URL: http://localhost:4200
