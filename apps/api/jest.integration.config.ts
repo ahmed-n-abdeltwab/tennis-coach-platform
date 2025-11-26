@@ -45,6 +45,7 @@ const config: Config = {
     '(?<!\\.integration)\\.spec\\.ts$',
     '\\.e2e\\.spec\\.ts$',
     'base-e2e\\.integration\\.spec\\.ts$', // Skip E2E base class test (requires full AppModule)
+    'cross-module-interactions\\.integration\\.spec\\.ts$', // Skip cross-module test (imports BaseE2ETest)
   ],
 
   // Setup files for integration testing
