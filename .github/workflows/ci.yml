@@ -125,7 +125,7 @@ jobs:
         if: always()
         with:
           files: |
-            **/test-reports/junit.xml
+            **/test-reports/junit*.xml
           check_name: Test Results
           comment_mode: always
           compare_to_earlier_commit: true
@@ -141,16 +141,35 @@ jobs:
             **/coverage/
           retention-days: 30
 
-      - name: Upload test coverage
+      - name: Upload Unit Test Coverage
         uses: codecov/codecov-action@v4
         if: always()
         with:
-          files: |
-            coverage/apps/api/unit/lcov.info
-            coverage/apps/api/integration/lcov.info
-            coverage/apps/api/e2e/lcov.info
-          flags: unittests
-          name: codecov-umbrella
+          files: coverage/apps/api/unit/lcov.info
+          flags: unit
+          name: unit-tests
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+        continue-on-error: true
+
+      - name: Upload Integration Test Coverage
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: coverage/apps/api/integration/lcov.info
+          flags: integration
+          name: integration-tests
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+        continue-on-error: true
+
+      - name: Upload E2E Test Coverage
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: coverage/apps/api/e2e/lcov.info
+          flags: e2e
+          name: e2e-tests
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
         continue-on-error: true
