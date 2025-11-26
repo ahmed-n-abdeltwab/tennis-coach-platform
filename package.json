@@ -214,5 +214,10 @@
     "seed": "tsx apps/api/prisma/seed.ts",
     "schema": "./apps/api/prisma/schema.prisma",
     "config": "apps/api/prisma/prisma.config.ts"
+  },
+  "pnpm": {
+    "overrides": {
+      "hono": ">=4.10.2"
+    }
   }
 }
