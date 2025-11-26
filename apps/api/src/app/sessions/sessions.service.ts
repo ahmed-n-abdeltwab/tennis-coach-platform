@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Discount, Role, Session } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
+import type { Decimal } from '@prisma/client/runtime/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 

@@ -54,13 +54,13 @@ describe('Database Cleanup - Simple Test', () => {
     expect(connection).toBeUndefined();
 
     // Verify the database no longer exists by trying to connect
-    const testClient = new PrismaClient({
-      datasources: {
-        db: {
-          url: dbUrl,
+    const { Pool } = await import('pg');
+    const { PrismaPg } = await import('@prisma/adapter-pg');
+    const testPool = new Pool({ connectionString: dbUrl });
+    const testAdapter = new PrismaPg(testPool);
 
-        },
-      },
+    const testClient = new PrismaClient({
+      adapter: testAdapter,
     });
 
     let connectionFailed = false;
@@ -69,13 +69,19 @@ describe('Database Cleanup - Simple Test', () => {
       // Try to query - this should fail if database doesn't exist
       await testClient.$executeRawUnsafe(`SELECT 1`);
       await testClient.$disconnect();
-    } catch  {
+      await testPool.end();
+    } catch {
       // Expected: connection or query should fail because database doesn't exist
       connectionFailed = true;
       try {
         await testClient.$disconnect();
       } catch {
         // Ignore disconnect errors
+      }
+      try {
+        await testPool.end();
+      } catch {
+        // Ignore pool cleanup errors
       }
     }
 

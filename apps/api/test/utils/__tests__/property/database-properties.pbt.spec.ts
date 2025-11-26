@@ -365,12 +365,13 @@ describe.skip('Database Properties (Property-Based Tests)', () => {
 
               // Verify the database no longer exists by trying to connect to it
               // This should fail because the database has been dropped
+              const { Pool } = await import('pg');
+              const { PrismaPg } = await import('@prisma/adapter-pg');
+              const testPool = new Pool({ connectionString: dbUrl });
+              const testAdapter = new PrismaPg(testPool);
+
               const testClient = new (await import('@prisma/client')).PrismaClient({
-                datasources: {
-                  db: {
-                    url: dbUrl,
-                  },
-                },
+                adapter: testAdapter,
               });
 
               let connectionFailed = false;
@@ -379,9 +380,15 @@ describe.skip('Database Properties (Property-Based Tests)', () => {
                 // Try to query - this should fail if database doesn't exist
                 await testClient.$executeRawUnsafe(`SELECT 1`);
                 await testClient.$disconnect();
+                await testPool.end();
               } catch {
                 // Expected: connection or query should fail because database doesn't exist
                 connectionFailed = true;
+                try {
+                  await testPool.end();
+                } catch {
+                  // Ignore pool errors
+                }
                 try {
                   await testClient.$disconnect();
                 } catch {
@@ -434,12 +441,13 @@ describe.skip('Database Properties (Property-Based Tests)', () => {
             expect(connection).toBeUndefined();
 
             // Verify the database no longer exists
+            const { Pool } = await import('pg');
+            const { PrismaPg } = await import('@prisma/adapter-pg');
+            const testPool2 = new Pool({ connectionString: dbUrl });
+            const testAdapter2 = new PrismaPg(testPool2);
+
             const testClient = new (await import('@prisma/client')).PrismaClient({
-              datasources: {
-                db: {
-                  url: dbUrl,
-                },
-              },
+              adapter: testAdapter2,
             });
 
             let connectionFailed = false;
@@ -447,12 +455,18 @@ describe.skip('Database Properties (Property-Based Tests)', () => {
               await testClient.$connect();
               await testClient.$executeRawUnsafe(`SELECT 1`);
               await testClient.$disconnect();
+              await testPool2.end();
             } catch {
               connectionFailed = true;
               try {
                 await testClient.$disconnect();
               } catch {
                 // Ignore disconnect errors
+              }
+              try {
+                await testPool2.end();
+              } catch {
+                // Ignore pool errors
               }
             }
 
@@ -594,12 +608,13 @@ describe.skip('Database Properties (Property-Based Tests)', () => {
               expect(connection).toBeUndefined();
 
               // Verify the database no longer exists
+              const { Pool } = await import('pg');
+              const { PrismaPg } = await import('@prisma/adapter-pg');
+              const testPool3 = new Pool({ connectionString: dbUrl });
+              const testAdapter3 = new PrismaPg(testPool3);
+
               const testClient = new (await import('@prisma/client')).PrismaClient({
-                datasources: {
-                  db: {
-                    url: dbUrl,
-                  },
-                },
+                adapter: testAdapter3,
               });
 
               let connectionFailed = false;
@@ -607,12 +622,18 @@ describe.skip('Database Properties (Property-Based Tests)', () => {
                 await testClient.$connect();
                 await testClient.$executeRawUnsafe(`SELECT 1`);
                 await testClient.$disconnect();
+                await testPool3.end();
               } catch {
                 connectionFailed = true;
                 try {
                   await testClient.$disconnect();
                 } catch {
                   // Ignore disconnect errors
+                }
+                try {
+                  await testPool3.end();
+                } catch {
+                  // Ignore pool errors
                 }
               }
 

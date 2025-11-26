@@ -11,5 +11,5 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false
   },
-  "include": ["src/**/*.spec.ts", "src/**/*.test.ts", "jest.config.ts"]
+  "include": ["src/**/*.spec.ts", "src/**/*.test.ts", "jest.config.ts", "test/**/*.ts"]
 }

@@ -140,11 +140,9 @@ describe.skip('Database Helpers', () => {
       const mockCoach = { id: 'coach-1', email: 'coach@test.com', role: Role.COACH };
       const mockBookingType = { id: 'booking-1', name: 'Test Booking' };
 
-      (mockPrisma.account.create as jest.Mock)
-        .mockResolvedValueOnce(mockUser)
-        .mockResolvedValueOnce(mockCoach);
+      mockPrisma.account.create.mockResolvedValueOnce(mockUser).mockResolvedValueOnce(mockCoach);
 
-      (mockPrisma.bookingType.create as jest.Mock).mockResolvedValue(mockBookingType);
+      mockPrisma.bookingType.create.mockResolvedValue(mockBookingType);
 
       const result = await seedTestDatabase(mockPrisma);
 

@@ -2,7 +2,7 @@ import { useAuth } from '@contexts/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
 
 // Role enum matching the backend
-enum Role {
+enum _Role {
   USER = 'USER',
   PREMIUM_USER = 'PREMIUM_USER',
   ADMIN = 'ADMIN',
@@ -39,7 +39,7 @@ function Header() {
               <Link to='/dashboard' className={`transition-colors ${isActive('/dashboard')}`}>
                 Dashboard
               </Link>
-              {user.type === Role.COACH && (
+              {user.type === 'coach' && (
                 <Link to='/admin' className={`transition-colors ${isActive('/admin')}`}>
                   Admin
                 </Link>

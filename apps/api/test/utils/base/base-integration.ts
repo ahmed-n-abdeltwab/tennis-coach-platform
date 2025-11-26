@@ -194,8 +194,15 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
    */
   async cleanupDatabase(): Promise<void> {
     if (this.prisma) {
-      // Use optimized batch cleanup with sequential mode to avoid foreign key issues
-      await batchCleanupManager.cleanDatabase(this.prisma, { parallel: false });
+      try {
+        // Use optimized batch cleanup with sequential mode to avoid foreign key issues
+        await batchCleanupManager.cleanDatabase(this.prisma, { parallel: false });
+      } catch (error) {
+        // Ignore errors if the connection is already closed
+        if (error instanceof Error && !error.message.includes('pool after calling end')) {
+          throw error;
+        }
+      }
 
       // Clear local caches after database cleanup
       this.cachedCoach = undefined;

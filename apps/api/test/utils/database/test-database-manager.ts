@@ -167,9 +167,18 @@ export class TestDatabaseManager {
       return;
     }
 
+    // Remove from tracking first to prevent double cleanup
+    this.testDatabases.delete(testSuite);
+
     try {
-      // Clean up any active transactions
-      await this.rollbackActiveTransactions(testSuite);
+      // Clear active transaction references without trying to rollback
+      // (database will be dropped anyway)
+      const transactionKeys = Array.from(this.activeTransactions.keys()).filter(key =>
+        key.startsWith(`${testSuite}:`)
+      );
+      for (const key of transactionKeys) {
+        this.activeTransactions.delete(key);
+      }
 
       // Release connection back to pool
       connectionPoolManager.releaseConnection(connection.url);
@@ -179,9 +188,6 @@ export class TestDatabaseManager {
 
       // Remove connection from pool
       await connectionPoolManager.removeConnection(connection.url);
-
-      // Remove from tracking
-      this.testDatabases.delete(testSuite);
     } catch (error) {
       const dbError = createDatabaseError(
         'cleanup test database',
@@ -358,13 +364,16 @@ export class TestDatabaseManager {
       // Set the database URL for migration
       process.env.DATABASE_URL = databaseUrl;
 
-      // Run Prisma migrations with timeout and explicit schema path
-      execSync(`npx prisma migrate deploy --schema=${DATABASE_CONSTANTS.SCHEMA_PATH}`, {
-        cwd: process.cwd(),
-        stdio: 'pipe',
-        env: { ...process.env, DATABASE_URL: databaseUrl },
-        timeout: DATABASE_CONSTANTS.MIGRATION_TIMEOUT_MS,
-      });
+      // Run Prisma migrations with timeout and explicit schema and config paths
+      execSync(
+        `npx prisma migrate deploy --schema=${DATABASE_CONSTANTS.SCHEMA_PATH} --config=./apps/api/prisma/prisma.config.ts`,
+        {
+          cwd: process.cwd(),
+          stdio: 'pipe',
+          env: { ...process.env, DATABASE_URL: databaseUrl },
+          timeout: DATABASE_CONSTANTS.MIGRATION_TIMEOUT_MS,
+        }
+      );
 
       // Restore original URL
       if (originalUrl) {
@@ -454,12 +463,15 @@ export class TestDatabaseManager {
 
   async createDatabase(dbName: string): Promise<void> {
     const adminUrl = `${this.baseUrl}/${DATABASE_CONSTANTS.ADMIN_DATABASE}?connect_timeout=${DATABASE_CONSTANTS.CONNECTION_TIMEOUT_MS / 1000}`;
+
+    // Prisma 7 requires adapter pattern
+    const { Pool } = await import('pg');
+    const { PrismaPg } = await import('@prisma/adapter-pg');
+    const pool = new Pool({ connectionString: adminUrl });
+    const adapter = new PrismaPg(pool);
+
     const adminClient = new PrismaClient({
-      datasources: {
-        db: {
-          url: adminUrl,
-        },
-      },
+      adapter,
     });
 
     try {
@@ -499,17 +511,21 @@ export class TestDatabaseManager {
       }
     } finally {
       await adminClient.$disconnect();
+      await pool.end();
     }
   }
 
   private async dropDatabase(dbName: string): Promise<void> {
     const adminUrl = `${this.baseUrl}/${DATABASE_CONSTANTS.ADMIN_DATABASE}`;
+
+    // Prisma 7 requires adapter pattern
+    const { Pool } = await import('pg');
+    const { PrismaPg } = await import('@prisma/adapter-pg');
+    const pool = new Pool({ connectionString: adminUrl });
+    const adapter = new PrismaPg(pool);
+
     const adminClient = new PrismaClient({
-      datasources: {
-        db: {
-          url: adminUrl,
-        },
-      },
+      adapter,
     });
 
     try {
@@ -537,6 +553,7 @@ export class TestDatabaseManager {
       console.warn(dbError.toLogFormat());
     } finally {
       await adminClient.$disconnect();
+      await pool.end();
     }
   }
 

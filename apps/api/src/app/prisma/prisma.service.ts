@@ -1,6 +1,8 @@
 import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '@prisma/client';
+import { Pool } from 'pg';
 
 import { AppLoggerService } from '../logger/app-logger.service';
 
@@ -11,17 +13,23 @@ export class PrismaService
   extends PrismaClient<Prisma.PrismaClientOptions, 'query' | 'info' | 'warn' | 'error'>
   implements OnModuleInit, OnModuleDestroy
 {
+  private pool: Pool;
+  private isPoolEnded = false;
+
   constructor(
     @Inject(prismaConfig.KEY) private readonly prismaConfiguration: ConfigType<typeof prismaConfig>,
     private readonly logger: AppLoggerService
   ) {
+    const pool = new Pool({ connectionString: prismaConfiguration.database_url });
+    const adapter = new PrismaPg(pool);
+
     super({
-      datasources: {
-        db: { url: prismaConfiguration.database_url },
-      },
+      adapter,
       log: ['query', 'info', 'warn', 'error'],
       errorFormat: 'pretty',
     });
+
+    this.pool = pool;
 
     this.$on('query', queryEvent => {
       this.logger.log(
@@ -35,5 +43,9 @@ export class PrismaService
 
   async onModuleDestroy() {
     await this.$disconnect();
+    if (!this.isPoolEnded) {
+      this.isPoolEnded = true;
+      await this.pool.end();
+    }
   }
 }

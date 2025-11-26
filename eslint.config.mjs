@@ -65,7 +65,7 @@ export default [
       parserOptions: {
         ecmaVersion: 2022,
         sourceType: 'module',
-        project: './tsconfig.base.json',
+        projectService: true,
       },
       globals: {
         ...globals.node,

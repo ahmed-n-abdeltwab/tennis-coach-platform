@@ -8,7 +8,9 @@
  * - Automatic cleanup of idle connections
  */
 
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
+import { Pool } from 'pg';
 
 import { createDatabaseError } from '../errors/test-infrastructure-errors';
 
@@ -20,6 +22,7 @@ export interface ConnectionPoolConfig {
 
 export interface PooledConnection {
   client: PrismaClient;
+  pool: any; // pg Pool instance
   url: string;
   createdAt: Date;
   lastUsedAt: Date;
@@ -76,13 +79,13 @@ export class ConnectionPoolManager {
       }
     }
 
-    // Create new connection
+    // Create new connection with Prisma 7 adapter pattern
+
+    const pool = new Pool({ connectionString: databaseUrl });
+    const adapter = new PrismaPg(pool);
+
     const client = new PrismaClient({
-      datasources: {
-        db: {
-          url: databaseUrl,
-        },
-      },
+      adapter,
     });
 
     try {
@@ -105,6 +108,7 @@ export class ConnectionPoolManager {
 
       const pooledConnection: PooledConnection = {
         client,
+        pool,
         url: databaseUrl,
         createdAt: new Date(),
         lastUsedAt: new Date(),
@@ -142,13 +146,22 @@ export class ConnectionPoolManager {
       return;
     }
 
+    // Mark as inactive first to prevent reuse
     connection.isActive = false;
     this.pool.delete(databaseUrl);
 
     try {
       await connection.client.$disconnect();
-    } catch (error) {
-      console.warn(`Failed to disconnect client for ${databaseUrl}:`, error);
+    } catch {
+      // Ignore disconnect errors - client may already be disconnected
+    }
+
+    try {
+      if (connection.pool && typeof connection.pool.end === 'function' && !connection.pool.ended) {
+        await connection.pool.end();
+      }
+    } catch {
+      // Ignore pool end errors - pool may already be ended
     }
   }
 

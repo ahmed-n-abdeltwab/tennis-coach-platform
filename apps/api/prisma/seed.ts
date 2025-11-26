@@ -1,7 +1,13 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import { Account, Prisma, PrismaClient, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { Pool } from 'pg';
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
 
 const prisma = new PrismaClient({
+  adapter,
   log: [
     { emit: 'stdout', level: 'info' },
     { emit: 'stdout', level: 'warn' },
@@ -137,5 +143,6 @@ seed()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
     console.info('🔒 Prisma client disconnected.');
   });
