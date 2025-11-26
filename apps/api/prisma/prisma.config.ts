@@ -20,6 +20,4 @@ export default defineConfig({
   typedSql: {
     path: path.resolve(configDir, 'queries'),
   },
-
-  engine: 'classic',
 });
