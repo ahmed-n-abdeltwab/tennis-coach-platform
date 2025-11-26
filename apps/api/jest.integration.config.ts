@@ -44,6 +44,7 @@ const config: Config = {
     '/node_modules/',
     '(?<!\\.integration)\\.spec\\.ts$',
     '\\.e2e\\.spec\\.ts$',
+    'base-e2e\\.integration\\.spec\\.ts$', // Skip E2E base class test (requires full AppModule)
   ],
 
   // Setup files for integration testing
