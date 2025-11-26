@@ -92,7 +92,21 @@ const config: Config = {
   detectOpenHandles: true,
 
   // Custom reporters
-  reporters: ['default', ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }]],
+  reporters: [
+    'default',
+    [
+      'jest-junit',
+      {
+        outputDirectory: './test-reports',
+        outputName: 'junit-integration.xml',
+        classNameTemplate: '{classname}',
+        titleTemplate: '{title}',
+        ancestorSeparator: ' › ',
+        usePathForSuiteName: true,
+      },
+    ],
+    ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }],
+  ],
 };
 
 export default config;

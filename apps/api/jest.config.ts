@@ -66,7 +66,21 @@ const config: Config = {
   maxWorkers: 1,
 
   // Custom reporters
-  reporters: ['default', ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }]],
+  reporters: [
+    'default',
+    [
+      'jest-junit',
+      {
+        outputDirectory: './test-reports',
+        outputName: 'junit.xml',
+        classNameTemplate: '{classname}',
+        titleTemplate: '{title}',
+        ancestorSeparator: ' › ',
+        usePathForSuiteName: true,
+      },
+    ],
+    ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }],
+  ],
 };
 
 export default config;

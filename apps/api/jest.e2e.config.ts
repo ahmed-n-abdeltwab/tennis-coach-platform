@@ -87,7 +87,21 @@ const config: Config = {
   testSequencer: '<rootDir>/test/setup/e2e-sequencer.ts',
 
   // Custom reporters
-  reporters: ['default', ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }]],
+  reporters: [
+    'default',
+    [
+      'jest-junit',
+      {
+        outputDirectory: './test-reports',
+        outputName: 'junit-e2e.xml',
+        classNameTemplate: '{classname}',
+        titleTemplate: '{title}',
+        ancestorSeparator: ' › ',
+        usePathForSuiteName: true,
+      },
+    ],
+    ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }],
+  ],
 };
 
 export default config;
