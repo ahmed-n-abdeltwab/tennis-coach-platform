@@ -81,9 +81,6 @@ const config: Config = {
 
   detectOpenHandles: true,
 
-  // Additional e2e specific configurations
-  testSequencer: '<rootDir>/test/setup/e2e-sequencer.ts',
-
   // Custom reporters
   reporters: [
     'default',
