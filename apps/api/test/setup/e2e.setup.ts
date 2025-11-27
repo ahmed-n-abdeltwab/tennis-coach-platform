@@ -7,7 +7,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import TestAgent from 'supertest/lib/agent';
 
-import { AppModule } from '../../src/app/app.module';
 import { PrismaService } from '../../src/app/prisma/prisma.service';
 
 export class NestE2ETestContext {
@@ -16,6 +15,9 @@ export class NestE2ETestContext {
   public req: TestAgent<request.Test>;
 
   async setup() {
+    // Dynamic import to ensure environment variables are set first
+    const { AppModule } = await import('../../src/app/app.module');
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
