@@ -352,8 +352,8 @@ export function WithTransaction(options: TransactionOptions = {}) {
           ERROR_MESSAGES.NO_PRISMA_CLIENT,
           {
             hasThisContext: !!this,
-            hasPrismaProperty: !!(this as any).prisma,
-            hasClientProperty: !!(this as any).client,
+            hasPrismaProperty: !!this.prisma,
+            hasClientProperty: !!this.client,
           }
         );
       }

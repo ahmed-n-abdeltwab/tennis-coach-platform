@@ -19,8 +19,8 @@ export class BaseHttpMockFactory extends BaseMockFactory<Request> {
     req.params = overrides.params ?? {};
     req.query = (overrides.query as ParsedQs) ?? {};
     req.headers = overrides.headers ?? {};
-    // user and files are custom, cast as any
-    if ((overrides as any).user) (req as any).user = (overrides as any).user;
+    // user and files are custom
+    if (overrides.user) req.user = overrides.user;
     if ((overrides as any).files) (req as any).files = (overrides as any).files;
 
     return req;

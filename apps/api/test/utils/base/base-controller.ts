@@ -156,7 +156,7 @@ export abstract class BaseControllerTest<
     options?: RequestOptions
   ): Promise<request.Test> {
     const { body, params } = payload ?? {};
-    const builtPath = this.buildPathWithParams(endpoint, params as any);
+    const builtPath = this.buildPathWithParams(endpoint, params as Record<string, any>);
 
     const normalizedMethod = method.toLowerCase() as Lowercase<M>;
     let req = request(this.app.getHttpServer())[normalizedMethod](builtPath);

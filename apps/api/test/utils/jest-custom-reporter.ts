@@ -2,6 +2,8 @@ import { Reporter, ReporterOnStartOptions, Test, TestResult } from '@jest/report
 import { AggregatedResult } from '@jest/test-result';
 import { Config } from '@jest/types';
 
+import { AppLoggerService } from '../../src/app/logger';
+
 import TestReporter, { TestResults } from './test-reporter';
 
 export default class JestCustomReporter implements Reporter {
@@ -10,28 +12,29 @@ export default class JestCustomReporter implements Reporter {
 
   constructor(
     private globalConfig: Config.GlobalConfig,
-    private options: any = {}
+    private options: any = {},
+    private logger: AppLoggerService
   ) {
     this.testReporter = TestReporter.getInstance();
   }
 
   onRunStart(_results: AggregatedResult, _options: ReporterOnStartOptions): void {
     this.startTime = Date.now();
-    console.log('🚀 Starting test execution...');
+    this.logger.log('🚀 Starting test execution...');
   }
 
   onTestStart(test: Test): void {
     if (this.options.verbose) {
-      console.log(`▶️  Running: ${test.path}`);
+      this.logger.log(`▶️  Running: ${test.path}`);
     }
   }
 
   onTestResult(test: Test, testResult: TestResult): void {
     if (testResult.numFailingTests > 0) {
-      console.log(`❌ Failed: ${test.path}`);
-      testResult.failureMessage && console.log(testResult.failureMessage);
+      this.logger.error(`❌ Failed: ${test.path}`);
+      testResult.failureMessage && this.logger.error(testResult.failureMessage);
     } else if (this.options.verbose) {
-      console.log(`✅ Passed: ${test.path}`);
+      this.logger.log(`✅ Passed: ${test.path}`);
     }
   }
 
@@ -84,13 +87,15 @@ export default class JestCustomReporter implements Reporter {
         ? ((results.numPassedTests / results.numTotalTests) * 100).toFixed(1)
         : '0';
 
-    console.log(`\n${  '─'.repeat(50)}`);
-    console.log(`🎯 Quick Summary (${results.testType.toUpperCase()})`);
-    console.log('─'.repeat(50));
-    console.log(`Tests: ${results.numPassedTests}/${results.numTotalTests} passed (${passRate}%)`);
-    console.log(`Time: ${(results.duration / 1000).toFixed(2)}s`);
-    console.log(`Status: ${results.success ? '✅ PASSED' : '❌ FAILED'}`);
-    console.log('─'.repeat(50));
+    this.logger.log(`\n${'─'.repeat(50)}`);
+    this.logger.log(`🎯 Quick Summary (${results.testType.toUpperCase()})`);
+    this.logger.log('─'.repeat(50));
+    this.logger.log(
+      `Tests: ${results.numPassedTests}/${results.numTotalTests} passed (${passRate}%)`
+    );
+    this.logger.log(`Time: ${(results.duration / 1000).toFixed(2)}s`);
+    this.logger.log(`Status: ${results.success ? '✅ PASSED' : '❌ FAILED'}`);
+    this.logger.log('─'.repeat(50));
   }
 
   getLastError(): Error | undefined {

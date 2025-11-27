@@ -203,8 +203,7 @@ describe('BaseE2ETest Integration Tests', () => {
 
   describe('HTTP Requests', () => {
     it('should make HTTP requests against full app', async () => {
-      // Test health endpoint (should exist in full app)
-      const response = await testInstance.get('/health' as any);
+      const response = await testInstance.get('/api/health');
 
       expect(response).toBeDefined();
       expect(response.status).toBeDefined();
