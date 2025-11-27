@@ -142,6 +142,13 @@ jobs:
           npm_package_version: 1.0.0
           LOG_LEVEL: error
 
+      - name: Create Integration test database
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE tennis_coach_test_integration;" || true
+          DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tennis_coach_test_integration pnpm db:migrate:deploy
+        env:
+          PGPASSWORD: postgres
+
       - name: Run Integration Tests
         run: pnpm exec nx run api:test:integration -- --coverage
         env:
@@ -168,6 +175,13 @@ jobs:
           FRONTEND_URL: http://localhost:4200
           npm_package_version: 1.0.0
           LOG_LEVEL: error
+
+      - name: Create E2E test database
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE tennis_coach_test_e2e;" || true
+          DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tennis_coach_test_e2e pnpm db:migrate:deploy
+        env:
+          PGPASSWORD: postgres
 
       - name: Run E2E Tests
         run: pnpm exec nx run api:test:e2e -- --coverage

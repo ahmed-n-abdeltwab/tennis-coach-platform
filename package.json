@@ -48,6 +48,7 @@
     "test": "nx run-many --target=test --all",
     "test:watch": "nx run-many --target=test --all --watch",
     "test:coverage": "nx run-many --target=test --all --coverage",
+    "test:db:setup": "psql $DATABASE_URL -c 'CREATE DATABASE tennis_coach_test;' || true && psql $DATABASE_URL -c 'CREATE DATABASE tennis_coach_test_integration;' || true && psql $DATABASE_URL -c 'CREATE DATABASE tennis_coach_test_e2e;' || true && DATABASE_URL=postgresql://postgres:password@localhost:5432/tennis_coach_test pnpm db:migrate:deploy && DATABASE_URL=postgresql://postgres:password@localhost:5432/tennis_coach_test_integration pnpm db:migrate:deploy && DATABASE_URL=postgresql://postgres:password@localhost:5432/tennis_coach_test_e2e pnpm db:migrate:deploy",
     "@comment:lint-format": "Linting, formatting, and code quality tools.",
     "lint": "nx run-many --target=lint --all",
     "lint:fix": "nx run-many --target=lint --all --fix",
