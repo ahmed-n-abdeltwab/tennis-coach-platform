@@ -4,6 +4,7 @@
  * These types provide compile-time type safety for API route operations
  */
 
+import { Endpoints } from '../constants/api-routes.registry';
 import { HttpMethod } from '../interfaces/IRoutes';
 
 /**
@@ -285,6 +286,73 @@ export type PathsWithMethod<E extends Record<string, unknown>, M extends HttpMet
   }[ExtractPaths<E>],
   string
 >;
+
+/**
+ * Extract all paths for a specific route/module, optionally filtered by HTTP method
+ *
+ * @example Basic Usage (All Methods)
+ * ```typescript
+ * import { PathsForRoute } from '@routes-helpers';
+ *
+ * type AccountPaths = PathsForRoute<"accounts">;
+ * // Result: "/api/accounts" | "/api/accounts/me" | "/api/accounts/{id}"
+ *
+ * type SessionPaths = PathsForRoute<"sessions">;
+ * // Result: "/api/sessions" | "/api/sessions/{id}"
+ * ```
+ *
+ * @example With Method Filter
+ * ```typescript
+ * type AccountGetPaths = PathsForRoute<"accounts", "GET">;
+ * // Result: Only GET paths for accounts
+ *
+ * type AccountPostPaths = PathsForRoute<"accounts", "POST">;
+ * // Result: Only POST paths for accounts
+ *
+ * type AccountPatchPaths = PathsForRoute<"accounts", "PATCH">;
+ * // Result: Only PATCH paths for accounts
+ * ```
+ *
+ * @example In Test Helper
+ * ```typescript
+ * class AccountsControllerTest extends BaseControllerTest<AccountsController, AccountsService> {
+ *   async testGet(path: PathsForRoute<'accounts', 'GET'>) {
+ *     return this.get(path);
+ *   }
+ *
+ *   async testPatch(path: PathsForRoute<'accounts', 'PATCH'>, body?: any) {
+ *     return this.patch(path, { body });
+ *   }
+ * }
+ * ```
+ *
+ * @example With Custom Endpoints
+ * ```typescript
+ * type CustomAccountPaths = PathsForRoute<"accounts", "GET", CustomEndpoints>;
+ * // Use a different endpoints interface
+ * ```
+ */
+export type PathsForRoute<
+  Route extends string,
+  Method extends HttpMethod | undefined = undefined,
+  E extends Record<string, any> = Endpoints,
+> = Method extends HttpMethod
+  ? Extract<
+      {
+        [P in ExtractPaths<E>]: P extends `/api/${Route}${string}`
+          ? Method extends keyof E[P]
+            ? P
+            : never
+          : never;
+      }[ExtractPaths<E>],
+      string
+    >
+  : Extract<
+      {
+        [P in ExtractPaths<E>]: P extends `/api/${Route}${string}` ? P : never;
+      }[ExtractPaths<E>],
+      string
+    >;
 
 /**
  * Check if a path requires parameters (contains path parameters like {id})

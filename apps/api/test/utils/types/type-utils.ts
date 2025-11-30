@@ -269,6 +269,7 @@ export type {
   ExtractRequestType,
   ExtractResponseType,
   HttpMethod,
+  PathsForRoute,
   PathsWithMethod,
   PathWithValues,
   RequiresParams,

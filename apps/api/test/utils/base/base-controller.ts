@@ -59,6 +59,24 @@ export abstract class BaseControllerTest<
 
     this.app = this.module.createNestApplication();
     this.app.setGlobalPrefix('api');
+
+    // Add authentication middleware to extract user from JWT
+    this.app.use((req: any, _res: any, next: any) => {
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        try {
+          const jwtService = new JwtService({
+            secret: process.env.JWT_SECRET ?? 'test-secret',
+          });
+          req.user = jwtService.verify(token);
+        } catch {
+          // Token invalid, leave user undefined
+        }
+      }
+      next();
+    });
+
     await this.app.init();
   }
 
@@ -214,6 +232,17 @@ export abstract class BaseControllerTest<
   }
 
   /**
+   * Makes an unauthenticated PATCH request
+   */
+  protected async patch<P extends PathsWithMethod<E, 'PATCH'>>(
+    endpoint: P,
+    payload?: RequestType<E, P, 'PATCH'>,
+    options?: RequestOptions
+  ): Promise<request.Test> {
+    return this.request(endpoint, 'PATCH', payload, options);
+  }
+
+  /**
    * Makes an unauthenticated DELETE request
    */
   protected async delete<P extends PathsWithMethod<E, 'DELETE'>>(
@@ -274,6 +303,18 @@ export abstract class BaseControllerTest<
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<request.Test> {
     return this.authenticatedRequest(endpoint, 'PUT', token, payload, options);
+  }
+
+  /**
+   * Makes an authenticated PATCH request
+   */
+  protected async authenticatedPatch<P extends PathsWithMethod<E, 'PATCH'>>(
+    endpoint: P,
+    token: string,
+    payload?: RequestType<E, P, 'PATCH'>,
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<request.Test> {
+    return this.authenticatedRequest(endpoint, 'PATCH', token, payload, options);
   }
 
   /**
