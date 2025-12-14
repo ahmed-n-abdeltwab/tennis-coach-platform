@@ -240,7 +240,7 @@ jobs:
           retention-days: 30
 
       - name: Upload ${{ matrix.test-type }} coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         if: always()
         with:
           files: coverage/apps/api/${{ matrix.test-type }}/lcov.info
