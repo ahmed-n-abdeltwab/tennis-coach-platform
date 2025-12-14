@@ -107,7 +107,7 @@ export class AuthenticatedHttpClient<E extends Record<string, any>> {
    */
   async get<P extends PathsWithMethod<E, 'GET'>>(
     path: P,
-    payload?: RequestType<E, P, 'GET'>,
+    payload?: RequestType<P, 'GET', E>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
     return this.client.authenticatedGet(path, this.token, payload, options);
@@ -118,7 +118,7 @@ export class AuthenticatedHttpClient<E extends Record<string, any>> {
    */
   async post<P extends PathsWithMethod<E, 'POST'>>(
     path: P,
-    payload?: RequestType<E, P, 'POST'>,
+    payload?: RequestType<P, 'POST', E>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
     return this.client.authenticatedPost(path, this.token, payload, options);
@@ -129,7 +129,7 @@ export class AuthenticatedHttpClient<E extends Record<string, any>> {
    */
   async put<P extends PathsWithMethod<E, 'PUT'>>(
     path: P,
-    payload?: RequestType<E, P, 'PUT'>,
+    payload?: RequestType<P, 'PUT', E>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
     return this.client.authenticatedPut(path, this.token, payload, options);
@@ -140,7 +140,7 @@ export class AuthenticatedHttpClient<E extends Record<string, any>> {
    */
   async delete<P extends PathsWithMethod<E, 'DELETE'>>(
     path: P,
-    payload?: RequestType<E, P, 'DELETE'>,
+    payload?: RequestType<P, 'DELETE', E>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
     return this.client.authenticatedDelete(path, this.token, payload, options);
@@ -151,7 +151,7 @@ export class AuthenticatedHttpClient<E extends Record<string, any>> {
    */
   async patch<P extends PathsWithMethod<E, 'PATCH'>>(
     path: P,
-    payload?: RequestType<E, P, 'PATCH'>,
+    payload?: RequestType<P, 'PATCH', E>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
     return this.client.authenticatedPatch(path, this.token, payload, options);

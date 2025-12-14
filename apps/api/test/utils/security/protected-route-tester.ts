@@ -77,7 +77,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
   async testRequiresAuth<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
-    payload?: RequestType<E, P, M>
+    payload?: RequestType<P, M, E>
   ): Promise<void> {
     await this.httpClient.request(path, method, payload, {
       expectedStatus: 401,
@@ -103,7 +103,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
   async testRejectsExpiredToken<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
-    payload?: RequestType<E, P, M>
+    payload?: RequestType<P, M, E>
   ): Promise<void> {
     const expiredToken = this.authHelper.createExpiredToken();
 
@@ -135,7 +135,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
   async testAcceptsUserToken<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
-    payload?: RequestType<E, P, M>,
+    payload?: RequestType<P, M, E>,
     expectedStatus?: number
   ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
     const userToken = this.authHelper.createUserToken();
@@ -169,7 +169,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
   async testAcceptsCoachToken<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
-    payload?: RequestType<E, P, M>,
+    payload?: RequestType<P, M, E>,
     expectedStatus?: number
   ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
     const coachToken = this.authHelper.createCoachToken();
@@ -203,7 +203,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
   async testAcceptsAdminToken<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
-    payload?: RequestType<E, P, M>,
+    payload?: RequestType<P, M, E>,
     expectedStatus?: number
   ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
     const adminToken = this.authHelper.createAdminToken();
@@ -250,7 +250,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
     path: P,
     allowedRoles: Role[],
     method: M,
-    payload?: RequestType<E, P, M>
+    payload?: RequestType<P, M, E>
   ): Promise<void> {
     const roles = [Role.USER, Role.COACH, Role.ADMIN, Role.PREMIUM_USER] as const;
 

@@ -1,12 +1,12 @@
 import { Provider } from '@nestjs/common';
 import { Role } from '@prisma/client';
-import { BaseControllerTest, PathsForRoute } from '@test-utils';
+import { BaseControllerTest, PathsForRoute, RequestType } from '@test-utils';
 
 import { JwtPayload } from '../../common';
 
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
-import { AccountResponseDto, UpdateAccountDto } from './dto/account.dto';
+import { AccountResponseDto } from './dto/account.dto';
 
 class AccountsControllerTest extends BaseControllerTest<AccountsController, AccountsService> {
   private mockAccountsService: jest.Mocked<AccountsService>;
@@ -50,32 +50,49 @@ class AccountsControllerTest extends BaseControllerTest<AccountsController, Acco
   }
 
   // AccountsController uses GET, PATCH, DELETE - so create helpers for those
-  async testGet(path: PathsForRoute<'accounts', 'GET'>) {
-    return this.get(path);
+  async testGet<P extends PathsForRoute<'accounts', 'GET'>>(
+    path: P,
+    payload?: RequestType<P, 'GET'>
+  ) {
+    return this.get(path, payload);
   }
 
-  async testPatch(path: PathsForRoute<'accounts', 'PATCH'>, payload?: { body?: UpdateAccountDto }) {
-    return this.patch(path, payload as any);
+  async testPatch<P extends PathsForRoute<'accounts', 'PATCH'>>(
+    path: P,
+    payload?: RequestType<P, 'PATCH'>
+  ) {
+    return this.patch(path, payload);
   }
 
-  async testDelete(path: PathsForRoute<'accounts', 'DELETE'>, payload?: { params?: any }) {
+  async testDelete<P extends PathsForRoute<'accounts', 'DELETE'>>(
+    path: P,
+    payload?: RequestType<P, 'DELETE'>
+  ) {
     return this.delete(path, payload);
   }
 
-  async testAuthenticatedGet(path: PathsForRoute<'accounts', 'GET'>, token: string) {
-    return this.authenticatedGet(path, token);
-  }
-
-  async testAuthenticatedPatch(
-    path: PathsForRoute<'accounts', 'PATCH'>,
+  async testAuthenticatedGet<P extends PathsForRoute<'accounts', 'GET'>>(
+    path: P,
     token: string,
-    payload?: { body?: UpdateAccountDto }
+    payload?: RequestType<P, 'GET'>
   ) {
-    return this.authenticatedPatch(path, token, payload as any);
+    return this.authenticatedGet(path, token, payload);
   }
 
-  async testAuthenticatedDelete(path: PathsForRoute<'accounts', 'DELETE'>, token: string) {
-    return this.authenticatedDelete(path, token);
+  async testAuthenticatedPatch<P extends PathsForRoute<'accounts', 'PATCH'>>(
+    path: P,
+    token: string,
+    payload?: RequestType<P, 'PATCH'>
+  ) {
+    return this.authenticatedPatch(path, token, payload);
+  }
+
+  async testAuthenticatedDelete<P extends PathsForRoute<'accounts', 'DELETE'>>(
+    path: P,
+    token: string,
+    payload?: RequestType<P, 'DELETE'>
+  ) {
+    return this.authenticatedDelete(path, token, payload);
   }
 
   async createTestRoleToken(role: Role, overrides?: Partial<JwtPayload>) {
@@ -195,7 +212,7 @@ describe('AccountsController', () => {
 
   describe('PATCH /accounts/:id', () => {
     it('should call update with provided id for admin', async () => {
-      const updateDto: UpdateAccountDto = {
+      const updateData = {
         name: 'Updated Name',
       };
 
@@ -217,15 +234,15 @@ describe('AccountsController', () => {
         `/api/accounts/${mockUpdatedAccount.id}` as '/api/accounts/{id}',
         adminToken,
         {
-          body: updateDto,
+          body: updateData,
         }
       );
 
-      expect(test.getMockService().update).toHaveBeenCalledWith(mockUpdatedAccount.id, updateDto);
+      expect(test.getMockService().update).toHaveBeenCalledWith(mockUpdatedAccount.id, updateData);
     });
 
     it('should call update with own id for regular user', async () => {
-      const updateDto: UpdateAccountDto = {
+      const updateData = {
         name: 'Updated Name',
       };
 
@@ -249,11 +266,11 @@ describe('AccountsController', () => {
         `/api/accounts/${mockUpdatedAccount.id}` as '/api/accounts/{id}',
         userToken,
         {
-          body: updateDto,
+          body: updateData,
         }
       );
 
-      expect(test.getMockService().update).toHaveBeenCalledWith(mockUpdatedAccount.id, updateDto);
+      expect(test.getMockService().update).toHaveBeenCalledWith(mockUpdatedAccount.id, updateData);
     });
   });
 

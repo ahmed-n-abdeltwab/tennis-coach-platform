@@ -254,7 +254,7 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
   async request<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     endpoint: P,
     method: M,
-    payload?: RequestType<E, P, M>,
+    payload?: RequestType<P, M, E>,
     options?: RequestOptions
   ): Promise<request.Test> {
     const { body, params } = payload ?? {};
@@ -287,7 +287,7 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
    */
   async get<P extends PathsWithMethod<E, 'GET'>>(
     endpoint: P,
-    payload?: RequestType<E, P, 'GET'>,
+    payload?: RequestType<P, 'GET', E>,
     options?: RequestOptions
   ): Promise<request.Test> {
     return this.request(endpoint, 'GET', payload, options);
@@ -298,7 +298,7 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
    */
   async post<P extends PathsWithMethod<E, 'POST'>>(
     endpoint: P,
-    payload?: RequestType<E, P, 'POST'>,
+    payload?: RequestType<P, 'POST', E>,
     options?: RequestOptions
   ): Promise<request.Test> {
     return this.request(endpoint, 'POST', payload, options);
@@ -309,7 +309,7 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
    */
   async put<P extends PathsWithMethod<E, 'PUT'>>(
     endpoint: P,
-    payload?: RequestType<E, P, 'PUT'>,
+    payload?: RequestType<P, 'PUT', E>,
     options?: RequestOptions
   ): Promise<request.Test> {
     return this.request(endpoint, 'PUT', payload, options);
@@ -320,7 +320,7 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
    */
   async delete<P extends PathsWithMethod<E, 'DELETE'>>(
     endpoint: P,
-    payload?: RequestType<E, P, 'DELETE'>,
+    payload?: RequestType<P, 'DELETE', E>,
     options?: RequestOptions
   ): Promise<request.Test> {
     return this.request(endpoint, 'DELETE', payload, options);
@@ -332,7 +332,7 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
     endpoint: P,
     method: M,
     token: string,
-    payload?: RequestType<E, P, M>,
+    payload?: RequestType<P, M, E>,
     options?: RequestOptions
   ): Promise<request.Test> {
     const authHeaders = await this.createAuthHeaders(token);
@@ -348,7 +348,7 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
   async authenticatedGet<P extends PathsWithMethod<E, 'GET'>>(
     endpoint: P,
     token: string,
-    payload?: RequestType<E, P, 'GET'>,
+    payload?: RequestType<P, 'GET', E>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<request.Test> {
     return this.authenticatedRequest(endpoint, 'GET', token, payload, options);
@@ -360,7 +360,7 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
   async authenticatedPost<P extends PathsWithMethod<E, 'POST'>>(
     endpoint: P,
     token: string,
-    payload?: RequestType<E, P, 'POST'>,
+    payload?: RequestType<P, 'POST', E>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<request.Test> {
     return this.authenticatedRequest(endpoint, 'POST', token, payload, options);
@@ -372,7 +372,7 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
   async authenticatedPut<P extends PathsWithMethod<E, 'PUT'>>(
     endpoint: P,
     token: string,
-    payload?: RequestType<E, P, 'PUT'>,
+    payload?: RequestType<P, 'PUT', E>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<request.Test> {
     return this.authenticatedRequest(endpoint, 'PUT', token, payload, options);
@@ -384,7 +384,7 @@ export abstract class BaseIntegrationTest<E extends Record<string, any> = Endpoi
   authenticatedDelete<P extends PathsWithMethod<E, 'DELETE'>>(
     endpoint: P,
     token: string,
-    payload?: RequestType<E, P, 'DELETE'>,
+    payload?: RequestType<P, 'DELETE', E>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<request.Test> {
     return this.authenticatedRequest(endpoint, 'DELETE', token, payload, options);
