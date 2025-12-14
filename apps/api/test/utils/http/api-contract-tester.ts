@@ -13,6 +13,7 @@ import type {
   RequestType,
   TypedResponse,
 } from '@test-utils';
+// eslint-disable-next-line no-duplicate-imports
 import { Endpoints } from '@test-utils';
 
 import { RequestOptions, TypeSafeHttpClient } from './type-safe-http-client';
@@ -103,7 +104,7 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
     contract?: {
       request?: {
         headers?: Record<string, string>;
-        payload?: RequestType<E, P, M>;
+        payload?: RequestType<P, M, E>;
       };
       response: {
         status: number;
@@ -166,7 +167,7 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
       contract?: {
         request?: {
           headers?: Record<string, string>;
-          payload?: RequestType<E, P, M>;
+          payload?: RequestType<P, M, E>;
         };
         response: {
           status: number;
@@ -218,7 +219,7 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
     path: P,
     method: M,
     errorCases: HttpErrorTestCase[],
-    payload?: RequestType<E, P, M>,
+    payload?: RequestType<P, M, E>,
     options?: RequestOptions
   ): Promise<void> {
     for (const errorCase of errorCases) {
@@ -276,7 +277,7 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
     method: M,
     validationCases: Array<{
       name: string;
-      payload: RequestType<E, P, M>;
+      payload: RequestType<P, M, E>;
       expectedErrors: string[];
     }>,
     options?: RequestOptions

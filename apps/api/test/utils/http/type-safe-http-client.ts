@@ -91,9 +91,9 @@ export type TypedResponse<T> = SuccessResponse<T> | FailureResponse;
  *
  */
 export interface RequestType<
-  E extends Record<string, any>,
   P extends keyof E,
   M extends HttpMethod,
+  E extends Record<string, any> = Endpoints,
 > {
   body?: DeepPartial<ExtractRequestBody<E, P, M>>;
   params?: DeepPartial<ExtractRequestParams<E, P, M>>;
@@ -216,7 +216,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   async request<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
     method: M,
-    payload?: RequestType<E, P, M>,
+    payload?: RequestType<P, M, E>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
     const { body, params } = payload ?? {};
@@ -291,7 +291,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
    */
   async get<P extends PathsWithMethod<E, 'GET'>>(
     path: P,
-    payload?: RequestType<E, P, 'GET'>,
+    payload?: RequestType<P, 'GET', E>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
     return this.request(path, 'GET', payload, options);
@@ -323,7 +323,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
    */
   async post<P extends PathsWithMethod<E, 'POST'>>(
     path: P,
-    payload?: RequestType<E, P, 'POST'>,
+    payload?: RequestType<P, 'POST', E>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
     return this.request(path, 'POST', payload, options);
@@ -334,7 +334,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
    */
   async put<P extends PathsWithMethod<E, 'PUT'>>(
     path: P,
-    payload?: RequestType<E, P, 'PUT'>,
+    payload?: RequestType<P, 'PUT', E>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
     return this.request(path, 'PUT', payload, options);
@@ -345,7 +345,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
    */
   async delete<P extends PathsWithMethod<E, 'DELETE'>>(
     path: P,
-    payload?: RequestType<E, P, 'DELETE'>,
+    payload?: RequestType<P, 'DELETE', E>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
     return this.request(path, 'DELETE', payload, options);
@@ -356,7 +356,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
    */
   async patch<P extends PathsWithMethod<E, 'PATCH'>>(
     path: P,
-    payload?: RequestType<E, P, 'PATCH'>,
+    payload?: RequestType<P, 'PATCH', E>,
     options?: RequestOptions
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
     return this.request(path, 'PATCH', payload, options);
@@ -365,7 +365,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   async authenticatedGet<P extends PathsWithMethod<E, 'GET'>>(
     path: P,
     token: string,
-    payload?: RequestType<E, P, 'GET'>,
+    payload?: RequestType<P, 'GET', E>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
     return this.get(path, payload, {
@@ -377,7 +377,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   async authenticatedPost<P extends PathsWithMethod<E, 'POST'>>(
     path: P,
     token: string,
-    payload?: RequestType<E, P, 'POST'>,
+    payload?: RequestType<P, 'POST', E>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
     return this.post(path, payload, {
@@ -389,7 +389,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   async authenticatedPut<P extends PathsWithMethod<E, 'PUT'>>(
     path: P,
     token: string,
-    payload?: RequestType<E, P, 'PUT'>,
+    payload?: RequestType<P, 'PUT', E>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
     return this.put(path, payload, {
@@ -401,7 +401,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   async authenticatedDelete<P extends PathsWithMethod<E, 'DELETE'>>(
     path: P,
     token: string,
-    payload?: RequestType<E, P, 'DELETE'>,
+    payload?: RequestType<P, 'DELETE', E>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
     return this.delete(path, payload, {
@@ -416,7 +416,7 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
   async authenticatedPatch<P extends PathsWithMethod<E, 'PATCH'>>(
     path: P,
     token: string,
-    payload?: RequestType<E, P, 'PATCH'>,
+    payload?: RequestType<P, 'PATCH', E>,
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
     return this.patch(path, payload, {

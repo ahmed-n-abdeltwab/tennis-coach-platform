@@ -115,7 +115,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     path: P,
     method: M,
     config: RoleAccessConfig,
-    data?: RequestType<E, P, M>
+    data?: RequestType<P, M, E>
   ): Promise<RoleAccessTestResult[]> {
     const { allowedRoles, deniedRoles = [], successStatus, deniedStatus = 403 } = config;
     const defaultSuccessStatus = method === 'POST' ? 201 : 200;
@@ -166,7 +166,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     path: P,
     method: M,
     allowedRoles: Role[],
-    data?: RequestType<E, P, M>
+    data?: RequestType<P, M, E>
   ): Promise<RoleAccessTestResult[]> {
     const allRoles = [Role.USER, Role.COACH, Role.ADMIN, Role.PREMIUM_USER];
     const deniedRoles = allRoles.filter(role => !allowedRoles.includes(role));
@@ -201,7 +201,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     path: P,
     method: M,
     allowedRoles: Role[],
-    data?: RequestType<E, P, M>
+    data?: RequestType<P, M, E>
   ): Promise<void> {
     const results = await this.testAllRoles(path, method, allowedRoles, data);
 
@@ -240,7 +240,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     path: P,
     method: M,
     role: Role,
-    data?: RequestType<E, P, M>
+    data?: RequestType<P, M, E>
   ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
     const token = await this.createTokenForRole(role);
     const expectedStatus = method === 'POST' ? 201 : 200;
@@ -275,7 +275,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     path: P,
     method: M,
     role: Role,
-    data?: RequestType<E, P, M>,
+    data?: RequestType<P, M, E>,
     expectedStatus = 403
   ): Promise<void> {
     const token = await this.createTokenForRole(role);
@@ -295,7 +295,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
     method: M,
     role: Role,
     expectedStatus: number,
-    data?: RequestType<E, P, M>
+    data?: RequestType<P, M, E>
   ): Promise<RoleAccessTestResult> {
     const token = this.createTokenForRole(role);
 

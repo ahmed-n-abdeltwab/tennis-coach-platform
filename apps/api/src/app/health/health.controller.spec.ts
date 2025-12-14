@@ -1,5 +1,5 @@
 import { Provider } from '@nestjs/common';
-import { BaseControllerTest, PathsForRoute } from '@test-utils';
+import { BaseControllerTest, PathsForRoute, RequestType } from '@test-utils';
 
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
@@ -40,8 +40,11 @@ class HealthControllerTest extends BaseControllerTest<HealthController, HealthSe
   }
 
   // HealthController only uses GET, so we only create testGet helper
-  async testGet(path: PathsForRoute<'health', 'GET'>) {
-    return this.get(path);
+  async testGet<P extends PathsForRoute<'health', 'GET'>>(
+    path: P,
+    payload?: RequestType<P, 'GET'>
+  ) {
+    return this.get(path, payload);
   }
 }
 
