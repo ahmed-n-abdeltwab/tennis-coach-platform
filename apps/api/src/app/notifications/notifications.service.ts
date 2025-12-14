@@ -9,7 +9,6 @@ import { SessionsService } from './../sessions/sessions.service';
 import notificationsConfig from './config/notifications.config';
 import { MailResponse, SendEmailDto } from './dto/notification.dto';
 
-
 @Injectable()
 export class NotificationsService {
   private transporter: MailtrapTransporter;

@@ -28,7 +28,7 @@ import {
  *
  * @template _T - The response DTO type that decorators will be bound to
  */
- 
+
 export interface TypedApiDecorators<_T extends Type<any>> {
   /**
    * Composable error decorator methods

@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const user = JSON.parse(userData);
         dispatch({ type: 'SET_USER', payload: { user, token } });
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      } catch  {
+      } catch {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       }

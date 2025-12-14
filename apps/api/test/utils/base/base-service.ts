@@ -255,9 +255,7 @@ export abstract class BaseServiceTest<TService, TRepository> {
   /**
    * Asserts that a mock was not called
    */
-  protected assertMethodNotCalled(
-    mockMethod: jest.Mock | jest.MockInstance<any, any[]>
-  ): void {
+  protected assertMethodNotCalled(mockMethod: jest.Mock | jest.MockInstance<any, any[]>): void {
     expect(mockMethod).not.toHaveBeenCalled();
   }
 
@@ -353,9 +351,7 @@ export abstract class BaseServiceTest<TService, TRepository> {
   /**
    * Gets the last call arguments of a mock
    */
-  protected getLastCallArgs(
-    mockMethod: jest.Mock | jest.MockInstance<any, any[]>
-  ): any[] {
+  protected getLastCallArgs(mockMethod: jest.Mock | jest.MockInstance<any, any[]>): any[] {
     expect(mockMethod).toHaveBeenCalled();
     const lastCall = mockMethod.mock.calls[mockMethod.mock.calls.length - 1];
     return lastCall ?? [];
@@ -364,9 +360,7 @@ export abstract class BaseServiceTest<TService, TRepository> {
   /**
    * Gets the first call arguments of a mock
    */
-  protected getFirstCallArgs(
-    mockMethod: jest.Mock | jest.MockInstance<any, any[]>
-  ): any[] {
+  protected getFirstCallArgs(mockMethod: jest.Mock | jest.MockInstance<any, any[]>): any[] {
     expect(mockMethod).toHaveBeenCalled();
     const firstCall = mockMethod.mock.calls[0];
     return firstCall ?? [];

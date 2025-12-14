@@ -26,11 +26,7 @@ describe('TypeSafeHttpClient - Type Inference (Compile-Time Tests)', () => {
     // If this compiles, type inference is working
 
     type SignupResponseType = ExtractResponseType<Endpoints, '/api/authentication/signup', 'POST'>;
-    type LoginResponseType = ExtractResponseType<
-      Endpoints,
-      '/api/authentication/login',
-      'POST'
-    >;
+    type LoginResponseType = ExtractResponseType<Endpoints, '/api/authentication/login', 'POST'>;
 
     // These types should be properly inferred, not unknown
     const assertSignupHasAccessToken: (response: SignupResponseType) => string = response =>

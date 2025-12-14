@@ -1,7 +1,6 @@
-import { JwtPayload , CurrentUser } from '@common';
+import { JwtPayload, CurrentUser } from '@common';
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
-
 
 import { AuthenticationService } from './authentication.service';
 import { Auth } from './decorators/auth.decorator';
