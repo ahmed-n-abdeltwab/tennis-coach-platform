@@ -55,8 +55,18 @@ jobs:
       - name: Run linting
         run: pnpm exec nx affected -t lint --exclude=web
 
-      - name: Check formatting
-        run: pnpm format:check
+      - name: Auto-format code
+        run: pnpm format
+
+      - name: Check for formatting changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "❌ Code formatting issues detected. Please run 'pnpm format' locally."
+            git diff
+            exit 1
+          else
+            echo "✅ Code is properly formatted"
+          fi
 
   security:
     name: Security Scan

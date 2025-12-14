@@ -2,7 +2,6 @@ import { ApiResponse } from '@nestjs/swagger';
 
 import { ErrorResponseDto, ValidationErrorResponseDto } from '../dto/base-response.dto';
 
-
 // Individual error response decorators for reuse across modules
 export const ApiForbiddenResponse = (description?: string) => {
   return ApiResponse({
