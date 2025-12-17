@@ -61,7 +61,7 @@ describe('HealthController', () => {
   });
 
   describe('GET /health', () => {
-    it('should return health check with connected database', async () => {
+    it('should return health check with connected database and redis', async () => {
       const mockHealthData = {
         status: 'ok',
         timestamp: new Date().toISOString(),
@@ -70,6 +70,7 @@ describe('HealthController', () => {
         version: '1.0.0',
         environment: 'test',
         database: 'connected',
+        redis: 'connected',
       };
 
       test.getMockService().check.mockResolvedValue(mockHealthData);
@@ -80,6 +81,7 @@ describe('HealthController', () => {
       expect(response.body).toMatchObject({
         status: 'ok',
         database: 'connected',
+        redis: 'connected',
         version: '1.0.0',
         environment: 'test',
       });
@@ -95,6 +97,7 @@ describe('HealthController', () => {
         version: '1.0.0',
         environment: 'test',
         database: 'disconnected',
+        redis: 'connected',
       };
 
       test.getMockService().check.mockResolvedValue(mockHealthData);
@@ -105,6 +108,32 @@ describe('HealthController', () => {
       expect(response.body).toMatchObject({
         status: 'error',
         database: 'disconnected',
+        redis: 'connected',
+      });
+      expect(test.getMockService().check).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return health check with disconnected redis', async () => {
+      const mockHealthData = {
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        uptime: 100,
+        memory: process.memoryUsage(),
+        version: '1.0.0',
+        environment: 'test',
+        database: 'connected',
+        redis: 'disconnected',
+      };
+
+      test.getMockService().check.mockResolvedValue(mockHealthData);
+
+      const response = await test.testGet('/api/health');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toMatchObject({
+        status: 'error',
+        database: 'connected',
+        redis: 'disconnected',
       });
       expect(test.getMockService().check).toHaveBeenCalledTimes(1);
     });
@@ -131,10 +160,12 @@ describe('HealthController', () => {
   });
 
   describe('GET /health/readiness', () => {
-    it('should return ready status when database is accessible', async () => {
+    it('should return ready status when database and redis are accessible', async () => {
       const mockReadinessData = {
         status: 'ready',
         timestamp: new Date().toISOString(),
+        database: 'ready',
+        redis: 'ready',
       };
 
       test.getMockService().readiness.mockResolvedValue(mockReadinessData);
@@ -144,6 +175,8 @@ describe('HealthController', () => {
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
         status: 'ready',
+        database: 'ready',
+        redis: 'ready',
       });
       expect(response.body.timestamp).toBeDefined();
       expect(test.getMockService().readiness).toHaveBeenCalledTimes(1);
@@ -153,6 +186,8 @@ describe('HealthController', () => {
       const mockReadinessData = {
         status: 'not ready',
         timestamp: new Date().toISOString(),
+        database: 'not ready',
+        redis: 'ready',
       };
 
       test.getMockService().readiness.mockResolvedValue(mockReadinessData);
@@ -162,6 +197,30 @@ describe('HealthController', () => {
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
         status: 'not ready',
+        database: 'not ready',
+        redis: 'ready',
+      });
+      expect(response.body.timestamp).toBeDefined();
+      expect(test.getMockService().readiness).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return not ready status when redis is not accessible', async () => {
+      const mockReadinessData = {
+        status: 'not ready',
+        timestamp: new Date().toISOString(),
+        database: 'ready',
+        redis: 'not ready',
+      };
+
+      test.getMockService().readiness.mockResolvedValue(mockReadinessData);
+
+      const response = await test.testGet('/api/health/readiness');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toMatchObject({
+        status: 'not ready',
+        database: 'ready',
+        redis: 'not ready',
       });
       expect(response.body.timestamp).toBeDefined();
       expect(test.getMockService().readiness).toHaveBeenCalledTimes(1);

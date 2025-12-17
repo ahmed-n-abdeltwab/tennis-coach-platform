@@ -202,6 +202,27 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test_${{ matrix.test-type }}
 
+      - name: Verify PostgreSQL health
+        run: |
+          echo "🔍 Checking PostgreSQL connection..."
+          PGPASSWORD=postgres psql -h localhost -U postgres -d tennis_coach_test_${{ matrix.test-type }} -c "SELECT version();" || {
+            echo "❌ PostgreSQL health check failed"
+            exit 1
+          }
+          echo "✅ PostgreSQL is healthy"
+
+      - name: Verify Redis health
+        run: |
+          echo "🔍 Checking Redis connection..."
+          redis-cli -h localhost -p 6379 ping | grep -q PONG || {
+            echo "❌ Redis health check failed"
+            exit 1
+          }
+          echo "✅ Redis is healthy"
+
+          echo "🔍 Checking Redis info..."
+          redis-cli -h localhost -p 6379 info server | grep -E "redis_version|uptime_in_seconds" || true
+
       - name: Run ${{ matrix.test-type }} tests
         run: pnpm exec nx run api:test:${{ matrix.test-type }} -- --coverage
         env:

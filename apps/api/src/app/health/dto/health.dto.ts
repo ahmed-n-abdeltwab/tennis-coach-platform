@@ -33,11 +33,23 @@ export class CheckHealthDto extends BaseHealthDto {
   @ApiProperty()
   @IsString()
   database: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  redis?: string;
 }
 
 export class LivenessHealthDto extends BaseHealthDto {}
 
-export class ReadinessHealthDto extends BaseHealthDto {}
+export class ReadinessHealthDto extends BaseHealthDto {
+  @ApiProperty({ required: false })
+  @IsString()
+  database?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  redis?: string;
+}
 
 export const CheckHealthApiResponses = createTypedApiDecorators(CheckHealthDto);
 
