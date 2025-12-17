@@ -1,141 +1,33 @@
-import { Provider } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
-import { BaseControllerTest, PathsForRoute, RequestType } from '@test-utils';
-
-import { JwtPayload } from '../../common';
+import { BaseControllerTest } from '@test-utils';
 
 import { BookingTypesController } from './booking-types.controller';
 import { BookingTypesService } from './booking-types.service';
 import { BookingTypeResponseDto } from './dto/booking-type.dto';
 
-class BookingTypesControllerTest extends BaseControllerTest<
-  BookingTypesController,
-  BookingTypesService
-> {
-  private mockBookingTypesService: jest.Mocked<BookingTypesService>;
+describe('BookingTypesController', () => {
+  let test: BaseControllerTest<BookingTypesController, BookingTypesService, 'booking-types'>;
+  let mockService: jest.Mocked<BookingTypesService>;
 
-  async setupController(): Promise<void> {
-    this.controller = this.module.get<BookingTypesController>(BookingTypesController);
-  }
-
-  setupMocks() {
-    this.mockBookingTypesService = {
+  beforeEach(async () => {
+    // Create mock service
+    mockService = {
       findAll: jest.fn(),
       findByCoach: jest.fn(),
       findOne: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       remove: jest.fn(),
-    } as unknown as jest.Mocked<BookingTypesService>;
+    } as any;
 
-    return [];
-  }
+    // Create test instance with configuration - no class extension needed!
+    test = new BaseControllerTest({
+      controllerClass: BookingTypesController,
+      moduleName: 'booking-types',
+      providers: [{ provide: BookingTypesService, useValue: mockService }],
+    });
 
-  getControllerClass() {
-    return BookingTypesController;
-  }
-
-  override getTestProviders(): Provider[] {
-    return [
-      {
-        provide: BookingTypesService,
-        useValue: this.mockBookingTypesService,
-      },
-    ];
-  }
-
-  getMockService(): jest.Mocked<BookingTypesService> {
-    return this.mockBookingTypesService;
-  }
-
-  // BookingTypesController uses GET, POST, PUT, PATCH, DELETE
-  async testGet<P extends PathsForRoute<'booking-types', 'GET'>>(
-    path: P,
-    payload?: RequestType<P, 'GET'>
-  ) {
-    return this.get(path, payload);
-  }
-
-  async testPost<P extends PathsForRoute<'booking-types', 'POST'>>(
-    path: P,
-    payload?: RequestType<P, 'POST'>
-  ) {
-    return this.post(path, payload);
-  }
-
-  async testPut<P extends PathsForRoute<'booking-types', 'PUT'>>(
-    path: P,
-    payload?: RequestType<P, 'PUT'>
-  ) {
-    return this.put(path, payload);
-  }
-
-  async testPatch<P extends PathsForRoute<'booking-types', 'PATCH'>>(
-    path: P,
-    payload?: RequestType<P, 'PATCH'>
-  ) {
-    return this.patch(path, payload);
-  }
-
-  async testDelete<P extends PathsForRoute<'booking-types', 'DELETE'>>(
-    path: P,
-    payload?: RequestType<P, 'DELETE'>
-  ) {
-    return this.delete(path, payload);
-  }
-
-  // Authenticated versions
-  async testAuthenticatedGet<P extends PathsForRoute<'booking-types', 'GET'>>(
-    path: P,
-    token: string,
-    payload?: RequestType<P, 'GET'>
-  ) {
-    return this.authenticatedGet(path, token, payload);
-  }
-
-  async testAuthenticatedPost<P extends PathsForRoute<'booking-types', 'POST'>>(
-    path: P,
-    token: string,
-    payload?: RequestType<P, 'POST'>
-  ) {
-    return this.authenticatedPost(path, token, payload);
-  }
-
-  async testAuthenticatedPut<P extends PathsForRoute<'booking-types', 'PUT'>>(
-    path: P,
-    token: string,
-    payload?: RequestType<P, 'PUT'>
-  ) {
-    return this.authenticatedPut(path, token, payload);
-  }
-
-  async testAuthenticatedPatch<P extends PathsForRoute<'booking-types', 'PATCH'>>(
-    path: P,
-    token: string,
-    payload?: RequestType<P, 'PATCH'>
-  ) {
-    return this.authenticatedPatch(path, token, payload);
-  }
-
-  async testAuthenticatedDelete<P extends PathsForRoute<'booking-types', 'DELETE'>>(
-    path: P,
-    token: string,
-    payload?: RequestType<P, 'DELETE'>
-  ) {
-    return this.authenticatedDelete(path, token, payload);
-  }
-
-  async createTestRoleToken(role: Role, overrides?: Partial<JwtPayload>) {
-    return this.createRoleToken(role, overrides);
-  }
-}
-
-describe('BookingTypesController', () => {
-  let test: BookingTypesControllerTest;
-
-  beforeEach(async () => {
-    test = new BookingTypesControllerTest();
     await test.setup();
   });
 
@@ -158,11 +50,12 @@ describe('BookingTypesController', () => {
         },
       ];
 
-      test.getMockService().findAll.mockResolvedValue(mockBookingTypes as any);
+      mockService.findAll.mockResolvedValue(mockBookingTypes as any);
 
-      await test.testGet('/api/booking-types');
+      // Direct access to HTTP methods - no wrapper needed!
+      await test.get('/api/booking-types');
 
-      expect(test.getMockService().findAll).toHaveBeenCalledTimes(1);
+      expect(mockService.findAll).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -182,13 +75,11 @@ describe('BookingTypesController', () => {
         },
       ];
 
-      test.getMockService().findByCoach.mockResolvedValue(mockBookingTypes as any);
+      mockService.findByCoach.mockResolvedValue(mockBookingTypes as any);
 
-      await test.testGet(
-        `/api/booking-types/coach/${coachId}` as '/api/booking-types/coach/{coachId}'
-      );
+      await test.get(`/api/booking-types/coach/${coachId}` as '/api/booking-types/coach/{coachId}');
 
-      expect(test.getMockService().findByCoach).toHaveBeenCalledWith(coachId);
+      expect(mockService.findByCoach).toHaveBeenCalledWith(coachId);
     });
   });
 
@@ -205,11 +96,11 @@ describe('BookingTypesController', () => {
         updatedAt: new Date().toISOString(),
       };
 
-      test.getMockService().findOne.mockResolvedValue(mockBookingType as any);
+      mockService.findOne.mockResolvedValue(mockBookingType as any);
 
-      await test.testGet(`/api/booking-types/${mockBookingType.id}` as '/api/booking-types/{id}');
+      await test.get(`/api/booking-types/${mockBookingType.id}` as '/api/booking-types/{id}');
 
-      expect(test.getMockService().findOne).toHaveBeenCalledWith(mockBookingType.id);
+      expect(mockService.findOne).toHaveBeenCalledWith(mockBookingType.id);
     });
   });
 
@@ -233,14 +124,17 @@ describe('BookingTypesController', () => {
         updatedAt: new Date().toISOString(),
       };
 
-      test.getMockService().create.mockResolvedValue(mockCreatedBookingType as any);
+      mockService.create.mockResolvedValue(mockCreatedBookingType as any);
 
-      const coachToken = await test.createTestRoleToken(Role.COACH, { sub: coachId });
-      await test.testAuthenticatedPost('/api/booking-types', coachToken, {
+      // Built-in token creation - no helper method needed!
+      const coachToken = await test.createRoleToken(Role.COACH, { sub: coachId });
+
+      // Direct access to authenticated HTTP methods!
+      await test.authenticatedPost('/api/booking-types', coachToken, {
         body: createData,
       });
 
-      expect(test.getMockService().create).toHaveBeenCalledWith(createData, coachId);
+      expect(mockService.create).toHaveBeenCalledWith(createData, coachId);
     });
   });
 
@@ -265,10 +159,10 @@ describe('BookingTypesController', () => {
         updatedAt: new Date().toISOString(),
       };
 
-      test.getMockService().update.mockResolvedValue(mockUpdatedBookingType as any);
+      mockService.update.mockResolvedValue(mockUpdatedBookingType as any);
 
-      const coachToken = await test.createTestRoleToken(Role.COACH, { sub: coachId });
-      await test.testAuthenticatedPut(
+      const coachToken = await test.createRoleToken(Role.COACH, { sub: coachId });
+      await test.authenticatedPut(
         `/api/booking-types/${bookingTypeId}` as '/api/booking-types/{id}',
         coachToken,
         {
@@ -276,7 +170,7 @@ describe('BookingTypesController', () => {
         }
       );
 
-      expect(test.getMockService().update).toHaveBeenCalledWith(bookingTypeId, updateData, coachId);
+      expect(mockService.update).toHaveBeenCalledWith(bookingTypeId, updateData, coachId);
     });
   });
 
@@ -300,10 +194,10 @@ describe('BookingTypesController', () => {
         updatedAt: new Date().toISOString(),
       };
 
-      test.getMockService().update.mockResolvedValue(mockUpdatedBookingType as any);
+      mockService.update.mockResolvedValue(mockUpdatedBookingType as any);
 
-      const coachToken = await test.createTestRoleToken(Role.COACH, { sub: coachId });
-      await test.testAuthenticatedPatch(
+      const coachToken = await test.createRoleToken(Role.COACH, { sub: coachId });
+      await test.authenticatedPatch(
         `/api/booking-types/${bookingTypeId}` as '/api/booking-types/{id}',
         coachToken,
         {
@@ -311,7 +205,7 @@ describe('BookingTypesController', () => {
         }
       );
 
-      expect(test.getMockService().update).toHaveBeenCalledWith(bookingTypeId, updateData, coachId);
+      expect(mockService.update).toHaveBeenCalledWith(bookingTypeId, updateData, coachId);
     });
   });
 
@@ -320,15 +214,15 @@ describe('BookingTypesController', () => {
       const coachId = 'coach-1';
       const bookingTypeId = 'booking-type-1';
 
-      test.getMockService().remove.mockResolvedValue(undefined);
+      mockService.remove.mockResolvedValue(undefined);
 
-      const coachToken = await test.createTestRoleToken(Role.COACH, { sub: coachId });
-      await test.testAuthenticatedDelete(
+      const coachToken = await test.createRoleToken(Role.COACH, { sub: coachId });
+      await test.authenticatedDelete(
         `/api/booking-types/${bookingTypeId}` as '/api/booking-types/{id}',
         coachToken
       );
 
-      expect(test.getMockService().remove).toHaveBeenCalledWith(bookingTypeId, coachId);
+      expect(mockService.remove).toHaveBeenCalledWith(bookingTypeId, coachId);
     });
   });
 });

@@ -1,6 +1,23 @@
 /**
- * Abstract base class for controller testing
- * Provides common patterns and utilities for testing NestJS controllers
+ * Improved base class for controller testing
+ * Automatically provides type-safe HTTP methods based on module name
+ *
+ * Usage:
+ * ```typescript
+ * const test = new BaseControllerTest({
+ *   controllerClass: BookinsController,
+ *   moduleName: 'booking-types',
+ *   providers: [
+ *     { provide: BookingTypesService, useValue: mockService },
+ *   ],
+ * });
+ *
+ * await test.setup();
+ *
+ * // Type-safe HTTP methods automatically available
+ * await test.get('/api/booking-types');
+ * await test.authenticatedPost('/api/booking-types', token, { body: data });
+ * ```
  */
 
 import { INestApplication, Provider } from '@nestjs/common';
@@ -13,7 +30,7 @@ import {
   ExtractMethods,
   ExtractPaths,
   MockRequest,
-  PathsWithMethod,
+  PathsForRoute,
   buildPath,
 } from '@test-utils';
 import request from 'supertest';
@@ -21,47 +38,78 @@ import request from 'supertest';
 import { JwtPayload } from '../../../src/common';
 import { RequestOptions, RequestType } from '../http';
 
-export abstract class BaseControllerTest<
+export interface ControllerTestConfig<TController, _TService, TModuleName extends string> {
+  /** The controller class to test */
+  controllerClass: new (...args: any[]) => TController;
+  /** The module name for type-safe routing (e.g., 'booking-types', 'accounts') */
+  moduleName: TModuleName;
+  /** Mock service and other providers */
+  providers: Provider[];
+}
+
+/**
+ * Type helper to extract module-specific paths
+ */
+export type ModulePaths<TModuleName extends string> = Extract<
+  keyof Endpoints,
+  `/api/${TModuleName}${string}`
+>;
+
+/**
+ * Improved BaseControllerTest with automatic type-safe methods
+ */
+export class BaseControllerTest<
   TController,
   TService,
+  TModuleName extends string = string,
   E extends Record<string, any> = Endpoints,
 > {
-  protected controller: TController;
-  protected service: TService;
-  protected app: INestApplication;
-  protected module: TestingModule;
+  private _controller!: TController;
+  private _app!: INestApplication;
+  private _module!: TestingModule;
+  private config: ControllerTestConfig<TController, TService, TModuleName>;
+
+  constructor(config: ControllerTestConfig<TController, TService, TModuleName>) {
+    this.config = config;
+  }
 
   /**
-   * Abstract method to setup the controller and its dependencies
-   * Must be implemented by concrete test classes
+   * Public accessor for the controller being tested
    */
-  abstract setupController(): Promise<void>;
+  get controller(): TController {
+    return this._controller;
+  }
 
   /**
-   * Abstract method to setup mocks for the controller's dependencies
-   * Must be implemented by concrete test classes
+   * Public accessor for the NestJS application
    */
-  abstract setupMocks(): any;
+  get app(): INestApplication {
+    return this._app;
+  }
+
+  /**
+   * Public accessor for the testing module
+   */
+  get module(): TestingModule {
+    return this._module;
+  }
 
   /**
    * Setup method called before each test
-   * Creates the testing module and initializes the controller
    */
   async setup(): Promise<void> {
-    const mocks = this.setupMocks();
-
-    this.module = await Test.createTestingModule({
-      controllers: [this.getControllerClass()],
-      providers: [...this.getTestProviders(), ...mocks],
+    this._module = await Test.createTestingModule({
+      controllers: [this.config.controllerClass],
+      providers: this.config.providers,
     }).compile();
 
-    await this.setupController();
+    this._controller = this._module.get<TController>(this.config.controllerClass);
 
-    this.app = this.module.createNestApplication();
-    this.app.setGlobalPrefix('api');
+    this._app = this._module.createNestApplication();
+    this._app.setGlobalPrefix('api');
 
     // Add authentication middleware to extract user from JWT
-    this.app.use((req: any, _res: any, next: any) => {
+    this._app.use((req: any, _res: any, next: any) => {
       const authHeader = req.headers.authorization;
       if (authHeader?.startsWith('Bearer ')) {
         const token = authHeader.substring(7);
@@ -77,97 +125,25 @@ export abstract class BaseControllerTest<
       next();
     });
 
-    await this.app.init();
-  }
-
-  getApp() {
-    return this.app;
+    await this._app.init();
   }
 
   /**
    * Cleanup method called after each test
    */
   async cleanup(): Promise<void> {
-    if (this.app) {
-      await this.app.close();
+    if (this._app) {
+      await this._app.close();
     }
-    if (this.module) {
-      await this.module.close();
+    if (this._module) {
+      await this._module.close();
     }
   }
 
   /**
-   * Abstract method to get the controller class
-   * Must be implemented by concrete test classes
+   * Makes a generic HTTP request
    */
-  abstract getControllerClass(): any;
-
-  /**
-   * Abstract method to get additional providers
-   * Can be overridden by concrete test classes
-   */
-  getTestProviders(): Provider[] {
-    return [];
-  }
-
-  /**
-   * Creates a mock HTTP request object
-   */
-  protected createMockRequest(data?: any, user?: JwtPayload): MockRequest {
-    return {
-      body: data ?? {},
-      user: user ?? { sub: 'test-user-id', email: 'test@example.com', role: Role.USER },
-      headers: {},
-      query: {},
-      params: {},
-    };
-  }
-
-  /**
-   * Creates a mock HTTP response object
-   */
-  protected createMockResponse(): any {
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-      send: jest.fn().mockReturnThis(),
-      cookie: jest.fn().mockReturnThis(),
-      header: jest.fn().mockReturnThis(),
-    };
-    return res;
-  }
-
-  /**
-   * Creates a test JWT token for authentication
-   */
-  protected async createTestJwtToken(
-    payload: Partial<JwtPayload> = {
-      sub: 'test-user-id',
-      email: 'test@example.com',
-      role: Role.USER,
-    }
-  ): Promise<string> {
-    const jwtService = new JwtService({
-      secret: process.env.JWT_SECRET ?? 'test-secret',
-      signOptions: { expiresIn: '1h' },
-    });
-    return jwtService.signAsync(payload);
-  }
-
-  /**
-   * Creates Authorization headers for HTTP requests
-   */
-  protected async createAuthHeaders(token?: string): Promise<AuthHeaders> {
-    const authToken = token ?? (await this.createTestJwtToken());
-    return {
-      Authorization: `Bearer ${authToken}`,
-    };
-  }
-
-  /**
-   * Makes an request
-   */
-  protected async request<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
+  private async request<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     endpoint: P,
     method: M,
     payload?: RequestType<P, M, E>,
@@ -177,7 +153,7 @@ export abstract class BaseControllerTest<
     const builtPath = this.buildPathWithParams(endpoint, params as Record<string, any>);
 
     const normalizedMethod = method.toLowerCase() as Lowercase<M>;
-    let req = request(this.app.getHttpServer())[normalizedMethod](builtPath);
+    let req = request(this._app.getHttpServer())[normalizedMethod](builtPath);
 
     // Add headers
     if (options?.headers) {
@@ -198,10 +174,12 @@ export abstract class BaseControllerTest<
 
     return req;
   }
+
   /**
    * Makes an unauthenticated GET request
+   * Path is automatically constrained to routes for this module
    */
-  protected async get<P extends PathsWithMethod<E, 'GET'>>(
+  async get<P extends PathsForRoute<TModuleName, 'GET', E>>(
     endpoint: P,
     payload?: RequestType<P, 'GET', E>,
     options?: RequestOptions
@@ -211,8 +189,9 @@ export abstract class BaseControllerTest<
 
   /**
    * Makes an unauthenticated POST request
+   * Path is automatically constrained to routes for this module
    */
-  protected async post<P extends PathsWithMethod<E, 'POST'>>(
+  async post<P extends PathsForRoute<TModuleName, 'POST', E>>(
     endpoint: P,
     payload?: RequestType<P, 'POST', E>,
     options?: RequestOptions
@@ -222,8 +201,9 @@ export abstract class BaseControllerTest<
 
   /**
    * Makes an unauthenticated PUT request
+   * Path is automatically constrained to routes for this module
    */
-  protected async put<P extends PathsWithMethod<E, 'PUT'>>(
+  async put<P extends PathsForRoute<TModuleName, 'PUT', E>>(
     endpoint: P,
     payload?: RequestType<P, 'PUT', E>,
     options?: RequestOptions
@@ -233,8 +213,9 @@ export abstract class BaseControllerTest<
 
   /**
    * Makes an unauthenticated PATCH request
+   * Path is automatically constrained to routes for this module
    */
-  protected async patch<P extends PathsWithMethod<E, 'PATCH'>>(
+  async patch<P extends PathsForRoute<TModuleName, 'PATCH', E>>(
     endpoint: P,
     payload?: RequestType<P, 'PATCH', E>,
     options?: RequestOptions
@@ -244,18 +225,20 @@ export abstract class BaseControllerTest<
 
   /**
    * Makes an unauthenticated DELETE request
+   * Path is automatically constrained to routes for this module
    */
-  protected async delete<P extends PathsWithMethod<E, 'DELETE'>>(
+  async delete<P extends PathsForRoute<TModuleName, 'DELETE', E>>(
     endpoint: P,
     payload?: RequestType<P, 'DELETE', E>,
     options?: RequestOptions
   ): Promise<request.Test> {
     return this.request(endpoint, 'DELETE', payload, options);
   }
+
   /**
    * Makes an authenticated request
    */
-  protected async authenticatedRequest<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
+  private async authenticatedRequest<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     endpoint: P,
     method: M,
     token: string,
@@ -271,8 +254,9 @@ export abstract class BaseControllerTest<
 
   /**
    * Makes an authenticated GET request
+   * Path is automatically constrained to routes for this module
    */
-  protected async authenticatedGet<P extends PathsWithMethod<E, 'GET'>>(
+  async authenticatedGet<P extends PathsForRoute<TModuleName, 'GET', E>>(
     endpoint: P,
     token: string,
     payload?: RequestType<P, 'GET', E>,
@@ -283,8 +267,9 @@ export abstract class BaseControllerTest<
 
   /**
    * Makes an authenticated POST request
+   * Path is automatically constrained to routes for this module
    */
-  protected async authenticatedPost<P extends PathsWithMethod<E, 'POST'>>(
+  async authenticatedPost<P extends PathsForRoute<TModuleName, 'POST', E>>(
     endpoint: P,
     token: string,
     payload?: RequestType<P, 'POST', E>,
@@ -295,8 +280,9 @@ export abstract class BaseControllerTest<
 
   /**
    * Makes an authenticated PUT request
+   * Path is automatically constrained to routes for this module
    */
-  protected async authenticatedPut<P extends PathsWithMethod<E, 'PUT'>>(
+  async authenticatedPut<P extends PathsForRoute<TModuleName, 'PUT', E>>(
     endpoint: P,
     token: string,
     payload?: RequestType<P, 'PUT', E>,
@@ -307,8 +293,9 @@ export abstract class BaseControllerTest<
 
   /**
    * Makes an authenticated PATCH request
+   * Path is automatically constrained to routes for this module
    */
-  protected async authenticatedPatch<P extends PathsWithMethod<E, 'PATCH'>>(
+  async authenticatedPatch<P extends PathsForRoute<TModuleName, 'PATCH', E>>(
     endpoint: P,
     token: string,
     payload?: RequestType<P, 'PATCH', E>,
@@ -319,8 +306,9 @@ export abstract class BaseControllerTest<
 
   /**
    * Makes an authenticated DELETE request
+   * Path is automatically constrained to routes for this module
    */
-  protected authenticatedDelete<P extends PathsWithMethod<E, 'DELETE'>>(
+  async authenticatedDelete<P extends PathsForRoute<TModuleName, 'DELETE', E>>(
     endpoint: P,
     token: string,
     payload?: RequestType<P, 'DELETE', E>,
@@ -330,138 +318,26 @@ export abstract class BaseControllerTest<
   }
 
   /**
-   * Asserts that a response has the expected structure
+   * Creates a test JWT token for authentication
    */
-  protected assertResponseStructure(response: any, expectedKeys: string[]): void {
-    expect(response.body).toBeDefined();
-    expectedKeys.forEach(key => {
-      expect(response.body).toHaveProperty(key);
+  async createTestJwtToken(
+    payload: Partial<JwtPayload> = {
+      sub: 'test-user-id',
+      email: 'test@example.com',
+      role: Role.USER,
+    }
+  ): Promise<string> {
+    const jwtService = new JwtService({
+      secret: process.env.JWT_SECRET ?? 'test-secret',
+      signOptions: { expiresIn: '1h' },
     });
-  }
-
-  /**
-   * Asserts that a response is a successful API response
-   */
-  protected assertSuccessResponse(response: any, expectedStatus = 200): void {
-    expect(response.status).toBe(expectedStatus);
-    expect(response.body).toBeDefined();
-  }
-
-  /**
-   * Asserts that a response is an error response
-   */
-  protected assertErrorResponse(
-    response: any,
-    expectedStatus: number,
-    expectedMessage?: string
-  ): void {
-    expect(response.status).toBe(expectedStatus);
-    expect(response.body).toBeDefined();
-
-    // For error responses, check the message
-    if (expectedMessage && !response.ok) {
-      expect(response.body.message).toContain(expectedMessage);
-    }
-  }
-
-  /**
-   * Asserts that a response that has a certain set of keys
-   */
-  protected assertResponseHasKeys(response: any, expectedKeys: string[]): void {
-    expect(response.body).toBeDefined();
-    expectedKeys.forEach(key => {
-      expect(response.body).toHaveProperty(key);
-    });
-  }
-
-  /**
-   * Asserts that a response body matches expected data
-   */
-  protected assertResponseBody(response: any, expectedData: any): void {
-    expect(response.body).toBeDefined();
-    expect(response.body).toMatchObject(expectedData);
-  }
-
-  /**
-   * Asserts that a response is a validation error
-   */
-  protected assertValidationError(response: any, expectedFields?: string[]): void {
-    expect(response.status).toBe(400);
-    expect(response.body).toBeDefined();
-    expect(response.body.message).toBeDefined();
-
-    if (expectedFields) {
-      const messages = Array.isArray(response.body.message)
-        ? response.body.message
-        : [response.body.message];
-      expectedFields.forEach(field => {
-        expect(messages.some((msg: string) => msg.includes(field))).toBe(true);
-      });
-    }
-  }
-
-  /**
-   * Asserts that a response is unauthorized (401)
-   */
-  protected assertUnauthorized(response: any): void {
-    expect(response.status).toBe(401);
-    expect(response.body).toBeDefined();
-  }
-
-  /**
-   * Asserts that a response is forbidden (403)
-   */
-  protected assertForbidden(response: any): void {
-    expect(response.status).toBe(403);
-    expect(response.body).toBeDefined();
-  }
-
-  /**
-   * Asserts that a response is not found (404)
-   */
-  protected assertNotFound(response: any): void {
-    expect(response.status).toBe(404);
-    expect(response.body).toBeDefined();
-  }
-
-  /**
-   * Asserts that a response array has expected length
-   */
-  protected assertArrayLength(response: any, expectedLength: number): void {
-    expect(response.body).toBeDefined();
-    expect(Array.isArray(response.body)).toBe(true);
-    expect(response.body).toHaveLength(expectedLength);
-  }
-
-  /**
-   * Asserts that a response array contains an item matching criteria
-   */
-  protected assertArrayContains(response: any, matcher: any): void {
-    expect(response.body).toBeDefined();
-    expect(Array.isArray(response.body)).toBe(true);
-    expect(
-      response.body.some((item: any) =>
-        Object.keys(matcher).every(key => item[key] === matcher[key])
-      )
-    ).toBe(true);
-  }
-
-  /**
-   * Extracts a specific field from response body
-   */
-  protected extractField<T = any>(response: any, fieldPath: string): T {
-    const fields = fieldPath.split('.');
-    let value = response.body;
-    for (const field of fields) {
-      value = value?.[field];
-    }
-    return value as T;
+    return jwtService.signAsync(payload);
   }
 
   /**
    * Creates a token for a specific role
    */
-  protected async createRoleToken(role: Role, overrides?: Partial<JwtPayload>): Promise<string> {
+  async createRoleToken(role: Role, overrides?: Partial<JwtPayload>): Promise<string> {
     return this.createTestJwtToken({
       sub: `test-${role.toLowerCase()}-id`,
       email: `test-${role.toLowerCase()}@example.com`,
@@ -471,28 +347,101 @@ export abstract class BaseControllerTest<
   }
 
   /**
-   * Creates an expired JWT token for testing authentication failures
+   * Creates Authorization headers for HTTP requests
    */
-  protected async createExpiredToken(payload?: Partial<JwtPayload>): Promise<string> {
-    const jwtService = new JwtService({
-      secret: process.env.JWT_SECRET ?? 'test-secret',
-      signOptions: { expiresIn: '-1h' }, // Expired 1 hour ago
-    });
-    return jwtService.signAsync({
-      sub: 'test-user-id',
-      email: 'test@example.com',
-      role: Role.USER,
-      ...payload,
-    });
+  private async createAuthHeaders(token?: string): Promise<AuthHeaders> {
+    const authToken = token ?? (await this.createTestJwtToken());
+    return {
+      Authorization: `Bearer ${authToken}`,
+    };
+  }
+
+  /**
+   * Creates a mock HTTP request object
+   */
+  createMockRequest(data?: any, user?: JwtPayload): MockRequest {
+    return {
+      body: data ?? {},
+      user: user ?? { sub: 'test-user-id', email: 'test@example.com', role: Role.USER },
+      headers: {},
+      query: {},
+      params: {},
+    };
+  }
+
+  /**
+   * Creates a mock HTTP response object
+   */
+  createMockResponse(): any {
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
+      cookie: jest.fn().mockReturnThis(),
+      header: jest.fn().mockReturnThis(),
+    };
+    return res;
   }
 
   /**
    * Build path with parameters (replace {id} with actual values)
-   * @private
    */
   private buildPathWithParams(path: string, data?: Record<string, any>): string {
     if (!data || typeof data !== 'object') return path;
-
     return buildPath(path, data);
+  }
+
+  /**
+   * Asserts that a response has the expected structure
+   */
+  assertResponseStructure(response: any, expectedKeys: string[]): void {
+    expect(response.body).toBeDefined();
+    expectedKeys.forEach(key => {
+      expect(response.body).toHaveProperty(key);
+    });
+  }
+
+  /**
+   * Asserts that a response is a successful API response
+   */
+  assertSuccessResponse(response: any, expectedStatus = 200): void {
+    expect(response.status).toBe(expectedStatus);
+    expect(response.body).toBeDefined();
+  }
+
+  /**
+   * Asserts that a response is an error response
+   */
+  assertErrorResponse(response: any, expectedStatus: number, expectedMessage?: string): void {
+    expect(response.status).toBe(expectedStatus);
+    expect(response.body).toBeDefined();
+
+    if (expectedMessage && !response.ok) {
+      expect(response.body.message).toContain(expectedMessage);
+    }
+  }
+
+  /**
+   * Asserts that a response is not found (404)
+   */
+  assertNotFound(response: any): void {
+    expect(response.status).toBe(404);
+    expect(response.body).toBeDefined();
+  }
+
+  /**
+   * Asserts that a response is unauthorized (401)
+   */
+  assertUnauthorized(response: any): void {
+    expect(response.status).toBe(401);
+    expect(response.body).toBeDefined();
+  }
+
+  /**
+   * Asserts that a response is forbidden (403)
+   */
+  assertForbidden(response: any): void {
+    expect(response.status).toBe(403);
+    expect(response.body).toBeDefined();
   }
 }

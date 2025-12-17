@@ -11,53 +11,41 @@ import { SessionsService } from './sessions.service';
 // Constants
 const ONE_DAY_MS = 24 * 60 * 60 * 1000; // 86400000 milliseconds in a day
 
-class SessionsServiceTest extends BaseServiceTest<SessionsService, PrismaService> {
-  async setupService(): Promise<void> {
-    this.service = this.module.get<SessionsService>(SessionsService);
-    this.prisma = this.module.get<PrismaService>(PrismaService);
-  }
-
-  setupMocks() {
-    const mockPrismaService = this.createMockPrismaService();
-    return [
-      {
-        provide: PrismaService,
-        useValue: mockPrismaService,
-      },
-    ];
-  }
-
-  getServiceClass(): new (...args: unknown[]) => SessionsService {
-    return SessionsService as new (...args: unknown[]) => SessionsService;
-  }
-
-  override getProviders(): unknown[] {
-    return [];
-  }
-
-  // Public accessors
-  getService(): SessionsService {
-    return this.service;
-  }
-
-  getPrisma(): any {
-    return this.prisma;
-  }
-
-  mockReturn<T>(mockMethod: jest.Mock | jest.MockInstance<any, any[]>, returnValue: T): void {
-    return this.mockMethodToReturn(mockMethod, returnValue);
-  }
-
-  mockThrow(mockMethod: jest.Mock | jest.MockInstance<any, any[]>, error: Error | string): void {
-    return this.mockMethodToThrow(mockMethod, error);
-  }
-}
-
 describe('SessionsService', () => {
-  let test: SessionsServiceTest;
+  let test: BaseServiceTest<SessionsService, PrismaService>;
 
   beforeEach(async () => {
-    test = new SessionsServiceTest();
+    const mockPrisma = {
+      $connect: jest.fn(),
+      $disconnect: jest.fn(),
+      $transaction: jest.fn(),
+      $executeRaw: jest.fn(),
+      $queryRaw: jest.fn(),
+      session: {
+        create: jest.fn(),
+        findMany: jest.fn(),
+        findUnique: jest.fn(),
+        findFirst: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
+      bookingType: {
+        findUnique: jest.fn(),
+      },
+      timeSlot: {
+        findUnique: jest.fn(),
+      },
+      discount: {
+        findFirst: jest.fn(),
+        update: jest.fn(),
+      },
+    };
+
+    test = new BaseServiceTest({
+      serviceClass: SessionsService,
+      mocks: [{ provide: PrismaService, useValue: mockPrisma }],
+    });
+
     await test.setup();
   });
 
@@ -105,10 +93,9 @@ describe('SessionsService', () => {
         },
       ];
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.session.findMany.mockResolvedValue(mockSessions);
+      test.prisma.session.findMany.mockResolvedValue(mockSessions);
 
-      const result = await test.getService().findByUser(userId, Role.USER);
+      const result = await test.service.findByUser(userId, Role.USER);
 
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
@@ -116,7 +103,7 @@ describe('SessionsService', () => {
         userId,
         status: 'scheduled',
       });
-      expect(mockPrisma.session.findMany).toHaveBeenCalledWith({
+      expect(test.prisma.session.findMany).toHaveBeenCalledWith({
         where: {
           userId,
           status: undefined,
@@ -169,13 +156,12 @@ describe('SessionsService', () => {
         },
       ];
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.session.findMany.mockResolvedValue(mockSessions);
+      test.prisma.session.findMany.mockResolvedValue(mockSessions);
 
-      const result = await test.getService().findByUser(coachId, Role.COACH);
+      const result = await test.service.findByUser(coachId, Role.COACH);
 
       expect(result).toHaveLength(1);
-      expect(mockPrisma.session.findMany).toHaveBeenCalledWith({
+      expect(test.prisma.session.findMany).toHaveBeenCalledWith({
         where: {
           coachId,
           status: undefined,
@@ -197,12 +183,11 @@ describe('SessionsService', () => {
         endDate: '2024-11-30',
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.session.findMany.mockResolvedValue([]);
+      test.prisma.session.findMany.mockResolvedValue([]);
 
-      await test.getService().findByUser(userId, Role.USER, query);
+      await test.service.findByUser(userId, Role.USER, query);
 
-      expect(mockPrisma.session.findMany).toHaveBeenCalledWith({
+      expect(test.prisma.session.findMany).toHaveBeenCalledWith({
         where: {
           userId,
           status: 'completed',
@@ -256,28 +241,26 @@ describe('SessionsService', () => {
         discount: null,
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.session.findUnique.mockResolvedValue(mockSession);
+      test.prisma.session.findUnique.mockResolvedValue(mockSession);
 
-      const result = await test.getService().findOne(sessionId, userId, Role.USER);
+      const result = await test.service.findOne(sessionId, userId, Role.USER);
 
       expect(result).toMatchObject({
         id: sessionId,
         userId,
       });
-      expect(mockPrisma.session.findUnique).toHaveBeenCalledWith({
+      expect(test.prisma.session.findUnique).toHaveBeenCalledWith({
         where: { id: sessionId },
         include: expect.any(Object),
       });
     });
 
     it('should throw NotFoundException when session not found', async () => {
-      const mockPrisma = test.getPrisma();
-      mockPrisma.session.findUnique.mockResolvedValue(null);
+      test.prisma.session.findUnique.mockResolvedValue(null);
 
-      await expect(
-        test.getService().findOne('non-existent', 'user-123', Role.USER)
-      ).rejects.toThrow(NotFoundException);
+      await expect(test.service.findOne('non-existent', 'user-123', Role.USER)).rejects.toThrow(
+        NotFoundException
+      );
     });
 
     it('should throw ForbiddenException when user not authorized', async () => {
@@ -316,10 +299,9 @@ describe('SessionsService', () => {
         discount: null,
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.session.findUnique.mockResolvedValue(mockSession);
+      test.prisma.session.findUnique.mockResolvedValue(mockSession);
 
-      await expect(test.getService().findOne('session-123', 'user-123', Role.USER)).rejects.toThrow(
+      await expect(test.service.findOne('session-123', 'user-123', Role.USER)).rejects.toThrow(
         ForbiddenException
       );
     });
@@ -381,25 +363,24 @@ describe('SessionsService', () => {
         discount: null,
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.bookingType.findUnique.mockResolvedValue(mockBookingType);
-      mockPrisma.timeSlot.findUnique.mockResolvedValue(mockTimeSlot);
-      mockPrisma.session.create.mockResolvedValue(mockCreatedSession);
+      test.prisma.bookingType.findUnique.mockResolvedValue(mockBookingType);
+      test.prisma.timeSlot.findUnique.mockResolvedValue(mockTimeSlot);
+      test.prisma.session.create.mockResolvedValue(mockCreatedSession);
 
-      const result = await test.getService().create(createDto, userId);
+      const result = await test.service.create(createDto, userId);
 
       expect(result).toMatchObject({
         id: 'session-123',
         userId,
         price: new Decimal(100),
       });
-      expect(mockPrisma.bookingType.findUnique).toHaveBeenCalledWith({
+      expect(test.prisma.bookingType.findUnique).toHaveBeenCalledWith({
         where: { id: createDto.bookingTypeId },
       });
-      expect(mockPrisma.timeSlot.findUnique).toHaveBeenCalledWith({
+      expect(test.prisma.timeSlot.findUnique).toHaveBeenCalledWith({
         where: { id: createDto.timeSlotId },
       });
-      expect(mockPrisma.session.create).toHaveBeenCalledTimes(1);
+      expect(test.prisma.session.create).toHaveBeenCalledTimes(1);
     });
 
     it('should create a session with discount', async () => {
@@ -468,17 +449,16 @@ describe('SessionsService', () => {
         discount: mockDiscount,
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.bookingType.findUnique.mockResolvedValue(mockBookingType);
-      mockPrisma.timeSlot.findUnique.mockResolvedValue(mockTimeSlot);
-      mockPrisma.discount.findFirst.mockResolvedValue(mockDiscount);
-      mockPrisma.session.create.mockResolvedValue(mockCreatedSession);
-      mockPrisma.discount.update.mockResolvedValue(mockDiscount);
+      test.prisma.bookingType.findUnique.mockResolvedValue(mockBookingType);
+      test.prisma.timeSlot.findUnique.mockResolvedValue(mockTimeSlot);
+      test.prisma.discount.findFirst.mockResolvedValue(mockDiscount);
+      test.prisma.session.create.mockResolvedValue(mockCreatedSession);
+      test.prisma.discount.update.mockResolvedValue(mockDiscount);
 
-      const result = await test.getService().create(createDto, userId);
+      const result = await test.service.create(createDto, userId);
 
       expect(result.price).toEqual(new Decimal(80));
-      expect(mockPrisma.discount.update).toHaveBeenCalledWith({
+      expect(test.prisma.discount.update).toHaveBeenCalledWith({
         where: { code: 'SAVE20' },
         data: { useCount: { increment: 1 } },
       });
@@ -496,13 +476,10 @@ describe('SessionsService', () => {
         basePrice: new Decimal(100),
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.bookingType.findUnique.mockResolvedValue(mockBookingType);
+      test.prisma.bookingType.findUnique.mockResolvedValue(mockBookingType);
 
-      await expect(test.getService().create(createDto, 'user-123')).rejects.toThrow(
-        BadRequestException
-      );
-      expect(mockPrisma.session.create).not.toHaveBeenCalled();
+      await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(BadRequestException);
+      expect(test.prisma.session.create).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when time slot is not available', async () => {
@@ -522,14 +499,11 @@ describe('SessionsService', () => {
         isAvailable: false,
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.bookingType.findUnique.mockResolvedValue(mockBookingType);
-      mockPrisma.timeSlot.findUnique.mockResolvedValue(mockTimeSlot);
+      test.prisma.bookingType.findUnique.mockResolvedValue(mockBookingType);
+      test.prisma.timeSlot.findUnique.mockResolvedValue(mockTimeSlot);
 
-      await expect(test.getService().create(createDto, 'user-123')).rejects.toThrow(
-        BadRequestException
-      );
-      expect(mockPrisma.session.create).not.toHaveBeenCalled();
+      await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(BadRequestException);
+      expect(test.prisma.session.create).not.toHaveBeenCalled();
     });
   });
 
@@ -581,14 +555,13 @@ describe('SessionsService', () => {
         notes: 'Updated notes',
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.session.findUnique.mockResolvedValue(mockSession);
-      mockPrisma.session.update.mockResolvedValue(mockUpdatedSession);
+      test.prisma.session.findUnique.mockResolvedValue(mockSession);
+      test.prisma.session.update.mockResolvedValue(mockUpdatedSession);
 
-      const result = await test.getService().update(sessionId, updateDto, userId, Role.USER);
+      const result = await test.service.update(sessionId, updateDto, userId, Role.USER);
 
       expect(result.notes).toBe('Updated notes');
-      expect(mockPrisma.session.update).toHaveBeenCalledWith({
+      expect(test.prisma.session.update).toHaveBeenCalledWith({
         where: { id: sessionId },
         data: updateDto,
         include: expect.any(Object),
@@ -636,17 +609,16 @@ describe('SessionsService', () => {
         discount: null,
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.session.findUnique.mockResolvedValue({
+      test.prisma.session.findUnique.mockResolvedValue({
         ...mockCancelledSession,
         status: 'scheduled',
       });
-      mockPrisma.session.update.mockResolvedValue(mockCancelledSession);
+      test.prisma.session.update.mockResolvedValue(mockCancelledSession);
 
-      const result = await test.getService().cancel(sessionId, userId, Role.USER);
+      const result = await test.service.cancel(sessionId, userId, Role.USER);
 
       expect(result.status).toBe('cancelled');
-      expect(mockPrisma.session.update).toHaveBeenCalledWith({
+      expect(test.prisma.session.update).toHaveBeenCalledWith({
         where: { id: sessionId },
         data: { status: 'cancelled' },
         include: expect.any(Object),
@@ -664,8 +636,7 @@ describe('SessionsService', () => {
         status: 'cancelled',
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.session.findUnique.mockResolvedValue({
+      test.prisma.session.findUnique.mockResolvedValue({
         ...mockSession,
         coachId: 'coach-1',
         bookingTypeId: 'booking-1',
@@ -697,10 +668,10 @@ describe('SessionsService', () => {
         discount: null,
       });
 
-      await expect(test.getService().cancel(sessionId, userId, Role.USER)).rejects.toThrow(
+      await expect(test.service.cancel(sessionId, userId, Role.USER)).rejects.toThrow(
         BadRequestException
       );
-      expect(mockPrisma.session.update).not.toHaveBeenCalled();
+      expect(test.prisma.session.update).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when cancelling past session', async () => {
@@ -714,8 +685,7 @@ describe('SessionsService', () => {
         status: 'scheduled',
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.session.findUnique.mockResolvedValue({
+      test.prisma.session.findUnique.mockResolvedValue({
         ...mockSession,
         coachId: 'coach-1',
         bookingTypeId: 'booking-1',
@@ -748,10 +718,10 @@ describe('SessionsService', () => {
         discount: null,
       });
 
-      await expect(test.getService().cancel(sessionId, userId, Role.USER)).rejects.toThrow(
+      await expect(test.service.cancel(sessionId, userId, Role.USER)).rejects.toThrow(
         BadRequestException
       );
-      expect(mockPrisma.session.update).not.toHaveBeenCalled();
+      expect(test.prisma.session.update).not.toHaveBeenCalled();
     });
   });
 
@@ -778,27 +748,23 @@ describe('SessionsService', () => {
         updatedAt: new Date(),
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.session.findFirst.mockResolvedValue(mockSession);
+      test.prisma.session.findFirst.mockResolvedValue(mockSession);
 
-      const result = await test.getService().findFirst(calendarEventId);
+      const result = await test.service.findFirst(calendarEventId);
 
       expect(result).toMatchObject({
         id: 'session-123',
         calendarEventId,
       });
-      expect(mockPrisma.session.findFirst).toHaveBeenCalledWith({
+      expect(test.prisma.session.findFirst).toHaveBeenCalledWith({
         where: { calendarEventId },
       });
     });
 
     it('should throw BadRequestException when session not found', async () => {
-      const mockPrisma = test.getPrisma();
-      mockPrisma.session.findFirst.mockResolvedValue(null);
+      test.prisma.session.findFirst.mockResolvedValue(null);
 
-      await expect(test.getService().findFirst('non-existent')).rejects.toThrow(
-        BadRequestException
-      );
+      await expect(test.service.findFirst('non-existent')).rejects.toThrow(BadRequestException);
     });
   });
 });
