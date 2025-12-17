@@ -1,7 +1,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/apps/api"
+    "outDir": "../../dist/apps/api",
+    "isolatedModules": true
   },
   "include": ["src/**/*.ts", "prisma/**/*.ts"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__tests__/**", "test/**"]
