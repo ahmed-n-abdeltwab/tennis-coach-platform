@@ -45,11 +45,13 @@ export class NestIntegrationTestContext {
 global.NestIntegrationTestContext = NestIntegrationTestContext;
 
 // Suppress console output in integration tests
-global.console = {
-  ...console,
-  log: jest.fn(),
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: console.warn,
-  error: console.error,
-};
+if (typeof jest !== 'undefined') {
+  global.console = {
+    ...console,
+    log: jest.fn(),
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: console.warn,
+    error: console.error,
+  };
+}
