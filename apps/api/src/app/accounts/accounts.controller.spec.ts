@@ -1,22 +1,16 @@
-import { Provider } from '@nestjs/common';
 import { Role } from '@prisma/client';
-import { BaseControllerTest, PathsForRoute, RequestType } from '@test-utils';
-
-import { JwtPayload } from '../../common';
+import { BaseControllerTest } from '@test-utils';
 
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
 import { AccountResponseDto } from './dto/account.dto';
 
-class AccountsControllerTest extends BaseControllerTest<AccountsController, AccountsService> {
-  private mockAccountsService: jest.Mocked<AccountsService>;
+describe('AccountsController', () => {
+  let test: BaseControllerTest<AccountsController, AccountsService, 'accounts'>;
+  let mockService: jest.Mocked<AccountsService>;
 
-  async setupController(): Promise<void> {
-    this.controller = this.module.get<AccountsController>(AccountsController);
-  }
-
-  setupMocks() {
-    this.mockAccountsService = {
+  beforeEach(async () => {
+    mockService = {
       create: jest.fn(),
       findById: jest.fn(),
       findByEmail: jest.fn(),
@@ -27,84 +21,14 @@ class AccountsControllerTest extends BaseControllerTest<AccountsController, Acco
       delete: jest.fn(),
       updateOnlineStatus: jest.fn(),
       findCoachById: jest.fn(),
-    } as unknown as jest.Mocked<AccountsService>;
+    } as any;
 
-    return [];
-  }
+    test = new BaseControllerTest({
+      controllerClass: AccountsController,
+      moduleName: 'accounts',
+      providers: [{ provide: AccountsService, useValue: mockService }],
+    });
 
-  getControllerClass() {
-    return AccountsController;
-  }
-
-  override getTestProviders(): Provider[] {
-    return [
-      {
-        provide: AccountsService,
-        useValue: this.mockAccountsService,
-      },
-    ];
-  }
-
-  getMockService(): jest.Mocked<AccountsService> {
-    return this.mockAccountsService;
-  }
-
-  // AccountsController uses GET, PATCH, DELETE - so create helpers for those
-  async testGet<P extends PathsForRoute<'accounts', 'GET'>>(
-    path: P,
-    payload?: RequestType<P, 'GET'>
-  ) {
-    return this.get(path, payload);
-  }
-
-  async testPatch<P extends PathsForRoute<'accounts', 'PATCH'>>(
-    path: P,
-    payload?: RequestType<P, 'PATCH'>
-  ) {
-    return this.patch(path, payload);
-  }
-
-  async testDelete<P extends PathsForRoute<'accounts', 'DELETE'>>(
-    path: P,
-    payload?: RequestType<P, 'DELETE'>
-  ) {
-    return this.delete(path, payload);
-  }
-
-  async testAuthenticatedGet<P extends PathsForRoute<'accounts', 'GET'>>(
-    path: P,
-    token: string,
-    payload?: RequestType<P, 'GET'>
-  ) {
-    return this.authenticatedGet(path, token, payload);
-  }
-
-  async testAuthenticatedPatch<P extends PathsForRoute<'accounts', 'PATCH'>>(
-    path: P,
-    token: string,
-    payload?: RequestType<P, 'PATCH'>
-  ) {
-    return this.authenticatedPatch(path, token, payload);
-  }
-
-  async testAuthenticatedDelete<P extends PathsForRoute<'accounts', 'DELETE'>>(
-    path: P,
-    token: string,
-    payload?: RequestType<P, 'DELETE'>
-  ) {
-    return this.authenticatedDelete(path, token, payload);
-  }
-
-  async createTestRoleToken(role: Role, overrides?: Partial<JwtPayload>) {
-    return this.createRoleToken(role, overrides);
-  }
-}
-
-describe('AccountsController', () => {
-  let test: AccountsControllerTest;
-
-  beforeEach(async () => {
-    test = new AccountsControllerTest();
     await test.setup();
   });
 
@@ -127,12 +51,12 @@ describe('AccountsController', () => {
         },
       ];
 
-      test.getMockService().findUsers.mockResolvedValue(mockAccounts);
+      mockService.findUsers.mockResolvedValue(mockAccounts);
 
-      const adminToken = await test.createTestRoleToken(Role.ADMIN);
-      await test.testAuthenticatedGet('/api/accounts', adminToken);
+      const adminToken = await test.createRoleToken(Role.ADMIN);
+      await test.authenticatedGet('/api/accounts', adminToken);
 
-      expect(test.getMockService().findUsers).toHaveBeenCalledTimes(1);
+      expect(mockService.findUsers).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -149,14 +73,14 @@ describe('AccountsController', () => {
         updatedAt: new Date().toISOString(),
       };
 
-      test.getMockService().findById.mockResolvedValue(mockAccount);
+      mockService.findById.mockResolvedValue(mockAccount);
 
-      const userToken = await test.createTestRoleToken(Role.USER, {
+      const userToken = await test.createRoleToken(Role.USER, {
         sub: 'current-user-id',
       });
-      await test.testAuthenticatedGet('/api/accounts/me', userToken);
+      await test.authenticatedGet('/api/accounts/me', userToken);
 
-      expect(test.getMockService().findById).toHaveBeenCalledWith('current-user-id');
+      expect(mockService.findById).toHaveBeenCalledWith('current-user-id');
     });
   });
 
@@ -173,15 +97,15 @@ describe('AccountsController', () => {
         updatedAt: new Date().toISOString(),
       };
 
-      test.getMockService().findById.mockResolvedValue(mockAccount);
+      mockService.findById.mockResolvedValue(mockAccount);
 
-      const adminToken = await test.createTestRoleToken(Role.ADMIN);
-      await test.testAuthenticatedGet(
+      const adminToken = await test.createRoleToken(Role.ADMIN);
+      await test.authenticatedGet(
         `/api/accounts/${mockAccount.id}` as '/api/accounts/{id}',
         adminToken
       );
 
-      expect(test.getMockService().findById).toHaveBeenCalledWith(mockAccount.id);
+      expect(mockService.findById).toHaveBeenCalledWith(mockAccount.id);
     });
 
     it('should call findById with own id for regular user', async () => {
@@ -196,17 +120,17 @@ describe('AccountsController', () => {
         updatedAt: new Date().toISOString(),
       };
 
-      test.getMockService().findById.mockResolvedValue(mockAccount);
+      mockService.findById.mockResolvedValue(mockAccount);
 
-      const userToken = await test.createTestRoleToken(Role.USER, {
+      const userToken = await test.createRoleToken(Role.USER, {
         sub: mockAccount.id,
       });
-      await test.testAuthenticatedGet(
+      await test.authenticatedGet(
         `/api/accounts/${mockAccount.id}` as '/api/accounts/{id}',
         userToken
       );
 
-      expect(test.getMockService().findById).toHaveBeenCalledWith(mockAccount.id);
+      expect(mockService.findById).toHaveBeenCalledWith(mockAccount.id);
     });
   });
 
@@ -227,10 +151,10 @@ describe('AccountsController', () => {
         updatedAt: new Date().toISOString(),
       };
 
-      test.getMockService().update.mockResolvedValue(mockUpdatedAccount);
+      mockService.update.mockResolvedValue(mockUpdatedAccount);
 
-      const adminToken = await test.createTestRoleToken(Role.ADMIN);
-      await test.testAuthenticatedPatch(
+      const adminToken = await test.createRoleToken(Role.ADMIN);
+      await test.authenticatedPatch(
         `/api/accounts/${mockUpdatedAccount.id}` as '/api/accounts/{id}',
         adminToken,
         {
@@ -238,7 +162,7 @@ describe('AccountsController', () => {
         }
       );
 
-      expect(test.getMockService().update).toHaveBeenCalledWith(mockUpdatedAccount.id, updateData);
+      expect(mockService.update).toHaveBeenCalledWith(mockUpdatedAccount.id, updateData);
     });
 
     it('should call update with own id for regular user', async () => {
@@ -257,12 +181,12 @@ describe('AccountsController', () => {
         updatedAt: new Date().toISOString(),
       };
 
-      test.getMockService().update.mockResolvedValue(mockUpdatedAccount);
+      mockService.update.mockResolvedValue(mockUpdatedAccount);
 
-      const userToken = await test.createTestRoleToken(Role.USER, {
+      const userToken = await test.createRoleToken(Role.USER, {
         sub: 'current-user-id',
       });
-      await test.testAuthenticatedPatch(
+      await test.authenticatedPatch(
         `/api/accounts/${mockUpdatedAccount.id}` as '/api/accounts/{id}',
         userToken,
         {
@@ -270,21 +194,21 @@ describe('AccountsController', () => {
         }
       );
 
-      expect(test.getMockService().update).toHaveBeenCalledWith(mockUpdatedAccount.id, updateData);
+      expect(mockService.update).toHaveBeenCalledWith(mockUpdatedAccount.id, updateData);
     });
   });
 
   describe('DELETE /accounts/:id', () => {
     it('should call delete with provided id', async () => {
-      test.getMockService().delete.mockResolvedValue(undefined);
+      mockService.delete.mockResolvedValue(undefined);
 
-      const adminToken = await test.createTestRoleToken(Role.ADMIN);
-      await test.testAuthenticatedDelete(
+      const adminToken = await test.createRoleToken(Role.ADMIN);
+      await test.authenticatedDelete(
         '/api/accounts/target-user-id' as '/api/accounts/{id}',
         adminToken
       );
 
-      expect(test.getMockService().delete).toHaveBeenCalledWith('target-user-id');
+      expect(mockService.delete).toHaveBeenCalledWith('target-user-id');
     });
   });
 });

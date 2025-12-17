@@ -1,58 +1,25 @@
-import { Provider } from '@nestjs/common';
-import { BaseControllerTest, PathsForRoute, RequestType } from '@test-utils';
+import { BaseControllerTest } from '@test-utils';
 
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
 
-class HealthControllerTest extends BaseControllerTest<HealthController, HealthService> {
-  private mockHealthService: jest.Mocked<HealthService>;
+describe('HealthController', () => {
+  let test: BaseControllerTest<HealthController, HealthService, 'health'>;
+  let mockService: jest.Mocked<HealthService>;
 
-  async setupController(): Promise<void> {
-    this.controller = this.module.get<HealthController>(HealthController);
-    this.service = this.module.get<HealthService>(HealthService);
-  }
-
-  setupMocks() {
-    this.mockHealthService = {
+  beforeEach(async () => {
+    mockService = {
       check: jest.fn(),
       liveness: jest.fn(),
       readiness: jest.fn(),
-    } as unknown as jest.Mocked<HealthService>;
+    } as any;
 
-    return [];
-  }
+    test = new BaseControllerTest({
+      controllerClass: HealthController,
+      moduleName: 'health',
+      providers: [{ provide: HealthService, useValue: mockService }],
+    });
 
-  getControllerClass() {
-    return HealthController;
-  }
-
-  override getTestProviders(): Provider[] {
-    return [
-      {
-        provide: HealthService,
-        useValue: this.mockHealthService,
-      },
-    ];
-  }
-
-  getMockService(): jest.Mocked<HealthService> {
-    return this.mockHealthService;
-  }
-
-  // HealthController only uses GET, so we only create testGet helper
-  async testGet<P extends PathsForRoute<'health', 'GET'>>(
-    path: P,
-    payload?: RequestType<P, 'GET'>
-  ) {
-    return this.get(path, payload);
-  }
-}
-
-describe('HealthController', () => {
-  let test: HealthControllerTest;
-
-  beforeEach(async () => {
-    test = new HealthControllerTest();
     await test.setup();
   });
 
@@ -72,9 +39,9 @@ describe('HealthController', () => {
         database: 'connected',
       };
 
-      test.getMockService().check.mockResolvedValue(mockHealthData);
+      mockService.check.mockResolvedValue(mockHealthData);
 
-      const response = await test.testGet('/api/health');
+      const response = await test.get('/api/health');
 
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
@@ -83,7 +50,7 @@ describe('HealthController', () => {
         version: '1.0.0',
         environment: 'test',
       });
-      expect(test.getMockService().check).toHaveBeenCalledTimes(1);
+      expect(mockService.check).toHaveBeenCalledTimes(1);
     });
 
     it('should return health check with disconnected database', async () => {
@@ -97,16 +64,16 @@ describe('HealthController', () => {
         database: 'disconnected',
       };
 
-      test.getMockService().check.mockResolvedValue(mockHealthData);
+      mockService.check.mockResolvedValue(mockHealthData);
 
-      const response = await test.testGet('/api/health');
+      const response = await test.get('/api/health');
 
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
         status: 'error',
         database: 'disconnected',
       });
-      expect(test.getMockService().check).toHaveBeenCalledTimes(1);
+      expect(mockService.check).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -117,16 +84,16 @@ describe('HealthController', () => {
         timestamp: new Date().toISOString(),
       };
 
-      test.getMockService().liveness.mockReturnValue(mockLivenessData);
+      mockService.liveness.mockReturnValue(mockLivenessData);
 
-      const response = await test.testGet('/api/health/liveness');
+      const response = await test.get('/api/health/liveness');
 
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
         status: 'alive',
       });
       expect(response.body.timestamp).toBeDefined();
-      expect(test.getMockService().liveness).toHaveBeenCalledTimes(1);
+      expect(mockService.liveness).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -137,16 +104,16 @@ describe('HealthController', () => {
         timestamp: new Date().toISOString(),
       };
 
-      test.getMockService().readiness.mockResolvedValue(mockReadinessData);
+      mockService.readiness.mockResolvedValue(mockReadinessData);
 
-      const response = await test.testGet('/api/health/readiness');
+      const response = await test.get('/api/health/readiness');
 
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
         status: 'ready',
       });
       expect(response.body.timestamp).toBeDefined();
-      expect(test.getMockService().readiness).toHaveBeenCalledTimes(1);
+      expect(mockService.readiness).toHaveBeenCalledTimes(1);
     });
 
     it('should return not ready status when database is not accessible', async () => {
@@ -155,16 +122,16 @@ describe('HealthController', () => {
         timestamp: new Date().toISOString(),
       };
 
-      test.getMockService().readiness.mockResolvedValue(mockReadinessData);
+      mockService.readiness.mockResolvedValue(mockReadinessData);
 
-      const response = await test.testGet('/api/health/readiness');
+      const response = await test.get('/api/health/readiness');
 
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
         status: 'not ready',
       });
       expect(response.body.timestamp).toBeDefined();
-      expect(test.getMockService().readiness).toHaveBeenCalledTimes(1);
+      expect(mockService.readiness).toHaveBeenCalledTimes(1);
     });
   });
 });

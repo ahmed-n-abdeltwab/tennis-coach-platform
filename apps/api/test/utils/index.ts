@@ -9,6 +9,63 @@ export * from './database'; // Includes database helpers
 export * from './factories';
 
 // ============================================================================
+// Base Test Classes - Configuration-based with Zero Boilerplate
+// ============================================================================
+
+/**
+ * Base test classes with zero boilerplate
+ *
+ * These classes eliminate the need for:
+ * - Extending classes and implementing abstract methods
+ * - Creating public accessor methods for protected properties
+ * - Creating wrapper methods for HTTP operations
+ * - Manual type annotations
+ *
+ * Instead, use a simple configuration object and get:
+ * - Direct access to service/controller/prisma
+ * - All HTTP methods with full type safety
+ * - Built-in helper methods
+ * - Automatic token creation
+ *
+ * @example Service Test
+ * ```typescript
+ * import { BaseServiceTest } from '@test-utils';
+ *
+ * const test = new BaseServiceTest({
+ *   serviceClass: BookingTypesService,
+ *   mocks: [
+ *     { provide: PrismaService, useValue: mockPrisma },
+ *   ],
+ * });
+ *
+ * await test.setup();
+ * test.prisma.bookingType.findMany.mockResolvedValue([]);
+ * const result = await test.service.findAll();
+ * ```
+ *
+ * @example Controller Test
+ * ```typescript
+ * import { BaseControllerTest } from '@test-utils';
+ *
+ * const test = new BaseControllerTest({
+ *   controllerClass: BookingTypesController,
+ *   moduleName: 'booking-types',
+ *   providers: [
+ *     { provide: BookingTypesService, useValue: mockService },
+ *   ],
+ * });
+ *
+ * await test.setup();
+ * const token = await test.createRoleToken(Role.COACH);
+ * await test.authenticatedPost('/api/booking-types', token, { body: data });
+ * ```
+ */
+export { BaseControllerTest } from './base/base-controller';
+export type { ControllerTestConfig } from './base/base-controller';
+export { BaseServiceTest } from './base/base-service';
+export type { ServiceTestConfig } from './base/base-service';
+
+// ============================================================================
 // Type-Safe Test Utilities (Recommended)
 // ============================================================================
 

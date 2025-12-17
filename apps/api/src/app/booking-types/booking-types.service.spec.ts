@@ -7,53 +7,30 @@ import { PrismaService } from '../prisma/prisma.service';
 import { BookingTypesService } from './booking-types.service';
 import { CreateBookingTypeDto, UpdateBookingTypeDto } from './dto/booking-type.dto';
 
-class BookingTypesServiceTest extends BaseServiceTest<BookingTypesService, PrismaService> {
-  async setupService(): Promise<void> {
-    this.service = this.module.get<BookingTypesService>(BookingTypesService);
-    this.prisma = this.module.get<PrismaService>(PrismaService);
-  }
-
-  setupMocks() {
-    const mockPrismaService = this.createMockPrismaService();
-    return [
-      {
-        provide: PrismaService,
-        useValue: mockPrismaService,
-      },
-    ];
-  }
-
-  getServiceClass(): new (...args: unknown[]) => BookingTypesService {
-    return BookingTypesService as new (...args: unknown[]) => BookingTypesService;
-  }
-
-  override getProviders(): unknown[] {
-    return [];
-  }
-
-  // Public accessors
-  getService(): BookingTypesService {
-    return this.service;
-  }
-
-  getPrisma(): any {
-    return this.prisma;
-  }
-
-  mockReturn<T>(mockMethod: jest.Mock | jest.MockInstance<any, any[]>, returnValue: T): void {
-    return this.mockMethodToReturn(mockMethod, returnValue);
-  }
-
-  mockThrow(mockMethod: jest.Mock | jest.MockInstance<any, any[]>, error: Error | string): void {
-    return this.mockMethodToThrow(mockMethod, error);
-  }
-}
-
 describe('BookingTypesService', () => {
-  let test: BookingTypesServiceTest;
+  let test: BaseServiceTest<BookingTypesService, PrismaService>;
 
   beforeEach(async () => {
-    test = new BookingTypesServiceTest();
+    // Create mock PrismaService
+    const mockPrisma = {
+      $connect: jest.fn(),
+      $disconnect: jest.fn(),
+      $transaction: jest.fn(),
+      bookingType: {
+        create: jest.fn(),
+        findMany: jest.fn(),
+        findUnique: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
+    };
+
+    // Create test instance with configuration - no class extension needed!
+    test = new BaseServiceTest({
+      serviceClass: BookingTypesService,
+      mocks: [{ provide: PrismaService, useValue: mockPrisma }],
+    });
+
     await test.setup();
   });
 
@@ -81,13 +58,14 @@ describe('BookingTypesService', () => {
         },
       ];
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.bookingType.findMany.mockResolvedValue(mockBookingTypes);
+      // Direct access to prisma - no getPrisma() needed!
+      test.prisma.bookingType.findMany.mockResolvedValue(mockBookingTypes);
 
-      const result = await test.getService().findAll();
+      // Direct access to service - no getService() needed!
+      const result = await test.service.findAll();
 
       expect(result).toHaveLength(1);
-      expect(mockPrisma.bookingType.findMany).toHaveBeenCalledWith({
+      expect(test.prisma.bookingType.findMany).toHaveBeenCalledWith({
         where: { isActive: true },
         include: {
           coach: {
@@ -118,13 +96,12 @@ describe('BookingTypesService', () => {
         },
       ];
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.bookingType.findMany.mockResolvedValue(mockBookingTypes);
+      test.prisma.bookingType.findMany.mockResolvedValue(mockBookingTypes);
 
-      const result = await test.getService().findByCoach(coachId);
+      const result = await test.service.findByCoach(coachId);
 
       expect(result).toHaveLength(1);
-      expect(mockPrisma.bookingType.findMany).toHaveBeenCalledWith({
+      expect(test.prisma.bookingType.findMany).toHaveBeenCalledWith({
         where: {
           coachId,
           isActive: true,
@@ -147,25 +124,23 @@ describe('BookingTypesService', () => {
         updatedAt: new Date(),
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.bookingType.findUnique.mockResolvedValue(mockBookingType);
+      test.prisma.bookingType.findUnique.mockResolvedValue(mockBookingType);
 
-      const result = await test.getService().findOne('booking-type-1');
+      const result = await test.service.findOne('booking-type-1');
 
       expect(result).toMatchObject({
         id: 'booking-type-1',
         name: 'Personal Training',
       });
-      expect(mockPrisma.bookingType.findUnique).toHaveBeenCalledWith({
+      expect(test.prisma.bookingType.findUnique).toHaveBeenCalledWith({
         where: { id: 'booking-type-1' },
       });
     });
 
     it('should throw NotFoundException when booking type not found', async () => {
-      const mockPrisma = test.getPrisma();
-      mockPrisma.bookingType.findUnique.mockResolvedValue(null);
+      test.prisma.bookingType.findUnique.mockResolvedValue(null);
 
-      await expect(test.getService().findOne('non-existent-id')).rejects.toThrow(NotFoundException);
+      await expect(test.service.findOne('non-existent-id')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -188,17 +163,16 @@ describe('BookingTypesService', () => {
         updatedAt: new Date(),
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.bookingType.create.mockResolvedValue(mockBookingType);
+      test.prisma.bookingType.create.mockResolvedValue(mockBookingType);
 
-      const result = await test.getService().create(createDto, coachId);
+      const result = await test.service.create(createDto, coachId);
 
       expect(result).toMatchObject({
         id: 'booking-type-1',
         name: createDto.name,
         coachId,
       });
-      expect(mockPrisma.bookingType.create).toHaveBeenCalledWith({
+      expect(test.prisma.bookingType.create).toHaveBeenCalledWith({
         data: {
           ...createDto,
           coachId,
@@ -233,20 +207,19 @@ describe('BookingTypesService', () => {
         ...updateDto,
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.bookingType.findUnique.mockResolvedValue(existingBookingType);
-      mockPrisma.bookingType.update.mockResolvedValue(updatedBookingType);
+      test.prisma.bookingType.findUnique.mockResolvedValue(existingBookingType);
+      test.prisma.bookingType.update.mockResolvedValue(updatedBookingType);
 
-      const result = await test.getService().update(bookingTypeId, updateDto, coachId);
+      const result = await test.service.update(bookingTypeId, updateDto, coachId);
 
       expect(result).toMatchObject({
         id: bookingTypeId,
         name: 'Updated Training',
       });
-      expect(mockPrisma.bookingType.findUnique).toHaveBeenCalledWith({
+      expect(test.prisma.bookingType.findUnique).toHaveBeenCalledWith({
         where: { id: bookingTypeId },
       });
-      expect(mockPrisma.bookingType.update).toHaveBeenCalledWith({
+      expect(test.prisma.bookingType.update).toHaveBeenCalledWith({
         where: { id: bookingTypeId },
         data: updateDto,
       });
@@ -257,13 +230,12 @@ describe('BookingTypesService', () => {
         name: 'Updated Training',
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.bookingType.findUnique.mockResolvedValue(null);
+      test.prisma.bookingType.findUnique.mockResolvedValue(null);
 
-      await expect(
-        test.getService().update('non-existent-id', updateDto, 'coach-1')
-      ).rejects.toThrow(NotFoundException);
-      expect(mockPrisma.bookingType.update).not.toHaveBeenCalled();
+      await expect(test.service.update('non-existent-id', updateDto, 'coach-1')).rejects.toThrow(
+        NotFoundException
+      );
+      expect(test.prisma.bookingType.update).not.toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException when not the owner', async () => {
@@ -282,13 +254,12 @@ describe('BookingTypesService', () => {
         updatedAt: new Date(),
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.bookingType.findUnique.mockResolvedValue(existingBookingType);
+      test.prisma.bookingType.findUnique.mockResolvedValue(existingBookingType);
 
       await expect(
-        test.getService().update('booking-type-1', updateDto, 'different-coach')
+        test.service.update('booking-type-1', updateDto, 'different-coach')
       ).rejects.toThrow(ForbiddenException);
-      expect(mockPrisma.bookingType.update).not.toHaveBeenCalled();
+      expect(test.prisma.bookingType.update).not.toHaveBeenCalled();
     });
   });
 
@@ -308,32 +279,30 @@ describe('BookingTypesService', () => {
         updatedAt: new Date(),
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.bookingType.findUnique.mockResolvedValue(existingBookingType);
-      mockPrisma.bookingType.update.mockResolvedValue({
+      test.prisma.bookingType.findUnique.mockResolvedValue(existingBookingType);
+      test.prisma.bookingType.update.mockResolvedValue({
         ...existingBookingType,
         isActive: false,
       });
 
-      await test.getService().remove(bookingTypeId, coachId);
+      await test.service.remove(bookingTypeId, coachId);
 
-      expect(mockPrisma.bookingType.findUnique).toHaveBeenCalledWith({
+      expect(test.prisma.bookingType.findUnique).toHaveBeenCalledWith({
         where: { id: bookingTypeId },
       });
-      expect(mockPrisma.bookingType.update).toHaveBeenCalledWith({
+      expect(test.prisma.bookingType.update).toHaveBeenCalledWith({
         where: { id: bookingTypeId },
         data: { isActive: false },
       });
     });
 
     it('should throw NotFoundException when booking type not found', async () => {
-      const mockPrisma = test.getPrisma();
-      mockPrisma.bookingType.findUnique.mockResolvedValue(null);
+      test.prisma.bookingType.findUnique.mockResolvedValue(null);
 
-      await expect(test.getService().remove('non-existent-id', 'coach-1')).rejects.toThrow(
+      await expect(test.service.remove('non-existent-id', 'coach-1')).rejects.toThrow(
         NotFoundException
       );
-      expect(mockPrisma.bookingType.update).not.toHaveBeenCalled();
+      expect(test.prisma.bookingType.update).not.toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException when not the owner', async () => {
@@ -348,13 +317,12 @@ describe('BookingTypesService', () => {
         updatedAt: new Date(),
       };
 
-      const mockPrisma = test.getPrisma();
-      mockPrisma.bookingType.findUnique.mockResolvedValue(existingBookingType);
+      test.prisma.bookingType.findUnique.mockResolvedValue(existingBookingType);
 
-      await expect(test.getService().remove('booking-type-1', 'different-coach')).rejects.toThrow(
+      await expect(test.service.remove('booking-type-1', 'different-coach')).rejects.toThrow(
         ForbiddenException
       );
-      expect(mockPrisma.bookingType.update).not.toHaveBeenCalled();
+      expect(test.prisma.bookingType.update).not.toHaveBeenCalled();
     });
   });
 });
