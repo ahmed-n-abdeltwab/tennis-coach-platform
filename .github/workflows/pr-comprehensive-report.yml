@@ -262,11 +262,11 @@ jobs:
           EXCELLENT_THRESHOLD=${{ steps.thresholds.outputs.excellent_threshold }}
           GOOD_THRESHOLD=${{ steps.thresholds.outputs.good_threshold }}
 
-          # Coverage Matrix (like Codecov/Nx Cloud)
-          echo "### 📊 Coverage Matrix" >> report.md
+          # Enhanced Coverage Matrix with detailed metrics
+          echo "### 📊 Comprehensive Test & Coverage Matrix" >> report.md
           echo "" >> report.md
-          echo "| Test Suite | Lines | Statements | Functions | Branches | Status |" >> report.md
-          echo "|------------|-------|------------|-----------|----------|--------|" >> report.md
+          echo "| Suite | Tests | Pass Rate | Duration | Lines | Statements | Functions | Branches | Quality | Logs |" >> report.md
+          echo "|-------|-------|-----------|----------|-------|------------|-----------|----------|---------|------|" >> report.md
 
           OVERALL_STATUS="✅"
           CI_RUN_ID="${{ steps.download.outputs.ci_run_id }}"
@@ -285,78 +285,84 @@ jobs:
               fi
             done
 
+            # Get job ID for this test type
+            case "$test_type" in
+              unit)
+                JOB_ID="${{ steps.download.outputs.unit_job_id }}"
+                ;;
+              integration)
+                JOB_ID="${{ steps.download.outputs.integration_job_id }}"
+                ;;
+              e2e)
+                JOB_ID="${{ steps.download.outputs.e2e_job_id }}"
+                ;;
+            esac
+
+            # Extract test metrics
+            TESTS="N/A"
+            PASS_RATE="N/A"
+            DURATION="N/A"
+            if [ -n "$SUMMARY_FILE" ] && [ -f "$SUMMARY_FILE" ]; then
+              TESTS=$(grep "Total Tests" "$SUMMARY_FILE" | awk '{print $4}' | tr -d '|' || echo "N/A")
+              PASS_RATE=$(grep "Pass Rate" "$SUMMARY_FILE" | awk '{print $4}' | tr -d '|' || echo "N/A")
+              DURATION=$(grep "Duration" "$SUMMARY_FILE" | awk '{print $4}' | tr -d '|' || echo "N/A")
+            fi
+
+            # Extract coverage metrics
+            LINES="N/A"
+            STATEMENTS="N/A"
+            FUNCTIONS="N/A"
+            BRANCHES="N/A"
             if [ -n "$COVERAGE_REPORT" ] && [ -f "$COVERAGE_REPORT" ]; then
-              # Extract coverage percentages
               LINES=$(grep "Lines |" "$COVERAGE_REPORT" | head -1 | awk '{print $4}' || echo "N/A")
               STATEMENTS=$(grep "Statements |" "$COVERAGE_REPORT" | head -1 | awk '{print $4}' || echo "N/A")
               FUNCTIONS=$(grep "Functions |" "$COVERAGE_REPORT" | head -1 | awk '{print $4}' || echo "N/A")
               BRANCHES=$(grep "Branches |" "$COVERAGE_REPORT" | head -1 | awk '{print $4}' || echo "N/A")
+            fi
 
-              # Get badge with dynamic thresholds
-              COV_NUM=$(echo "$LINES" | sed 's/%//')
-              if [ "$COV_NUM" != "N/A" ]; then
-                if (( $(echo "$COV_NUM >= $EXCELLENT_THRESHOLD" | bc -l 2>/dev/null || echo 0) )); then
-                  BADGE="🟢 Excellent"
-                elif (( $(echo "$COV_NUM >= $GOOD_THRESHOLD" | bc -l 2>/dev/null || echo 0) )); then
-                  BADGE="🟡 Good"
-                else
-                  BADGE="🔴 Needs Work"
-                fi
+            # Determine quality badge with dynamic thresholds
+            COV_NUM=$(echo "$LINES" | sed 's/%//')
+            if [ "$COV_NUM" != "N/A" ]; then
+              if (( $(echo "$COV_NUM >= $EXCELLENT_THRESHOLD" | bc -l 2>/dev/null || echo 0) )); then
+                BADGE="🟢 Excellent"
+              elif (( $(echo "$COV_NUM >= $GOOD_THRESHOLD" | bc -l 2>/dev/null || echo 0) )); then
+                BADGE="🟡 Good"
               else
-                BADGE="⚪ N/A"
+                BADGE="🔴 Needs Work"
               fi
-
-              # Check if tests passed and add link
-              if [ -n "$SUMMARY_FILE" ] && [ -f "$SUMMARY_FILE" ] && grep -q "❌ Failed" "$SUMMARY_FILE"; then
-                # Get job ID for this test type
-                case "$test_type" in
-                  unit)
-                    JOB_ID="${{ steps.download.outputs.unit_job_id }}"
-                    ;;
-                  integration)
-                    JOB_ID="${{ steps.download.outputs.integration_job_id }}"
-                    ;;
-                  e2e)
-                    JOB_ID="${{ steps.download.outputs.e2e_job_id }}"
-                    ;;
-                esac
-
-                if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
-                  STATUS="[❌ Failed](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
-                else
-                  STATUS="❌ Failed"
-                fi
-                OVERALL_STATUS="❌"
-              else
-                STATUS="✅ Passed"
-              fi
-
-              echo "| **${test_type^}** | $LINES | $STATEMENTS | $FUNCTIONS | $BRANCHES | $BADGE |" >> report.md
             else
-              # No coverage report found - tests likely failed
-              case "$test_type" in
-                unit)
-                  JOB_ID="${{ steps.download.outputs.unit_job_id }}"
-                  ;;
-                integration)
-                  JOB_ID="${{ steps.download.outputs.integration_job_id }}"
-                  ;;
-                e2e)
-                  JOB_ID="${{ steps.download.outputs.e2e_job_id }}"
-                  ;;
-              esac
+              BADGE="⚪ N/A"
+            fi
 
+            # Determine status and create log link
+            if [ -n "$SUMMARY_FILE" ] && [ -f "$SUMMARY_FILE" ] && grep -q "❌ Failed" "$SUMMARY_FILE"; then
               if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
-                echo "| **${test_type^}** | N/A | N/A | N/A | N/A | [❌ Failed](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID}) |" >> report.md
+                LOG_LINK="[❌ View](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
               else
-                echo "| **${test_type^}** | N/A | N/A | N/A | N/A | ❌ Failed |" >> report.md
+                LOG_LINK="❌ Failed"
               fi
               OVERALL_STATUS="❌"
+            elif [ "$TESTS" = "N/A" ] || [ "$LINES" = "N/A" ]; then
+              # Tests likely failed before completion
+              if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
+                LOG_LINK="[❌ View](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
+              else
+                LOG_LINK="❌ Failed"
+              fi
+              OVERALL_STATUS="❌"
+            else
+              if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
+                LOG_LINK="[✅ View](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
+              else
+                LOG_LINK="✅ Passed"
+              fi
             fi
+
+            echo "| **${test_type^}** | $TESTS | $PASS_RATE | $DURATION | $LINES | $STATEMENTS | $FUNCTIONS | $BRANCHES | $BADGE | $LOG_LINK |" >> report.md
           done
 
           echo "" >> report.md
-          echo "> **Legend:** 🟢 Excellent (≥${EXCELLENT_THRESHOLD}%) • 🟡 Good (≥${GOOD_THRESHOLD}%) • 🔴 Needs Work (<${GOOD_THRESHOLD}%)" >> report.md
+          echo "> **Quality Legend:** 🟢 Excellent (≥${EXCELLENT_THRESHOLD}%) • 🟡 Good (≥${GOOD_THRESHOLD}%) • 🔴 Needs Work (<${GOOD_THRESHOLD}%)" >> report.md
           echo "" >> report.md
 
           # Test Results Summary
@@ -418,33 +424,32 @@ jobs:
             echo "" >> report.md
           fi
 
-          # Collapsible sections for detailed information
-          echo "<details>" >> report.md
-          echo "<summary>📋 <b>Detailed Test & Coverage Reports</b></summary>" >> report.md
-          echo "" >> report.md
-
-          # Affected projects
+          # Affected Projects Summary (if any)
           if [ "$TOTAL" -gt 0 ]; then
-            echo "#### 📦 Affected Projects" >> report.md
+            echo "<details>" >> report.md
+            echo "<summary>📦 <b>Affected Projects (${TOTAL})</b></summary>" >> report.md
             echo "" >> report.md
 
             if [ ${{ steps.affected.outputs.apps }} -gt 0 ]; then
-              echo "**Applications:**" >> report.md
+              echo "**Applications (** ${{ steps.affected.outputs.apps }} **):**" >> report.md
               echo '```' >> report.md
               cat affected_apps.txt >> report.md
               echo '```' >> report.md
+              echo "" >> report.md
             fi
 
             if [ ${{ steps.affected.outputs.libs }} -gt 0 ]; then
-              echo "**Libraries:**" >> report.md
+              echo "**Libraries (** ${{ steps.affected.outputs.libs }} **):**" >> report.md
               echo '```' >> report.md
               cat affected_libs.txt >> report.md
               echo '```' >> report.md
             fi
+
+            echo "</details>" >> report.md
             echo "" >> report.md
           fi
 
-          # Test summaries and coverage for each type
+          # Detailed breakdown for each test suite
           DETAILS_FOUND=false
           for test_type in unit integration e2e; do
             # Try multiple possible paths
@@ -462,8 +467,6 @@ jobs:
 
             if [ -n "$SUMMARY_FILE" ] || [ -n "$COVERAGE_REPORT" ]; then
               DETAILS_FOUND=true
-              echo "#### 🧪 ${test_type^} Tests" >> report.md
-              echo "" >> report.md
 
               # Get job ID for direct link
               case "$test_type" in
@@ -478,34 +481,46 @@ jobs:
                   ;;
               esac
 
+              # Create collapsible section for each test type
+              echo "<details>" >> report.md
+              echo "<summary>🧪 <b>${test_type^} Tests - Detailed Breakdown</b></summary>" >> report.md
+              echo "" >> report.md
+
               if [ -n "$SUMMARY_FILE" ] && [ -f "$SUMMARY_FILE" ]; then
                 cat "$SUMMARY_FILE" >> report.md
                 echo "" >> report.md
+                echo "---" >> report.md
+                echo "" >> report.md
               else
-                echo "> ⚠️ No test results found" >> report.md
+                echo "> ⚠️ **No test results found** - Tests may have failed before completion" >> report.md
                 echo "" >> report.md
               fi
 
               if [ -n "$COVERAGE_REPORT" ] && [ -f "$COVERAGE_REPORT" ]; then
                 cat "$COVERAGE_REPORT" >> report.md
                 echo "" >> report.md
+              else
+                echo "> ⚠️ **No coverage data** - Coverage may not have been collected" >> report.md
+                echo "" >> report.md
               fi
 
               # Add direct link to this test suite's logs
               if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
-                echo "> 🔗 [View ${test_type} test logs](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})" >> report.md
+                echo "---" >> report.md
+                echo "" >> report.md
+                echo "**📊 Full Test Output:** [View complete ${test_type} test logs →](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})" >> report.md
                 echo "" >> report.md
               fi
+
+              echo "</details>" >> report.md
+              echo "" >> report.md
             fi
           done
 
           if [ "$DETAILS_FOUND" = false ]; then
-            echo "> ℹ️ Detailed reports will be available after CI completes" >> report.md
+            echo "> ℹ️ **Detailed reports will be available after CI completes**" >> report.md
             echo "" >> report.md
           fi
-
-          echo "</details>" >> report.md
-          echo "" >> report.md
 
           # Failed tests section (if any)
           if [ $TOTAL_FAILED -gt 0 ]; then
