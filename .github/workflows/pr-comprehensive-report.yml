@@ -299,14 +299,20 @@ jobs:
             esac
 
             # Extract test metrics
-            TESTS="N/A"
-            PASS_RATE="N/A"
-            DURATION="N/A"
+            TESTS=""
+            PASS_RATE=""
+            DURATION=""
             if [ -n "$SUMMARY_FILE" ] && [ -f "$SUMMARY_FILE" ]; then
-              TESTS=$(grep "Total Tests" "$SUMMARY_FILE" | awk '{print $4}' | tr -d '|' || echo "N/A")
-              PASS_RATE=$(grep "Pass Rate" "$SUMMARY_FILE" | awk '{print $4}' | tr -d '|' || echo "N/A")
-              DURATION=$(grep "Duration" "$SUMMARY_FILE" | awk '{print $4}' | tr -d '|' || echo "N/A")
+              # Extract from markdown table format: | Metric | Value |
+              TESTS=$(grep "Total Tests" "$SUMMARY_FILE" | sed 's/|//g' | awk '{print $3}' || echo "")
+              PASS_RATE=$(grep "Pass Rate" "$SUMMARY_FILE" | sed 's/|//g' | awk '{print $3}' || echo "")
+              DURATION=$(grep "Duration" "$SUMMARY_FILE" | sed 's/|//g' | awk '{print $3}' || echo "")
             fi
+
+            # Set defaults if empty
+            [ -z "$TESTS" ] && TESTS="N/A"
+            [ -z "$PASS_RATE" ] && PASS_RATE="N/A"
+            [ -z "$DURATION" ] && DURATION="N/A"
 
             # Extract coverage metrics
             LINES="N/A"
@@ -385,11 +391,18 @@ jobs:
             done
 
             if [ -n "$SUMMARY_FILE" ] && [ -f "$SUMMARY_FILE" ]; then
-              # Extract test counts
-              TESTS=$(grep "Total Tests" "$SUMMARY_FILE" | awk '{print $4}' | tr -d '|' || echo "0")
-              PASSED=$(grep "✅ Passed" "$SUMMARY_FILE" | awk '{print $4}' | tr -d '|' || echo "0")
-              FAILED=$(grep "❌ Failed" "$SUMMARY_FILE" | awk '{print $4}' | tr -d '|' || echo "0")
-              SKIPPED=$(grep "⏭️ Skipped" "$SUMMARY_FILE" | awk '{print $4}' | tr -d '|' || echo "0")
+              # Extract test counts from markdown table: | Metric | Value |
+              # Remove all pipes first, then extract the number
+              TESTS=$(grep "Total Tests" "$SUMMARY_FILE" | sed 's/|//g' | awk '{print $3}' || echo "0")
+              PASSED=$(grep "✅ Passed" "$SUMMARY_FILE" | sed 's/|//g' | awk '{print $3}' || echo "0")
+              FAILED=$(grep "❌ Failed" "$SUMMARY_FILE" | sed 's/|//g' | awk '{print $3}' || echo "0")
+              SKIPPED=$(grep "⏭️ Skipped" "$SUMMARY_FILE" | sed 's/|//g' | awk '{print $3}' || echo "0")
+
+              # Ensure we have valid numbers
+              [ -z "$TESTS" ] || [ "$TESTS" = "N/A" ] && TESTS="0"
+              [ -z "$PASSED" ] || [ "$PASSED" = "N/A" ] && PASSED="0"
+              [ -z "$FAILED" ] || [ "$FAILED" = "N/A" ] && FAILED="0"
+              [ -z "$SKIPPED" ] || [ "$SKIPPED" = "N/A" ] && SKIPPED="0"
 
               TOTAL_TESTS=$((TOTAL_TESTS + TESTS))
               TOTAL_PASSED=$((TOTAL_PASSED + PASSED))
