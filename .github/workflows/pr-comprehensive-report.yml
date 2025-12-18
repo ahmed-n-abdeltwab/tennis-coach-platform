@@ -341,7 +341,15 @@ jobs:
             fi
 
             # Determine status and create log link
-            if [ -n "$SUMMARY_FILE" ] && [ -f "$SUMMARY_FILE" ] && grep -q "❌ Failed" "$SUMMARY_FILE"; then
+            # Extract failed count to check if tests actually failed
+            FAILED_COUNT="0"
+            if [ -n "$SUMMARY_FILE" ] && [ -f "$SUMMARY_FILE" ]; then
+              FAILED_COUNT=$(grep "❌ Failed" "$SUMMARY_FILE" | sed 's/|//g' | awk '{print $3}' || echo "0")
+              [ -z "$FAILED_COUNT" ] && FAILED_COUNT="0"
+            fi
+
+            if [ "$FAILED_COUNT" != "0" ] && [ "$FAILED_COUNT" != "N/A" ]; then
+              # Tests actually failed (failed count > 0)
               if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
                 LOG_LINK="[❌ View](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
               else
@@ -349,7 +357,7 @@ jobs:
               fi
               OVERALL_STATUS="❌"
             elif [ "$TESTS" = "N/A" ] || [ "$LINES" = "N/A" ]; then
-              # Tests likely failed before completion
+              # Tests likely failed before completion (no data collected)
               if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
                 LOG_LINK="[❌ View](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
               else
@@ -357,6 +365,7 @@ jobs:
               fi
               OVERALL_STATUS="❌"
             else
+              # Tests passed
               if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
                 LOG_LINK="[✅ View](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
               else
