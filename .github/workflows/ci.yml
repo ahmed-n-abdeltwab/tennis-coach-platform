@@ -55,12 +55,9 @@ jobs:
         uses: nrwl/nx-set-shas@v4
 
       - name: Run linting
-        run: |
-          if [ "${{ env.NX_CLOUD_ENABLED }}" = "false" ]; then
-            pnpm exec nx affected -t lint --exclude=web --skip-nx-cache
-          else
-            pnpm exec nx affected -t lint --exclude=web
-          fi
+        run: pnpm exec nx affected -t lint --exclude=web
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ env.NX_CLOUD_ENABLED == 'true' && secrets.NX_CLOUD_ACCESS_TOKEN || '' }}
 
       - name: Auto-format code
         run: pnpm format
@@ -129,12 +126,9 @@ jobs:
         uses: nrwl/nx-set-shas@v4
 
       - name: Build affected projects
-        run: |
-          if [ "${{ env.NX_CLOUD_ENABLED }}" = "false" ]; then
-            pnpm exec nx affected -t build --exclude=web --skip-nx-cache
-          else
-            pnpm exec nx affected -t build --exclude=web
-          fi
+        run: pnpm exec nx affected -t build --exclude=web
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ env.NX_CLOUD_ENABLED == 'true' && secrets.NX_CLOUD_ACCESS_TOKEN || '' }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v6
@@ -215,13 +209,9 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test_${{ matrix.test-type }}
 
       - name: Run ${{ matrix.test-type }} tests
-        run: |
-          if [ "${{ env.NX_CLOUD_ENABLED }}" = "false" ]; then
-            pnpm exec nx run api:test:${{ matrix.test-type }} -- --coverage --skip-nx-cache
-          else
-            pnpm exec nx run api:test:${{ matrix.test-type }} -- --coverage
-          fi
+        run: pnpm exec nx run api:test:${{ matrix.test-type }} -- --coverage
         env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ env.NX_CLOUD_ENABLED == 'true' && secrets.NX_CLOUD_ACCESS_TOKEN || '' }}
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test_${{ matrix.test-type }}
           DATABASE: tennis_coach_test_${{ matrix.test-type }}
           REDIS_HOST: localhost
