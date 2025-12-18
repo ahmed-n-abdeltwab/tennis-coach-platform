@@ -209,7 +209,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test_${{ matrix.test-type }}
 
       - name: Run ${{ matrix.test-type }} tests
-        run: pnpm exec nx run api:test:${{ matrix.test-type }} -- --coverage
+        run: pnpm exec nx run api:test:${{ matrix.test-type }} -- --coverage --coverageReporters=json-summary --coverageReporters=lcov
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ env.NX_CLOUD_ENABLED == 'true' && secrets.NX_CLOUD_ACCESS_TOKEN || '' }}
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test_${{ matrix.test-type }}
@@ -236,6 +236,11 @@ jobs:
           npm_package_version: 1.0.0
           LOG_LEVEL: error
 
+      - name: Generate coverage report
+        if: always()
+        run: node scripts/generate-coverage-report.js ${{ matrix.test-type }}
+        continue-on-error: true
+
       - name: Upload test reports
         uses: actions/upload-artifact@v6
         if: always()
@@ -245,9 +250,6 @@ jobs:
             **/test-reports/
             **/coverage/
           retention-days: 30
-
-      # Coverage is now handled by pr-coverage-report.yml workflow
-      # No need for external Codecov service
 
   # ============================================================================
   # STAGE 4: Reporting (aggregates test results)
