@@ -202,7 +202,7 @@ jobs:
         if: steps.pr.outputs.number != ''
         uses: thollander/actions-comment-pull-request@v3
         with:
-          filePath: report.md
-          comment_tag: comprehensive-pr-report
+          file-path: report.md
+          comment-tag: comprehensive-pr-report
           mode: recreate
-          pr_number: ${{ steps.pr.outputs.number }}
+          pr-number: ${{ steps.pr.outputs.number }}
