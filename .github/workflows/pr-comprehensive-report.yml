@@ -75,6 +75,14 @@ jobs:
           echo "$AFFECTED_APPS" > affected_apps.txt
           echo "$AFFECTED_LIBS" > affected_libs.txt
 
+      - name: Download test artifacts
+        uses: actions/download-artifact@v7
+        with:
+          pattern: test-reports-*
+          merge-multiple: true
+          path: test-reports
+        continue-on-error: true
+
       - name: Wait for all CI checks to complete
         id: tests
         run: |
@@ -193,13 +201,75 @@ jobs:
           fi
           echo "" >> report.md
 
-          # Check for coverage in artifacts
-          if [ -d "test-reports" ]; then
-            echo "📊 Coverage reports available in workflow artifacts" >> report.md
-          else
-            echo "ℹ️ Coverage reports will be available after CI completes" >> report.md
-          fi
+          # Coverage section
+          echo "## 📊 Code Coverage" >> report.md
           echo "" >> report.md
+
+          # Helper function for progress bar
+          create_progress_bar() {
+            local percentage=$1
+            local filled=$(awk "BEGIN {printf \"%.0f\", $percentage / 5}")
+            local empty=$((20 - filled))
+            printf "["
+            printf "█%.0s" $(seq 1 $filled 2>/dev/null || echo "")
+            printf "░%.0s" $(seq 1 $empty 2>/dev/null || echo "")
+            printf "]"
+          }
+
+          # Helper function for badge
+          get_badge() {
+            local coverage=$1
+            if (( $(awk "BEGIN {print ($coverage >= 80)}") )); then
+              echo "🟢"
+            elif (( $(awk "BEGIN {print ($coverage >= 60)}") )); then
+              echo "🟡"
+            else
+              echo "🔴"
+            fi
+          }
+
+          COVERAGE_FOUND=false
+
+          # Check each test type
+          for test_type in unit integration e2e; do
+            COVERAGE_FILE="test-reports/coverage/apps/api/$test_type/coverage-summary.json"
+
+            if [ -f "$COVERAGE_FILE" ]; then
+              COVERAGE_FOUND=true
+
+              LINES=$(jq -r '.total.lines.pct' "$COVERAGE_FILE" 2>/dev/null || echo "0")
+              STATEMENTS=$(jq -r '.total.statements.pct' "$COVERAGE_FILE" 2>/dev/null || echo "0")
+              FUNCTIONS=$(jq -r '.total.functions.pct' "$COVERAGE_FILE" 2>/dev/null || echo "0")
+              BRANCHES=$(jq -r '.total.branches.pct' "$COVERAGE_FILE" 2>/dev/null || echo "0")
+
+              BADGE=$(get_badge "$LINES")
+
+              echo "<details>" >> report.md
+              echo "<summary>$BADGE <b>${test_type^} Tests - ${LINES}% Coverage</b></summary>" >> report.md
+              echo "" >> report.md
+              echo "| Metric | Coverage | Progress |" >> report.md
+              echo "|--------|----------|----------|" >> report.md
+              echo "| Lines | ${LINES}% | $(create_progress_bar $LINES) |" >> report.md
+              echo "| Statements | ${STATEMENTS}% | $(create_progress_bar $STATEMENTS) |" >> report.md
+              echo "| Functions | ${FUNCTIONS}% | $(create_progress_bar $FUNCTIONS) |" >> report.md
+              echo "| Branches | ${BRANCHES}% | $(create_progress_bar $BRANCHES) |" >> report.md
+              echo "" >> report.md
+              echo "</details>" >> report.md
+              echo "" >> report.md
+            fi
+          done
+
+          if [ "$COVERAGE_FOUND" = false ]; then
+            echo "ℹ️ Coverage reports will be available after all tests complete" >> report.md
+            echo "" >> report.md
+          else
+            echo "### 🎯 Coverage Targets" >> report.md
+            echo "" >> report.md
+            echo "- 🟢 **Good**: ≥ 80%" >> report.md
+            echo "- 🟡 **Fair**: 60-79%" >> report.md
+            echo "- 🔴 **Needs Improvement**: < 60%" >> report.md
+            echo "" >> report.md
+          fi
 
           # Build info
           echo "## 🏗️ Build Information" >> report.md
