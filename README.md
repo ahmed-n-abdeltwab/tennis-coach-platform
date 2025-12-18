@@ -1,6 +1,6 @@
 # 🎾 Tennis Coach Booking Platform
-
-[![codecov](https://codecov.io/github/ahmed-n-abdeltwab/tennis-coach-platform/graph/badge.svg?token=J7XLLI2L7H)](https://codecov.io/github/ahmed-n-abdeltwab/tennis-coach-platform)
+<!-- 
+[![codecov](https://codecov.io/github/ahmed-n-abdeltwab/tennis-coach-platform/graph/badge.svg?token=J7XLLI2L7H)](https://codecov.io/github/ahmed-n-abdeltwab/tennis-coach-platform) -->
 
 [![CI](https://github.com/ahmed-n-abdeltwab/tennis-coach-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmed-n-abdeltwab/tennis-coach-platform/actions/workflows/ci.yml)
 
@@ -68,7 +68,7 @@ A modern, full-stack web application for tennis coaches to manage their business
 
 1. **Clone and install dependencies**
    ```bash
-   git clone <your-repo>
+   git clone https://github.com/ahmed-n-abdeltwab/tennis-coach-platform.git
    cd tennis-coach-platform
    pnpm install
    ```
