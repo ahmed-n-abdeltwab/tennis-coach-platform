@@ -16,6 +16,19 @@ const config: Config = {
   collectCoverage: true,
 
   coverageDirectory: '../../coverage/apps/api/unit',
+  coverageReporters: ['text', 'lcov', 'html', 'json', 'json-summary'],
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.spec.ts',
+    '!src/**/*.integration.spec.ts',
+    '!src/**/*.e2e.spec.ts',
+    '!src/**/__tests__/**',
+    '!src/main.ts',
+    '!src/**/*.d.ts',
+    '!src/**/*.interface.ts',
+    '!src/**/*.enum.ts',
+    '!src/**/*.type.ts',
+  ],
   coverageThreshold: {
     global: {
       branches: 80,
