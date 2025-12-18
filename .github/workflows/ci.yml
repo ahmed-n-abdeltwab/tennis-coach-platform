@@ -236,16 +236,6 @@ jobs:
           npm_package_version: 1.0.0
           LOG_LEVEL: error
 
-      - name: Generate coverage report
-        if: always()
-        run: node scripts/generate-coverage-report.js ${{ matrix.test-type }}
-        continue-on-error: true
-
-      - name: Generate test summary
-        if: always()
-        run: node scripts/generate-test-summary.js ${{ matrix.test-type }}
-        continue-on-error: true
-
       - name: Upload test reports
         uses: actions/upload-artifact@v6
         if: always()
