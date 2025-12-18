@@ -309,8 +309,17 @@ jobs:
               # Check if tests passed and add link
               if [ -n "$SUMMARY_FILE" ] && [ -f "$SUMMARY_FILE" ] && grep -q "❌ Failed" "$SUMMARY_FILE"; then
                 # Get job ID for this test type
-                JOB_ID_VAR="${test_type}_job_id"
-                JOB_ID="${{ steps.download.outputs[JOB_ID_VAR] }}"
+                case "$test_type" in
+                  unit)
+                    JOB_ID="${{ steps.download.outputs.unit_job_id }}"
+                    ;;
+                  integration)
+                    JOB_ID="${{ steps.download.outputs.integration_job_id }}"
+                    ;;
+                  e2e)
+                    JOB_ID="${{ steps.download.outputs.e2e_job_id }}"
+                    ;;
+                esac
 
                 if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
                   STATUS="[❌ Failed](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
@@ -325,8 +334,17 @@ jobs:
               echo "| **${test_type^}** | $LINES | $STATEMENTS | $FUNCTIONS | $BRANCHES | $BADGE |" >> report.md
             else
               # No coverage report found - tests likely failed
-              JOB_ID_VAR="${test_type}_job_id"
-              JOB_ID=$(eval echo "\${{ steps.download.outputs.${JOB_ID_VAR} }}")
+              case "$test_type" in
+                unit)
+                  JOB_ID="${{ steps.download.outputs.unit_job_id }}"
+                  ;;
+                integration)
+                  JOB_ID="${{ steps.download.outputs.integration_job_id }}"
+                  ;;
+                e2e)
+                  JOB_ID="${{ steps.download.outputs.e2e_job_id }}"
+                  ;;
+              esac
 
               if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
                 echo "| **${test_type^}** | N/A | N/A | N/A | N/A | [❌ Failed](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID}) |" >> report.md
@@ -448,8 +466,17 @@ jobs:
               echo "" >> report.md
 
               # Get job ID for direct link
-              JOB_ID_VAR="${test_type}_job_id"
-              JOB_ID=$(eval echo "\${{ steps.download.outputs.${JOB_ID_VAR} }}")
+              case "$test_type" in
+                unit)
+                  JOB_ID="${{ steps.download.outputs.unit_job_id }}"
+                  ;;
+                integration)
+                  JOB_ID="${{ steps.download.outputs.integration_job_id }}"
+                  ;;
+                e2e)
+                  JOB_ID="${{ steps.download.outputs.e2e_job_id }}"
+                  ;;
+              esac
 
               if [ -n "$SUMMARY_FILE" ] && [ -f "$SUMMARY_FILE" ]; then
                 cat "$SUMMARY_FILE" >> report.md
@@ -503,8 +530,17 @@ jobs:
                 echo "" >> report.md
 
                 # Add direct link to failed test logs
-                JOB_ID_VAR="${test_type}_job_id"
-                JOB_ID=$(eval echo "\${{ steps.download.outputs.${JOB_ID_VAR} }}")
+                case "$test_type" in
+                  unit)
+                    JOB_ID="${{ steps.download.outputs.unit_job_id }}"
+                    ;;
+                  integration)
+                    JOB_ID="${{ steps.download.outputs.integration_job_id }}"
+                    ;;
+                  e2e)
+                    JOB_ID="${{ steps.download.outputs.e2e_job_id }}"
+                    ;;
+                esac
 
                 if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
                   echo "🔗 [View ${test_type} test logs](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})" >> report.md
