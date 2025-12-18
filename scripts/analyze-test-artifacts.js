@@ -69,13 +69,21 @@ function findLatestTestReport(testType) {
     .sort()
     .reverse();
 
-  return files.length > 0 ? path.join(TEST_REPORTS_DIR, files[0]) : null;
+  if (files.length > 0) {
+    console.log(`  Found ${files.length} ${testType} report(s), using latest: ${files[0]}`);
+    return path.join(TEST_REPORTS_DIR, files[0]);
+  }
+
+  console.log(`  No detailed ${testType} reports found`);
+  return null;
 }
 
 /**
  * Analyze a single test type (unit, integration, e2e)
  */
 function analyzeTestType(testType) {
+  console.log(`\nAnalyzing ${testType} tests...`);
+
   const result = {
     testType,
     hasData: false,
@@ -83,30 +91,45 @@ function analyzeTestType(testType) {
     coverage: null,
     detailedReport: null,
     timestamp: new Date().toISOString(),
+    sources: {
+      junit: false,
+      coverage: false,
+      detailedReport: false,
+    },
   };
 
   // 1. Parse JUnit XML
   const junitFile = path.join(TEST_REPORTS_DIR, `junit-${testType}.xml`);
+  console.log(`  Checking JUnit XML: ${junitFile}`);
   if (fs.existsSync(junitFile)) {
     try {
       const xmlContent = fs.readFileSync(junitFile, 'utf8');
       result.junit = parseJUnitXML(xmlContent);
       result.hasData = true;
+      result.sources.junit = true;
+      console.log(`  ✅ JUnit XML parsed: ${result.junit.tests} tests`);
     } catch (error) {
-      console.error(`Error parsing JUnit XML for ${testType}:`, error.message);
+      console.error(`  ❌ Error parsing JUnit XML for ${testType}:`, error.message);
     }
+  } else {
+    console.log(`  ⚠️  JUnit XML not found`);
   }
 
   // 2. Parse coverage summary
   const coverageFile = path.join(COVERAGE_DIR, 'apps', 'api', testType, 'coverage-summary.json');
+  console.log(`  Checking coverage: ${coverageFile}`);
   if (fs.existsSync(coverageFile)) {
     try {
       const coverage = JSON.parse(fs.readFileSync(coverageFile, 'utf8'));
       result.coverage = coverage.total;
       result.hasData = true;
+      result.sources.coverage = true;
+      console.log(`  ✅ Coverage parsed: ${result.coverage.lines.pct}% lines`);
     } catch (error) {
-      console.error(`Error parsing coverage for ${testType}:`, error.message);
+      console.error(`  ❌ Error parsing coverage for ${testType}:`, error.message);
     }
+  } else {
+    console.log(`  ⚠️  Coverage file not found`);
   }
 
   // 3. Parse detailed test report (Jest JSON reporter)
@@ -121,9 +144,19 @@ function analyzeTestType(testType) {
         details: report.details || [],
       };
       result.hasData = true;
+      result.sources.detailedReport = true;
+      console.log(`  ✅ Detailed report parsed: ${result.detailedReport.testFiles} test files`);
     } catch (error) {
-      console.error(`Error parsing detailed report for ${testType}:`, error.message);
+      console.error(`  ❌ Error parsing detailed report for ${testType}:`, error.message);
     }
+  }
+
+  // Summary
+  const sourcesFound = Object.values(result.sources).filter(Boolean).length;
+  console.log(`  📊 Data sources found: ${sourcesFound}/3`);
+
+  if (!result.hasData) {
+    console.log(`  ⚠️  No data found for ${testType} tests`);
   }
 
   return result;

@@ -182,7 +182,15 @@ jobs:
         run: |
           set -e
 
-          echo "# 🚀 PR Test Analysis Report" > report.md
+          # Helper function to create progress bar
+          create_progress_bar() {
+            local pct=$1
+            local filled=$(awk "BEGIN {print int($pct / 5)}")
+            local empty=$((20 - filled))
+            printf "[%s%s]" "$(printf '█%.0s' $(seq 1 $filled))" "$(printf '░%.0s' $(seq 1 $empty))"
+          }
+
+          echo "# 🚀 PR Analysis Report" > report.md
           echo "" >> report.md
 
           # Overall status
@@ -197,8 +205,8 @@ jobs:
 
           # Check if we have analysis data
           if [ "${{ steps.analyze.outputs.analysis_available }}" == "true" ]; then
-            # Extract data from analysis.json using jq
             ANALYSIS_FILE="test-reports/analysis.json"
+            CI_RUN_ID="${{ steps.download.outputs.ci_run_id }}"
 
             # Get aggregate stats
             TOTAL_TESTS=$(jq -r '.summary.aggregate.total.tests' "$ANALYSIS_FILE")
@@ -206,79 +214,230 @@ jobs:
             TOTAL_FAILED=$(jq -r '.summary.aggregate.total.failed' "$ANALYSIS_FILE")
             TOTAL_SKIPPED=$(jq -r '.summary.aggregate.total.skipped' "$ANALYSIS_FILE")
             PASS_RATE=$(jq -r '.summary.aggregate.total.passRate' "$ANALYSIS_FILE")
-            DURATION=$(jq -r '.summary.aggregate.total.duration' "$ANALYSIS_FILE")
 
-            # Get coverage stats
-            COV_LINES=$(jq -r '.summary.aggregate.coverage.lines.pct' "$ANALYSIS_FILE")
-            COV_STATEMENTS=$(jq -r '.summary.aggregate.coverage.statements.pct' "$ANALYSIS_FILE")
-            COV_FUNCTIONS=$(jq -r '.summary.aggregate.coverage.functions.pct' "$ANALYSIS_FILE")
-            COV_BRANCHES=$(jq -r '.summary.aggregate.coverage.branches.pct' "$ANALYSIS_FILE")
-
-            # Get quality badges
-            BADGE_LINES=$(jq -r '.summary.qualityBadges.lines.emoji' "$ANALYSIS_FILE")
-            BADGE_STATEMENTS=$(jq -r '.summary.qualityBadges.statements.emoji' "$ANALYSIS_FILE")
-            BADGE_FUNCTIONS=$(jq -r '.summary.qualityBadges.functions.emoji' "$ANALYSIS_FILE")
-            BADGE_BRANCHES=$(jq -r '.summary.qualityBadges.branches.emoji' "$ANALYSIS_FILE")
-
-            # Test & Coverage Matrix
-            echo "### 📊 Test & Coverage Summary" >> report.md
+            # Comprehensive Test & Coverage Matrix
+            echo "### 📊 Comprehensive Test & Coverage Matrix" >> report.md
             echo "" >> report.md
-            echo "| Metric | Value |" >> report.md
-            echo "|--------|-------|" >> report.md
-            echo "| **Total Tests** | $TOTAL_TESTS |" >> report.md
-            echo "| ✅ Passed | $TOTAL_PASSED |" >> report.md
-            echo "| ❌ Failed | $TOTAL_FAILED |" >> report.md
-            echo "| ⏭️ Skipped | $TOTAL_SKIPPED |" >> report.md
-            echo "| **Pass Rate** | ${PASS_RATE}% |" >> report.md
-            echo "| ⏱️ Duration | ${DURATION}s |" >> report.md
-            echo "" >> report.md
-
-            echo "### 📈 Coverage Metrics" >> report.md
-            echo "" >> report.md
-            echo "| Metric | Coverage | Quality |" >> report.md
-            echo "|--------|----------|---------|" >> report.md
-            echo "| Lines | ${COV_LINES}% | $BADGE_LINES |" >> report.md
-            echo "| Statements | ${COV_STATEMENTS}% | $BADGE_STATEMENTS |" >> report.md
-            echo "| Functions | ${COV_FUNCTIONS}% | $BADGE_FUNCTIONS |" >> report.md
-            echo "| Branches | ${COV_BRANCHES}% | $BADGE_BRANCHES |" >> report.md
-            echo "" >> report.md
-
-            # Per-test-type breakdown
-            echo "### 🧪 Test Suite Breakdown" >> report.md
-            echo "" >> report.md
-            echo "| Suite | Tests | Passed | Failed | Coverage |" >> report.md
-            echo "|-------|-------|--------|--------|----------|" >> report.md
-
-            CI_RUN_ID="${{ steps.download.outputs.ci_run_id }}"
+            echo "| Suite | Tests | Pass Rate | Duration | Lines | Statements | Functions | Branches | Quality | Logs |" >> report.md
+            echo "|-------|-------|-----------|----------|-------|------------|-----------|----------|---------|------|" >> report.md
 
             for test_type in unit integration e2e; do
-              HAS_DATA=$(jq -r ".summary.aggregate.byType.${test_type}.hasData" "$ANALYSIS_FILE")
-              TESTS=$(jq -r ".summary.aggregate.byType.${test_type}.tests" "$ANALYSIS_FILE")
-              PASSED=$(jq -r ".summary.aggregate.byType.${test_type}.passed" "$ANALYSIS_FILE")
-              FAILED=$(jq -r ".summary.aggregate.byType.${test_type}.failed" "$ANALYSIS_FILE")
-              COVERAGE=$(jq -r ".summary.aggregate.byType.${test_type}.coverage" "$ANALYSIS_FILE")
+              # Get test data from JSON
+              HAS_DATA=$(jq -r ".testTypes.${test_type}.hasData" "$ANALYSIS_FILE")
 
-              # Get job ID
+              if [ "$HAS_DATA" == "true" ]; then
+                # Get junit data
+                TESTS=$(jq -r ".testTypes.${test_type}.junit.tests // 0" "$ANALYSIS_FILE")
+                PASSED=$(jq -r ".testTypes.${test_type}.junit.passed // 0" "$ANALYSIS_FILE")
+                FAILED=$(jq -r ".testTypes.${test_type}.junit.failures // 0" "$ANALYSIS_FILE")
+                DURATION=$(jq -r ".testTypes.${test_type}.junit.time // 0" "$ANALYSIS_FILE")
+
+                # Calculate pass rate
+                if [ "$TESTS" -gt 0 ]; then
+                  PASS_RATE=$(awk "BEGIN {printf \"%.1f\", ($PASSED / $TESTS) * 100}")
+                else
+                  PASS_RATE="N/A"
+                fi
+
+                # Get coverage data
+                COV_LINES=$(jq -r ".testTypes.${test_type}.coverage.lines.pct // \"N/A\"" "$ANALYSIS_FILE")
+                COV_STATEMENTS=$(jq -r ".testTypes.${test_type}.coverage.statements.pct // \"N/A\"" "$ANALYSIS_FILE")
+                COV_FUNCTIONS=$(jq -r ".testTypes.${test_type}.coverage.functions.pct // \"N/A\"" "$ANALYSIS_FILE")
+                COV_BRANCHES=$(jq -r ".testTypes.${test_type}.coverage.branches.pct // \"N/A\"" "$ANALYSIS_FILE")
+
+                # Determine quality badge
+                if [ "$COV_LINES" != "N/A" ]; then
+                  COV_NUM=$(echo "$COV_LINES" | awk '{print int($1)}')
+                  if [ "$COV_NUM" -ge 80 ]; then
+                    QUALITY="🟢 Excellent"
+                  elif [ "$COV_NUM" -ge 60 ]; then
+                    QUALITY="🟡 Good"
+                  else
+                    QUALITY="🔴 Needs Work"
+                  fi
+                else
+                  QUALITY="⚪ N/A"
+                fi
+
+                # Format values
+                [ "$TESTS" == "0" ] && TESTS="N/A"
+                [ "$PASS_RATE" == "N/A" ] || PASS_RATE="${PASS_RATE}%"
+                [ "$DURATION" == "0" ] && DURATION="N/A" || DURATION="${DURATION}s"
+                [ "$COV_LINES" != "N/A" ] && COV_LINES="${COV_LINES}%"
+                [ "$COV_STATEMENTS" != "N/A" ] && COV_STATEMENTS="${COV_STATEMENTS}%"
+                [ "$COV_FUNCTIONS" != "N/A" ] && COV_FUNCTIONS="${COV_FUNCTIONS}%"
+                [ "$COV_BRANCHES" != "N/A" ] && COV_BRANCHES="${COV_BRANCHES}%"
+              else
+                TESTS="N/A"
+                PASS_RATE="N/A"
+                DURATION="N/A"
+                COV_LINES=""
+                COV_STATEMENTS=""
+                COV_FUNCTIONS=""
+                COV_BRANCHES=""
+                QUALITY="🔴 Needs Work"
+                FAILED=1
+              fi
+
+              # Get job ID for link
               case "$test_type" in
                 unit) JOB_ID="${{ steps.download.outputs.unit_job_id }}" ;;
                 integration) JOB_ID="${{ steps.download.outputs.integration_job_id }}" ;;
                 e2e) JOB_ID="${{ steps.download.outputs.e2e_job_id }}" ;;
               esac
 
-              # Create log link
-              if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
-                SUITE_NAME="[**${test_type^}**](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
+              # Determine status link
+              if [ "$TESTS" == "N/A" ] || [ "$COV_LINES" == "" ]; then
+                STATUS_LINK="[⚠️ Partial](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
+              elif [ "$FAILED" -gt 0 ]; then
+                STATUS_LINK="[❌ Failed](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
               else
-                SUITE_NAME="**${test_type^}**"
+                STATUS_LINK="[✅ Passed](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
               fi
 
+              echo "| **${test_type^}** | $TESTS | $PASS_RATE | $DURATION | $COV_LINES | $COV_STATEMENTS | $COV_FUNCTIONS | $COV_BRANCHES | $QUALITY | $STATUS_LINK |" >> report.md
+            done
+
+            echo "" >> report.md
+            echo "> **Quality Legend:** 🟢 Excellent (≥80%) • 🟡 Good (≥60%) • 🔴 Needs Work (<60%)" >> report.md
+            echo "" >> report.md
+
+            # Test Results Summary
+            echo "### 🧪 Test Results" >> report.md
+            echo "" >> report.md
+            echo "| Metric | Count |" >> report.md
+            echo "|--------|-------|" >> report.md
+            echo "| **Total Tests** | $TOTAL_TESTS |" >> report.md
+            echo "| ✅ Passed | $TOTAL_PASSED |" >> report.md
+            echo "| ❌ Failed | $TOTAL_FAILED |" >> report.md
+            echo "| ⏭️ Skipped | $TOTAL_SKIPPED |" >> report.md
+            echo "| **Pass Rate** | ${PASS_RATE}% |" >> report.md
+            echo "" >> report.md
+
+            # Detailed breakdown for each test suite
+            for test_type in unit integration e2e; do
+              HAS_DATA=$(jq -r ".testTypes.${test_type}.hasData" "$ANALYSIS_FILE")
+
               if [ "$HAS_DATA" == "true" ]; then
-                echo "| $SUITE_NAME | $TESTS | $PASSED | $FAILED | ${COVERAGE}% |" >> report.md
-              else
-                echo "| $SUITE_NAME | N/A | N/A | N/A | N/A |" >> report.md
+                # Get job ID
+                case "$test_type" in
+                  unit) JOB_ID="${{ steps.outputs.unit_job_id }}" ;;
+                  integration) JOB_ID="${{ steps.download.outputs.integration_job_id }}" ;;
+                  e2e) JOB_ID="${{ steps.download.outputs.e2e_job_id }}" ;;
+                esac
+
+                echo "<details>" >> report.md
+                echo "<summary>🧪 <b>${test_type^} Tests - Detailed Breakdown</b></summary>" >> report.md
+                echo "" >> report.md
+
+                # Test Summary Section
+                TESTS=$(jq -r ".testTypes.${test_type}.junit.tests // 0" "$ANALYSIS_FILE")
+                PASSED=$(jq -r ".testTypes.${test_type}.junit.passed // 0" "$ANALYSIS_FILE")
+                FAILED=$(jq -r ".testTypes.${test_type}.junit.failures // 0" "$ANALYSIS_FILE")
+                SKIPPED=$(jq -r ".testTypes.${test_type}.junit.skipped // 0" "$ANALYSIS_FILE")
+                DURATION=$(jq -r ".testTypes.${test_type}.junit.time // 0" "$ANALYSIS_FILE")
+
+                if [ "$TESTS" -gt 0 ]; then
+                  SUITE_PASS_RATE=$(awk "BEGIN {printf \"%.1f\", ($PASSED / $TESTS) * 100}")
+
+                  echo "## 📋 ${test_type^} Test Summary" >> report.md
+                  echo "" >> report.md
+                  echo "| Metric | Count |" >> report.md
+                  echo "|--------|-------|" >> report.md
+                  echo "| Total Tests | $TESTS |" >> report.md
+                  echo "| ✅ Passed | $PASSED |" >> report.md
+                  echo "| ❌ Failed | $FAILED |" >> report.md
+                  echo "| ⏭️ Skipped | $SKIPPED |" >> report.md
+                  echo "| Pass Rate | ${SUITE_PASS_RATE}% |" >> report.md
+                  echo "| ⏱️ Duration | ${DURATION}s |" >> report.md
+                  echo "" >> report.md
+                else
+                  echo "## 📋 ${test_type^} Test Summary" >> report.md
+                  echo "" >> report.md
+                  echo "⚠️ No test results found" >> report.md
+                  echo "" >> report.md
+                fi
+
+                # Coverage Section
+                COV_LINES_PCT=$(jq -r ".testTypes.${test_type}.coverage.lines.pct // null" "$ANALYSIS_FILE")
+
+                if [ "$COV_LINES_PCT" != "null" ]; then
+                  COV_LINES_COVERED=$(jq -r ".testTypes.${test_type}.coverage.lines.covered" "$ANALYSIS_FILE")
+                  COV_LINES_TOTAL=$(jq -r ".testTypes.${test_type}.coverage.lines.total" "$ANALYSIS_FILE")
+                  COV_STATEMENTS_PCT=$(jq -r ".testTypes.${test_type}.coverage.statements.pct" "$ANALYSIS_FILE")
+                  COV_STATEMENTS_COVERED=$(jq -r ".testTypes.${test_type}.coverage.statements.covered" "$ANALYSIS_FILE")
+                  COV_STATEMENTS_TOTAL=$(jq -r ".testTypes.${test_type}.coverage.statements.total" "$ANALYSIS_FILE")
+                  COV_FUNCTIONS_PCT=$(jq -r ".testTypes.${test_type}.coverage.functions.pct" "$ANALYSIS_FILE")
+                  COV_FUNCTIONS_COVERED=$(jq -r ".testTypes.${test_type}.coverage.functions.covered" "$ANALYSIS_FILE")
+                  COV_FUNCTIONS_TOTAL=$(jq -r ".testTypes.${test_type}.coverage.functions.total" "$ANALYSIS_FILE")
+                  COV_BRANCHES_PCT=$(jq -r ".testTypes.${test_type}.coverage.branches.pct" "$ANALYSIS_FILE")
+                  COV_BRANCHES_COVERED=$(jq -r ".testTypes.${test_type}.coverage.branches.covered" "$ANALYSIS_FILE")
+                  COV_BRANCHES_TOTAL=$(jq -r ".testTypes.${test_type}.coverage.branches.total" "$ANALYSIS_FILE")
+
+                  # Determine badge
+                  COV_NUM=$(echo "$COV_LINES_PCT" | awk '{print int($1)}')
+                  if [ "$COV_NUM" -ge 80 ]; then
+                    BADGE="🟢"
+                    LABEL="Excellent"
+                  elif [ "$COV_NUM" -ge 60 ]; then
+                    BADGE="🟡"
+                    LABEL="Good"
+                  else
+                    BADGE="🔴"
+                    LABEL="Needs Work"
+                  fi
+
+                  echo "**Coverage:**" >> report.md
+                  echo "- Lines: ${COV_LINES_PCT}% (${COV_LINES_COVERED}/${COV_LINES_TOTAL})" >> report.md
+                  echo "- Statements: ${COV_STATEMENTS_PCT}% (${COV_STATEMENTS_COVERED}/${COV_STATEMENTS_TOTAL})" >> report.md
+                  echo "- Functions: ${COV_FUNCTIONS_PCT}% (${COV_FUNCTIONS_COVERED}/${COV_FUNCTIONS_TOTAL})" >> report.md
+                  echo "- Branches: ${COV_BRANCHES_PCT}% (${COV_BRANCHES_COVERED}/${COV_BRANCHES_TOTAL})" >> report.md
+                  echo "" >> report.md
+                  echo "---" >> report.md
+                  echo "" >> report.md
+
+                  # Coverage table with progress bars
+                  echo "## $BADGE ${test_type^} Test Coverage" >> report.md
+                  echo "" >> report.md
+                  echo "| Metric | Coverage | Progress |" >> report.md
+                  echo "|--------|----------|----------|" >> report.md
+                  echo "| Lines | ${COV_LINES_PCT}% | $(create_progress_bar $COV_LINES_PCT) |" >> report.md
+                  echo "| Statements | ${COV_STATEMENTS_PCT}% | $(create_progress_bar $COV_STATEMENTS_PCT) |" >> report.md
+                  echo "| Functions | ${COV_FUNCTIONS_PCT}% | $(create_progress_bar $COV_FUNCTIONS_PCT) |" >> report.md
+                  echo "| Branches | ${COV_BRANCHES_PCT}% | $(create_progress_bar $COV_BRANCHES_PCT) |" >> report.md
+                  echo "" >> report.md
+                  echo "**Coverage Details:**" >> report.md
+                  echo "- ✅ Covered: ${COV_LINES_COVERED} / ${COV_LINES_TOTAL} lines" >> report.md
+                  echo "- ❌ Uncovered: $((COV_LINES_TOTAL - COV_LINES_COVERED)) lines" >> report.md
+                  echo "" >> report.md
+                else
+                  echo "---" >> report.md
+                  echo "" >> report.md
+                  echo "## ❌ ${test_type^} Test Coverage" >> report.md
+                  echo "" >> report.md
+                  echo "**Status**: Tests failed before coverage could be collected" >> report.md
+                  echo "" >> report.md
+                  echo "This usually means:" >> report.md
+                  echo "- Tests crashed or had compilation errors" >> report.md
+                  echo "- No tests were executed" >> report.md
+                  echo "- Coverage collection was not enabled" >> report.md
+                  echo "" >> report.md
+                  echo "Check ts for more details." >> report.md
+                  echo "" >> report.md
+                fi
+
+                # Link to full logs
+                if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
+                  echo "---" >> report.md
+                  echo "" >> report.md
+                  echo "**📊 Full Test Output:** [View complete ${test_type} test logs →](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})" >> report.md
+                  echo "" >> report.md
+                fi
+
+                echo "</details>" >> report.md
+                echo "" >> report.md
               fi
             done
-            echo "" >> report.md
           else
             echo "> ⚠️ Test analysis data not available yet" >> report.md
             echo "" >> report.md
@@ -320,18 +479,30 @@ jobs:
           echo "" >> report.md
 
           # Quick links
-          echo "## 🔗 Quick Links" >> report.md
+          echo "## 🔗 Quick Actions" >> report.md
           echo "" >> report.md
           echo "- [View All Checks](https://github.com/${{ github.repository }}/pull/${{ github.event.number }}/checks)" >> report.md
           echo "- [View Changes](https://github.com/${{ github.repository }}/pull/${{ github.event.number }}/files)" >> report.md
           if [ -n "${{ steps.download.outputs.ci_run_id }}" ]; then
-            echo "- [View CI Run](https://github.com/${{ github.repository }}/actions/runs/${{ steps.download.outputs.ci_run_id }})" >> report.md
+            echo "- [View This Report Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> report.md
           fi
+          echo "" >> report.md
+
+          # Tips section
+          echo "<details>" >> report.md
+          echo "<summary>💡 <b>Tips for local development</b></summary>" >> report.md
+          echo "" >> report.md
+          echo "- See affected projects: \`pnpm exec nx show projects --affected\`" >> report.md
+          echo "- Run affected tests: \`pnpm exec nx affected -t test\`" >> report.md
+          echo "- View dependency graph: \`pnpm exec nx graph --affected\`" >> report.md
+          echo "- Run with coverage: \`pnpm exec nx run api:test:unit -- --coverage\`" >> report.md
+          echo "" >> report.md
+          echo "</details>" >> report.md
           echo "" >> report.md
 
           # Footer
           echo "---" >> report.md
-          echo "_🤖 Generated by PR Test Analysis Bot • Powered by [analyze-test-artifacts.js](https://github.com/${{ github.repository }}/blob/${{ github.head_ref }}/scripts/analyze-test-artifacts.js)_" >> report.md
+          echo "_🤖 Generated by PR Analysis Bot • [Powered by GitHub Actions](https://github.com/features/actions)_" >> report.md
 
           cat report.md > $GITHUB_STEP_SUMMARY
 
@@ -347,5 +518,5 @@ jobs:
         uses: thollander/actions-comment-pull-request@v3
         with:
           file-path: report.md
-          comment-tag: pr-test-analysis
+          comment-tag: comprehensive-pr-report
           mode: recreate
