@@ -238,7 +238,7 @@ jobs:
           # Check each test type
           for test_type in unit integration e2e; do
             # Check if test passed by looking for coverage report
-            COVERAGE_REPORT="./downloaded-reports/test-reports-${test_type}/test-reports/coverage-${test_type}.md"
+            COVERAGE_REPORT="./downloaded-reports/test-reports/coverage-${test_type}.md"
 
             if [ -f "$COVERAGE_REPORT" ]; then
               # Extract coverage percentage from the report
@@ -273,7 +273,7 @@ jobs:
 
           # Check for downloaded coverage reports
           for test_type in unit integration e2e; do
-            COVERAGE_REPORT="./downloaded-reports/test-reports-${test_type}/test-reports/coverage-${test_type}.md"
+            COVERAGE_REPORT="./downloaded-reports/test-reports/coverage-${test_type}.md"
 
             if [ -f "$COVERAGE_REPORT" ]; then
               COVERAGE_FOUND=true
