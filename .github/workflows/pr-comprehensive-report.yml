@@ -199,7 +199,7 @@ jobs:
           # Coverage section
           echo "## 📊 Code Coverage" >> report.md
           echo "" >> report.md
-  echo "Coverage reports are generated for:" >> report.md
+          echo "Coverage reports are generated for:" >> report.md
           echo "" >> report.md
           echo "- 🧪 **Unit Tests** - Component-level coverage" >> report.md
           echo "- 🔗 **Integration Tests** - Module interaction coverage" >> report.md
