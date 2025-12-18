@@ -215,7 +215,12 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test_${{ matrix.test-type }}
 
       - name: Run ${{ matrix.test-type }} tests
-        run: pnpm exec nx run api:test:${{ matrix.test-type }} -- --coverage
+        run: |
+          if [ "${{ env.NX_CLOUD_ENABLED }}" = "false" ]; then
+            pnpm exec nx run api:test:${{ matrix.test-type }} -- --coverage --skip-nx-cache
+          else
+            pnpm exec nx run api:test:${{ matrix.test-type }} -- --coverage
+          fi
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test_${{ matrix.test-type }}
           DATABASE: tennis_coach_test_${{ matrix.test-type }}
