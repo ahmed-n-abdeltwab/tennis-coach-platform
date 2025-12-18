@@ -1,6 +1,6 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/client';
-import { BaseServiceTest } from '@test-utils';
+import { ServiceTest } from '@test-utils';
 
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -8,7 +8,7 @@ import { BookingTypesService } from './booking-types.service';
 import { CreateBookingTypeDto, UpdateBookingTypeDto } from './dto/booking-type.dto';
 
 describe('BookingTypesService', () => {
-  let test: BaseServiceTest<BookingTypesService, PrismaService>;
+  let test: ServiceTest<BookingTypesService, PrismaService>;
 
   beforeEach(async () => {
     // Create mock PrismaService
@@ -26,7 +26,7 @@ describe('BookingTypesService', () => {
     };
 
     // Create test instance with configuration - no class extension needed!
-    test = new BaseServiceTest({
+    test = new ServiceTest({
       serviceClass: BookingTypesService,
       mocks: [{ provide: PrismaService, useValue: mockPrisma }],
     });
@@ -45,7 +45,7 @@ describe('BookingTypesService', () => {
           id: 'booking-type-1',
           name: 'Personal Training',
           description: 'One-on-one training',
-          basePrice: 99.99,
+          basePrice: new Decimal(99.99),
           isActive: true,
           coachId: 'coach-1',
           createdAt: new Date(),
@@ -88,7 +88,7 @@ describe('BookingTypesService', () => {
           id: 'booking-type-1',
           name: 'Personal Training',
           description: 'One-on-one training',
-          basePrice: 99.99,
+          basePrice: new Decimal(99.99),
           isActive: true,
           coachId,
           createdAt: new Date(),
@@ -117,7 +117,7 @@ describe('BookingTypesService', () => {
         id: 'booking-type-1',
         name: 'Personal Training',
         description: 'One-on-one training',
-        basePrice: 99.99,
+        basePrice: new Decimal(99.99),
         isActive: true,
         coachId: 'coach-1',
         createdAt: new Date(),
@@ -195,7 +195,7 @@ describe('BookingTypesService', () => {
         id: bookingTypeId,
         name: 'Personal Training',
         description: 'One-on-one training',
-        basePrice: 99.99,
+        basePrice: new Decimal(99.99),
         isActive: true,
         coachId,
         createdAt: new Date(),
@@ -247,7 +247,7 @@ describe('BookingTypesService', () => {
         id: 'booking-type-1',
         name: 'Personal Training',
         description: 'One-on-one training',
-        basePrice: 99.99,
+        basePrice: new Decimal(99.99),
         isActive: true,
         coachId: 'coach-1',
         createdAt: new Date(),
@@ -272,7 +272,7 @@ describe('BookingTypesService', () => {
         id: bookingTypeId,
         name: 'Personal Training',
         description: 'One-on-one training',
-        basePrice: 99.99,
+        basePrice: new Decimal(99.99),
         isActive: true,
         coachId,
         createdAt: new Date(),
@@ -310,7 +310,7 @@ describe('BookingTypesService', () => {
         id: 'booking-type-1',
         name: 'Personal Training',
         description: 'One-on-one training',
-        basePrice: 99.99,
+        basePrice: new Decimal(99.99),
         isActive: true,
         coachId: 'coach-1',
         createdAt: new Date(),

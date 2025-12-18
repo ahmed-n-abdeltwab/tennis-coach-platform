@@ -5,14 +5,14 @@ import { JwtModule } from '@nestjs/jwt';
 import { DiscountsModule } from '../../src/app/discounts/discounts.module';
 import { DiscountsService } from '../../src/app/discounts/discounts.service';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
-import { BaseIntegrationTest } from '../utils';
+import { IntegrationTest } from '../utils';
 
 describe('Discounts Integration', () => {
-  let test: BaseIntegrationTest;
+  let test: IntegrationTest;
   let discountsService: DiscountsService;
 
   beforeAll(async () => {
-    test = new BaseIntegrationTest({
+    test = new IntegrationTest({
       modules: [
         ConfigModule.forRoot({
           isGlobal: true,
@@ -35,7 +35,7 @@ describe('Discounts Integration', () => {
   });
 
   beforeEach(async () => {
-    await test.cleanupDatabase();
+    await test.db.cleanupDatabase();
   });
 
   describe('Discount Validation Workflow', () => {

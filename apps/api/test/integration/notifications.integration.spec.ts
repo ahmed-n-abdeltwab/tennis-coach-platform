@@ -8,7 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import notificationsConfig from '../../src/app/notifications/config/notifications.config';
 import { NotificationsModule } from '../../src/app/notifications/notifications.module';
-import { BaseIntegrationTest } from '../utils/base/base-integration';
+import { IntegrationTest } from '../utils';
 import { NotificationMockFactory } from '../utils/factories/notification.factory';
 
 // Mock nodemailer
@@ -25,11 +25,11 @@ jest.mock('mailtrap', () => ({
 }));
 
 describe('Notifications Integration', () => {
-  let test: BaseIntegrationTest;
+  let test: IntegrationTest;
   let notificationFactory: NotificationMockFactory;
 
   beforeAll(async () => {
-    test = new BaseIntegrationTest({
+    test = new IntegrationTest({
       modules: [
         ConfigModule.forRoot({
           load: [notificationsConfig],
@@ -47,10 +47,7 @@ describe('Notifications Integration', () => {
     await test.cleanup();
   });
 
-  beforeEach(() => {
-    // Reset mocks before each test
-    mockSendMail.mockClear();
-  });
+  beforeEach(() => {});
 
   describe('POST /api/notifications/email', () => {
     it.todo('should send email successfully');

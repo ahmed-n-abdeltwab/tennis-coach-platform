@@ -1,10 +1,10 @@
-import { BaseControllerTest } from '@test-utils';
+import { ControllerTest } from '@test-utils';
 
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
 
 describe('HealthController', () => {
-  let test: BaseControllerTest<HealthController, HealthService, 'health'>;
+  let test: ControllerTest<HealthController, HealthService, 'health'>;
   let mockService: jest.Mocked<HealthService>;
 
   beforeEach(async () => {
@@ -14,7 +14,7 @@ describe('HealthController', () => {
       readiness: jest.fn(),
     } as any;
 
-    test = new BaseControllerTest({
+    test = new ControllerTest({
       controllerClass: HealthController,
       moduleName: 'health',
       providers: [{ provide: HealthService, useValue: mockService }],
@@ -41,7 +41,7 @@ describe('HealthController', () => {
 
       mockService.check.mockResolvedValue(mockHealthData);
 
-      const response = await test.get('/api/health');
+      const response = await test.http.get('/api/health');
 
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
@@ -66,7 +66,7 @@ describe('HealthController', () => {
 
       mockService.check.mockResolvedValue(mockHealthData);
 
-      const response = await test.get('/api/health');
+      const response = await test.http.get('/api/health');
 
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
@@ -86,7 +86,7 @@ describe('HealthController', () => {
 
       mockService.liveness.mockReturnValue(mockLivenessData);
 
-      const response = await test.get('/api/health/liveness');
+      const response = await test.http.get('/api/health/liveness');
 
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
@@ -106,7 +106,7 @@ describe('HealthController', () => {
 
       mockService.readiness.mockResolvedValue(mockReadinessData);
 
-      const response = await test.get('/api/health/readiness');
+      const response = await test.http.get('/api/health/readiness');
 
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
@@ -124,7 +124,7 @@ describe('HealthController', () => {
 
       mockService.readiness.mockResolvedValue(mockReadinessData);
 
-      const response = await test.get('/api/health/readiness');
+      const response = await test.http.get('/api/health/readiness');
 
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({

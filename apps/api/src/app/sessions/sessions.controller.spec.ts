@@ -1,13 +1,13 @@
 import { Role } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
-import { BaseControllerTest } from '@test-utils';
+import { ControllerTest } from '@test-utils';
 
 import { CreateSessionDto, SessionResponseDto, UpdateSessionDto } from './dto/session.dto';
 import { SessionsController } from './sessions.controller';
 import { SessionsService } from './sessions.service';
 
 describe('SessionsController', () => {
-  let test: BaseControllerTest<SessionsController, SessionsService, 'sessions'>;
+  let test: ControllerTest<SessionsController, SessionsService, 'sessions'>;
   let mockService: jest.Mocked<SessionsService>;
 
   beforeEach(async () => {
@@ -21,7 +21,7 @@ describe('SessionsController', () => {
       cancel: jest.fn(),
     } as any;
 
-    test = new BaseControllerTest({
+    test = new ControllerTest({
       controllerClass: SessionsController,
       moduleName: 'sessions',
       providers: [{ provide: SessionsService, useValue: mockService }],
@@ -60,10 +60,10 @@ describe('SessionsController', () => {
 
       mockService.findByUser.mockResolvedValue(mockSessions);
 
-      const userToken = await test.createRoleToken(Role.USER, {
+      const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: 'user-123',
       });
-      await test.authenticatedGet('/api/sessions', userToken);
+      await test.http.authenticatedGet('/api/sessions', userToken);
 
       expect(mockService.findByUser).toHaveBeenCalledWith(
         'user-123',
@@ -77,10 +77,10 @@ describe('SessionsController', () => {
 
       mockService.findByUser.mockResolvedValue(mockSessions);
 
-      const coachToken = await test.createRoleToken(Role.COACH, {
+      const coachToken = await test.auth.createRoleToken(Role.COACH, {
         sub: 'coach-123',
       });
-      await test.authenticatedGet('/api/sessions', coachToken);
+      await test.http.authenticatedGet('/api/sessions', coachToken);
 
       expect(mockService.findByUser).toHaveBeenCalledWith(
         'coach-123',
@@ -114,10 +114,13 @@ describe('SessionsController', () => {
 
       mockService.findOne.mockResolvedValue(mockSession);
 
-      const userToken = await test.createRoleToken(Role.USER, {
+      const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: 'user-123',
       });
-      await test.authenticatedGet('/api/sessions/session-123' as '/api/sessions/{id}', userToken);
+      await test.http.authenticatedGet(
+        '/api/sessions/session-123' as '/api/sessions/{id}',
+        userToken
+      );
 
       expect(mockService.findOne).toHaveBeenCalledWith('session-123', 'user-123', Role.USER);
     });
@@ -153,10 +156,10 @@ describe('SessionsController', () => {
 
       mockService.create.mockResolvedValue(mockSession);
 
-      const userToken = await test.createRoleToken(Role.USER, {
+      const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: 'user-123',
       });
-      await test.authenticatedPost('/api/sessions', userToken, {
+      await test.http.authenticatedPost('/api/sessions', userToken, {
         body: createDto,
       });
 
@@ -192,12 +195,16 @@ describe('SessionsController', () => {
 
       mockService.update.mockResolvedValue(mockSession);
 
-      const userToken = await test.createRoleToken(Role.USER, {
+      const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: 'user-123',
       });
-      await test.authenticatedPut('/api/sessions/session-123' as '/api/sessions/{id}', userToken, {
-        body: updateDto,
-      });
+      await test.http.authenticatedPut(
+        '/api/sessions/session-123' as '/api/sessions/{id}',
+        userToken,
+        {
+          body: updateDto,
+        }
+      );
 
       expect(mockService.update).toHaveBeenCalledWith(
         'session-123',
@@ -236,10 +243,10 @@ describe('SessionsController', () => {
 
       mockService.update.mockResolvedValue(mockSession);
 
-      const coachToken = await test.createRoleToken(Role.COACH, {
+      const coachToken = await test.auth.createRoleToken(Role.COACH, {
         sub: 'coach-1',
       });
-      await test.authenticatedPatch(
+      await test.http.authenticatedPatch(
         '/api/sessions/session-123' as '/api/sessions/{id}',
         coachToken,
         {
@@ -280,10 +287,10 @@ describe('SessionsController', () => {
 
       mockService.cancel.mockResolvedValue(mockSession);
 
-      const userToken = await test.createRoleToken(Role.USER, {
+      const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: 'user-123',
       });
-      await test.authenticatedPut(
+      await test.http.authenticatedPut(
         '/api/sessions/session-123/cancel' as '/api/sessions/{id}/cancel',
         userToken
       );

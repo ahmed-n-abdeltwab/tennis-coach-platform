@@ -3,17 +3,17 @@ import { ConfigModule } from '@nestjs/config';
 import healthConfig from '../../src/app/health/config/health.config';
 import { HealthModule } from '../../src/app/health/health.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
-import { BaseIntegrationTest } from '../utils/base/base-integration';
+import { IntegrationTest } from '../utils';
 
 /**
  * Health Endpoints Integration Tests
  * Demonstrates using BaseIntegrationTest for integration testing
  */
 describe('Health Endpoints Integration', () => {
-  let test: BaseIntegrationTest;
+  let test: IntegrationTest;
 
   beforeAll(async () => {
-    test = new BaseIntegrationTest({
+    test = new IntegrationTest({
       modules: [HealthModule, PrismaModule, ConfigModule.forFeature(healthConfig)],
     });
 
@@ -26,7 +26,7 @@ describe('Health Endpoints Integration', () => {
 
   describe('GET /api/health', () => {
     it('should return health check with 200 status', async () => {
-      const response = await test.get('/api/health');
+      const response = await test.http.get('/api/health');
 
       expect(response.ok).toBe(true);
       if (response.ok) {
@@ -38,7 +38,7 @@ describe('Health Endpoints Integration', () => {
     });
 
     it('should return valid timestamp in ISO format', async () => {
-      const response = await test.get('/api/health');
+      const response = await test.http.get('/api/health');
 
       if (response.ok) {
         expect(response.body.timestamp).toBeDefined();
@@ -63,7 +63,7 @@ describe('Health Endpoints Integration', () => {
 
   describe('GET /api/health/liveness', () => {
     it('should return alive status with 200', async () => {
-      const response = await test.get('/api/health/liveness');
+      const response = await test.http.get('/api/health/liveness');
 
       expect(response.ok).toBe(true);
       if (response.ok) {
@@ -75,7 +75,7 @@ describe('Health Endpoints Integration', () => {
     });
 
     it('should return valid timestamp', async () => {
-      const response = await test.get('/api/health/liveness');
+      const response = await test.http.get('/api/health/liveness');
 
       if (response.ok) {
         expect(response.body.timestamp).toBeDefined();
@@ -94,7 +94,7 @@ describe('Health Endpoints Integration', () => {
 
   describe('GET /api/health/readiness', () => {
     it('should return ready status with 200 when database is available', async () => {
-      const response = await test.get('/api/health/readiness');
+      const response = await test.http.get('/api/health/readiness');
 
       expect(response.ok).toBe(true);
       if (response.ok) {
@@ -106,7 +106,7 @@ describe('Health Endpoints Integration', () => {
     });
 
     it('should return valid timestamp', async () => {
-      const response = await test.get('/api/health/readiness');
+      const response = await test.http.get('/api/health/readiness');
 
       if (response.ok) {
         expect(response.body.timestamp).toBeDefined();

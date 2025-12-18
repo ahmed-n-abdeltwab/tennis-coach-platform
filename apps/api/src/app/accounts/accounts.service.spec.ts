@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Role } from '@prisma/client';
-import { BaseServiceTest } from '@test-utils';
+import { ServiceTest } from '@test-utils';
 
 import { HashingService } from '../iam/hashing/hashing.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -9,7 +9,7 @@ import { AccountsService } from './accounts.service';
 import { CreateAccountDto, UpdateAccountDto } from './dto/account.dto';
 
 describe('AccountsService', () => {
-  let test: BaseServiceTest<AccountsService, PrismaService>;
+  let test: ServiceTest<AccountsService, PrismaService>;
   let mockHashingService: jest.Mocked<HashingService>;
 
   beforeEach(async () => {
@@ -31,7 +31,7 @@ describe('AccountsService', () => {
       compare: jest.fn(),
     } as any;
 
-    test = new BaseServiceTest({
+    test = new ServiceTest({
       serviceClass: AccountsService,
       mocks: [
         { provide: PrismaService, useValue: mockPrisma },
@@ -292,8 +292,7 @@ describe('AccountsService', () => {
 
       const updatedAccount = {
         ...existingAccount,
-        name: updateDto.name,
-        bio: updateDto.bio,
+        ...updateDto,
       };
 
       test.prisma.account.findUnique.mockResolvedValue(existingAccount);
@@ -455,11 +454,22 @@ describe('AccountsService', () => {
           id: 'coach-1',
           email: 'coach1@example.com',
           name: 'Coach One',
+          passwordHash: 'hash',
+          gender: null,
+          age: null,
+          height: null,
+          weight: null,
+          disability: false,
+          disabilityCause: null,
+          country: null,
+          address: null,
+          notes: null,
           bio: 'Coach bio',
           credentials: 'Certified',
           philosophy: 'Philosophy',
           profileImage: null,
           isActive: true,
+          isOnline: false,
           role: Role.COACH,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -489,11 +499,22 @@ describe('AccountsService', () => {
           id: 'coach-1',
           email: 'coach1@example.com',
           name: 'Coach One',
+          passwordHash: 'hash',
+          gender: null,
+          age: null,
+          height: null,
+          weight: null,
+          disability: false,
+          disabilityCause: null,
+          country: 'USA',
+          address: null,
+          notes: null,
           bio: 'Coach bio',
           credentials: 'Certified',
           philosophy: 'Philosophy',
           profileImage: null,
           isActive: true,
+          isOnline: false,
           role: Role.COACH,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -623,11 +644,27 @@ describe('AccountsService', () => {
     it('should return coach with booking types', async () => {
       const mockCoach = {
         id: 'coach-id',
+        email: 'coach@example.com',
         name: 'Coach Name',
+        passwordHash: 'hash',
+        gender: null,
+        age: null,
+        height: null,
+        weight: null,
+        disability: false,
+        disabilityCause: null,
+        country: null,
+        address: null,
+        notes: null,
         bio: 'Coach bio',
         credentials: 'Certified',
         philosophy: 'Philosophy',
         profileImage: null,
+        isActive: true,
+        isOnline: false,
+        role: Role.COACH,
+        createdAt: new Date(),
+        updatedAt: new Date(),
         bookingTypes: [
           {
             id: 'booking-1',

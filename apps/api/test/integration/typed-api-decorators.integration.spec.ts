@@ -151,9 +151,9 @@ class TestResourceController {
   }
 }
 
-import { BaseIntegrationTest } from '../utils/base/base-integration';
+import { IntegrationTest } from '../utils';
 
-class TypedApiDecoratorsTest extends BaseIntegrationTest {
+class TypedApiDecoratorsTest extends IntegrationTest {
   document: any;
 
   constructor() {
@@ -188,7 +188,7 @@ class TypedApiDecoratorsTest extends BaseIntegrationTest {
     });
   }
 
-  override async seedTestData(): Promise<void> {
+  async seedTestData(): Promise<void> {
     // No database seeding needed
   }
 }

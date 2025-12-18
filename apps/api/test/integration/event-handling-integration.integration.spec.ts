@@ -10,13 +10,13 @@ import { MessagesModule } from '../../src/app/messages/messages.module';
 import { NotificationsModule } from '../../src/app/notifications/notifications.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
 import { SessionsModule } from '../../src/app/sessions/sessions.module';
-import { BaseIntegrationTest } from '../utils';
+import { IntegrationTest } from '../utils';
 
 describe.skip('Event Handling Integration Tests', () => {
-  let test: BaseIntegrationTest;
+  let test: IntegrationTest;
 
   beforeAll(async () => {
-    test = new BaseIntegrationTest({
+    test = new IntegrationTest({
       modules: [
         ConfigModule.forRoot({
           isGlobal: true,
@@ -41,7 +41,7 @@ describe.skip('Event Handling Integration Tests', () => {
   });
 
   beforeEach(async () => {
-    await test.cleanupDatabase();
+    await test.db.cleanupDatabase();
   });
 
   describe('Message Event Handling', () => {

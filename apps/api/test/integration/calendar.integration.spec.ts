@@ -7,13 +7,13 @@ import { JwtModule } from '@nestjs/jwt';
 
 import { CalendarModule } from '../../src/app/calendar/calendar.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
-import { BaseIntegrationTest } from '../utils/base/base-integration';
+import { IntegrationTest } from '../utils';
 
 describe('Calendar Integration Tests', () => {
-  let test: BaseIntegrationTest;
+  let test: IntegrationTest;
 
   beforeAll(async () => {
-    test = new BaseIntegrationTest({
+    test = new IntegrationTest({
       modules: [
         CalendarModule,
         PrismaModule,

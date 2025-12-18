@@ -7,17 +7,17 @@
 import { Role } from '@prisma/client';
 import { ApiContractTester, TypeSafeHttpClient, userFactory } from '@test-utils';
 
+import { E2ETest } from '../utils';
 import { AuthTestHelper } from '../utils/auth';
-import { BaseE2ETest } from '../utils/base/base-e2e';
 
 describe('User Registration and Authentication Flow (E2E)', () => {
-  let test: BaseE2ETest;
+  let test: E2ETest;
   let authHelper: AuthTestHelper;
   let contractHelper: ApiContractTester;
   let httpClient: TypeSafeHttpClient;
 
   beforeAll(async () => {
-    test = new BaseE2ETest();
+    test = new E2ETest();
     await test.setup();
 
     authHelper = new AuthTestHelper();

@@ -11,10 +11,10 @@ import { BookingTypesModule } from '../../src/app/booking-types/booking-types.mo
 import { IamModule } from '../../src/app/iam/iam.module';
 import { SessionsModule } from '../../src/app/sessions/sessions.module';
 import { TimeSlotsModule } from '../../src/app/time-slots/time-slots.module';
-import { BaseIntegrationTest } from '../utils/base/base-integration';
+import { IntegrationTest } from '../utils';
 
 describe('Booking System Integration', () => {
-  let test: BaseIntegrationTest;
+  let test: IntegrationTest;
   let testUser: Account;
   let testCoach: Account;
   let testBookingType: BookingType;
@@ -30,11 +30,11 @@ describe('Booking System Integration', () => {
   async function seedBookingTestData(): Promise<void> {
     // Create test user and coach using base class helpers with unique emails
     const timestamp = Date.now();
-    testUser = await test.createTestUser({
+    testUser = await test.db.createTestUser({
       email: `testuser-${timestamp}@example.com`,
     });
 
-    testCoach = await test.createTestCoach({
+    testCoach = await test.db.createTestCoach({
       email: `testcoach-${timestamp}@example.com`,
     });
 
@@ -53,14 +53,14 @@ describe('Booking System Integration', () => {
     }
 
     // Create booking type and time slot
-    testBookingType = await test.createTestBookingType({
+    testBookingType = await test.db.createTestBookingType({
       coachId: testCoach.id,
       name: 'Individual Lesson',
       basePrice: new Prisma.Decimal(100),
       isActive: true,
     });
 
-    testTimeSlot = await test.createTestTimeSlot({
+    testTimeSlot = await test.db.createTestTimeSlot({
       coachId: testCoach.id,
       dateTime: new Date('2025-12-25T10:00:00Z'),
       durationMin: 60,
@@ -68,13 +68,13 @@ describe('Booking System Integration', () => {
     });
 
     // Create auth tokens with fresh user/coach IDs
-    userToken = await test.createTestJwtToken({
+    userToken = await test.auth.createTestJwtToken({
       sub: testUser.id,
       email: testUser.email,
       role: testUser.role,
     });
 
-    coachToken = await test.createTestJwtToken({
+    coachToken = await test.auth.createTestJwtToken({
       sub: testCoach.id,
       email: testCoach.email,
       role: testCoach.role,
@@ -90,7 +90,7 @@ describe('Booking System Integration', () => {
       await seedBookingTestData();
     }
 
-    testSession = await test.createTestSession({
+    testSession = await test.db.createTestSession({
       userId: testUser.id,
       coachId: testCoach.id,
       bookingTypeId: testBookingType.id,
@@ -102,7 +102,7 @@ describe('Booking System Integration', () => {
   }
 
   beforeAll(async () => {
-    test = new BaseIntegrationTest({
+    test = new IntegrationTest({
       modules: [SessionsModule, TimeSlotsModule, BookingTypesModule, IamModule, AccountsModule],
     });
 
@@ -115,14 +115,14 @@ describe('Booking System Integration', () => {
 
   beforeEach(async () => {
     // Clean and reseed test data before each test to ensure clean state
-    await test.cleanupDatabase();
+    await test.db.cleanupDatabase();
     await seedBookingTestData();
   });
 
   describe('Complete Booking Workflow', () => {
     it('should complete full booking workflow from time slot creation to session booking', async () => {
       // Step 1: Coach creates a time slot (already created in setup)
-      const timeSlotsResponse = await test.authenticatedGet('/api/time-slots', coachToken);
+      const timeSlotsResponse = await test.http.authenticatedGet('/api/time-slots', coachToken);
 
       expect(timeSlotsResponse.ok).toBe(true);
       if (timeSlotsResponse.ok) {
@@ -131,7 +131,10 @@ describe('Booking System Integration', () => {
       }
 
       // Step 2: User views available booking types
-      const bookingTypesResponse = await test.authenticatedGet('/api/booking-types', userToken);
+      const bookingTypesResponse = await test.http.authenticatedGet(
+        '/api/booking-types',
+        userToken
+      );
 
       expect(bookingTypesResponse.ok).toBe(true);
       if (bookingTypesResponse.ok) {
@@ -140,7 +143,7 @@ describe('Booking System Integration', () => {
       }
 
       // Step 3: User creates a session booking
-      const createSessionResponse = await test.authenticatedPost('/api/sessions', userToken, {
+      const createSessionResponse = await test.http.authenticatedPost('/api/sessions', userToken, {
         body: {
           bookingTypeId: testBookingType.id,
           timeSlotId: testTimeSlot.id,
@@ -163,7 +166,7 @@ describe('Booking System Integration', () => {
     it('should allow user to view their sessions', async () => {
       // Create a test session for this test
       await createSessionForTest();
-      const response = await test.authenticatedGet('/api/sessions', userToken);
+      const response = await test.http.authenticatedGet('/api/sessions', userToken);
 
       expect(response.ok).toBe(true);
       if (response.ok) {
@@ -182,7 +185,7 @@ describe('Booking System Integration', () => {
       // Create a test session for this test
       await createSessionForTest();
 
-      const response = await test.authenticatedGet('/api/sessions', coachToken);
+      const response = await test.http.authenticatedGet('/api/sessions', coachToken);
 
       expect(response.ok).toBe(true);
       if (response.ok) {
@@ -219,14 +222,14 @@ describe('Booking System Integration', () => {
   describe('Error Handling and Edge Cases', () => {
     it('should handle booking unavailable time slot', async () => {
       // Create an unavailable time slot
-      const timeSlot = await test.createTestTimeSlot({
+      const timeSlot = await test.db.createTestTimeSlot({
         coachId: testCoach.id,
         dateTime: new Date('2025-01-15T14:00:00Z'),
         durationMin: 60,
         isAvailable: false,
       });
 
-      const response = await test.authenticatedPost('/api/sessions', userToken, {
+      const response = await test.http.authenticatedPost('/api/sessions', userToken, {
         body: {
           bookingTypeId: testBookingType.id,
           timeSlotId: timeSlot.id,
@@ -241,7 +244,7 @@ describe('Booking System Integration', () => {
 
     it('should prevent unauthorized access to other users sessions', async () => {
       // Create a session for the test user
-      const session = await test.createTestSession({
+      const session = await test.db.createTestSession({
         userId: testUser.id,
         coachId: testCoach.id,
         bookingTypeId: testBookingType.id,
@@ -249,17 +252,17 @@ describe('Booking System Integration', () => {
       });
 
       // Create another user
-      const otherUser = await test.createTestUser({
+      const otherUser = await test.db.createTestUser({
         email: 'otheruser@example.com',
       });
-      const otherUserToken = await test.createTestJwtToken({
+      const otherUserToken = await test.auth.createTestJwtToken({
         sub: otherUser.id,
         email: otherUser.email,
         role: otherUser.role,
       });
 
       // Try to access the test session with different user token
-      const response = await test.authenticatedGet(
+      const response = await test.http.authenticatedGet(
         `/api/sessions/${session.id}` as '/api/sessions/{id}',
         otherUserToken
       );

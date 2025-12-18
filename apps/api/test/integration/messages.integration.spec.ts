@@ -6,21 +6,21 @@
 
 import { MessagesModule } from '../../src/app/messages/messages.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
-import { BaseIntegrationTest } from '../utils/base/base-integration';
+import { IntegrationTest } from '../utils';
 import { CoachMockFactory } from '../utils/factories/coach.factory';
 import { MessageMockFactory } from '../utils/factories/message.factory';
 import { SessionMockFactory } from '../utils/factories/session.factory';
 import { UserMockFactory } from '../utils/factories/user.factory';
 
 describe('Messages Integration', () => {
-  let test: BaseIntegrationTest;
+  let test: IntegrationTest;
   let messageFactory: MessageMockFactory;
   let sessionFactory: SessionMockFactory;
   let userFactory: UserMockFactory;
   let coachFactory: CoachMockFactory;
 
   beforeAll(async () => {
-    test = new BaseIntegrationTest({
+    test = new IntegrationTest({
       modules: [MessagesModule, PrismaModule],
     });
 
@@ -37,7 +37,7 @@ describe('Messages Integration', () => {
   });
 
   beforeEach(async () => {
-    await test.cleanupDatabase();
+    await test.db.cleanupDatabase();
   });
 
   describe('POST /api/messages', () => {

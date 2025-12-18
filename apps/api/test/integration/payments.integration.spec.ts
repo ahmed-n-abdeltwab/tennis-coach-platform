@@ -6,17 +6,17 @@ import paymentsConfig from '../../src/app/payments/config/payments.config';
 import { PaymentsModule } from '../../src/app/payments/payments.module';
 import { PaymentsService } from '../../src/app/payments/payments.service';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
-import { BaseIntegrationTest } from '../utils/base/base-integration';
+import { IntegrationTest } from '../utils';
 
 // Mock fetch globally
 global.fetch = jest.fn();
 
 describe('Payments Integration', () => {
-  let test: BaseIntegrationTest;
+  let test: IntegrationTest;
   let paymentsService: PaymentsService;
 
   beforeAll(async () => {
-    test = new BaseIntegrationTest({
+    test = new IntegrationTest({
       modules: [
         ConfigModule.forRoot({
           isGlobal: true,
@@ -39,9 +39,7 @@ describe('Payments Integration', () => {
     await test.cleanup();
   });
 
-  beforeEach(async () => {
-    (fetch as jest.Mock).mockReset();
-  });
+  beforeEach(async () => {});
 
   describe('Payment Order Creation Workflow', () => {
     it.todo('should create a complete payment order workflow');

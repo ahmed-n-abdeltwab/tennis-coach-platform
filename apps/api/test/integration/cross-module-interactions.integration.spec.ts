@@ -17,13 +17,13 @@ import { PaymentsModule } from '../../src/app/payments/payments.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
 import { SessionsModule } from '../../src/app/sessions/sessions.module';
 import { TimeSlotsModule } from '../../src/app/time-slots/time-slots.module';
-import { BaseIntegrationTest } from '../utils';
+import { IntegrationTest } from '../utils';
 
 describe('Cross-Module Integration Tests', () => {
-  let test: BaseIntegrationTest;
+  let test: IntegrationTest;
 
   beforeAll(async () => {
-    test = new BaseIntegrationTest({
+    test = new IntegrationTest({
       modules: [
         ConfigModule.forRoot({
           isGlobal: true,
@@ -55,7 +55,7 @@ describe('Cross-Module Integration Tests', () => {
   });
 
   beforeEach(async () => {
-    await test.cleanupDatabase();
+    await test.db.cleanupDatabase();
   });
 
   describe('Service-to-Service Interactions', () => {
