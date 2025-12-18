@@ -136,28 +136,45 @@ jobs:
       - name: Download coverage reports from CI
         run: |
           echo "Downloading coverage reports from CI workflow..."
+          echo "Commit SHA: ${{ github.event.pull_request.head.sha }}"
 
           # Find the CI workflow run for this commit
-          CI_RUNS=$(gh api repos/${{ github.repository }}/actions/workflows/ci.yml/runs \
+          echo "Searching for CI workflow runs..."
+          gh api repos/${{ github.repository }}/actions/workflows/ci.yml/runs \
+            --jq ".workflow_runs[] | select(.head_sha == \"${{ github.event.pull_request.head.sha }}\") | {id: .id, status: .status, conclusion: .conclusion}" \
+            | head -5
+
+          CI_RUN_ID=$(gh api repos/${{ github.repository }}/actions/workflows/ci.yml/runs \
             --jq ".workflow_runs[] | select(.head_sha == \"${{ github.event.pull_request.head.sha }}\") | .id" | head -1)
 
-          if [ -n "$CI_RUNS" ]; then
-            echo "Found CI run: $CI_RUNS"
+          if [ -n "$CI_RUN_ID" ]; then
+            echo "Found CI run: $CI_RUN_ID"
+
+            # List available artifacts
+            echo "Available artifacts:"
+            gh api repos/${{ github.repository }}/actions/runs/$CI_RUN_ID/artifacts --jq '.artifacts[] | {name: .name, size: .size_in_bytes}'
 
             # Download all test report artifacts
             for test_type in unit integration e2e; do
+              echo ""
               echo "Downloading test-reports-${test_type}..."
-              gh run download $CI_RUNS --dir ./downloaded-reports --name "test-reports-${test_type}" 2>/dev/null || echo "  ⚠️ test-reports-${test_type} not available (test may have failed)"
+              if gh run download $CI_RUN_ID --dir ./downloaded-reports --name "test-reports-${test_type}" 2>&1; then
+                echo "  ✅ Downloaded test-reports-${test_type}"
+              else
+                echo "  ⚠️ test-reports-${test_type} not available"
+              fi
             done
 
-              fist what we got
+            # List what we got
+            echo ""
+            echo "Downloaded files:"
             if [ -d "./downloaded-reports" ]; then
-              echo ""
-              echo "Downloaded reports:"
-              find ./downloaded-reports -name "*.md" -type f || echo "No markdown reports found"
+              find ./downloaded-reports -type f
+            else
+              echo "No files downloaded"
             fi
           else
-            echo "No CI run found for this commit yet"
+            echo "❌ No CI run found for this commit"
           fi
         env:
           GH_TOKEN: ${{ github.token }}

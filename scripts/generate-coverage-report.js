@@ -19,8 +19,31 @@ const coverageFile = path.join(
 );
 
 if (!fs.existsSync(coverageFile)) {
-  console.error(`Coverage file not found: ${coverageFile}`);
-  process.exit(1);
+  console.error(`❌ Coverage file not found: ${coverageFile}`);
+  console.error(`Tests may have failed before coverage could be collected.`);
+
+  // Generate a failure report instead
+  const reportDir = path.join(__dirname, '..', 'test-reports');
+  if (!fs.existsSync(reportDir)) {
+    fs.mkdirSync(reportDir, { recursive: true });
+  }
+
+  const failureReport = `## ❌ ${testType.charAt(0).toUpperCase() + testType.slice(1)} Test Coverage
+
+**Status**: Tests failed before coverage could be collected
+
+This usually means:
+- Tests crashed or had compilation errors
+- No tests were executed
+- Coverage collection was not enabled
+
+Check the test logs for more details.
+`;
+
+  const reportFile = path.join(reportDir, `coverage-${testType}.md`);
+  fs.writeFileSync(reportFile, failureReport);
+  console.log(`⚠️ Failure report generated: ${reportFile}`);
+  process.exit(0);
 }
 
 const coverage = JSON.parse(fs.readFileSync(coverageFile, 'utf8'));
