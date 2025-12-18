@@ -152,10 +152,31 @@ jobs:
 
             # Move downloaded files to expected locations
             if [ -d "./downloaded-reports" ]; then
-              mkdir -p test-reports coverage
-              find ./downloaded-reports -type f -name "*.xml" -exec cp {} test-reports/ \;
-              find ./downloaded-reports -type f -name "*.json" -exec cp {} test-reports/ \;
-              find ./downloaded-reports -type f -name "coverage-summary.json" -exec sh -c 'mkdir -p coverage/apps/api/$(basename $(dirname {})) && cp {} coverage/apps/api/$(basename $(dirname {}))/' \;
+              mkdir -p test-reports coverage/apps/api/unit coverage/apps/api/integration coverage/apps/api/e2e
+
+              echo "📦 Organizing downloaded artifacts..."
+
+              # Copy all XML files to test-reports
+              find ./downloaded-reports -type f -name "*.xml" -exec cp -v {} test-reports/ \;
+
+              # Copy all JSON test reports to test-reports
+              find ./downloaded-reports -type f -name "test-report-*.json" -exec cp -v {} test-reports/ \;
+
+              # Copy coverage files to correct locations
+              # The structure is: downloaded-reports/apps/api/{type}/coverage-summary.json
+              for test_type in unit integration e2e; do
+                COVERAGE_FILE=$(find ./downloaded-reports -type f -path "*/api/${test_type}/coverage-summary.json" | head -1)
+                if [ -n "$COVERAGE_FILE" ]; then
+                  cp -v "$COVERAGE_FILE" "coverage/apps/api/${test_type}/coverage-summary.json"
+                  echo "✅ Copied ${test_type} coverage"
+                else
+                  echo "⚠️  No coverage found for ${test_type}"
+                fi
+              done
+
+              echo "📊 Final structure:"
+              ls -la test-reports/*.xml 2>/dev/null || echo "  No XML files"
+              ls -la coverage/apps/api/*/coverage-summary.json 2>/dev/null || echo "  No coverage files"
             fi
           else
             echo "⚠️  No CI run found for this commit"
