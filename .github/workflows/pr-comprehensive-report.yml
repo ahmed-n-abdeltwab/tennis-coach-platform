@@ -1,8 +1,9 @@
 name: PR - Comprehensive Report
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
 
 permissions:
   contents: read
@@ -10,63 +11,46 @@ permissions:
   actions: read
   checks: read
 
-env:
-  NODE_VERSION: "20"
-  PNPM_VERSION: "10"
-
 jobs:
   comprehensive-report:
     name: Generate Comprehensive PR Report
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: tennis_coach_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
+    if: github.event.workflow_run.event == 'pull_request'
 
     steps:
+      - name: Get PR number
+        id: pr
+        run: |
+          PR_NUMBER=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }} --jq '.pull_requests[0].number')
+          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" == "null" ]; then
+            echo "No PR found for this workflow run"
+            exit 0
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Checkout PR code
         uses: actions/checkout@v6
         with:
+          ref: refs/pull/${{ steps.pr.outputs.number }}/head
           fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
+          version: "10"
           run_install: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: "20"
           cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma Client
-        run: pnpm db:generate
 
       - name: Set up Nx SHAs for affected detection
         uses: nrwl/nx-set-shas@v4
@@ -74,101 +58,56 @@ jobs:
       - name: Get affected projects
         id: affected
         run: |
-          AFFECTED_APPS=$(pnpm exec nx show projects --affected --type app 2>/dev/null || echo "")
-          AFFECTED_LIBS=$(pnpm exec nx show projects --affected --type lib 2>/dev/null || echo "")
+          set -e
 
-          APP_COUNT=$(echo "$AFFECTED_APPS" | grep -v '^$' | wc -l)
-          LIB_COUNT=$(echo "$AFFECTED_LIBS" | grep -v '^$' | wc -l)
+          AFFECTED_APPS=$(pnpm exec nx show projects --affected --type app 2>/dev/null || true)
+          AFFECTED_LIBS=$(pnpm exec nx show projects --affected --type lib 2>/dev/null || true)
+
+          APP_COUNT=0
+          LIB_COUNT=0
+
+          if [ -n "$AFFECTED_APPS" ]; then
+            APP_COUNT=$(echo "$AFFECTED_APPS" | grep -c . || echo 0)
+          fi
+
+          if [ -n "$AFFECTED_LIBS" ]; then
+            LIB_COUNT=$(echo "$AFFECTED_LIBS" | grep -c . || echo 0)
+          fi
+
           TOTAL_COUNT=$((APP_COUNT + LIB_COUNT))
 
           echo "total=$TOTAL_COUNT" >> $GITHUB_OUTPUT
-          echo "apps=$APP> $GITHUB_OUTPUT
+          echo "apps=$APP_COUNT" >> $GITHUB_OUTPUT
           echo "libs=$LIB_COUNT" >> $GITHUB_OUTPUT
 
           # Save for later
           echo "$AFFECTED_APPS" > affected_apps.txt
           echo "$AFFECTED_LIBS" > affected_libs.txt
 
-      - name: Run database migrations
-        run: pnpm db:migrate:deploy
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test
+      - name: Download test artifacts
+        uses: actions/download-artifact@v7
+        with:
+          pattern: test-reports-*
+          merge-multiple: true
+          path: test-reports
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+        continue-on-error: true
 
-      - name: Run tests with coverage
+      - name: Get test results from CI
         id: tests
         run: |
-          # Run tests and capture results
-          set +e
-
-          pnpm exec nx run api:test:unit -- --coverage --coverageReporters=json-summary --coverageReporters=lcov > unit_output.txt 2>&1
-          UNIT_EXIT=$?
-
-          pnpm exec nx run api:test:integration -- --coverage --coverageReporters=json-summary --coverageReporters=lcov > integration_output.txt 2>&1
-          INTEGRATION_EXIT=$?
-
-          pnpm exec nx run api:test:e2e -- --coverage --coverageReporters=json-summary --coverageReporters=lcov > e2e_output.txt 2>&1
-          E2E_EXIT=$?
-
-          echo "unit_exit=$UNIT_EXIT" >> $GITHUB_OUTPUT
-          echo "integration_exit=$INTEGRATION_EXIT" >> $GITHUB_OUTPUT
-          echo "e2e_exit=$E2E_EXIT" >> $GITHUB_OUTPUT
-
-          # Overall status
-          if [ $UNIT_EXIT -eq 0 ] && [ $INTEGRATION_EXIT -eq 0 ] && [ $E2E_EXIT -eq 0 ]; then
+          # Get workflow conclusion
+          if [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
             echo "all_passed=true" >> $GITHUB_OUTPUT
           else
             echo "all_passed=false" >> $GITHUB_OUTPUT
           fi
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test
-          DATABASE: tennis_coach_test
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          REDIS_DB: 0
-          JWT_SECRET: test-secret-key-for-ci-minimum-32-chars
-          JWT_REFRESH_SECRET: test-refresh-secret-key-for-ci-minimum-32-chars
-          JWT_EXPIRES_IN: 15m
-          JWT_REFRESH_EXPIRES_IN: 24h
-          BCRYPT_SALT_ROUNDS: 10
-          PAYPAL_CLIENT_ID: test-paypal-client-id
-          PAYPAL_CLIENT_SECRET: test-paypal-client-secret
-          PAYPAL_ENVIRONMENT: sandbox
-          GOOGLE_CLIENT_ID: test-google-client-id
-          GOOGLE_CLIENT_SECRET: test-google-client-secret
-          GOOGLE_REDIRECT_URI: http://localhost:3333/auth/google/callback
-          SMTP_SENDER_EMAIL: test@example.com
-          SMTP_TOKEN: test-smtp-token
-          NODE_ENV: test
-          PORT: 3333
-          FRONTEND_URL: http://localhost:4200
-          npm_package_version: 1.0.0
-          LOG_LEVEL: error
-        continue-on-error: true
 
       - name: Generate comprehensive report
         id: report
         run: |
-          # Helper functions
-          get_badge_color() {
-            local coverage=$1
-            if (( $(echo "$coverage >= 80" | bc -l) )); then
-              echo "🟢"
-            elif (( $(echo "$coverage >= 60" | bc -l) )); then
-              echo "🟡"
-            else
-              echo "🔴"
-            fi
-          }
-
-          create_progress_bar() {
-            local percentage=$1
-            local filled=$(printf "%.0f" $(echo "$percentage / 5" | bc -l))
-            local empty=$((20 - filled))
-            printf "["
-            printf "█%.0s" $(seq 1 $filled)
-            printf "░%.0s" $(seq 1 $empty)
-            printf "]"
-          }
+          set -e
 
           # Start report
           echo "# 🚀 PR Analysis Report" > report.md
@@ -187,10 +126,10 @@ jobs:
           echo "" >> report.md
 
           TOTAL=${{ steps.affected.outputs.total }}
-          if [ $TOTAL -eq 0 ]; then
+          if [ "$TOTAL" -eq 0 ]; then
             echo "✅ No projects affected - changes are in non-project files" >> report.md
           else
-            echo "🎯 **$TOTAL project(s) affected**" >> report.md
+            echo "🎯 **${TOTAL} project(s) affected**" >> report.md
             echo "" >> report.md
 
             if [ ${{ steps.affected.outputs.apps }} -gt 0 ]; then
@@ -198,6 +137,7 @@ jobs:
               echo '```' >> report.md
               cat affected_apps.txt >> report.md
               echo '```' >> report.md
+              echo "" >> report.md
             fi
 
             if [ ${{ steps.affected.outputs.libs }} -gt 0 ]; then
@@ -205,97 +145,55 @@ jobs:
               echo '```' >> report.md
               cat affected_libs.txt >> report.md
               echo '```' >> report.md
+              echo "" >> report.md
             fi
           fi
-          echo "" >> report.md
 
           # Test results section
           echo "## 🧪 Test Results" >> report.md
           echo "" >> report.md
-          echo "| Test Suite | Status | Coverage |" >> report.md
-          echo "|------------|--------|----------|" >> report.md
 
-          # Process each test type
-          for test_type in unit integration e2e; do
-            # Get exit code
-            EXIT_VAR="${test_type}_exit"
-            EXIT_CODE="${!EXIT_VAR:-1}"
-
-            if [ "$EXIT_CODE" -eq 0 ]; then
-              STATUS="✅ Passed"
-            else
-              STATUS="❌ Failed"
-            fi
-
-            # Get coverage
-            COVERAGE_FILE="coverage/apps/api/$test_type/coverage-summary.json"
-            if [ -f "$COVERAGE_FILE" ]; then
-              LINES=$(jq -r '.total.lines.pct' "$COVERAGE_FILE")
-              BADGE=$(get_badge_color "$LINES")
-              COVERAGE="$BADGE ${LINES}%"
-            else
-              COVERAGE="N/A"
-            fi
-
-            echo "| ${test_type^} | $STATUS | $COVERAGE |" >> report.md
-          done
+          if [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
+            echo "✅ All test suites passed" >> report.md
+          elif [ "${{ github.event.workflow_run.conclusion }}" == "failure" ]; then
+            echo "❌ Some test suites failed" >> report.md
+          else
+            echo "⚠️ Test status: ${{ github.event.workflow_run.conclusion }}" >> report.md
+          fi
           echo "" >> report.md
 
-          # Detailed coverage section
-          echo "## 📊 Coverage Details" >> report.md
+          # Check for coverage in artifacts
+          if [ -d "test-reports" ]; then
+            echo "📊 Coverage reports available in workflow artifacts" >> report.md
+          else
+            echo "ℹ️ Coverage reports will be available after CI completes" >> report.md
+          fi
           echo "" >> report.md
-
-          for test_type in unit integration e2e; do
-            COVERAGE_FILE="coverage/apps/api/$test_type/coverage-summary.json"
-
-            if [ -f "$COVERAGE_FILE" ]; then
-              LINES=$(jq -r '.total.lines.pct' "$COVERAGE_FILE")
-              STATEMENTS=$(jq -r '.total.statements.pct' "$COVERAGE_FILE")
-              FUNCTIONS=$(jq -r '.total.functions.pct' "$COVERAGE_FILE")
-              BRANCHES=$(jq -r '.total.branches.pct' "$COVERAGE_FILE")
-
-              BADGE=$(get_badge_color "$LINES")
-
-              echo "<details>" >> report.md
-              echo "<summary>$BADGE <b>${test_type^} Tests - ${LINES}% Coverage</b></summary>" >> report.md
-              echo "" >> report.md
-              echo "| Metric | Coverage | Progress |" >> report.md
-              echo "|--------|----------|----------|" >> report.md
-              echo "| Lines | ${LINES}% | $(create_progress_bar $LINES) |" >> report.md
-              echo "| Statements | ${STATEMENTS}% | $(create_progress_bar $STATEMENTS) |" >> report.md
-              echo "| Functions | ${FUNCTIONS}% | $(create_progress_bar $FUNCTIONS) |" >> report.md
-              echo "| Branches | ${BRANCHES}% | $(create_progress_bar $BRANCHES) |" >> report.md
-              echo "" >> report.md
-              echo "</details>" >> report.md
-              echo "" >> report.md
-            fi
-          done
 
           # Build info
           echo "## 🏗️ Build Information" >> report.md
           echo "" >> report.md
-          echo "- **Branch**: \`${{ github.head_ref }}\`" >> report.md
-          echo "- **Base**: \`${{ github.base_ref }}\`" >> report.md
-          echo "- **Commit**: \`${{ github.event.pull_request.head.sha }}\`" >> report.md
-          echo "- **Author**: @${{ github.event.pull_request.user.login }}" >> report.md
+          echo "- **Workflow**: ${{ github.event.workflow_run.name }}" >> report.md
+          echo "- **Status**: ${{ github.event.workflow_run.conclusion }}" >> report.md
+          echo "- **PR**: #${{ steps.pr.outputs.number }}" >> report.md
           echo "" >> report.md
 
           # Quick actions
           echo "## 🔗 Quick Actions" >> report.md
           echo "" >> report.md
-          echo "- [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> report.md
-          echo "- [View Changes](${{ github.event.pull_request.html_url }}/files)" >> report.md
-          echo "- [Download Coverage Reports](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> report.md
+          echo "- [View CI Workflow Run](${{ github.event.workflow_run.html_url }})" >> report.md
+          echo "- [View This Report Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> report.md
+          echo "- [Download Test Reports](${{ github.event.workflow_run.html_url }})" >> report.md
           echo "" >> report.md
 
           # Tips section
           echo "<details>" >> report.md
-          echo "<summary>💡 <b>Tips for improving coverage</b></summary>" >> report.md
+          echo "<summary>💡 <b>Tips for local development</b></summary>" >> report.md
           echo "" >> report.md
-          echo "- Focus on testing critical business logic" >> report.md
-          echo "- Add edge case tests for better branch coverage" >> report.md
-          echo "- Use \`pnpm exec nx affected -t test\` locally to run affected tests" >> report.md
-          echo "- View detailed coverage: \`pnpm exec nx run api:test:unit -- --coverage\`" >> report.md
+          echo "- See affected projects: \`pnpm exec nx show projects --affected\`" >> report.md
+          echo "- Run affected tests: \`pnpm exec nx affected -t test\`" >> report.md
+          echo "- View dependency graph: \`pnpm exec nx graph --affected\`" >> report.md
+          echo "- Run with coverage: \`pnpm exec nx run api:test:unit -- --coverage\`" >> report.md
           echo "" >> report.md
           echo "</details>" >> report.md
           echo "" >> report.md
@@ -308,16 +206,10 @@ jobs:
           cat report.md > $GITHUB_STEP_SUMMARY
 
       - name: Comment PR
+        if: steps.pr.outputs.number != ''
         uses: thollander/actions-comment-pull-request@v3
         with:
           filePath: report.md
           comment_tag: comprehensive-pr-report
           mode: recreate
-
-      - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v6
-        if: always()
-        with:
-          name: coverage-reports
-          path: coverage/
-          retention-days: 30
+          pr_number: ${{ steps.pr.outputs.number }}
