@@ -75,29 +75,63 @@ jobs:
           echo "$AFFECTED_APPS" > affected_apps.txt
           echo "$AFFECTED_LIBS" > affected_libs.txt
 
-      - name: Wait for CI to complete
-        uses: lewagon/wait-on-check-action@v1.3.4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          check-name: "Test - unit"
-          repo-token: ${{ github.token }}
-          wait-interval: 10
-        continue-on-error: true
-
-      - name: Get CI status
+      - name: Wait for all CI checks to complete
         id: tests
         run: |
-          # Check if all CI checks passed
-          CHECKS=$(gh api repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha }}/check-runs --jq '.check_runs[] | select(.name | startswith("Test -") or . == "Build" or . == "Lint & Format Check") | .conclusion')
+          echo "Waiting for CI checks to complete..."
 
-          if echo "$CHECKS" | grep -q "failure"; then
-            echo "all_passed=false" >> $GITHUB_OUTPUT
-          else
-            echo "all_passed=true" >> $GITHUB_OUTPUT
+          MAX_WAIT=1800  # 30 minutes max
+          WAIT_INTERVAL=15
+          ELAPSED=0
+
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            # Get all check runs for this commit
+            RESPONSE=$(gh api repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha }}/check-runs)
+
+            # Get CI-related checks (exclude this workflow)
+            CI_CHECKS=$(echo "$RESPONSE" | jq -r '.check_runs[] | select(.name != "Generate Comprehensive PR Report") | select(.name | test("Test -|Build|Lint|Security|Publish Test Results")) | "\(.name):\(.status):\(.conclusion)"')
+
+            if [ -z "$CI_CHECKS" ]; then
+              echo "No CI checks found yet, waiting..."
+              sleep $WAIT_INTERVAL
+              ELAPSED=$((ELAPSED + WAIT_INTERVAL))
+              continue
+            fi
+
+            echo "Current check status:"
+            echo "$CI_CHECKS"
+
+            # Check if all are completed
+            PENDING=$(echo "$CI_CHECKS" | grep -c "in_progress\|queued" || true)
+
+            if [ "$PENDING" -eq 0 ]; then
+              echo "All CI checks completed!"
+
+              # Check for failures
+              FAILURES=$(echo "$CI_CHECKS" | grep -c ":failure" || true)
+
+              if [ "$FAILURES" -gt 0 ]; then
+                echo "all_passed=false" >> $GITHUB_OUTPUT
+                echo "❌ $FAILURES check(s) failed"
+              else
+                echo "all_passed=true" >> $GITHUB_OUTPUT
+                echo "✅ All checks passed"
+              fi
+
+              break
+            fi
+
+            echo "Waiting for $PENDING check(s) to complete..."
+            sleep $WAIT_INTERVAL
+            ELAPSED=$((ELAPSED + WAIT_INTERVAL))
+          done
+
+          if [ $ELAPSED -ge $MAX_WAIT ]; then
+            echo "Timeout waiting for CI checks"
+            echo "all_passed=unknown" >> $GITHUB_OUTPUT
           fi
         env:
           GH_TOKEN: ${{ github.token }}
-        continue-on-error: true
 
       - name: Generate comprehensive report
         id: report
@@ -111,8 +145,10 @@ jobs:
           # Overall status
           if [ "${{ steps.tests.outputs.all_passed }}" == "true" ]; then
             echo "## ✅ All Checks Passed!" >> report.md
+          elif [ "${{ steps.tests.outputs.all_passed }}" == "unknown" ]; then
+            echo "## ⏳ CI Checks Still Running" >> report.md
           else
-            echo "## ⚠️ Some Checks Need Attention" >> report.md
+            echo "## ⚠️ Some Checks Failed" >> report.md
           fi
           echo "" >> report.md
 
@@ -150,6 +186,8 @@ jobs:
 
           if [ "${{ steps.tests.outputs.all_passed }}" == "true" ]; then
             echo "✅ All test suites passed" >> report.md
+          elif [ "${{ steps.tests.outputs.all_passed }}" == "unknown" ]; then
+            echo "⏳ CI checks are still running - report will update when complete" >> report.md
           else
             echo "❌ Some test suites failed - check CI workflow for details" >> report.md
           fi
