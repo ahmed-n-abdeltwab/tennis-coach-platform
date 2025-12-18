@@ -156,8 +156,18 @@ import { BaseIntegrationTest } from '../utils/base/base-integration';
 class TypedApiDecoratorsTest extends BaseIntegrationTest {
   document: any;
 
-  override async setupTestApp(): Promise<void> {
-    // Generate OpenAPI document
+  constructor() {
+    super({
+      modules: [],
+      controllers: [TestResourceController],
+      providers: [],
+    });
+  }
+
+  override async setup(): Promise<void> {
+    await super.setup();
+
+    // Generate OpenAPI document after app is initialized
     const config = new DocumentBuilder()
       .setTitle('Test API')
       .setDescription('Test API for decorator validation')
@@ -165,7 +175,7 @@ class TypedApiDecoratorsTest extends BaseIntegrationTest {
       .addBearerAuth()
       .build();
 
-    this.document = SwaggerModule.createDocument(this.app, config, {
+    this.document = SwaggerModule.createDocument(this.application, config, {
       extraModels: [
         TestResourceDto,
         PaginatedResponseDto,
@@ -176,18 +186,6 @@ class TypedApiDecoratorsTest extends BaseIntegrationTest {
         CustomStatusDto,
       ],
     });
-  }
-
-  override getTestModules(): any[] {
-    return [];
-  }
-
-  override getTestControllers(): any[] {
-    return [TestResourceController];
-  }
-
-  override getTestProviders() {
-    return [];
   }
 
   override async seedTestData(): Promise<void> {

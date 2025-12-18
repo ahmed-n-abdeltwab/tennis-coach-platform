@@ -5,7 +5,6 @@
 
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { Test } from '@nestjs/testing';
 
 import { AccountsModule } from '../../src/app/accounts/accounts.module';
 import { BookingTypesModule } from '../../src/app/booking-types/booking-types.module';
@@ -16,64 +15,47 @@ import { MessagesModule } from '../../src/app/messages/messages.module';
 import { NotificationsModule } from '../../src/app/notifications/notifications.module';
 import { PaymentsModule } from '../../src/app/payments/payments.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
-import { PrismaService } from '../../src/app/prisma/prisma.service';
 import { SessionsModule } from '../../src/app/sessions/sessions.module';
 import { TimeSlotsModule } from '../../src/app/time-slots/time-slots.module';
 import { BaseIntegrationTest } from '../utils';
 
-class CrossModuleIntegrationTest extends BaseIntegrationTest {
-  async setupTestApp(): Promise<void> {
-    this.module = await Test.createTestingModule({
-      imports: this.getTestModules(),
-    }).compile();
-
-    this.app = this.module.createNestApplication();
-    this.app.setGlobalPrefix('api');
-    await this.app.init();
-
-    this.prisma = this.module.get<PrismaService>(PrismaService);
-    this.module = this.module;
-  }
-
-  getTestModules(): any[] {
-    return [
-      ConfigModule.forRoot({
-        isGlobal: true,
-        envFilePath: ['.env.test', '.env'],
-      }),
-      JwtModule.register({
-        secret: 'test-secret',
-        signOptions: { expiresIn: '1h' },
-      }),
-      PrismaModule,
-      IamModule,
-      AccountsModule,
-      BookingTypesModule,
-      SessionsModule,
-      TimeSlotsModule,
-      DiscountsModule,
-      MessagesModule,
-      PaymentsModule,
-      CalendarModule,
-      NotificationsModule,
-    ];
-  }
-}
-
 describe('Cross-Module Integration Tests', () => {
-  let testHelper: CrossModuleIntegrationTest;
+  let test: BaseIntegrationTest;
 
   beforeAll(async () => {
-    testHelper = new CrossModuleIntegrationTest();
-    await testHelper.setupTestApp();
+    test = new BaseIntegrationTest({
+      modules: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          envFilePath: ['.env.test', '.env'],
+        }),
+        JwtModule.register({
+          secret: 'test-secret',
+          signOptions: { expiresIn: '1h' },
+        }),
+        PrismaModule,
+        IamModule,
+        AccountsModule,
+        BookingTypesModule,
+        SessionsModule,
+        TimeSlotsModule,
+        DiscountsModule,
+        MessagesModule,
+        PaymentsModule,
+        CalendarModule,
+        NotificationsModule,
+      ],
+    });
+
+    await test.setup();
   });
 
   afterAll(async () => {
-    await testHelper.cleanup();
+    await test.cleanup();
   });
 
   beforeEach(async () => {
-    await testHelper.cleanupDatabase();
+    await test.cleanupDatabase();
   });
 
   describe('Service-to-Service Interactions', () => {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -10,39 +11,32 @@ import { BaseIntegrationTest } from '../utils/base/base-integration';
 // Mock fetch globally
 global.fetch = jest.fn();
 
-class PaymentsIntegrationTest extends BaseIntegrationTest {
-  paymentsService!: PaymentsService;
-
-  async setupTestApp(): Promise<void> {
-    this.paymentsService = this.module.get<PaymentsService>(PaymentsService);
-  }
-
-  getTestModules(): any[] {
-    return [
-      ConfigModule.forRoot({
-        isGlobal: true,
-        load: [paymentsConfig],
-      }),
-      PrismaModule,
-      PaymentsModule,
-      JwtModule.register({
-        secret: 'test-secret',
-        signOptions: { expiresIn: '1h' },
-      }),
-    ];
-  }
-}
-
 describe('Payments Integration', () => {
-  let testInstance: PaymentsIntegrationTest;
+  let test: BaseIntegrationTest;
+  let paymentsService: PaymentsService;
 
   beforeAll(async () => {
-    testInstance = new PaymentsIntegrationTest();
-    await testInstance.setup();
+    test = new BaseIntegrationTest({
+      modules: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          load: [paymentsConfig],
+        }),
+        PrismaModule,
+        PaymentsModule,
+        JwtModule.register({
+          secret: 'test-secret',
+          signOptions: { expiresIn: '1h' },
+        }),
+      ],
+    });
+
+    await test.setup();
+    paymentsService = test.testModule.get<PaymentsService>(PaymentsService);
   });
 
   afterAll(async () => {
-    await testInstance.cleanup();
+    await test.cleanup();
   });
 
   beforeEach(async () => {

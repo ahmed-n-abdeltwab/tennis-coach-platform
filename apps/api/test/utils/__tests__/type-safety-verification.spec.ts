@@ -21,16 +21,21 @@ import { RoleBasedAccessTester } from '../security/role-based-access-tester';
 class TypeSafetyVerificationTest extends BaseIntegrationTest {
   authHelper: AuthTestHelper;
 
-  async setupTestApp(): Promise<void> {
-    this.authHelper = new AuthTestHelper();
+  constructor() {
+    super({
+      modules: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+        }),
+      ],
+      controllers: [],
+      providers: [],
+    });
   }
 
-  getTestModules(): any[] {
-    return [
-      ConfigModule.forRoot({
-        isGlobal: true,
-      }),
-    ];
+  override async setup(): Promise<void> {
+    await super.setup();
+    this.authHelper = new AuthTestHelper();
   }
 
   override async seedTestData(): Promise<void> {
@@ -38,8 +43,8 @@ class TypeSafetyVerificationTest extends BaseIntegrationTest {
   }
 
   // Expose app for testing purposes
-  override getApp() {
-    return this.app;
+  getApp() {
+    return this.application;
   }
 }
 

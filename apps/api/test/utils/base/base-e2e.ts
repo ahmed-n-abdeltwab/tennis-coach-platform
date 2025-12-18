@@ -1,63 +1,58 @@
 /**
- * Abstract base class for E2E testing
+ * Configuration-based E2E test class
  * Provides full application setup with all modules for end-to-end testing
+ *
+ * Usage:
+ * ```typescript
+ * const test = new BaseE2ETest({
+ *   appModule: AppModule,
+ * });
+ *
+ * await test.setup();
+ *
+ * // Full application available for E2E testing
+ * await test.authenticatedPost('/api/sessions', token, { body: data });
+ * ```
  */
 
-import { Test } from '@nestjs/testing';
+import { ValidationPipe } from '@nestjs/common';
 
 import { AppModule } from '../../../src/app/app.module';
-import { PrismaService } from '../../../src/app/prisma/prisma.service';
 
 import { BaseIntegrationTest } from './base-integration';
 
-export abstract class BaseE2ETest extends BaseIntegrationTest {
-  /**
-   * Setup method for E2E tests
-   * Loads the full AppModule for complete end-to-end testing
-   */
-  async setupTestApp(): Promise<void> {
-    // E2E tests use the full AppModule
-    // No additional setup needed - app is created in setup()
+export interface E2ETestConfig {
+  /** The main application module (defaults to AppModule) */
+  appModule?: typeof AppModule;
+}
+
+export class BaseE2ETest extends BaseIntegrationTest<string> {
+  private e2eConfig: E2ETestConfig;
+
+  constructor(config: E2ETestConfig = {}) {
+    // Convert E2E config to Integration config
+    super({
+      modules: [config.appModule ?? AppModule],
+      controllers: [],
+      providers: [],
+    });
+    this.e2eConfig = config;
   }
 
   /**
-   * Gets the full application module for E2E testing
-   */
-  getTestModules(): [typeof AppModule] {
-    return [AppModule];
-  }
-
-  /**
-   * Override setup to use AppModule
+   * Override setup to use AppModule with validation pipes
    */
   override async setup(): Promise<void> {
-    const { ValidationPipe } = await import('@nestjs/common');
+    // Call parent setup which handles async module resolution
+    await super.setup();
 
-    this.module = await Test.createTestingModule({
-      imports: this.getTestModules(),
-    }).compile();
-
-    this.app = this.module.createNestApplication();
-    this.app.setGlobalPrefix('api');
-
-    // Apply global pipes like in main.ts
-    this.app.useGlobalPipes(
+    // Apply global pipes like in main.ts (after app is initialized)
+    this.application.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
       })
     );
-
-    await this.app.init();
-
-    // Get PrismaService
-    try {
-      this.prisma = this.module.get<PrismaService>(PrismaService, { strict: false });
-    } catch {
-      // PrismaService not available, skip database setup
-    }
-
-    await this.setupDatabase();
   }
 }

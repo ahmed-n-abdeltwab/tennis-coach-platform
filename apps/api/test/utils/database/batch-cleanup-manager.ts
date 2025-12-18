@@ -58,20 +58,20 @@ export class BatchCleanupManager {
   private async cleanDatabaseParallel(prisma: PrismaClient): Promise<void> {
     try {
       // First, delete refresh tokens and messages (leaf nodes)
-      await Promise.all([prisma.refreshToken.deleteMany(), prisma.message.deleteMany()]);
+      await Promise.all([prisma.refreshToken.deleteMany({}), prisma.message.deleteMany({})]);
 
       // Then delete sessions (depends on bookingType, timeSlot, discount, accounts)
-      await prisma.session.deleteMany();
+      await prisma.session.deleteMany({});
 
       // Then delete time slots, discounts, and booking types (depend on accounts)
       await Promise.all([
-        prisma.timeSlot.deleteMany(),
-        prisma.discount.deleteMany(),
-        prisma.bookingType.deleteMany(),
+        prisma.timeSlot.deleteMany({}),
+        prisma.discount.deleteMany({}),
+        prisma.bookingType.deleteMany({}),
       ]);
 
       // Finally delete accounts (root table)
-      await prisma.account.deleteMany();
+      await prisma.account.deleteMany({});
     } catch (error) {
       throw createDatabaseError(
         'parallel batch cleanup',
@@ -92,19 +92,19 @@ export class BatchCleanupManager {
     try {
       // Delete in reverse order of dependencies
       // 1. Delete leaf nodes first (no dependencies)
-      await prisma.refreshToken.deleteMany();
-      await prisma.message.deleteMany();
+      await prisma.refreshToken.deleteMany({});
+      await prisma.message.deleteMany({});
 
       // 2. Delete sessions (depends on bookingType, timeSlot, discount, accounts)
-      await prisma.session.deleteMany();
+      await prisma.session.deleteMany({});
 
       // 3. Delete entities that depend only on accounts
-      await prisma.timeSlot.deleteMany();
-      await prisma.discount.deleteMany();
-      await prisma.bookingType.deleteMany();
+      await prisma.timeSlot.deleteMany({});
+      await prisma.discount.deleteMany({});
+      await prisma.bookingType.deleteMany({});
 
       // 4. Finally delete accounts (root table)
-      await prisma.account.deleteMany();
+      await prisma.account.deleteMany({});
     } catch (error) {
       throw createDatabaseError(
         'sequential batch cleanup',

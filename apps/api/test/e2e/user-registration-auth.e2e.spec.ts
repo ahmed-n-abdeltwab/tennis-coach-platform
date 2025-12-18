@@ -10,29 +10,23 @@ import { ApiContractTester, TypeSafeHttpClient, userFactory } from '@test-utils'
 import { AuthTestHelper } from '../utils/auth';
 import { BaseE2ETest } from '../utils/base/base-e2e';
 
-class UserRegistrationAuthE2ETest extends BaseE2ETest {
-  override async setupTestApp(): Promise<void> {
-    // Use default AppModule setup from BaseE2ETest
-  }
-}
-
 describe('User Registration and Authentication Flow (E2E)', () => {
-  let testInstance: UserRegistrationAuthE2ETest;
+  let test: BaseE2ETest;
   let authHelper: AuthTestHelper;
   let contractHelper: ApiContractTester;
   let httpClient: TypeSafeHttpClient;
 
   beforeAll(async () => {
-    testInstance = new UserRegistrationAuthE2ETest();
-    await testInstance.setup();
+    test = new BaseE2ETest();
+    await test.setup();
 
     authHelper = new AuthTestHelper();
-    contractHelper = new ApiContractTester(testInstance.getApp());
-    httpClient = new TypeSafeHttpClient(testInstance.getApp());
+    contractHelper = new ApiContractTester(test.application);
+    httpClient = new TypeSafeHttpClient(test.application);
   });
 
   afterAll(async () => {
-    await testInstance.cleanup();
+    await test.cleanup();
   });
 
   describe('User Registration Flow', () => {

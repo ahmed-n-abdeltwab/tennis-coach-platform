@@ -5,7 +5,6 @@
  */
 
 import { ConfigModule } from '@nestjs/config';
-import { Test, TestingModule } from '@nestjs/testing';
 
 import notificationsConfig from '../../src/app/notifications/config/notifications.config';
 import { NotificationsModule } from '../../src/app/notifications/notifications.module';
@@ -26,40 +25,26 @@ jest.mock('mailtrap', () => ({
 }));
 
 describe('Notifications Integration', () => {
+  let test: BaseIntegrationTest;
   let notificationFactory: NotificationMockFactory;
 
-  class NotificationsIntegrationTest extends BaseIntegrationTest {
-    override getTestModules(): any[] {
-      return [NotificationsModule];
-    }
-    async setupTestApp(): Promise<void> {
-      const moduleFixture: TestingModule = await Test.createTestingModule({
-        imports: [
-          ConfigModule.forRoot({
-            load: [notificationsConfig],
-            isGlobal: true,
-          }),
-          NotificationsModule,
-        ],
-      }).compile();
-
-      this.app = moduleFixture.createNestApplication();
-      this.app.setGlobalPrefix('api');
-      await this.app.init();
-    }
-  }
-
-  let testHelper: NotificationsIntegrationTest;
-
   beforeAll(async () => {
-    testHelper = new NotificationsIntegrationTest();
-    await testHelper.setupTestApp();
+    test = new BaseIntegrationTest({
+      modules: [
+        ConfigModule.forRoot({
+          load: [notificationsConfig],
+          isGlobal: true,
+        }),
+        NotificationsModule,
+      ],
+    });
 
+    await test.setup();
     notificationFactory = new NotificationMockFactory();
   });
 
   afterAll(async () => {
-    await testHelper.cleanup();
+    await test.cleanup();
   });
 
   beforeEach(() => {
