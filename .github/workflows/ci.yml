@@ -18,6 +18,8 @@ permissions:
 env:
   NODE_VERSION: "20"
   PNPM_VERSION: "10"
+  # Set to 'true' to enable Nx Cloud (requires active subscription)
+  NX_CLOUD_ENABLED: "false"
 
 jobs:
   # ============================================================================
@@ -53,7 +55,12 @@ jobs:
         uses: nrwl/nx-set-shas@v4
 
       - name: Run linting
-        run: pnpm exec nx affected -t lint --exclude=web
+        run: |
+          if [ "${{ env.NX_CLOUD_ENABLED }}" = "false" ]; then
+            pnpm exec nx affected -t lint --exclude=web --skip-nx-cache
+          else
+            pnpm exec nx affected -t lint --exclude=web
+          fi
 
       - name: Auto-format code
         run: pnpm format
@@ -122,7 +129,12 @@ jobs:
         uses: nrwl/nx-set-shas@v4
 
       - name: Build affected projects
-        run: pnpm exec nx affected -t build --exclude=web
+        run: |
+          if [ "${{ env.NX_CLOUD_ENABLED }}" = "false" ]; then
+            pnpm exec nx affected -t build --exclude=web --skip-nx-cache
+          else
+            pnpm exec nx affected -t build --exclude=web
+          fi
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v6
