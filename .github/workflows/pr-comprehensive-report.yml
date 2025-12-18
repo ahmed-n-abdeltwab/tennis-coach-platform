@@ -133,7 +133,48 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
+      - name: Extract coverage thresholds from Jest configs
+        id: thresholds
+        run: |
+          echo "Extracting coverage thresholds from Jest configs..."
+
+          # Extract thresholds for each test type
+          for test_type in unit integration e2e; do
+            CONFIG_FILE="apps/api/jest.${test_type}.config.ts"
+
+            if [ -f "$CONFIG_FILE" ]; then
+              # Extract the branches threshold (they're all the same in the config)
+              THRESHOLD=$(grep -A 5 "coverageThreshold:" "$CONFIG_FILE" | grep "branches:" | awk '{print $2}' | sed 's/,//' || echo "80")
+              echo "${test_type}_threshold=$THRESHOLD" >> $GITHUB_OUTPUT
+              echo "  ${test_type}: ${THRESHOLD}%"
+            else
+              echo "${test_type}_threshold=80" >> $GITHUB_OUTPUT
+              echo "  ${test_type}: 80% (default)"
+            fi
+          done
+
+          # Calculate thresholds for badges
+          # Using unit test threshold as the baseline (most strict)
+          UNIT_THRESHOLD=$(grep -A 5 "coverageThreshold:" "apps/api/jest.unit.config.ts" | grep "branches:" | awk '{print $2}' | sed 's/,//' || echo "80")
+
+          EXCELLENT_THRESHOLD=$UNIT_THRESHOLD
+          GOOD_THRESHOLD=$((UNIT_THRESHOLD - 20))
+
+          if [ $GOOD_THRESHOLD -lt 50 ]; then
+            GOOD_THRESHOLD=50
+          fi
+
+          echo "excellent_threshold=$EXCELLENT_THRESHOLD" >> $GITHUB_OUTPUT
+          echo "good_threshold=$GOOD_THRESHOLD" >> $GITHUB_OUTPUT
+
+          echo ""
+          echo "Badge thresholds:"
+          echo "  🟢 Excellent: ≥${EXCELLENT_THRESHOLD}%"
+          echo "  🟡 Good: ≥${GOOD_THRESHOLD}%"
+          echo "  🔴 Needs Work: <${GOOD_THRESHOLD}%"
+
       - name: Download coverage reports from CI
+        id: download
         run: |
           echo "Downloading coverage reports from CI workflow..."
           echo "Commit SHA: ${{ github.event.pull_request.head.sha }}"
@@ -149,6 +190,24 @@ jobs:
 
           if [ -n "$CI_RUN_ID" ]; then
             echo "Found CI run: $CI_RUN_ID"
+            echo "ci_run_id=$CI_RUN_ID" >> $GITHUB_OUTPUT
+
+            # Get job IDs for direct links to logs
+            echo "Getting job IDs for test links..."
+            gh api repos/${{ github.repository }}/actions/runs/$CI_RUN_ID/jobs \
+              --jq '.jobs[] | select(.name | test("Test -")) | {name: .name, id: .id, conclusion: .conclusion}' \
+              > job_info.json
+
+            cat job_info.json
+
+            # Extract job IDs
+            UNIT_JOB_ID=$(jq -r 'select(.name | test("unit")) | .id' job_info.json | head -1)
+            INTEGRATION_JOB_ID=$(jq -r 'select(.name | test("integration")) | .id' job_info.json | head -1)
+            E2E_JOB_ID=$(jq -r 'select(.name | test("e2e")) | .id' job_info.json | head -1)
+
+            echo "unit_job_id=$UNIT_JOB_ID" >> $GITHUB_OUTPUT
+            echo "integration_job_id=$INTEGRATION_JOB_ID" >> $GITHUB_OUTPUT
+            echo "e2e_job_id=$E2E_JOB_ID" >> $GITHUB_OUTPUT
 
             # List available artifacts
             echo "Available artifacts:"
@@ -167,9 +226,9 @@ jobs:
 
             # List what we got
             echo ""
-            echo "Downloaded files:"
+            echo "Downloaded files structure:"
             if [ -d "./downloaded-reports" ]; then
-              find ./downloaded-reports -type f
+              find ./downloaded-reports -type f -exec echo "  {}" \;
             else
               echo "No files downloaded"
             fi
@@ -199,6 +258,10 @@ jobs:
           fi
           echo "" >> report.md
 
+          # Get dynamic thresholds
+          EXCELLENT_THRESHOLD=${{ steps.thresholds.outputs.excellent_threshold }}
+          GOOD_THRESHOLD=${{ steps.thresholds.outputs.good_threshold }}
+
           # Coverage Matrix (like Codecov/Nx Cloud)
           echo "### 📊 Coverage Matrix" >> report.md
           echo "" >> report.md
@@ -206,23 +269,35 @@ jobs:
           echo "|------------|-------|------------|-----------|----------|--------|" >> report.md
 
           OVERALL_STATUS="✅"
-          for test_type in unit integration e2e; do
-            COVERAGE_REPORT="./downloaded-reports/test-reports/coverage-${test_type}.md"
-            SUMMARY_FILE="./downloaded-reports/test-reports/summary-${test_type}.md"
+          CI_RUN_ID="${{ steps.download.outputs.ci_run_id }}"
 
-            if [ -f "$COVERAGE_REPORT" ]; then
+          for test_type in unit integration e2e; do
+            # Try multiple possible paths for downloaded artifacts
+            COVERAGE_REPORT=""
+            SUMMARY_FILE=""
+
+            for base_path in "./downloaded-reports/test-reports" "./downloaded-reports"; do
+              if [ -f "${base_path}/coverage-${test_type}.md" ]; then
+                COVERAGE_REPORT="${base_path}/coverage-${test_type}.md"
+              fi
+              if [ -f "${base_path}/summary-${test_type}.md" ]; then
+                SUMMARY_FILE="${base_path}/summary-${test_type}.md"
+              fi
+            done
+
+            if [ -n "$COVERAGE_REPORT" ] && [ -f "$COVERAGE_REPORT" ]; then
               # Extract coverage percentages
               LINES=$(grep "Lines |" "$COVERAGE_REPORT" | head -1 | awk '{print $4}' || echo "N/A")
               STATEMENTS=$(grep "Statements |" "$COVERAGE_REPORT" | head -1 | awk '{print $4}' || echo "N/A")
               FUNCTIONS=$(grep "Functions |" "$COVERAGE_REPORT" | head -1 | awk '{print $4}' || echo "N/A")
               BRANCHES=$(grep "Branches |" "$COVERAGE_REPORT" | head -1 | awk '{print $4}' || echo "N/A")
 
-              # Get badge
+              # Get badge with dynamic thresholds
               COV_NUM=$(echo "$LINES" | sed 's/%//')
               if [ "$COV_NUM" != "N/A" ]; then
-                if (( $(echo "$COV_NUM >= 80" | bc -l 2>/dev/null || echo 0) )); then
+                if (( $(echo "$COV_NUM >= $EXCELLENT_THRESHOLD" | bc -l 2>/dev/null || echo 0) )); then
                   BADGE="🟢 Excellent"
-                elif (( $(echo "$COV_NUM >= 60" | bc -l 2>/dev/null || echo 0) )); then
+                elif (( $(echo "$COV_NUM >= $GOOD_THRESHOLD" | bc -l 2>/dev/null || echo 0) )); then
                   BADGE="🟡 Good"
                 else
                   BADGE="🔴 Needs Work"
@@ -231,9 +306,17 @@ jobs:
                 BADGE="⚪ N/A"
               fi
 
-              # Check if tests passed
-              if [ -f "$SUMMARY_FILE" ] && grep -q "❌ Failed" "$SUMMARY_FILE"; then
-                STATUS="❌ Failed"
+              # Check if tests passed and add link
+              if [ -n "$SUMMARY_FILE" ] && [ -f "$SUMMARY_FILE" ] && grep -q "❌ Failed" "$SUMMARY_FILE"; then
+                # Get job ID for this test type
+                JOB_ID_VAR="${test_type}_job_id"
+                JOB_ID="${{ steps.download.outputs[JOB_ID_VAR] }}"
+
+                if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
+                  STATUS="[❌ Failed](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
+                else
+                  STATUS="❌ Failed"
+                fi
                 OVERALL_STATUS="❌"
               else
                 STATUS="✅ Passed"
@@ -241,13 +324,21 @@ jobs:
 
               echo "| **${test_type^}** | $LINES | $STATEMENTS | $FUNCTIONS | $BRANCHES | $BADGE |" >> report.md
             else
-              echo "| **${test_type^}** | N/A | N/A | N/A | N/A | ❌ Failed |" >> report.md
+              # No coverage report found - tests likely failed
+              JOB_ID_VAR="${test_type}_job_id"
+              JOB_ID=$(eval echo "\${{ steps.download.outputs.${JOB_ID_VAR} }}")
+
+              if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
+                echo "| **${test_type^}** | N/A | N/A | N/A | N/A | [❌ Failed](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID}) |" >> report.md
+              else
+                echo "| **${test_type^}** | N/A | N/A | N/A | N/A | ❌ Failed |" >> report.md
+              fi
               OVERALL_STATUS="❌"
             fi
           done
 
           echo "" >> report.md
-          echo "> **Legend:** 🟢 Excellent (≥80%) • 🟡 Good (60-79%) • 🔴 Needs Work (<60%)" >> report.md
+          echo "> **Legend:** 🟢 Excellent (≥${EXCELLENT_THRESHOLD}%) • 🟡 Good (≥${GOOD_THRESHOLD}%) • 🔴 Needs Work (<${GOOD_THRESHOLD}%)" >> report.md
           echo "" >> report.md
 
           # Test Results Summary
@@ -260,14 +351,21 @@ jobs:
           TOTAL_SKIPPED=0
 
           for test_type in unit integration e2e; do
-            SUMMARY_FILE="./downloaded-reports/test-reports/summary-${test_type}.md"
+            # Try multiple possible paths
+            SUMMARY_FILE=""
+            for base_path in "./downloaded-reports/test-reports" "./downloaded-reports"; do
+              if [ -f "${base_path}/summary-${test_type}.md" ]; then
+                SUMMARY_FILE="${base_path}/summary-${test_type}.md"
+                break
+              fi
+            done
 
-            if [ -f "$SUMMARY_FILE" ]; then
+            if [ -n "$SUMMARY_FILE" ] && [ -f "$SUMMARY_FILE" ]; then
               # Extract test counts
-              TESTS=$(grep "Total Tests" "$SUMMARY_FILE" | awk '{print $4}' || echo "0")
-              PASSED=$(grep "✅ Passed" "$SUMMARY_FILE" | awk '{print $4}' || echo "0")
-              FAILED=$(grep "❌ Failed" "$SUMMARY_FILE" | awk '{print $4}' || echo "0")
-              SKIPPED=$(grep "⏭️ Skipped" "$SUMMARY_FILE" | awk '{print $4}' || echo "0")
+              TESTS=$(grep "Total Tests" "$SUMMARY_FILE" | awk '{print $4}' | tr -d '|' || echo "0")
+              PASSED=$(grep "✅ Passed" "$SUMMARY_FILE" | awk '{print $4}' | tr -d '|' || echo "0")
+              FAILED=$(grep "❌ Failed" "$SUMMARY_FILE" | awk '{print $4}' | tr -d '|' || echo "0")
+              SKIPPED=$(grep "⏭️ Skipped" "$SUMMARY_FILE" | awk '{print $4}' | tr -d '|' || echo "0")
 
               TOTAL_TESTS=$((TOTAL_TESTS + TESTS))
               TOTAL_PASSED=$((TOTAL_PASSED + PASSED))
@@ -331,27 +429,44 @@ jobs:
           # Test summaries and coverage for each type
           DETAILS_FOUND=false
           for test_type in unit integration e2e; do
-            SUMMARY_FILE="./downloaded-reports/test-reports/summary-${test_type}.md"
-            COVERAGE_REPORT="./downloaded-reports/test-reports/coverage-${test_type}.md"
+            # Try multiple possible paths
+            SUMMARY_FILE=""
+            COVERAGE_REPORT=""
 
-            if [ -f "$SUMMARY_FILE" ] || [ -f "$COVERAGE_REPORT" ]; then
+            for base_path in "./downloaded-reports/test-reports" "./downloaded-reports"; do
+              if [ -f "${base_path}/summary-${test_type}.md" ]; then
+                SUMMARY_FILE="${base_path}/summary-${test_type}.md"
+              fi
+              if [ -f "${base_path}/coverage-${test_type}.md" ]; then
+                COVERAGE_REPORT="${base_path}/coverage-${test_type}.md"
+              fi
+            done
+
+            if [ -n "$SUMMARY_FILE" ] || [ -n "$COVERAGE_REPORT" ]; then
               DETAILS_FOUND=true
               echo "#### 🧪 ${test_type^} Tests" >> report.md
               echo "" >> report.md
 
-              if [ -f "$SUMMARY_FILE" ]; then
+              # Get job ID for direct link
+              JOB_ID_VAR="${test_type}_job_id"
+              JOB_ID=$(eval echo "\${{ steps.download.outputs.${JOB_ID_VAR} }}")
+
+              if [ -n "$SUMMARY_FILE" ] && [ -f "$SUMMARY_FILE" ]; then
                 cat "$SUMMARY_FILE" >> report.md
+                echo "" >> report.md
+              else
+                echo "> ⚠️ No test results found" >> report.md
                 echo "" >> report.md
               fi
 
-              if [ -f "$COVERAGE_REPORT" ]; then
+              if [ -n "$COVERAGE_REPORT" ] && [ -f "$COVERAGE_REPORT" ]; then
                 cat "$COVERAGE_REPORT" >> report.md
                 echo "" >> report.md
               fi
 
-              # Add link to full coverage report
-              if [ -d "./downloaded-reports/coverage" ]; then
-                echo "> 📊 [View detailed coverage report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> report.md
+              # Add direct link to this test suite's logs
+              if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
+                echo "> 🔗 [View ${test_type} test logs](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})" >> report.md
                 echo "" >> report.md
               fi
             fi
@@ -371,15 +486,31 @@ jobs:
             echo "" >> report.md
 
             for test_type in unit integration e2e; do
-              SUMMARY_FILE="./downloaded-reports/test-reports/summary-${test_type}.md"
+              # Try multiple possible paths
+              SUMMARY_FILE=""
+              for base_path in "./downloaded-reports/test-reports" "./downloaded-reports"; do
+                if [ -f "${base_path}/summary-${test_type}.md" ]; then
+                  SUMMARY_FILE="${base_path}/summary-${test_type}.md"
+                  break
+                fi
+              done
 
-              if [ -f "$SUMMARY_FILE" ] && grep -q "Failed Tests:" "$SUMMARY_FILE"; then
+              if [ -n "$SUMMARY_FILE" ] && [ -f "$SUMMARY_FILE" ] && grep -q "Failed Tests:" "$SUMMARY_FILE"; then
                 echo "**${test_type^} Tests:**" >> report.md
                 echo "" >> report.md
                 # Extract failed test list
                 sed -n '/\*\*Failed Tests:\*\*/,/^$/p' "$SUMMARY_FILE" | tail -n +2 >> report.md
                 echo "" >> report.md
-                echo "🔗 [View ${test_type} test logs](https://github.com/${{ github.repository }}/pull/${{ steps.pr.outputs.number }}/checks)" >> report.md
+
+                # Add direct link to failed test logs
+                JOB_ID_VAR="${test_type}_job_id"
+                JOB_ID=$(eval echo "\${{ steps.download.outputs.${JOB_ID_VAR} }}")
+
+                if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
+                  echo "🔗 [View ${test_type} test logs](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})" >> report.md
+                else
+                  echo "🔗 [View ${test_type} test logs](https://github.com/${{ github.repository }}/pull/${{ steps.pr.outputs.number }}/checks)" >> report.md
+                fi
                 echo "" >> report.md
               fi
             done
