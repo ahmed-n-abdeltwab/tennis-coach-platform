@@ -269,6 +269,8 @@ jobs:
           echo "|-------|-------|-----------|----------|-------|------------|-----------|----------|---------|------|" >> report.md
 
           OVERALL_STATUS="✅"
+
+          # Get CI run ID globally for use throughout the report
           CI_RUN_ID="${{ steps.download.outputs.ci_run_id }}"
 
           for test_type in unit integration e2e; do
@@ -348,26 +350,41 @@ jobs:
               [ -z "$FAILED_COUNT" ] && FAILED_COUNT="0"
             fi
 
+            # Determine status based on available data
+            HAS_TEST_DATA=false
+            HAS_COVERAGE_DATA=false
+
+            [ "$TESTS" != "N/A" ] && HAS_TEST_DATA=true
+            [ "$LINES" != "N/A" ] && HAS_COVERAGE_DATA=true
+
             if [ "$FAILED_COUNT" != "0" ] && [ "$FAILED_COUNT" != "N/A" ]; then
-              # Tests actually failed (failed count > 0)
+              # Tests ran but some failed - show partial data with failed status
               if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
-                LOG_LINK="[❌ View](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
+                LOG_LINK="[❌ Failed ($FAILED_COUNT)](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
               else
-                LOG_LINK="❌ Failed"
+                LOG_LINK="❌ Failed ($FAILED_COUNT)"
               fi
               OVERALL_STATUS="❌"
-            elif [ "$TESTS" = "N/A" ] || [ "$LINES" = "N/A" ]; then
-              # Tests likely failed before completion (no data collected)
+            elif [ "$HAS_TEST_DATA" = false ] && [ "$HAS_COVERAGE_DATA" = false ]; then
+              # No data at all - tests crashed before collecting anything
               if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
-                LOG_LINK="[❌ View](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
+                LOG_LINK="[❌ Crashed](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
               else
-                LOG_LINK="❌ Failed"
+                LOG_LINK="❌ Crashed"
               fi
               OVERALL_STATUS="❌"
+            elif [ "$HAS_TEST_DATA" = false ] || [ "$HAS_COVERAGE_DATA" = false ]; then
+              # Partial data - tests may have crashed during coverage collection
+              if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
+                LOG_LINK="[⚠️ Partial](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
+              else
+                LOG_LINK="⚠️ Partial"
+              fi
+              OVERALL_STATUS="⚠️"
             else
-              # Tests passed
+              # All tests passed with full data
               if [ -n "$JOB_ID" ] && [ -n "$CI_RUN_ID" ]; then
-                LOG_LINK="[✅ View](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
+                LOG_LINK="[✅ Passed](https://github.com/${{ github.repository }}/actions/runs/${CI_RUN_ID}/job/${JOB_ID})"
               else
                 LOG_LINK="✅ Passed"
               fi
@@ -437,16 +454,8 @@ jobs:
           fi
           echo "" >> report.md
 
-          # Affected Projects Summary
-          TOTAL=${{ steps.affected.outputs.total }}
-          if [ "$TOTAL" -gt 0 ]; then
-            echo "### 📦 Affected Projects" >> report.md
-            echo "" >> report.md
-            echo "🎯 **${TOTAL} project(s) affected** (${{ steps.affected.outputs.apps }} apps, ${{ steps.affected.outputs.libs }} libs)" >> report.md
-            echo "" >> report.md
-          fi
-
           # Affected Projects Summary (if any)
+          TOTAL=${{ steps.affected.outputs.total }}
           if [ "$TOTAL" -gt 0 ]; then
             echo "<details>" >> report.md
             echo "<summary>📦 <b>Affected Projects (${TOTAL})</b></summary>" >> report.md
@@ -559,7 +568,8 @@ jobs:
                 fi
               done
 
-              if [ -n "$SUMMARY_FILE" ] && [ -f "$SUMMARY_FILE" ] && grep -q "Failed Tests:" "$SUMMARY_FILE"; then
+              # Check if there are actual failed tests listed (not just the header)
+              if [ -f "$SUMMARY_FILE" ] && grep -A 1 "Failed Tests:" "$SUMMARY_FILE" | grep -q "^-"; then
                 echo "**${test_type^} Tests:**" >> report.md
                 echo "" >> report.md
                 # Extract failed test list
