@@ -198,13 +198,188 @@ describe('Booking System Integration', () => {
       }
     });
 
-    it.todo('should allow session updates');
+    it('should allow session updates', async () => {
+      // Create a test session for this test
+      const session = await createSessionForTest();
 
-    it.todo('should allow session cancellation');
+      // Update session status
+      const updateResponse = await test.http.authenticatedPatch(
+        `/api/sessions/${session.id}` as '/api/sessions/{id}',
+        userToken,
+        {
+          body: {
+            status: 'CONFIRMED',
+          },
+        }
+      );
 
-    it.todo('should filter sessions by status');
+      expect(updateResponse.ok).toBe(true);
+      if (updateResponse.ok) {
+        expect(updateResponse.body).toHaveProperty('id', session.id);
+        expect(updateResponse.body.status).toBe('CONFIRMED');
+      }
 
-    it.todo('should filter sessions by date range');
+      // Verify the update persisted
+      const getResponse = await test.http.authenticatedGet(
+        `/api/sessions/${session.id}` as '/api/sessions/{id}',
+        userToken
+      );
+
+      expect(getResponse.ok).toBe(true);
+      if (getResponse.ok) {
+        expect(getResponse.body.status).toBe('CONFIRMED');
+      }
+    });
+
+    it('should allow session cancellation', async () => {
+      // Create a test session for this test
+      const session = await createSessionForTest();
+
+      // Cancel the session
+      const cancelResponse = await test.http.authenticatedPatch(
+        `/api/sessions/${session.id}` as '/api/sessions/{id}',
+        userToken,
+        {
+          body: {
+            status: 'CANCELLED',
+          },
+        }
+      );
+
+      expect(cancelResponse.ok).toBe(true);
+      if (cancelResponse.ok) {
+        expect(cancelResponse.body).toHaveProperty('id', session.id);
+        expect(cancelResponse.body.status).toBe('CANCELLED');
+      }
+
+      // Verify cancellation persisted
+      const getResponse = await test.http.authenticatedGet(
+        `/api/sessions/${session.id}` as '/api/sessions/{id}',
+        userToken
+      );
+
+      expect(getResponse.ok).toBe(true);
+      if (getResponse.ok) {
+        expect(getResponse.body.status).toBe('CANCELLED');
+      }
+    });
+
+    it('should filter sessions by status', async () => {
+      // Create sessions with different statuses
+      await test.db.createTestSession({
+        userId: testUser.id,
+        coachId: testCoach.id,
+        bookingTypeId: testBookingType.id,
+        timeSlotId: testTimeSlot.id,
+        status: 'SCHEDULED',
+        dateTime: new Date('2025-12-25T10:00:00Z'),
+      });
+
+      // Create another time slot for the confirmed session
+      const timeSlot2 = await test.db.createTestTimeSlot({
+        coachId: testCoach.id,
+        dateTime: new Date('2025-12-26T10:00:00Z'),
+        durationMin: 60,
+        isAvailable: true,
+      });
+
+      await test.db.createTestSession({
+        userId: testUser.id,
+        coachId: testCoach.id,
+        bookingTypeId: testBookingType.id,
+        timeSlotId: timeSlot2.id,
+        status: 'CONFIRMED',
+        dateTime: new Date('2025-12-26T10:00:00Z'),
+      });
+
+      // Filter by SCHEDULED status
+      const scheduledResponse = await test.http.authenticatedGet(
+        '/api/sessions?status=SCHEDULED' as '/api/sessions',
+        userToken
+      );
+
+      expect(scheduledResponse.ok).toBe(true);
+      if (scheduledResponse.ok) {
+        const sessions = scheduledResponse.body.data ?? scheduledResponse.body;
+        expect(Array.isArray(sessions)).toBe(true);
+        if (Array.isArray(sessions)) {
+          const scheduledSessions = sessions.filter(s => s.status === 'SCHEDULED');
+          expect(scheduledSessions.length).toBeGreaterThan(0);
+          expect(scheduledSessions.every(s => s.status === 'SCHEDULED')).toBe(true);
+        }
+      }
+
+      // Filter by CONFIRMED status
+      const confirmedResponse = await test.http.authenticatedGet(
+        '/api/sessions?status=CONFIRMED' as '/api/sessions',
+        userToken
+      );
+
+      expect(confirmedResponse.ok).toBe(true);
+      if (confirmedResponse.ok) {
+        const sessions = confirmedResponse.body.data ?? confirmedResponse.body;
+        expect(Array.isArray(sessions)).toBe(true);
+        if (Array.isArray(sessions)) {
+          const confirmedSessions = sessions.filter(s => s.status === 'CONFIRMED');
+          expect(confirmedSessions.length).toBeGreaterThan(0);
+          expect(confirmedSessions.every(s => s.status === 'CONFIRMED')).toBe(true);
+        }
+      }
+    });
+
+    it('should filter sessions by date range', async () => {
+      // Create sessions at different dates
+      await test.db.createTestSession({
+        userId: testUser.id,
+        coachId: testCoach.id,
+        bookingTypeId: testBookingType.id,
+        timeSlotId: testTimeSlot.id,
+        status: 'SCHEDULED',
+        dateTime: new Date('2025-12-20T10:00:00Z'),
+      });
+
+      // Create another time slot for session2
+      const timeSlot2 = await test.db.createTestTimeSlot({
+        coachId: testCoach.id,
+        dateTime: new Date('2025-12-28T10:00:00Z'),
+        durationMin: 60,
+        isAvailable: true,
+      });
+
+      await test.db.createTestSession({
+        userId: testUser.id,
+        coachId: testCoach.id,
+        bookingTypeId: testBookingType.id,
+        timeSlotId: timeSlot2.id,
+        status: 'SCHEDULED',
+        dateTime: new Date('2025-12-28T10:00:00Z'),
+      });
+
+      // Filter by date range
+      const startDate = '2025-12-25';
+      const endDate = '2025-12-30';
+      const response = await test.http.authenticatedGet(
+        `/api/sessions?startDate=${startDate}&endDate=${endDate}` as '/api/sessions',
+        userToken
+      );
+
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        const sessions = response.body.data ?? response.body;
+        expect(Array.isArray(sessions)).toBe(true);
+        if (Array.isArray(sessions)) {
+          // Should include session2 (Dec 28) but not session1 (Dec 20)
+          const sessionDates = sessions.map(s => new Date(s.dateTime));
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+
+          sessionDates.forEach(date => {
+            expect(date >= start).toBe(true);
+            expect(date <= end).toBe(true);
+          });
+        }
+      }
+    });
   });
 
   describe('Time Slot Management Workflow', () => {
