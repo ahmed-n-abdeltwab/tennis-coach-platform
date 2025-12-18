@@ -75,13 +75,8 @@ jobs:
           echo "$AFFECTED_APPS" > affected_apps.txt
           echo "$AFFECTED_LIBS" > affected_libs.txt
 
-      - name: Download test artifacts
-        uses: actions/download-artifact@v7
-        with:
-          pattern: test-reports-*
-          merge-multiple: true
-          path: test-reports
-        continue-on-error: true
+      # Note: Cannot download artifacts from other workflows in the same run
+      # Artifacts are only available after the workflow completes
 
       - name: Wait for all CI checks to complete
         id: tests
@@ -204,72 +199,20 @@ jobs:
           # Coverage section
           echo "## 📊 Code Coverage" >> report.md
           echo "" >> report.md
-
-          # Helper function for progress bar
-          create_progress_bar() {
-            local percentage=$1
-            local filled=$(awk "BEGIN {printf \"%.0f\", $percentage / 5}")
-            local empty=$((20 - filled))
-            printf "["
-            printf "█%.0s" $(seq 1 $filled 2>/dev/null || echo "")
-            printf "░%.0s" $(seq 1 $empty 2>/dev/null || echo "")
-            printf "]"
-          }
-
-          # Helper function for badge
-          get_badge() {
-            local coverage=$1
-            if (( $(awk "BEGIN {print ($coverage >= 80)}") )); then
-              echo "🟢"
-            elif (( $(awk "BEGIN {print ($coverage >= 60)}") )); then
-              echo "🟡"
-            else
-              echo "🔴"
-            fi
-          }
-
-          COVERAGE_FOUND=false
-
-          # Check each test type
-          for test_type in unit integration e2e; do
-            COVERAGE_FILE="test-reports/coverage/apps/api/$test_type/coverage-summary.json"
-
-            if [ -f "$COVERAGE_FILE" ]; then
-              COVERAGE_FOUND=true
-
-              LINES=$(jq -r '.total.lines.pct' "$COVERAGE_FILE" 2>/dev/null || echo "0")
-              STATEMENTS=$(jq -r '.total.statements.pct' "$COVERAGE_FILE" 2>/dev/null || echo "0")
-              FUNCTIONS=$(jq -r '.total.functions.pct' "$COVERAGE_FILE" 2>/dev/null || echo "0")
-              BRANCHES=$(jq -r '.total.branches.pct' "$COVERAGE_FILE" 2>/dev/null || echo "0")
-
-              BADGE=$(get_badge "$LINES")
-
-              echo "<details>" >> report.md
-              echo "<summary>$BADGE <b>${test_type^} Tests - ${LINES}% Coverage</b></summary>" >> report.md
-              echo "" >> report.md
-              echo "| Metric | Coverage | Progress |" >> report.md
-              echo "|--------|----------|----------|" >> report.md
-              echo "| Lines | ${LINES}% | $(create_progress_bar $LINES) |" >> report.md
-              echo "| Statements | ${STATEMENTS}% | $(create_progress_bar $STATEMENTS) |" >> report.md
-              echo "| Functions | ${FUNCTIONS}% | $(create_progress_bar $FUNCTIONS) |" >> report.md
-              echo "| Branches | ${BRANCHES}% | $(create_progress_bar $BRANCHES) |" >> report.md
-              echo "" >> report.md
-              echo "</details>" >> report.md
-              echo "" >> report.md
-            fi
-          done
-
-          if [ "$COVERAGE_FOUND" = false ]; then
-            echo "ℹ️ Coverage reports will be available after all tests complete" >> report.md
-            echo "" >> report.md
-          else
-            echo "### 🎯 Coverage Targets" >> report.md
-            echo "" >> report.md
-            echo "- 🟢 **Good**: ≥ 80%" >> report.md
-            echo "- 🟡 **Fair**: 60-79%" >> report.md
-            echo "- 🔴 **Needs Improvement**: < 60%" >> report.md
-            echo "" >> report.md
-          fi
+  echo "Coverage reports are generated for:" >> report.md
+          echo "" >> report.md
+          echo "- 🧪 **Unit Tests** - Component-level coverage" >> report.md
+          echo "- 🔗 **Integration Tests** - Module interaction coverage" >> report.md
+          echo "- 🌐 **E2E Tests** - End-to-end workflow coverage" >> report.md
+          echo "" >> report.md
+          echo "📥 [Download detailed coverage reports from CI artifacts](https://github.com/${{ github.repository }}/actions/runs?event=pull_request&branch=${{ github.head_ref }})" >> report.md
+          echo "" >> report.md
+          echo "### 🎯 Coverage Targets" >> report.md
+          echo "" >> report.md
+          echo "- 🟢 **Good**: ≥ 80%" >> report.md
+          echo "- 🟡 **Fair**: 60-79%" >> report.md
+          echo "- 🔴 **Needs Improvement**: < 60%" >> report.md
+          echo "" >> report.md
 
           # Build info
           echo "## 🏗️ Build Information" >> report.md
