@@ -185,122 +185,209 @@ jobs:
         run: |
           set -e
 
-          # Start report
+          # Start report with summary
           echo "# 🚀 PR Analysis Report" > report.md
           echo "" >> report.md
 
-          # Overall status
+          # Overall status badge
           if [ "${{ steps.tests.outputs.all_passed }}" == "true" ]; then
-            echo "## ✅ All Checks Passed!" >> report.md
+            echo "## ✅ All Checks Passed" >> report.md
           elif [ "${{ steps.tests.outputs.all_passed }}" == "unknown" ]; then
-            echo "## ⏳ CI Checks Still Running" >> report.md
+            echo "## ⏳ CI Checks Running" >> report.md
           else
             echo "## ⚠️ Some Checks Failed" >> report.md
           fi
           echo "" >> report.md
 
-          # Affected projects section
-          echo "## 📦 Affected Projects" >> report.md
+          # Coverage Matrix (like Codecov/Nx Cloud)
+          echo "### 📊 Coverage Matrix" >> report.md
+          echo "" >> report.md
+          echo "| Test Suite | Lines | Statements | Functions | Branches | Status |" >> report.md
+          echo "|------------|-------|------------|-----------|----------|--------|" >> report.md
+
+          OVERALL_STATUS="✅"
+          for test_type in unit integration e2e; do
+            COVERAGE_REPORT="./downloaded-reports/test-reports/coverage-${test_type}.md"
+            SUMMARY_FILE="./downloaded-reports/test-reports/summary-${test_type}.md"
+
+            if [ -f "$COVERAGE_REPORT" ]; then
+              # Extract coverage percentages
+              LINES=$(grep "Lines |" "$COVERAGE_REPORT" | head -1 | awk '{print $4}' || echo "N/A")
+              STATEMENTS=$(grep "Statements |" "$COVERAGE_REPORT" | head -1 | awk '{print $4}' || echo "N/A")
+              FUNCTIONS=$(grep "Functions |" "$COVERAGE_REPORT" | head -1 | awk '{print $4}' || echo "N/A")
+              BRANCHES=$(grep "Branches |" "$COVERAGE_REPORT" | head -1 | awk '{print $4}' || echo "N/A")
+
+              # Get badge
+              COV_NUM=$(echo "$LINES" | sed 's/%//')
+              if [ "$COV_NUM" != "N/A" ]; then
+                if (( $(echo "$COV_NUM >= 80" | bc -l 2>/dev/null || echo 0) )); then
+                  BADGE="🟢 Excellent"
+                elif (( $(echo "$COV_NUM >= 60" | bc -l 2>/dev/null || echo 0) )); then
+                  BADGE="🟡 Good"
+                else
+                  BADGE="🔴 Needs Work"
+                fi
+              else
+                BADGE="⚪ N/A"
+              fi
+
+              # Check if tests passed
+              if [ -f "$SUMMARY_FILE" ] && grep -q "❌ Failed" "$SUMMARY_FILE"; then
+                STATUS="❌ Failed"
+                OVERALL_STATUS="❌"
+              else
+                STATUS="✅ Passed"
+              fi
+
+              echo "| **${test_type^}** | $LINES | $STATEMENTS | $FUNCTIONS | $BRANCHES | $BADGE |" >> report.md
+            else
+              echo "| **${test_type^}** | N/A | N/A | N/A | N/A | ❌ Failed |" >> report.md
+              OVERALL_STATUS="❌"
+            fi
+          done
+
+          echo "" >> report.md
+          echo "> **Legend:** 🟢 Excellent (≥80%) • 🟡 Good (60-79%) • 🔴 Needs Work (<60%)" >> report.md
           echo "" >> report.md
 
-          TOTAL=${{ steps.affected.outputs.total }}
-          if [ "$TOTAL" -eq 0 ]; then
-            echo "✅ No projects affected - changes are in non-project files" >> report.md
+          # Test Results Summary
+          echo "### 🧪 Test Results" >> report.md
+          echo "" >> report.md
+
+          TOTAL_TESTS=0
+          TOTAL_PASSED=0
+          TOTAL_FAILED=0
+          TOTAL_SKIPPED=0
+
+          for test_type in unit integration e2e; do
+            SUMMARY_FILE="./downloaded-reports/test-reports/summary-${test_type}.md"
+
+            if [ -f "$SUMMARY_FILE" ]; then
+              # Extract test counts
+              TESTS=$(grep "Total Tests" "$SUMMARY_FILE" | awk '{print $4}' || echo "0")
+              PASSED=$(grep "✅ Passed" "$SUMMARY_FILE" | awk '{print $4}' || echo "0")
+              FAILED=$(grep "❌ Failed" "$SUMMARY_FILE" | awk '{print $4}' || echo "0")
+              SKIPPED=$(grep "⏭️ Skipped" "$SUMMARY_FILE" | awk '{print $4}' || echo "0")
+
+              TOTAL_TESTS=$((TOTAL_TESTS + TESTS))
+              TOTAL_PASSED=$((TOTAL_PASSED + PASSED))
+              TOTAL_FAILED=$((TOTAL_FAILED + FAILED))
+              TOTAL_SKIPPED=$((TOTAL_SKIPPED + SKIPPED))
+            fi
+          done
+
+          if [ $TOTAL_TESTS -gt 0 ]; then
+            echo "| Metric | Count |" >> report.md
+            echo "|--------|-------|" >> report.md
+            echo "| **Total Tests** | $TOTAL_TESTS |" >> report.md
+            echo "| ✅ Passed | $TOTAL_PASSED |" >> report.md
+            echo "| ❌ Failed | $TOTAL_FAILED |" >> report.md
+            echo "| ⏭️ Skipped | $TOTAL_SKIPPED |" >> report.md
+
+            if [ $TOTAL_TESTS -gt 0 ]; then
+              PASS_RATE=$(echo "scale=1; ($TOTAL_PASSED * 100) / $TOTAL_TESTS" | bc)
+              echo "| **Pass Rate** | ${PASS_RATE}% |" >> report.md
+            fi
           else
-            echo "🎯 **${TOTAL} project(s) affected**" >> report.md
+            echo "> ⚠️ No test results available yet" >> report.md
+          fi
+          echo "" >> report.md
+
+          # Affected Projects Summary
+          TOTAL=${{ steps.affected.outputs.total }}
+          if [ "$TOTAL" -gt 0 ]; then
+            echo "### 📦 Affected Projects" >> report.md
+            echo "" >> report.md
+            echo "🎯 **${TOTAL} project(s) affected** (${{ steps.affected.outputs.apps }} apps, ${{ steps.affected.outputs.libs }} libs)" >> report.md
+            echo "" >> report.md
+          fi
+
+          # Collapsible sections for detailed information
+          echo "<details>" >> report.md
+          echo "<summary>📋 <b>Detailed Test & Coverage Reports</b></summary>" >> report.md
+          echo "" >> report.md
+
+          # Affected projects
+          if [ "$TOTAL" -gt 0 ]; then
+            echo "#### 📦 Affected Projects" >> report.md
             echo "" >> report.md
 
             if [ ${{ steps.affected.outputs.apps }} -gt 0 ]; then
-              echo "**Applications (${{ steps.affected.outputs.apps }}):**" >> report.md
+              echo "**Applications:**" >> report.md
               echo '```' >> report.md
               cat affected_apps.txt >> report.md
               echo '```' >> report.md
-              echo "" >> report.md
             fi
 
             if [ ${{ steps.affected.outputs.libs }} -gt 0 ]; then
-              echo "**Libraries (${{ steps.affected.outputs.libs }}):**" >> report.md
+              echo "**Libraries:**" >> report.md
               echo '```' >> report.md
               cat affected_libs.txt >> report.md
               echo '```' >> report.md
-              echo "" >> report.md
             fi
+            echo "" >> report.md
           fi
 
-
-
-          # Test details section
-          echo "## 🧪 Test Details" >> report.md
-          echo "" >> report.md
-          echo "| Test Suite | Status | Coverage |" >> report.md
-          echo "|------------|--------|----------|" >> report.md
-
-          # Check each test type
+          # Test summaries and coverage for each type
+          DETAILS_FOUND=false
           for test_type in unit integration e2e; do
-            # Check if test passed by looking for coverage report
+            SUMMARY_FILE="./downloaded-reports/test-reports/summary-${test_type}.md"
             COVERAGE_REPORT="./downloaded-reports/test-reports/coverage-${test_type}.md"
 
-            if [ -f "$COVERAGE_REPORT" ]; then
-              # Extract coverage percentage from the report
-              COVERAGE=$(grep "Lines |" "$COVERAGE_REPORT" | head -1 | awk '{print $4}' || echo "N/A")
+            if [ -f "$SUMMARY_FILE" ] || [ -f "$COVERAGE_REPORT" ]; then
+              DETAILS_FOUND=true
+              echo "#### 🧪 ${test_type^} Tests" >> report.md
+              echo "" >> report.md
 
-              if [ "$COVERAGE" != "N/A" ]; then
-                # Get badge based on coverage
-                COV_NUM=$(echo "$COVERAGE" | sed 's/%//')
-                if (( $(echo "$COV_NUM >= 80" | bc -l 2>/dev/null || echo 0) )); then
-                  BADGE="🟢"
-                elif (( $(echo "$COV_NUM >= 60" | bc -l 2>/dev/null || echo 0) )); then
-                  BADGE="🟡"
-                else
-                  BADGE="🔴"
-                fi
-                echo "| ${test_type^} | ✅ Passed | $BADGE $COVERAGE |" >> report.md
-              else
-                echo "| ${test_type^} | ✅ Passed | N/A |" >> report.md
+              if [ -f "$SUMMARY_FILE" ]; then
+                cat "$SUMMARY_FILE" >> report.md
+                echo "" >> report.md
               fi
-            else
-              echo "| ${test_type^} | ❌ Failed or Skipped | N/A |" >> report.md
+
+              if [ -f "$COVERAGE_REPORT" ]; then
+                cat "$COVERAGE_REPORT" >> report.md
+                echo "" >> report.md
+              fi
+
+              # Add link to full coverage report
+              if [ -d "./downloaded-reports/coverage" ]; then
+                echo "> 📊 [View detailed coverage report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> report.md
+                echo "" >> report.md
+              fi
             fi
           done
 
-          echo "" >> report.md
-
-          # Coverage section
-          echo "## 📊 Code Coverage" >> report.md
-          echo "" >> report.md
-
-          COVERAGE_FOUND=false
-
-          # Check for downloaded coverage reports
-          for test_type in unit integration e2e; do
-            COVERAGE_REPORT="./downloaded-reports/test-reports/coverage-${test_type}.md"
-
-            if [ -f "$COVERAGE_REPORT" ]; then
-              COVERAGE_FOUND=true
-              cat "$COVERAGE_REPORT" >> report.md
-              echo "" >> report.md
-            fi
-          done
-
-          if [ "$COVERAGE_FOUND" = false ]; then
-            echo "ℹ️ No coverage reports available yet. Reports are generated after tests complete successfully." >> report.md
-            echo "" >> report.md
-            echo "- 🧪 **Unit Tests** - Component-level coverage" >> report.md
-            echo "- 🔗 **Integration Tests** - Module interaction coverage" >> report.md
-            echo "- 🌐 **E2E Tests** - End-to-end workflow coverage" >> report.md
-            echo "" >> report.md
-            echo "ℹ️ Coverage reports will be available after CI completes" >> report.md
+          if [ "$DETAILS_FOUND" = false ]; then
+            echo "> ℹ️ Detailed reports will be available after CI completes" >> report.md
             echo "" >> report.md
           fi
 
-          echo "### 🎯 Coverage Targets" >> report.md
+          echo "</details>" >> report.md
           echo "" >> report.md
-          echo "- 🟢 **Good**: ≥ 80%" >> report.md
-          echo "- 🟡 **Fair**: 60-79%" >> report.md
-          echo "- 🔴 **Needs Improvement**: < 60%" >> report.md
-          echo "" >> report.md
+
+          # Failed tests section (if any)
+          if [ $TOTAL_FAILED -gt 0 ]; then
+            echo "### ❌ Failed Tests" >> report.md
+            echo "" >> report.md
+
+            for test_type in unit integration e2e; do
+              SUMMARY_FILE="./downloaded-reports/test-reports/summary-${test_type}.md"
+
+              if [ -f "$SUMMARY_FILE" ] && grep -q "Failed Tests:" "$SUMMARY_FILE"; then
+                echo "**${test_type^} Tests:**" >> report.md
+                echo "" >> report.md
+                # Extract failed test list
+                sed -n '/\*\*Failed Tests:\*\*/,/^$/p' "$SUMMARY_FILE" | tail -n +2 >> report.md
+                echo "" >> report.md
+                echo "🔗 [View ${test_type} test logs](https://github.com/${{ github.repository }}/pull/${{ steps.pr.outputs.number }}/checks)" >> report.md
+                echo "" >> report.md
+              fi
+            done
+          fi
 
           # Build info
+          echo "---" >> report.md
+          echo "" >> report.md
           echo "## 🏗️ Build Information" >> report.md
           echo "" >> report.md
           echo "- **PR**: #${{ steps.pr.outputs.number }}" >> report.md

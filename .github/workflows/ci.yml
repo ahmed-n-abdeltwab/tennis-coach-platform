@@ -260,6 +260,7 @@ jobs:
   # STAGE 4: Reporting (handled by pr-comprehensive-report.yml)
   # ============================================================================
   # Test results and coverage are now reported by our custom PR bot
+  # No external services needed - saves $50-200/month (Nx Cloud) + $10-30/month (Codecov)
 
   # ============================================================================
   # STAGE 5: Deployment (only runs after all checks pass)
