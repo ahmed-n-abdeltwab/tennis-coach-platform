@@ -98,20 +98,31 @@ function analyzeTestType(testType) {
     },
   };
 
-  // 1. Parse JUnit XML
-  const junitFile = path.join(TEST_REPORTS_DIR, `junit-${testType}.xml`);
-  console.log(`  Checking JUnit XML: ${junitFile}`);
-  if (fs.existsSync(junitFile)) {
-    try {
-      const xmlContent = fs.readFileSync(junitFile, 'utf8');
-      result.junit = parseJUnitXML(xmlContent);
-      result.hasData = true;
-      result.sources.junit = true;
-      console.log(`  ✅ JUnit XML parsed: ${result.junit.tests} tests`);
-    } catch (error) {
-      console.error(`  ❌ Error parsing JUnit XML for ${testType}:`, error.message);
+  // 1. Parse JUnit XML (try both with and without type suffix)
+  const junitFiles = [
+    path.join(TEST_REPORTS_DIR, `junit-${testType}.xml`),
+    path.join(TEST_REPORTS_DIR, 'junit.xml'), // Fallback for unit tests
+  ];
+
+  let junitFound = false;
+  for (const junitFile of junitFiles) {
+    console.log(`  Checking JUnit XML: ${junitFile}`);
+    if (fs.existsSync(junitFile)) {
+      try {
+        const xmlContent = fs.readFileSync(junitFile, 'utf8');
+        result.junit = parseJUnitXML(xmlContent);
+        result.hasData = true;
+        result.sources.junit = true;
+        junitFound = true;
+        console.log(`  ✅ JUnit XML parsed: ${result.junit.tests} tests`);
+        break;
+      } catch (error) {
+        console.error(`  ❌ Error parsing JUnit XML:`, error.message);
+      }
     }
-  } else {
+  }
+
+  if (!junitFound) {
     console.log(`  ⚠️  JUnit XML not found`);
   }
 

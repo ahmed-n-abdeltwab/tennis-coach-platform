@@ -422,7 +422,7 @@ jobs:
                   echo "- No tests were executed" >> report.md
                   echo "- Coverage collection was not enabled" >> report.md
                   echo "" >> report.md
-                  echo "Check ts for more details." >> report.md
+                  echo "Check the test logs for more details." >> report.md
                   echo "" >> report.md
                 fi
 
