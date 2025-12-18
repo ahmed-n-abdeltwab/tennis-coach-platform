@@ -1,9 +1,8 @@
 name: PR - Comprehensive Report
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
@@ -15,26 +14,18 @@ jobs:
   comprehensive-report:
     name: Generate Comprehensive PR Report
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.event == 'pull_request'
+    # Wait for CI to complete before running
+    needs: []
 
     steps:
       - name: Get PR number
         id: pr
         run: |
-          PR_NUMBER=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }} --jq '.pull_requests[0].number')
-          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
-
-          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" == "null" ]; then
-            echo "No PR found for this workflow run"
-            exit 0
-          fi
-        env:
-          GH_TOKEN: ${{ github.token }}
+          echo "number=${{ github.event.number }}" >> $GITHUB_OUTPUT
 
       - name: Checkout PR code
         uses: actions/checkout@v6
         with:
-          ref: refs/pull/${{ steps.pr.outputs.number }}/head
           fetch-depth: 0
 
       - name: Setup pnpm
@@ -84,25 +75,29 @@ jobs:
           echo "$AFFECTED_APPS" > affected_apps.txt
           echo "$AFFECTED_LIBS" > affected_libs.txt
 
-      - name: Download test artifacts
-        uses: actions/download-artifact@v7
+      - name: Wait for CI to complete
+        uses: lewagon/wait-on-check-action@v1.3.4
         with:
-          pattern: test-reports-*
-          merge-multiple: true
-          path: test-reports
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ github.token }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          check-name: "Test - unit"
+          repo-token: ${{ github.token }}
+          wait-interval: 10
         continue-on-error: true
 
-      - name: Get test results from CI
+      - name: Get CI status
         id: tests
         run: |
-          # Get workflow conclusion
-          if [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
-            echo "all_passed=true" >> $GITHUB_OUTPUT
-          else
+          # Check if all CI checks passed
+          CHECKS=$(gh api repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha }}/check-runs --jq '.check_runs[] | select(.name | startswith("Test -") or . == "Build" or . == "Lint & Format Check") | .conclusion')
+
+          if echo "$CHECKS" | grep -q "failure"; then
             echo "all_passed=false" >> $GITHUB_OUTPUT
+          else
+            echo "all_passed=true" >> $GITHUB_OUTPUT
           fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+        continue-on-error: true
 
       - name: Generate comprehensive report
         id: report
@@ -153,12 +148,10 @@ jobs:
           echo "## 🧪 Test Results" >> report.md
           echo "" >> report.md
 
-          if [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
+          if [ "${{ steps.tests.outputs.all_passed }}" == "true" ]; then
             echo "✅ All test suites passed" >> report.md
-          elif [ "${{ github.event.workflow_run.conclusion }}" == "failure" ]; then
-            echo "❌ Some test suites failed" >> report.md
           else
-            echo "⚠️ Test status: ${{ github.event.workflow_run.conclusion }}" >> report.md
+            echo "❌ Some test suites failed - check CI workflow for details" >> report.md
           fi
           echo "" >> report.md
 
@@ -173,17 +166,17 @@ jobs:
           # Build info
           echo "## 🏗️ Build Information" >> report.md
           echo "" >> report.md
-          echo "- **Workflow**: ${{ github.event.workflow_run.name }}" >> report.md
-          echo "- **Status**: ${{ github.event.workflow_run.conclusion }}" >> report.md
           echo "- **PR**: #${{ steps.pr.outputs.number }}" >> report.md
+          echo "- **Branch**: \`${{ github.head_ref }}\`" >> report.md
+          echo "- **Commit**: \`${{ github.event.pull_request.head.sha }}\`" >> report.md
           echo "" >> report.md
 
           # Quick actions
           echo "## 🔗 Quick Actions" >> report.md
           echo "" >> report.md
-          echo "- [View CI Workflow Run](${{ github.event.workflow_run.html_url }})" >> report.md
+          echo "- [View All Checks](https://github.com/${{ github.repository }}/pull/${{ steps.pr.outputs.number }}/checks)" >> report.md
+          echo "- [View Changes](https://github.com/${{ github.repository }}/pull/${{ steps.pr.outputs.number }}/files)" >> report.md
           echo "- [View This Report Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> report.md
-          echo "- [Download Test Reports](${{ github.event.workflow_run.html_url }})" >> report.md
           echo "" >> report.md
 
           # Tips section
