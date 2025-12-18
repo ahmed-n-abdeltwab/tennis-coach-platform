@@ -18,7 +18,7 @@ permissions:
 env:
   NODE_VERSION: "20"
   PNPM_VERSION: "10"
-  # Set to 'true' to enable Nx Cloud (requires active subscription)
+  # Nx Cloud disabled - using custom GitHub Actions bots instead
   NX_CLOUD_ENABLED: "false"
 
 jobs:
@@ -246,16 +246,8 @@ jobs:
             **/coverage/
           retention-days: 30
 
-      - name: Upload ${{ matrix.test-type }} coverage
-        uses: codecov/codecov-action@v5
-        if: always()
-        with:
-          files: coverage/apps/api/${{ matrix.test-type }}/lcov.info
-          flags: ${{ matrix.test-type }}
-          name: ${{ matrix.test-type }}-tests
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
-        continue-on-error: true
+      # Coverage is now handled by pr-coverage-report.yml workflow
+      # No need for external Codecov service
 
   # ============================================================================
   # STAGE 4: Reporting (aggregates test results)

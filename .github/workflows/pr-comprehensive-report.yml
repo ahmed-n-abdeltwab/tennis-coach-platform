@@ -1,0 +1,323 @@
+name: PR - Comprehensive Report
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+  checks: read
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "10"
+
+jobs:
+  comprehensive-report:
+    name: Generate Comprehensive PR Report
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tennis_coach_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Set up Nx SHAs for affected detection
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Get affected projects
+        id: affected
+        run: |
+          AFFECTED_APPS=$(pnpm exec nx show projects --affected --type app 2>/dev/null || echo "")
+          AFFECTED_LIBS=$(pnpm exec nx show projects --affected --type lib 2>/dev/null || echo "")
+
+          APP_COUNT=$(echo "$AFFECTED_APPS" | grep -v '^$' | wc -l)
+          LIB_COUNT=$(echo "$AFFECTED_LIBS" | grep -v '^$' | wc -l)
+          TOTAL_COUNT=$((APP_COUNT + LIB_COUNT))
+
+          echo "total=$TOTAL_COUNT" >> $GITHUB_OUTPUT
+          echo "apps=$APP> $GITHUB_OUTPUT
+          echo "libs=$LIB_COUNT" >> $GITHUB_OUTPUT
+
+          # Save for later
+          echo "$AFFECTED_APPS" > affected_apps.txt
+          echo "$AFFECTED_LIBS" > affected_libs.txt
+
+      - name: Run database migrations
+        run: pnpm db:migrate:deploy
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test
+
+      - name: Run tests with coverage
+        id: tests
+        run: |
+          # Run tests and capture results
+          set +e
+
+          pnpm exec nx run api:test:unit -- --coverage --coverageReporters=json-summary --coverageReporters=lcov > unit_output.txt 2>&1
+          UNIT_EXIT=$?
+
+          pnpm exec nx run api:test:integration -- --coverage --coverageReporters=json-summary --coverageReporters=lcov > integration_output.txt 2>&1
+          INTEGRATION_EXIT=$?
+
+          pnpm exec nx run api:test:e2e -- --coverage --coverageReporters=json-summary --coverageReporters=lcov > e2e_output.txt 2>&1
+          E2E_EXIT=$?
+
+          echo "unit_exit=$UNIT_EXIT" >> $GITHUB_OUTPUT
+          echo "integration_exit=$INTEGRATION_EXIT" >> $GITHUB_OUTPUT
+          echo "e2e_exit=$E2E_EXIT" >> $GITHUB_OUTPUT
+
+          # Overall status
+          if [ $UNIT_EXIT -eq 0 ] && [ $INTEGRATION_EXIT -eq 0 ] && [ $E2E_EXIT -eq 0 ]; then
+            echo "all_passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "all_passed=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test
+          DATABASE: tennis_coach_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          REDIS_DB: 0
+          JWT_SECRET: test-secret-key-for-ci-minimum-32-chars
+          JWT_REFRESH_SECRET: test-refresh-secret-key-for-ci-minimum-32-chars
+          JWT_EXPIRES_IN: 15m
+          JWT_REFRESH_EXPIRES_IN: 24h
+          BCRYPT_SALT_ROUNDS: 10
+          PAYPAL_CLIENT_ID: test-paypal-client-id
+          PAYPAL_CLIENT_SECRET: test-paypal-client-secret
+          PAYPAL_ENVIRONMENT: sandbox
+          GOOGLE_CLIENT_ID: test-google-client-id
+          GOOGLE_CLIENT_SECRET: test-google-client-secret
+          GOOGLE_REDIRECT_URI: http://localhost:3333/auth/google/callback
+          SMTP_SENDER_EMAIL: test@example.com
+          SMTP_TOKEN: test-smtp-token
+          NODE_ENV: test
+          PORT: 3333
+          FRONTEND_URL: http://localhost:4200
+          npm_package_version: 1.0.0
+          LOG_LEVEL: error
+        continue-on-error: true
+
+      - name: Generate comprehensive report
+        id: report
+        run: |
+          # Helper functions
+          get_badge_color() {
+            local coverage=$1
+            if (( $(echo "$coverage >= 80" | bc -l) )); then
+              echo "🟢"
+            elif (( $(echo "$coverage >= 60" | bc -l) )); then
+              echo "🟡"
+            else
+              echo "🔴"
+            fi
+          }
+
+          create_progress_bar() {
+            local percentage=$1
+            local filled=$(printf "%.0f" $(echo "$percentage / 5" | bc -l))
+            local empty=$((20 - filled))
+            printf "["
+            printf "█%.0s" $(seq 1 $filled)
+            printf "░%.0s" $(seq 1 $empty)
+            printf "]"
+          }
+
+          # Start report
+          echo "# 🚀 PR Analysis Report" > report.md
+          echo "" >> report.md
+
+          # Overall status
+          if [ "${{ steps.tests.outputs.all_passed }}" == "true" ]; then
+            echo "## ✅ All Checks Passed!" >> report.md
+          else
+            echo "## ⚠️ Some Checks Need Attention" >> report.md
+          fi
+          echo "" >> report.md
+
+          # Affected projects section
+          echo "## 📦 Affected Projects" >> report.md
+          echo "" >> report.md
+
+          TOTAL=${{ steps.affected.outputs.total }}
+          if [ $TOTAL -eq 0 ]; then
+            echo "✅ No projects affected - changes are in non-project files" >> report.md
+          else
+            echo "🎯 **$TOTAL project(s) affected**" >> report.md
+            echo "" >> report.md
+
+            if [ ${{ steps.affected.outputs.apps }} -gt 0 ]; then
+              echo "**Applications (${{ steps.affected.outputs.apps }}):**" >> report.md
+              echo '```' >> report.md
+              cat affected_apps.txt >> report.md
+              echo '```' >> report.md
+            fi
+
+            if [ ${{ steps.affected.outputs.libs }} -gt 0 ]; then
+              echo "**Libraries (${{ steps.affected.outputs.libs }}):**" >> report.md
+              echo '```' >> report.md
+              cat affected_libs.txt >> report.md
+              echo '```' >> report.md
+            fi
+          fi
+          echo "" >> report.md
+
+          # Test results section
+          echo "## 🧪 Test Results" >> report.md
+          echo "" >> report.md
+          echo "| Test Suite | Status | Coverage |" >> report.md
+          echo "|------------|--------|----------|" >> report.md
+
+          # Process each test type
+          for test_type in unit integration e2e; do
+            # Get exit code
+            EXIT_VAR="${test_type}_exit"
+            EXIT_CODE="${!EXIT_VAR:-1}"
+
+            if [ "$EXIT_CODE" -eq 0 ]; then
+              STATUS="✅ Passed"
+            else
+              STATUS="❌ Failed"
+            fi
+
+            # Get coverage
+            COVERAGE_FILE="coverage/apps/api/$test_type/coverage-summary.json"
+            if [ -f "$COVERAGE_FILE" ]; then
+              LINES=$(jq -r '.total.lines.pct' "$COVERAGE_FILE")
+              BADGE=$(get_badge_color "$LINES")
+              COVERAGE="$BADGE ${LINES}%"
+            else
+              COVERAGE="N/A"
+            fi
+
+            echo "| ${test_type^} | $STATUS | $COVERAGE |" >> report.md
+          done
+          echo "" >> report.md
+
+          # Detailed coverage section
+          echo "## 📊 Coverage Details" >> report.md
+          echo "" >> report.md
+
+          for test_type in unit integration e2e; do
+            COVERAGE_FILE="coverage/apps/api/$test_type/coverage-summary.json"
+
+            if [ -f "$COVERAGE_FILE" ]; then
+              LINES=$(jq -r '.total.lines.pct' "$COVERAGE_FILE")
+              STATEMENTS=$(jq -r '.total.statements.pct' "$COVERAGE_FILE")
+              FUNCTIONS=$(jq -r '.total.functions.pct' "$COVERAGE_FILE")
+              BRANCHES=$(jq -r '.total.branches.pct' "$COVERAGE_FILE")
+
+              BADGE=$(get_badge_color "$LINES")
+
+              echo "<details>" >> report.md
+              echo "<summary>$BADGE <b>${test_type^} Tests - ${LINES}% Coverage</b></summary>" >> report.md
+              echo "" >> report.md
+              echo "| Metric | Coverage | Progress |" >> report.md
+              echo "|--------|----------|----------|" >> report.md
+              echo "| Lines | ${LINES}% | $(create_progress_bar $LINES) |" >> report.md
+              echo "| Statements | ${STATEMENTS}% | $(create_progress_bar $STATEMENTS) |" >> report.md
+              echo "| Functions | ${FUNCTIONS}% | $(create_progress_bar $FUNCTIONS) |" >> report.md
+              echo "| Branches | ${BRANCHES}% | $(create_progress_bar $BRANCHES) |" >> report.md
+              echo "" >> report.md
+              echo "</details>" >> report.md
+              echo "" >> report.md
+            fi
+          done
+
+          # Build info
+          echo "## 🏗️ Build Information" >> report.md
+          echo "" >> report.md
+          echo "- **Branch**: \`${{ github.head_ref }}\`" >> report.md
+          echo "- **Base**: \`${{ github.base_ref }}\`" >> report.md
+          echo "- **Commit**: \`${{ github.event.pull_request.head.sha }}\`" >> report.md
+          echo "- **Author**: @${{ github.event.pull_request.user.login }}" >> report.md
+          echo "" >> report.md
+
+          # Quick actions
+          echo "## 🔗 Quick Actions" >> report.md
+          echo "" >> report.md
+          echo "- [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> report.md
+          echo "- [View Changes](${{ github.event.pull_request.html_url }}/files)" >> report.md
+          echo "- [Download Coverage Reports](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> report.md
+          echo "" >> report.md
+
+          # Tips section
+          echo "<details>" >> report.md
+          echo "<summary>💡 <b>Tips for improving coverage</b></summary>" >> report.md
+          echo "" >> report.md
+          echo "- Focus on testing critical business logic" >> report.md
+          echo "- Add edge case tests for better branch coverage" >> report.md
+          echo "- Use \`pnpm exec nx affected -t test\` locally to run affected tests" >> report.md
+          echo "- View detailed coverage: \`pnpm exec nx run api:test:unit -- --coverage\`" >> report.md
+          echo "" >> report.md
+          echo "</details>" >> report.md
+          echo "" >> report.md
+
+          # Footer
+          echo "---" >> report.md
+          echo "_🤖 Generated by PR Analysis Bot • [Powered by GitHub Actions](https://github.com/features/actions)_" >> report.md
+
+          # Save to summary
+          cat report.md > $GITHUB_STEP_SUMMARY
+
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          filePath: report.md
+          comment_tag: comprehensive-pr-report
+          mode: recreate
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: coverage-reports
+          path: coverage/
+          retention-days: 30
