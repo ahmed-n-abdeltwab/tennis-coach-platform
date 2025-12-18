@@ -257,31 +257,9 @@ jobs:
           retention-days: 30
 
   # ============================================================================
-  # STAGE 4: Reporting (aggregates test results)
+  # STAGE 4: Reporting (handled by pr-comprehensive-report.yml)
   # ============================================================================
-
-  test-results:
-    name: Publish Test Results
-    runs-on: ubuntu-latest
-    needs: test
-    if: always()
-
-    steps:
-      - name: Download all test reports
-        uses: actions/download-artifact@v7
-        with:
-          pattern: test-reports-*
-          merge-multiple: true
-          path: test-reports
-
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          files: test-reports/**/junit*.xml
-          check_name: Test Results (All)
-          comment_mode: always
-          compare_to_earlier_commit: true
-        continue-on-error: true
+  # Test results and coverage are now reported by our custom PR bot
 
   # ============================================================================
   # STAGE 5: Deployment (only runs after all checks pass)
