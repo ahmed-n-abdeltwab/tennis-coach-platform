@@ -145,12 +145,16 @@ jobs:
             echo "Found CI run: $CI_RUNS"
 
             # Download all test report artifacts
-            gh run download $CI_RUNS --dir ./downloaded-reports --pattern "test-reports-*" 2>/dev/null || echo "No artifacts yet"
+            for test_type in unit integration e2e; do
+              echo "Downloading test-reports-${test_type}..."
+              gh run download $CI_RUNS --dir ./downloaded-reports --name "test-reports-${test_type}" 2>/dev/null || echo "  ⚠️ test-reports-${test_type} not available (test may have failed)"
+            done
 
-            # List what we got
+              fist what we got
             if [ -d "./downloaded-reports" ]; then
+              echo ""
               echo "Downloaded reports:"
-              find ./downloaded-reports -name "*.md" -type f
+              find ./downloaded-reports -name "*.md" -type f || echo "No markdown reports found"
             fi
           else
             echo "No CI run found for this commit yet"
@@ -206,17 +210,42 @@ jobs:
             fi
           fi
 
-          # Test results section
-          echo "## 🧪 Test Results" >> report.md
-          echo "" >> report.md
 
-          if [ "${{ steps.tests.outputs.all_passed }}" == "true" ]; then
-            echo "✅ All test suites passed" >> report.md
-          elif [ "${{ steps.tests.outputs.all_passed }}" == "unknown" ]; then
-            echo "⏳ CI checks are still running - report will update when complete" >> report.md
-          else
-            echo "❌ Some test suites failed - check CI workflow for details" >> report.md
-          fi
+
+          # Test details section
+          echo "## 🧪 Test Details" >> report.md
+          echo "" >> report.md
+          echo "| Test Suite | Status | Coverage |" >> report.md
+          echo "|------------|--------|----------|" >> report.md
+
+          # Check each test type
+          for test_type in unit integration e2e; do
+            # Check if test passed by looking for coverage report
+            COVERAGE_REPORT="./downloaded-reports/test-reports-${test_type}/test-reports/coverage-${test_type}.md"
+
+            if [ -f "$COVERAGE_REPORT" ]; then
+              # Extract coverage percentage from the report
+              COVERAGE=$(grep "Lines |" "$COVERAGE_REPORT" | awk '{print $3}' || echo "N/A")
+
+              if [ "$COVERAGE" != "N/A" ]; then
+                # Get badge based on coverage
+                COV_NUM=$(echo "$COVERAGE" | sed 's/%//')
+                if (( $(echo "$COV_NUM >= 80" | bc -l 2>/dev/null || echo 0) )); then
+                  BADGE="🟢"
+                elif (( $(echo "$COV_NUM >= 60" | bc -l 2>/dev/null || echo 0) )); then
+                  BADGE="🟡"
+                else
+                  BADGE="🔴"
+                fi
+                echo "| ${test_type^} | ✅ Passed | $BADGE $COVERAGE |" >> report.md
+              else
+                echo "| ${test_type^} | ✅ Passed | N/A |" >> report.md
+              fi
+            else
+              echo "| ${test_type^} | ❌ Failed or Skipped | N/A |" >> report.md
+            fi
+          done
+
           echo "" >> report.md
 
           # Coverage section
@@ -237,7 +266,7 @@ jobs:
           done
 
           if [ "$COVERAGE_FOUND" = false ]; then
-            echo "Coverage reports are generated for:" >> report.md
+            echo "ℹ️ No coverage reports available yet. Reports are generated after tests complete successfully." >> report.md
             echo "" >> report.md
             echo "- 🧪 **Unit Tests** - Component-level coverage" >> report.md
             echo "- 🔗 **Integration Tests** - Module interaction coverage" >> report.md
