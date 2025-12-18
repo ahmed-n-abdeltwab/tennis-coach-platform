@@ -242,7 +242,7 @@ jobs:
 
             if [ -f "$COVERAGE_REPORT" ]; then
               # Extract coverage percentage from the report
-              COVERAGE=$(grep "Lines |" "$COVERAGE_REPORT" | awk '{print $3}' || echo "N/A")
+              COVERAGE=$(grep "Lines |" "$COVERAGE_REPORT" | head -1 | awk '{print $4}' || echo "N/A")
 
               if [ "$COVERAGE" != "N/A" ]; then
                 # Get badge based on coverage
