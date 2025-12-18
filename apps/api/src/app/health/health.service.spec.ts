@@ -1,5 +1,5 @@
 import { ConfigType } from '@nestjs/config';
-import { BaseServiceTest } from '@test-utils';
+import { ServiceTest } from '@test-utils';
 
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -7,7 +7,7 @@ import healthConfig from './config/health.config';
 import { HealthService } from './health.service';
 
 describe('HealthService', () => {
-  let test: BaseServiceTest<HealthService, PrismaService>;
+  let test: ServiceTest<HealthService, PrismaService>;
   let mockHealthConfig: ConfigType<typeof healthConfig>;
 
   beforeEach(async () => {
@@ -24,7 +24,7 @@ describe('HealthService', () => {
       npmPackageVersion: '1.0.0',
     };
 
-    test = new BaseServiceTest({
+    test = new ServiceTest({
       serviceClass: HealthService,
       mocks: [
         { provide: PrismaService, useValue: mockPrisma },

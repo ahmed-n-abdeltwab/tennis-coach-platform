@@ -20,10 +20,9 @@ export class BookingTypeResponseDto extends BaseResponseDto {
   name: string;
 
   @ApiPropertyOptional({ example: 'One-on-one coaching session focused on your goals' })
-  @Transform(({ value }) => value ?? undefined)
   @IsOptional()
   @IsString()
-  description?: string | null;
+  description?: string;
 
   @ApiProperty({ example: '99.99', description: 'Base price in decimal format' })
   @Type(() => Number)
@@ -49,9 +48,10 @@ export class CreateBookingTypeDto {
   name: string;
 
   @ApiPropertyOptional()
+  @Transform(({ value }) => value ?? undefined)
   @IsOptional()
   @IsString()
-  description?: string;
+  description: string | null;
 
   @ApiProperty({ example: 99.99, description: 'Base price in decimal format' })
   @IsNumber()
@@ -62,7 +62,7 @@ export class CreateBookingTypeDto {
   @ApiPropertyOptional({ default: true })
   @IsOptional()
   @IsBoolean()
-  isActive?: boolean;
+  isActive: boolean;
 }
 
 export class UpdateBookingTypeDto {

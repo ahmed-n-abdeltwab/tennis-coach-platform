@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
-import { BaseServiceTest } from '@test-utils';
+import { ServiceTest } from '@test-utils';
 
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -12,7 +12,7 @@ import { SessionsService } from './sessions.service';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000; // 86400000 milliseconds in a day
 
 describe('SessionsService', () => {
-  let test: BaseServiceTest<SessionsService, PrismaService>;
+  let test: ServiceTest<SessionsService, PrismaService>;
 
   beforeEach(async () => {
     const mockPrisma = {
@@ -41,7 +41,7 @@ describe('SessionsService', () => {
       },
     };
 
-    test = new BaseServiceTest({
+    test = new ServiceTest({
       serviceClass: SessionsService,
       mocks: [{ provide: PrismaService, useValue: mockPrisma }],
     });
@@ -414,12 +414,14 @@ describe('SessionsService', () => {
       };
 
       const mockDiscount = {
+        id: 'discount-1',
         code: 'SAVE20',
         amount: new Decimal(20),
         isActive: true,
         expiry: new Date('2025-12-31'),
         useCount: 0,
-        maxUses: 100,
+        maxUsage: 100,
+        coachId: 'coach-1',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -476,7 +478,7 @@ describe('SessionsService', () => {
         basePrice: new Decimal(100),
       };
 
-      test.prisma.bookingType.findUnique.mockResolvedValue(mockBookingType);
+      test.prisma.bookingType.findUnique.mockResolvedValue(mockBookingType as any);
 
       await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(BadRequestException);
       expect(test.prisma.session.create).not.toHaveBeenCalled();
@@ -499,8 +501,8 @@ describe('SessionsService', () => {
         isAvailable: false,
       };
 
-      test.prisma.bookingType.findUnique.mockResolvedValue(mockBookingType);
-      test.prisma.timeSlot.findUnique.mockResolvedValue(mockTimeSlot);
+      test.prisma.bookingType.findUnique.mockResolvedValue(mockBookingType as any);
+      test.prisma.timeSlot.findUnique.mockResolvedValue(mockTimeSlot as any);
 
       await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(BadRequestException);
       expect(test.prisma.session.create).not.toHaveBeenCalled();
@@ -666,7 +668,7 @@ describe('SessionsService', () => {
           isAvailable: true,
         },
         discount: null,
-      });
+      } as any);
 
       await expect(test.service.cancel(sessionId, userId, Role.USER)).rejects.toThrow(
         BadRequestException
@@ -716,7 +718,7 @@ describe('SessionsService', () => {
           isAvailable: true,
         },
         discount: null,
-      });
+      } as any);
 
       await expect(test.service.cancel(sessionId, userId, Role.USER)).rejects.toThrow(
         BadRequestException

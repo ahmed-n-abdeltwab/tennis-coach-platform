@@ -1,12 +1,12 @@
 import { Role } from '@prisma/client';
-import { BaseControllerTest } from '@test-utils';
+import { ControllerTest } from '@test-utils';
 
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
 import { AccountResponseDto } from './dto/account.dto';
 
 describe('AccountsController', () => {
-  let test: BaseControllerTest<AccountsController, AccountsService, 'accounts'>;
+  let test: ControllerTest<AccountsController, AccountsService, 'accounts'>;
   let mockService: jest.Mocked<AccountsService>;
 
   beforeEach(async () => {
@@ -23,7 +23,7 @@ describe('AccountsController', () => {
       findCoachById: jest.fn(),
     } as any;
 
-    test = new BaseControllerTest({
+    test = new ControllerTest({
       controllerClass: AccountsController,
       moduleName: 'accounts',
       providers: [{ provide: AccountsService, useValue: mockService }],
@@ -53,8 +53,8 @@ describe('AccountsController', () => {
 
       mockService.findUsers.mockResolvedValue(mockAccounts);
 
-      const adminToken = await test.createRoleToken(Role.ADMIN);
-      await test.authenticatedGet('/api/accounts', adminToken);
+      const adminToken = await test.auth.createRoleToken(Role.ADMIN);
+      await test.http.authenticatedGet('/api/accounts', adminToken);
 
       expect(mockService.findUsers).toHaveBeenCalledTimes(1);
     });
@@ -75,10 +75,10 @@ describe('AccountsController', () => {
 
       mockService.findById.mockResolvedValue(mockAccount);
 
-      const userToken = await test.createRoleToken(Role.USER, {
+      const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: 'current-user-id',
       });
-      await test.authenticatedGet('/api/accounts/me', userToken);
+      await test.http.authenticatedGet('/api/accounts/me', userToken);
 
       expect(mockService.findById).toHaveBeenCalledWith('current-user-id');
     });
@@ -99,8 +99,8 @@ describe('AccountsController', () => {
 
       mockService.findById.mockResolvedValue(mockAccount);
 
-      const adminToken = await test.createRoleToken(Role.ADMIN);
-      await test.authenticatedGet(
+      const adminToken = await test.auth.createRoleToken(Role.ADMIN);
+      await test.http.authenticatedGet(
         `/api/accounts/${mockAccount.id}` as '/api/accounts/{id}',
         adminToken
       );
@@ -122,10 +122,10 @@ describe('AccountsController', () => {
 
       mockService.findById.mockResolvedValue(mockAccount);
 
-      const userToken = await test.createRoleToken(Role.USER, {
+      const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: mockAccount.id,
       });
-      await test.authenticatedGet(
+      await test.http.authenticatedGet(
         `/api/accounts/${mockAccount.id}` as '/api/accounts/{id}',
         userToken
       );
@@ -153,8 +153,8 @@ describe('AccountsController', () => {
 
       mockService.update.mockResolvedValue(mockUpdatedAccount);
 
-      const adminToken = await test.createRoleToken(Role.ADMIN);
-      await test.authenticatedPatch(
+      const adminToken = await test.auth.createRoleToken(Role.ADMIN);
+      await test.http.authenticatedPatch(
         `/api/accounts/${mockUpdatedAccount.id}` as '/api/accounts/{id}',
         adminToken,
         {
@@ -183,10 +183,10 @@ describe('AccountsController', () => {
 
       mockService.update.mockResolvedValue(mockUpdatedAccount);
 
-      const userToken = await test.createRoleToken(Role.USER, {
+      const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: 'current-user-id',
       });
-      await test.authenticatedPatch(
+      await test.http.authenticatedPatch(
         `/api/accounts/${mockUpdatedAccount.id}` as '/api/accounts/{id}',
         userToken,
         {
@@ -202,8 +202,8 @@ describe('AccountsController', () => {
     it('should call delete with provided id', async () => {
       mockService.delete.mockResolvedValue(undefined);
 
-      const adminToken = await test.createRoleToken(Role.ADMIN);
-      await test.authenticatedDelete(
+      const adminToken = await test.auth.createRoleToken(Role.ADMIN);
+      await test.http.authenticatedDelete(
         '/api/accounts/target-user-id' as '/api/accounts/{id}',
         adminToken
       );

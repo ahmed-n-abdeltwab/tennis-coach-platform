@@ -1,60 +1,41 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { Test } from '@nestjs/testing';
 
 import { DiscountsModule } from '../../src/app/discounts/discounts.module';
 import { DiscountsService } from '../../src/app/discounts/discounts.service';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
-import { PrismaService } from '../../src/app/prisma/prisma.service';
-import { BaseIntegrationTest } from '../utils';
-
-class DiscountsIntegrationTest extends BaseIntegrationTest {
-  discountsService: DiscountsService;
-  // Test data
-  async setupTestApp(): Promise<void> {
-    this.module = await Test.createTestingModule({
-      imports: this.getTestModules(),
-    }).compile();
-
-    this.app = this.module.createNestApplication();
-    this.app.setGlobalPrefix('api');
-    await this.app.init();
-
-    this.prisma = this.module.get<PrismaService>(PrismaService);
-    this.discountsService = this.module.get<DiscountsService>(DiscountsService);
-
-    this.module = this.module;
-  }
-
-  getTestModules(): any[] {
-    return [
-      ConfigModule.forRoot({
-        isGlobal: true,
-      }),
-      PrismaModule,
-      DiscountsModule,
-      JwtModule.register({
-        secret: 'test-secret',
-        signOptions: { expiresIn: '1h' },
-      }),
-    ];
-  }
-}
+import { IntegrationTest } from '../utils';
 
 describe('Discounts Integration', () => {
-  let testHelper: DiscountsIntegrationTest;
+  let test: IntegrationTest;
+  let discountsService: DiscountsService;
 
   beforeAll(async () => {
-    testHelper = new DiscountsIntegrationTest();
-    await testHelper.setupTestApp();
+    test = new IntegrationTest({
+      modules: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+        }),
+        PrismaModule,
+        DiscountsModule,
+        JwtModule.register({
+          secret: 'test-secret',
+          signOptions: { expiresIn: '1h' },
+        }),
+      ],
+    });
+
+    await test.setup();
+    discountsService = test.testModule.get<DiscountsService>(DiscountsService);
   });
 
   afterAll(async () => {
-    await testHelper.cleanup();
+    await test.cleanup();
   });
 
   beforeEach(async () => {
-    await testHelper.cleanupDatabase();
+    await test.db.cleanupDatabase();
   });
 
   describe('Discount Validation Workflow', () => {

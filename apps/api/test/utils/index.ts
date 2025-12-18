@@ -4,38 +4,65 @@
  */
 
 // Base test utilities
-export * from './base'; // Includes test app helpers
 export * from './database'; // Includes database helpers
 export * from './factories';
 
 // ============================================================================
-// Base Test Classes - Configuration-based with Zero Boilerplate
+// Base Test Classes - DRY, Composable, Configuration-based
 // ============================================================================
 
 /**
- * Base test classes with zero boilerplate
+ * DRY Base test classes with clean composition
  *
- * These classes eliminate the need for:
- * - Extending classes and implementing abstract methods
- * - Creating public accessor methods for protected properties
- * - Creating wrapper methods for HTTP operations
- * - Manual type annotations
+ * These classes follow DRY principles and use composition over inheritance:
+ * - Single Responsibility: Each mixin handles one concern
+ * - Composable: Mix and match capabilities as needed
+ * - Type-safe: Full TypeScript support with generics
+ * - Zero boilerplate: Simple configuration objects
  *
- * Instead, use a simple configuration object and get:
- * - Direct access to service/controller/prisma
- * - All HTTP methods with full type safety
- * - Built-in helper methods
- * - Automatic token creation
+ * Benefits:
+ * - Easy to read and understand (< 200 lines per file)
+ * - Easy to extend (add new mixins without touching existing code)
+ * - Easy to test (each mixin can be tested independently)
+ * - No code duplication (HTTP methods defined once, used everywhere)
+ *
+ * @example Integration Test
+ * ```typescript
+ * import { IntegrationTest } from '@test-utils';
+ *
+ * const test = new IntegrationTest({
+ *   modules: [MyModule],
+ *   moduleName: 'booking-types',
+ * });
+ *
+ * await test.setup();
+ * await test.http.get('/api/booking-types');
+ * const user = await test.db.createTestUser();
+ * test.assert.assertSuccessResponse(response);
+ * ```
+ *
+ * @example Controller Test
+ * ```typescript
+ * import { ControllerTest } from '@test-utils';
+ *
+ * const test = new ControllerTest({
+ *   controllerClass: BookingTypesController,
+ *   moduleName: 'booking-types',
+ *   providers: [mockService],
+ * });
+ *
+ * await test.setup();
+ * const token = await test.auth.createRoleToken(Role.COACH);
+ * await test.http.authenticatedPost('/api/booking-types', token, { body: data });
+ * ```
  *
  * @example Service Test
  * ```typescript
- * import { BaseServiceTest } from '@test-utils';
+ * import { ServiceTest } from '@test-utils';
  *
- * const test = new BaseServiceTest({
+ * const test = new ServiceTest({
  *   serviceClass: BookingTypesService,
- *   mocks: [
- *     { provide: PrismaService, useValue: mockPrisma },
- *   ],
+ *   mocks: [{ provide: PrismaService, useValue: mockPrisma }],
  * });
  *
  * await test.setup();
@@ -43,27 +70,16 @@ export * from './factories';
  * const result = await test.service.findAll();
  * ```
  *
- * @example Controller Test
+ * @example E2E Test
  * ```typescript
- * import { BaseControllerTest } from '@test-utils';
+ * import { E2ETest } from '@test-utils';
  *
- * const test = new BaseControllerTest({
- *   controllerClass: BookingTypesController,
- *   moduleName: 'booking-types',
- *   providers: [
- *     { provide: BookingTypesService, useValue: mockService },
- *   ],
- * });
- *
+ * const test = new E2ETest();
  * await test.setup();
- * const token = await test.createRoleToken(Role.COACH);
- * await test.authenticatedPost('/api/booking-types', token, { body: data });
+ * await test.http.authenticatedPost('/api/sessions', token, { body: data });
  * ```
  */
-export { BaseControllerTest } from './base/base-controller';
-export type { ControllerTestConfig } from './base/base-controller';
-export { BaseServiceTest } from './base/base-service';
-export type { ServiceTestConfig } from './base/base-service';
+export * from './base';
 
 // ============================================================================
 // Type-Safe Test Utilities (Recommended)

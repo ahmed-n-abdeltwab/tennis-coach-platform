@@ -7,35 +7,28 @@ import { JwtModule } from '@nestjs/jwt';
 
 import { CalendarModule } from '../../src/app/calendar/calendar.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
-import { BaseIntegrationTest } from '../utils/base/base-integration';
-
-class CalendarIntegrationTest extends BaseIntegrationTest {
-  async setupTestApp(): Promise<void> {
-    // No additional setup needed
-  }
-
-  getTestModules(): any[] {
-    return [
-      CalendarModule,
-      PrismaModule,
-      JwtModule.register({
-        secret: process.env.JWT_SECRET ?? 'test-secret',
-        signOptions: { expiresIn: '1h' },
-      }),
-    ];
-  }
-}
+import { IntegrationTest } from '../utils';
 
 describe('Calendar Integration Tests', () => {
-  let testInstance: CalendarIntegrationTest;
+  let test: IntegrationTest;
 
   beforeAll(async () => {
-    testInstance = new CalendarIntegrationTest();
-    await testInstance.setup();
+    test = new IntegrationTest({
+      modules: [
+        CalendarModule,
+        PrismaModule,
+        JwtModule.register({
+          secret: process.env.JWT_SECRET ?? 'test-secret',
+          signOptions: { expiresIn: '1h' },
+        }),
+      ],
+    });
+
+    await test.setup();
   });
 
   afterAll(async () => {
-    await testInstance.cleanup();
+    await test.cleanup();
   });
 
   describe('POST /api/calendar/event', () => {

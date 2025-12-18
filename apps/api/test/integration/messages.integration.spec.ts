@@ -4,46 +4,27 @@
  * Tests message sending workflows and database interactions
  */
 
-import { Test, TestingModule } from '@nestjs/testing';
-
 import { MessagesModule } from '../../src/app/messages/messages.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
-import { PrismaService } from '../../src/app/prisma/prisma.service';
-import { BaseIntegrationTest } from '../utils/base/base-integration';
+import { IntegrationTest } from '../utils';
 import { CoachMockFactory } from '../utils/factories/coach.factory';
 import { MessageMockFactory } from '../utils/factories/message.factory';
 import { SessionMockFactory } from '../utils/factories/session.factory';
 import { UserMockFactory } from '../utils/factories/user.factory';
 
-class MessagesIntegrationTest extends BaseIntegrationTest {
-  override getTestModules(): any[] {
-    return [MessagesModule, PrismaModule];
-  }
-  async setupTestApp(): Promise<void> {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [MessagesModule, PrismaModule],
-    }).compile();
-
-    this.app = moduleFixture.createNestApplication();
-    this.app.setGlobalPrefix('api');
-    await this.app.init();
-
-    this.prisma = moduleFixture.get<PrismaService>(PrismaService);
-    this.module = moduleFixture;
-  }
-}
-
 describe('Messages Integration', () => {
+  let test: IntegrationTest;
   let messageFactory: MessageMockFactory;
   let sessionFactory: SessionMockFactory;
   let userFactory: UserMockFactory;
   let coachFactory: CoachMockFactory;
 
-  let testHelper: MessagesIntegrationTest;
-
   beforeAll(async () => {
-    testHelper = new MessagesIntegrationTest();
-    await testHelper.setupTestApp();
+    test = new IntegrationTest({
+      modules: [MessagesModule, PrismaModule],
+    });
+
+    await test.setup();
 
     messageFactory = new MessageMockFactory();
     sessionFactory = new SessionMockFactory();
@@ -52,11 +33,11 @@ describe('Messages Integration', () => {
   });
 
   afterAll(async () => {
-    await testHelper.cleanup();
+    await test.cleanup();
   });
 
   beforeEach(async () => {
-    await testHelper.cleanupDatabase();
+    await test.db.cleanupDatabase();
   });
 
   describe('POST /api/messages', () => {

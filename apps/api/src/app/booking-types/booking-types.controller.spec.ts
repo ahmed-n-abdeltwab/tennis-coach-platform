@@ -1,13 +1,13 @@
 import { Role } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
-import { BaseControllerTest } from '@test-utils';
+import { ControllerTest } from '@test-utils';
 
 import { BookingTypesController } from './booking-types.controller';
 import { BookingTypesService } from './booking-types.service';
 import { BookingTypeResponseDto } from './dto/booking-type.dto';
 
 describe('BookingTypesController', () => {
-  let test: BaseControllerTest<BookingTypesController, BookingTypesService, 'booking-types'>;
+  let test: ControllerTest<BookingTypesController, BookingTypesService, 'booking-types'>;
   let mockService: jest.Mocked<BookingTypesService>;
 
   beforeEach(async () => {
@@ -22,7 +22,7 @@ describe('BookingTypesController', () => {
     } as any;
 
     // Create test instance with configuration - no class extension needed!
-    test = new BaseControllerTest({
+    test = new ControllerTest({
       controllerClass: BookingTypesController,
       moduleName: 'booking-types',
       providers: [{ provide: BookingTypesService, useValue: mockService }],
@@ -53,7 +53,7 @@ describe('BookingTypesController', () => {
       mockService.findAll.mockResolvedValue(mockBookingTypes as any);
 
       // Direct access to HTTP methods - no wrapper needed!
-      await test.get('/api/booking-types');
+      await test.http.get('/api/booking-types');
 
       expect(mockService.findAll).toHaveBeenCalledTimes(1);
     });
@@ -77,7 +77,9 @@ describe('BookingTypesController', () => {
 
       mockService.findByCoach.mockResolvedValue(mockBookingTypes as any);
 
-      await test.get(`/api/booking-types/coach/${coachId}` as '/api/booking-types/coach/{coachId}');
+      await test.http.get(
+        `/api/booking-types/coach/${coachId}` as '/api/booking-types/coach/{coachId}'
+      );
 
       expect(mockService.findByCoach).toHaveBeenCalledWith(coachId);
     });
@@ -98,7 +100,7 @@ describe('BookingTypesController', () => {
 
       mockService.findOne.mockResolvedValue(mockBookingType as any);
 
-      await test.get(`/api/booking-types/${mockBookingType.id}` as '/api/booking-types/{id}');
+      await test.http.get(`/api/booking-types/${mockBookingType.id}` as '/api/booking-types/{id}');
 
       expect(mockService.findOne).toHaveBeenCalledWith(mockBookingType.id);
     });
@@ -127,10 +129,10 @@ describe('BookingTypesController', () => {
       mockService.create.mockResolvedValue(mockCreatedBookingType as any);
 
       // Built-in token creation - no helper method needed!
-      const coachToken = await test.createRoleToken(Role.COACH, { sub: coachId });
+      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });
 
       // Direct access to authenticated HTTP methods!
-      await test.authenticatedPost('/api/booking-types', coachToken, {
+      await test.http.authenticatedPost('/api/booking-types', coachToken, {
         body: createData,
       });
 
@@ -161,8 +163,8 @@ describe('BookingTypesController', () => {
 
       mockService.update.mockResolvedValue(mockUpdatedBookingType as any);
 
-      const coachToken = await test.createRoleToken(Role.COACH, { sub: coachId });
-      await test.authenticatedPut(
+      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });
+      await test.http.authenticatedPut(
         `/api/booking-types/${bookingTypeId}` as '/api/booking-types/{id}',
         coachToken,
         {
@@ -196,8 +198,8 @@ describe('BookingTypesController', () => {
 
       mockService.update.mockResolvedValue(mockUpdatedBookingType as any);
 
-      const coachToken = await test.createRoleToken(Role.COACH, { sub: coachId });
-      await test.authenticatedPatch(
+      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });
+      await test.http.authenticatedPatch(
         `/api/booking-types/${bookingTypeId}` as '/api/booking-types/{id}',
         coachToken,
         {
@@ -216,8 +218,8 @@ describe('BookingTypesController', () => {
 
       mockService.remove.mockResolvedValue(undefined);
 
-      const coachToken = await test.createRoleToken(Role.COACH, { sub: coachId });
-      await test.authenticatedDelete(
+      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });
+      await test.http.authenticatedDelete(
         `/api/booking-types/${bookingTypeId}` as '/api/booking-types/{id}',
         coachToken
       );
