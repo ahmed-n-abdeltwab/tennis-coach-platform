@@ -6,6 +6,9 @@
  * - Managing seeds and variations
  * - Handling data relationships and dependencies
  * - Providing clean, isolated test data for each test run
+ *
+ * @deprecated This class now delegates to DatabaseMixin for actual data creation.
+ * Consider using DatabaseMixin directly for new code.
  */
 
 import {
@@ -19,6 +22,10 @@ import {
   TimeSlot,
 } from '@prisma/client';
 import { hash } from 'bcryptjs';
+
+import { PrismaService } from '../../../src/app/prisma/prisma.service';
+import { DatabaseCapable, DatabaseMixin } from '../base/mixins/database.mixin';
+import { generateUniqueEmail } from '../helpers/common-helpers';
 
 export interface SeedDataOptions {
   userCount?: number;
@@ -40,12 +47,21 @@ export interface SeededData {
   messages: Message[];
 }
 
-export class DatabaseSeeder {
+export class DatabaseSeeder implements DatabaseCapable {
   private client: PrismaClient;
   private saltRounds = 10;
+  private dbMixin: DatabaseMixin;
 
   constructor(client: PrismaClient) {
     this.client = client;
+    this.dbMixin = new DatabaseMixin(this);
+  }
+
+  /**
+   * Provides access to the database for DatabaseMixin
+   */
+  get database(): PrismaService {
+    return this.client as PrismaService;
   }
 
   /**
@@ -93,31 +109,30 @@ export class DatabaseSeeder {
 
   /**
    * Seed users with varied profiles
+   * Delegates to DatabaseMixin for user creation
    */
   async seedUsers(count = 3): Promise<Account[]> {
     const users: Account[] = [];
     const passwordHash = await hash('testpassword123', this.saltRounds);
 
     for (let i = 1; i <= count; i++) {
-      const user: Account = await this.client.account.create({
-        data: {
-          email: `testuser${i}@example.com`,
-          name: `Test User ${i}`,
-          passwordHash,
-          gender: i % 2 === 0 ? 'female' : 'male',
-          age: 20 + i * 5,
-          height: 160 + i * 10,
-          weight: 60 + i * 5,
-          disability: i === count, // Last user has disability
-          country: ['US', 'CA', 'UK'][i % 3],
-          address: `${i}00 Test Street, Test City`,
-          notes:
-            i === 1
-              ? 'Beginner player, needs basic instruction'
-              : i === 2
-                ? 'Intermediate player, working on serve'
-                : 'Advanced player, tournament preparation',
-        },
+      const user: Account = await this.dbMixin.createTestUser({
+        email: generateUniqueEmail(`testuser${i}`),
+        name: `Test User ${i}`,
+        passwordHash,
+        gender: i % 2 === 0 ? 'female' : 'male',
+        age: 20 + i * 5,
+        height: 160 + i * 10,
+        weight: 60 + i * 5,
+        disability: i === count, // Last user has disability
+        country: ['US', 'CA', 'UK'][i % 3],
+        address: `${i}00 Test Street, Test City`,
+        notes:
+          i === 1
+            ? 'Beginner player, needs basic instruction'
+            : i === 2
+              ? 'Intermediate player, working on serve'
+              : 'Advanced player, tournament preparation',
       });
       users.push(user);
     }
@@ -127,30 +142,29 @@ export class DatabaseSeeder {
 
   /**
    * Seed coaches with different specialties
+   * Delegates to DatabaseMixin for coach creation
    */
   async seedCoaches(count = 2): Promise<Account[]> {
     const coaches: Account[] = [];
     const passwordHash = await hash('coachpassword123', this.saltRounds);
 
     for (let i = 1; i <= count; i++) {
-      const coach: Account = await this.client.account.create({
-        data: {
-          email: `testcoach${i}@example.com`,
-          name: `Test Coach ${i}`,
-          passwordHash,
-          role: Role.COACH, // First coach is admin
-          bio:
-            i === 1
-              ? 'Professional tennis coach with 15+ years of experience. Specializes in technique development and mental game.'
-              : 'Former collegiate player turned coach. Expert in junior development and competitive play.',
-          credentials:
-            i === 1 ? 'USPTA Master Professional, PTR Certified' : 'USPTA Certified Professional',
-          philosophy:
-            i === 1
-              ? 'Focus on fundamentals and building confidence through progressive skill development.'
-              : 'Aggressive baseline play with emphasis on fitness and match strategy.',
-          profileImage: `https://example.com/coach${i}.jpg`,
-        },
+      const coach: Account = await this.dbMixin.createTestCoach({
+        email: generateUniqueEmail(`testcoach${i}`),
+        name: `Test Coach ${i}`,
+        passwordHash,
+        role: Role.COACH,
+        bio:
+          i === 1
+            ? 'Professional tennis coach with 15+ years of experience. Specializes in technique development and mental game.'
+            : 'Former collegiate player turned coach. Expert in junior development and competitive play.',
+        credentials:
+          i === 1 ? 'USPTA Master Professional, PTR Certified' : 'USPTA Certified Professional',
+        philosophy:
+          i === 1
+            ? 'Focus on fundamentals and building confidence through progressive skill development.'
+            : 'Aggressive baseline play with emphasis on fitness and match strategy.',
+        profileImage: `https://example.com/coach${i}.jpg`,
       });
       coaches.push(coach);
     }
@@ -160,6 +174,7 @@ export class DatabaseSeeder {
 
   /**
    * Seed booking types for each coach
+   * Delegates to DatabaseMixin for booking type creation
    */
   async seedBookingTypes(count = 3, coaches: Account[]): Promise<BookingType[]> {
     const bookingTypes: BookingType[] = [];
@@ -199,14 +214,12 @@ export class DatabaseSeeder {
           continue;
         }
 
-        const bookingType: BookingType = await this.client.bookingType.create({
-          data: {
-            name: typeData.name,
-            description: typeData.description,
-            basePrice: typeData.basePrice,
-            coachId: coach.id,
-            isActive: true,
-          },
+        const bookingType: BookingType = await this.dbMixin.createTestBookingType({
+          name: typeData.name,
+          description: typeData.description,
+          basePrice: typeData.basePrice,
+          coachId: coach.id,
+          isActive: true,
         });
         bookingTypes.push(bookingType);
       }
@@ -217,6 +230,7 @@ export class DatabaseSeeder {
 
   /**
    * Seed time slots for coaches
+   * Delegates to DatabaseMixin for time slot creation
    */
   async seedTimeSlots(count = 10, coaches: Account[]): Promise<TimeSlot[]> {
     const timeSlots: TimeSlot[] = [];
@@ -234,13 +248,11 @@ export class DatabaseSeeder {
         slotDate.setDate(slotDate.getDate() + dayOffset + 1); // Start from tomorrow
         slotDate.setHours(hourOffset, 0, 0, 0);
 
-        const timeSlot: TimeSlot = await this.client.timeSlot.create({
-          data: {
-            dateTime: slotDate,
-            durationMin: i % 3 === 2 ? 90 : 60, // Some 90-minute slots
-            isAvailable: i < slotsPerCoach - 1, // Last slot is unavailable
-            coachId: coach.id,
-          },
+        const timeSlot: TimeSlot = await this.dbMixin.createTestTimeSlot({
+          dateTime: slotDate,
+          durationMin: i % 3 === 2 ? 90 : 60, // Some 90-minute slots
+          isAvailable: i < slotsPerCoach - 1, // Last slot is unavailable
+          coachId: coach.id,
         });
         timeSlots.push(timeSlot);
       }
@@ -251,6 +263,7 @@ export class DatabaseSeeder {
 
   /**
    * Seed discounts for coaches
+   * Delegates to DatabaseMixin for discount creation
    */
   async seedDiscounts(coaches: Account[]): Promise<Discount[]> {
     const discounts: Discount[] = [];
@@ -289,13 +302,11 @@ export class DatabaseSeeder {
         const uniqueCode =
           coaches.length > 1 ? `${discountInfo.code}_C${coachIndex + 1}` : discountInfo.code;
 
-        const discount: Discount = await this.client.discount.create({
-          data: {
-            ...discountInfo,
-            code: uniqueCode,
-            expiry,
-            coachId: coach.id,
-          },
+        const discount: Discount = await this.dbMixin.createTestDiscount({
+          ...discountInfo,
+          code: uniqueCode,
+          expiry,
+          coachId: coach.id,
         });
         discounts.push(discount);
       }
@@ -306,6 +317,7 @@ export class DatabaseSeeder {
 
   /**
    * Seed sessions with various statuses
+   * Delegates to DatabaseMixin for session creation
    */
   async seedSessions(
     count = 5,
@@ -343,30 +355,28 @@ export class DatabaseSeeder {
       const discountAmount = discount ? Number(discount.amount) : 0;
       const finalPrice = Math.max(0, basePrice - discountAmount);
 
-      const session: Session = await this.client.session.create({
-        data: {
-          dateTime: timeSlot.dateTime,
-          durationMin: timeSlot.durationMin,
-          price: finalPrice,
-          isPaid: i % 2 === 0, // Half are paid
-          status: statuses[i % statuses.length],
-          notes:
-            i === 0
-              ? 'First lesson - focus on basics'
-              : i === 1
-                ? 'Working on backhand technique'
-                : i === 2
-                  ? 'Match preparation session'
-                  : null,
-          paymentId: i % 2 === 0 ? `payment_${i}_${Date.now()}` : null,
-          discountCode: discount?.code ?? null,
-          calendarEventId: `cal_event_${i}_${Date.now()}`,
-          userId: user.id,
-          coachId: coach.id,
-          bookingTypeId: bookingType.id,
-          timeSlotId: timeSlot.id,
-          discountId: discount?.id ?? null,
-        },
+      const session: Session = await this.dbMixin.createTestSession({
+        dateTime: timeSlot.dateTime,
+        durationMin: timeSlot.durationMin,
+        price: finalPrice,
+        isPaid: i % 2 === 0, // Half are paid
+        status: statuses[i % statuses.length],
+        notes:
+          i === 0
+            ? 'First lesson - focus on basics'
+            : i === 1
+              ? 'Working on backhand technique'
+              : i === 2
+                ? 'Match preparation session'
+                : null,
+        paymentId: i % 2 === 0 ? `payment_${i}_${Date.now()}` : null,
+        discountCode: discount?.code ?? null,
+        calendarEventId: `cal_event_${i}_${Date.now()}`,
+        userId: user.id,
+        coachId: coach.id,
+        bookingTypeId: bookingType.id,
+        timeSlotId: timeSlot.id,
+        discountId: discount?.id ?? null,
       });
       sessions.push(session);
     }
@@ -376,6 +386,7 @@ export class DatabaseSeeder {
 
   /**
    * Seed messages between users and coaches
+   * Delegates to DatabaseMixin for message creation
    */
   async seedMessages(
     sessions: Session[],
@@ -400,28 +411,24 @@ export class DatabaseSeeder {
       }
 
       // User to coach message
-      const userMessage: Message = await this.client.message.create({
-        data: {
-          content: `Hi ${coach.name}, I'm looking forward to our session on ${session.dateTime.toDateString()}. Any specific things I should prepare?`,
-          senderType: Role.USER,
-          senderId: user.id,
-          receiverType: Role.COACH,
-          receiverId: coach.id,
-          sessionId: session.id,
-        },
+      const userMessage: Message = await this.dbMixin.createTestMessage({
+        content: `Hi ${coach.name}, I'm looking forward to our session on ${session.dateTime.toDateString()}. Any specific things I should prepare?`,
+        senderType: Role.USER,
+        senderId: user.id,
+        receiverType: Role.COACH,
+        receiverId: coach.id,
+        sessionId: session.id,
       });
       messages.push(userMessage);
 
       // Coach to user response
-      const coachMessage: Message = await this.client.message.create({
-        data: {
-          content: `Hi ${user.name}! Great to hear from you. Please bring comfortable athletic wear and a water bottle. We'll focus on your serve technique as discussed.`,
-          senderType: Role.COACH,
-          senderId: coach.id,
-          receiverType: Role.USER,
-          receiverId: user.id,
-          sessionId: session.id,
-        },
+      const coachMessage: Message = await this.dbMixin.createTestMessage({
+        content: `Hi ${user.name}! Great to hear from you. Please bring comfortable athletic wear and a water bottle. We'll focus on your serve technique as discussed.`,
+        senderType: Role.COACH,
+        senderId: coach.id,
+        receiverType: Role.USER,
+        receiverId: user.id,
+        sessionId: session.id,
       });
       messages.push(coachMessage);
     }
@@ -431,16 +438,10 @@ export class DatabaseSeeder {
 
   /**
    * Clear all data from the database
+   * Delegates to DatabaseMixin for cleanup
    */
   async clearAll(): Promise<void> {
-    // Delete in reverse order of dependencies
-    await this.client.message.deleteMany();
-    await this.client.session.deleteMany();
-    await this.client.discount.deleteMany();
-    await this.client.timeSlot.deleteMany();
-    await this.client.bookingType.deleteMany();
-    await this.client.account.deleteMany();
-    await this.client.refreshToken.deleteMany();
+    await this.dbMixin.cleanupDatabase();
   }
 
   /**

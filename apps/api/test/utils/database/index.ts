@@ -9,16 +9,42 @@
  * - Simple database helpers for common operations
  */
 
-import { createDatabaseSeeder, DatabaseSeeder, SeedDataOptions } from './database-seeder';
-import { MigrationOptions } from './migration-manager';
-import { DatabaseConnection, testDatabaseManager } from './test-database-manager';
-import { createTransactionManager, TransactionManager } from './transaction-manager';
-
 /**
  * Simple database helper functions
  * For quick database operations in tests
+ *
+ * Note: These functions now delegate to DatabaseMixin internally.
+ * For new code, consider using IntegrationTest or E2ETest classes
+ * which provide access to DatabaseMixin through the `db` property.
  */
 export * from './database-helpers';
+
+/**
+ * Database seeder utilities
+ * For creating consistent test data
+ *
+ * Note: DatabaseSeeder now delegates to DatabaseMixin internally.
+ * For new code, consider using IntegrationTest or E2ETest classes.
+ */
+export * from './database-seeder';
+
+/**
+ * Test database manager
+ * For managing test database lifecycle
+ */
+export * from './test-database-manager';
+
+/**
+ * Transaction manager
+ * For transaction-based test isolation
+ */
+export * from './transaction-manager';
+
+/**
+ * Migration manager
+ * For handling database migrations in tests
+ */
+export * from './migration-manager';
 
 /**
  * Performance optimization utilities
@@ -26,6 +52,12 @@ export * from './database-helpers';
  */
 export * from './batch-cleanup-manager';
 export * from './connection-pool-manager';
+
+// Re-import for convenience functions below
+import { createDatabaseSeeder, DatabaseSeeder, SeedDataOptions } from './database-seeder';
+import { MigrationOptions } from './migration-manager';
+import { DatabaseConnection, testDatabaseManager } from './test-database-manager';
+import { createTransactionManager, TransactionManager } from './transaction-manager';
 
 /**
  * Convenience function to setup a complete test database environment
