@@ -3,35 +3,36 @@
 const fs = require('fs');
 const path = require('path');
 
-/**
- * Comprehensive Test Artifacts Analyzer
- *
- * Analyzes test-reports and coverage folders to generate a complete JSON report
- * containing all test results, coverage metrics, and metadata.
- *
- * Usage: node analyze-test-artifacts.js [output-file]
- * Default output: test-reports/analysis.json
- */
-
 const OUTPUT_FILE = process.argv[2] || path.join(__dirname, '..', 'test-reports', 'analysis.json');
 const TEST_REPORTS_DIR = path.join(__dirname, '..', 'test-reports');
 const COVERAGE_DIR = path.join(__dirname, '..', 'coverage');
 
-/**
- * Parse JUnit XML to extract test statistics
- */
+const TEST_TYPES = ['unit', 'integration', 'e2e'];
+const COVERAGE_METRICS = ['lines', 'statements', 'functions', 'branches'];
+const QUALITY_THRESHOLDS = {
+  excellent: 80,
+  good: 60,
+};
+const REPORT_VERSION = '1.0.0';
+
+function extractAttribute(attrs, name, defaultValue = '0') {
+  const match = attrs.match(new RegExp(`${name}="([^"]*)"`, 'i'));
+  return match ? match[1] : defaultValue;
+}
+
 function parseJUnitXML(xmlContent) {
   const testsuiteMatch = xmlContent.match(/<testsuite[^>]*>/);
-  if (!testsuiteMatch) return null;
+  if (!testsuiteMatch) {
+    return null;
+  }
 
   const attrs = testsuiteMatch[0];
-  const tests = (attrs.match(/tests="(\d+)"/) || [])[1] || '0';
-  const failures = (attrs.match(/failures="(\d+)"/) || [])[1] || '0';
-  const errors = (attrs.match(/errors="(\d+)"/) || [])[1] || '0';
-  const skipped = (attrs.match(/skipped="(\d+)"/) || [])[1] || '0';
-  const time = (attrs.match(/time="([\d.]+)"/) || [])[1] || '0';
+  const tests = parseInt(extractAttribute(attrs, 'tests'), 10);
+  const failures = parseInt(extractAttribute(attrs, 'failures'), 10);
+  const errors = parseInt(extractAttribute(attrs, 'errors'), 10);
+  const skipped = parseInt(extractAttribute(attrs, 'skipped'), 10);
+  const time = parseFloat(extractAttribute(attrs, 'time'));
 
-  // Extract failed test cases
   const failedTests = [];
   const testcaseMatches = xmlContent.matchAll(
     /<testcase[^>]*name="([^"]*)"[^>]*classname="([^"]*)"[^>]*>[\s\S]*?<(failure|error)[^>]*message="([^"]*)"[^>]*>/g
@@ -47,40 +48,97 @@ function parseJUnitXML(xmlContent) {
   }
 
   return {
-    tests: parseInt(tests),
-    failures: parseInt(failures),
-    errors: parseInt(errors),
-    skipped: parseInt(skipped),
-    passed: parseInt(tests) - parseInt(failures) - parseInt(errors) - parseInt(skipped),
-    time: parseFloat(time),
+    tests,
+    failures,
+    errors,
+    skipped,
+    passed: tests - failures - errors - skipped,
+    time,
     failedTests,
   };
 }
 
-/**
- * Find the most recent test report JSON file for a given test type
- */
 function findLatestTestReport(testType) {
-  if (!fs.existsSync(TEST_REPORTS_DIR)) return null;
+  if (!fs.existsSync(TEST_REPORTS_DIR)) {
+    return null;
+  }
 
+  const prefix = `test-report-${testType}-`;
   const files = fs
     .readdirSync(TEST_REPORTS_DIR)
-    .filter(f => f.startsWith(`test-report-${testType}-`) && f.endsWith('.json'))
+    .filter(f => f.startsWith(prefix) && f.endsWith('.json'))
     .sort()
     .reverse();
 
-  if (files.length > 0) {
-    console.log(`  Found ${files.length} ${testType} report(s), using latest: ${files[0]}`);
-    return path.join(TEST_REPORTS_DIR, files[0]);
+  if (files.length === 0) {
+    console.log(`  No detailed ${testType} reports found`);
+    return null;
   }
 
-  console.log(`  No detailed ${testType} reports found`);
-  return null;
+  console.log(`  Found ${files.length} ${testType} report(s), using latest: ${files[0]}`);
+  return path.join(TEST_REPORTS_DIR, files[0]);
 }
 
-/**
- * Analyze a single test type (unit, integration, e2e)
- */
+function parseJUnitFile(junitFile) {
+  console.log(`  Checking JUnit XML: ${junitFile}`);
+  if (!fs.existsSync(junitFile)) {
+    return null;
+  }
+
+  try {
+    const xmlContent = fs.readFileSync(junitFile, 'utf8');
+    const parsed = parseJUnitXML(xmlContent);
+    if (parsed) {
+      console.log(`  ✅ JUnit XML parsed: ${parsed.tests} tests`);
+    }
+    return parsed;
+  } catch (error) {
+    console.error(`  ❌ Error parsing JUnit XML:`, error.message);
+    return null;
+  }
+}
+
+function parseCoverageFile(testType) {
+  const coverageFile = path.join(COVERAGE_DIR, 'apps', 'api', testType, 'coverage-summary.json');
+  console.log(`  Checking coverage: ${coverageFile}`);
+
+  if (!fs.existsSync(coverageFile)) {
+    console.log(`  ⚠️  Coverage file not found`);
+    return null;
+  }
+
+  try {
+    const coverage = JSON.parse(fs.readFileSync(coverageFile, 'utf8'));
+    console.log(`  ✅ Coverage parsed: ${coverage.total.lines.pct}% lines`);
+    return coverage.total;
+  } catch (error) {
+    console.error(`  ❌ Error parsing coverage for ${testType}:`, error.message);
+    return null;
+  }
+}
+
+function parseDetailedReport(testType) {
+  const reportFile = findLatestTestReport(testType);
+  if (!reportFile || !fs.existsSync(reportFile)) {
+    return null;
+  }
+
+  try {
+    const report = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
+    const detailedReport = {
+      timestamp: report.timestamp,
+      summary: report.summary,
+      testFiles: report.details?.length || 0,
+      details: report.details || [],
+    };
+    console.log(`  ✅ Detailed report parsed: ${detailedReport.testFiles} test files`);
+    return detailedReport;
+  } catch (error) {
+    console.error(`  ❌ Error parsing detailed report for ${testType}:`, error.message);
+    return null;
+  }
+}
+
 function analyzeTestType(testType) {
   console.log(`\nAnalyzing ${testType} tests...`);
 
@@ -98,73 +156,42 @@ function analyzeTestType(testType) {
     },
   };
 
-  // 1. Parse JUnit XML (try both with and without type suffix)
   const junitFiles = [
     path.join(TEST_REPORTS_DIR, `junit-${testType}.xml`),
-    path.join(TEST_REPORTS_DIR, 'junit.xml'), // Fallback for unit tests
+    path.join(TEST_REPORTS_DIR, 'junit.xml'),
   ];
 
-  let junitFound = false;
   for (const junitFile of junitFiles) {
-    console.log(`  Checking JUnit XML: ${junitFile}`);
-    if (fs.existsSync(junitFile)) {
-      try {
-        const xmlContent = fs.readFileSync(junitFile, 'utf8');
-        result.junit = parseJUnitXML(xmlContent);
-        result.hasData = true;
-        result.sources.junit = true;
-        junitFound = true;
-        console.log(`  ✅ JUnit XML parsed: ${result.junit.tests} tests`);
-        break;
-      } catch (error) {
-        console.error(`  ❌ Error parsing JUnit XML:`, error.message);
-      }
+    const parsed = parseJUnitFile(junitFile);
+    if (parsed) {
+      result.junit = parsed;
+      result.hasData = true;
+      result.sources.junit = true;
+      break;
     }
   }
 
-  if (!junitFound) {
+  if (!result.sources.junit) {
     console.log(`  ⚠️  JUnit XML not found`);
   }
 
-  // 2. Parse coverage summary
-  const coverageFile = path.join(COVERAGE_DIR, 'apps', 'api', testType, 'coverage-summary.json');
-  console.log(`  Checking coverage: ${coverageFile}`);
-  if (fs.existsSync(coverageFile)) {
-    try {
-      const coverage = JSON.parse(fs.readFileSync(coverageFile, 'utf8'));
-      result.coverage = coverage.total;
-      result.hasData = true;
-      result.sources.coverage = true;
-      console.log(`  ✅ Coverage parsed: ${result.coverage.lines.pct}% lines`);
-    } catch (error) {
-      console.error(`  ❌ Error parsing coverage for ${testType}:`, error.message);
-    }
-  } else {
-    console.log(`  ⚠️  Coverage file not found`);
+  const coverage = parseCoverageFile(testType);
+  if (coverage) {
+    result.coverage = coverage;
+    result.hasData = true;
+    result.sources.coverage = true;
   }
 
-  // 3. Parse detailed test report (Jest JSON reporter)
-  const reportFile = findLatestTestReport(testType);
-  if (reportFile && fs.existsSync(reportFile)) {
-    try {
-      const report = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
-      result.detailedReport = {
-        timestamp: report.timestamp,
-        summary: report.summary,
-        testFiles: report.details?.length || 0,
-        details: report.details || [],
-      };
-      result.hasData = true;
-      result.sources.detailedReport = true;
-      console.log(`  ✅ Detailed report parsed: ${result.detailedReport.testFiles} test files`);
-    } catch (error) {
-      console.error(`  ❌ Error parsing detailed report for ${testType}:`, error.message);
-    }
+  const detailedReport = parseDetailedReport(testType);
+  if (detailedReport) {
+    result.detailedReport = detailedReport;
+    result.hasData = true;
+    result.sources.detailedReport = true;
   }
 
-  // Summary
   const sourcesFound = Object.values(result.sources).filter(Boolean).length;
-  console.log(`  📊 Data sources found: ${sourcesFound}/3`);
+  const totalSources = Object.keys(result.sources).length;
+  console.log(`  📊 Data sources found: ${sourcesFound}/${totalSources}`);
 
   if (!result.hasData) {
     console.log(`  ⚠️  No data found for ${testType} tests`);
@@ -173,9 +200,17 @@ function analyzeTestType(testType) {
   return result;
 }
 
-/**
- * Calculate aggregate statistics across all test types
- */
+function calculatePercentage(numerator, denominator) {
+  if (denominator === 0) {
+    return 0;
+  }
+  return parseFloat(((numerator / denominator) * 100).toFixed(2));
+}
+
+function initializeCoverageMetric() {
+  return { total: 0, covered: 0, pct: 0 };
+}
+
 function calculateAggregates(testResults) {
   const aggregate = {
     total: {
@@ -186,19 +221,15 @@ function calculateAggregates(testResults) {
       errors: 0,
       duration: 0,
     },
-    coverage: {
-      lines: { total: 0, covered: 0, pct: 0 },
-      statements: { total: 0, covered: 0, pct: 0 },
-      functions: { total: 0, covered: 0, pct: 0 },
-      branches: { total: 0, covered: 0, pct: 0 },
-    },
+    coverage: {},
     byType: {},
   };
 
-  let coverageCount = 0;
+  COVERAGE_METRICS.forEach(metric => {
+    aggregate.coverage[metric] = initializeCoverageMetric();
+  });
 
   for (const result of testResults) {
-    // Aggregate test counts
     if (result.junit) {
       aggregate.total.tests += result.junit.tests;
       aggregate.total.passed += result.junit.passed;
@@ -208,16 +239,13 @@ function calculateAggregates(testResults) {
       aggregate.total.duration += result.junit.time;
     }
 
-    // Aggregate coverage (we'll average percentages)
     if (result.coverage) {
-      coverageCount++;
-      ['lines', 'statements', 'functions', 'branches'].forEach(metric => {
+      COVERAGE_METRICS.forEach(metric => {
         aggregate.coverage[metric].total += result.coverage[metric].total;
         aggregate.coverage[metric].covered += result.coverage[metric].covered;
       });
     }
 
-    // Store per-type summary
     aggregate.byType[result.testType] = {
       hasData: result.hasData,
       tests: result.junit?.tests || 0,
@@ -227,80 +255,97 @@ function calculateAggregates(testResults) {
     };
   }
 
-  // Calculate coverage percentages
-  ['lines', 'statements', 'functions', 'branches'].forEach(metric => {
+  COVERAGE_METRICS.forEach(metric => {
     const { total, covered } = aggregate.coverage[metric];
-    aggregate.coverage[metric].pct =
-      total > 0 ? parseFloat(((covered / total) * 100).toFixed(2)) : 0;
+    aggregate.coverage[metric].pct = calculatePercentage(covered, total);
   });
 
-  // Calculate pass rate
-  aggregate.total.passRate =
-    aggregate.total.tests > 0
-      ? parseFloat(((aggregate.total.passed / aggregate.total.tests) * 100).toFixed(2))
-      : 0;
+  aggregate.total.passRate = calculatePercentage(aggregate.total.passed, aggregate.total.tests);
 
   return aggregate;
 }
 
-/**
- * Generate quality badges based on coverage thresholds
- */
-function generateQualityBadges(coverage, thresholds = { excellent: 80, good: 60 }) {
+function getQualityBadge(pct) {
+  if (pct >= QUALITY_THRESHOLDS.excellent) {
+    return { emoji: '🟢', label: 'Excellent', color: 'green' };
+  } else if (pct >= QUALITY_THRESHOLDS.good) {
+    return { emoji: '🟡', label: 'Good', color: 'yellow' };
+  } else {
+    return { emoji: '🔴', label: 'Needs Work', color: 'red' };
+  }
+}
+
+function generateQualityBadges(coverage) {
   const badges = {};
 
-  ['lines', 'statements', 'functions', 'branches'].forEach(metric => {
+  COVERAGE_METRICS.forEach(metric => {
     const pct = coverage[metric]?.pct || 0;
-
-    if (pct >= thresholds.excellent) {
-      badges[metric] = { emoji: '🟢', label: 'Excellent', color: 'green' };
-    } else if (pct >= thresholds.good) {
-      badges[metric] = { emoji: '🟡', label: 'Good', color: 'yellow' };
-    } else {
-      badges[metric] = { emoji: '🔴', label: 'Needs Work', color: 'red' };
-    }
+    badges[metric] = getQualityBadge(pct);
   });
 
   return badges;
 }
 
-/**
- * Main analysis function
- */
+function determineStatus(aggregate) {
+  if (aggregate.total.failed === 0 && aggregate.total.errors === 0) {
+    return 'passed';
+  }
+  return 'failed';
+}
+
+function printSummary(aggregate, qualityBadges) {
+  const SEPARATOR_LENGTH = 50;
+  const DECIMAL_PLACES = 2;
+
+  console.log('📊 Analysis Summary:');
+  console.log('─'.repeat(SEPARATOR_LENGTH));
+  console.log(`Total Tests:     ${aggregate.total.tests}`);
+  console.log(`✅ Passed:       ${aggregate.total.passed}`);
+  console.log(`❌ Failed:       ${aggregate.total.failed}`);
+  console.log(`⏭️  Skipped:      ${aggregate.total.skipped}`);
+  console.log(`Pass Rate:       ${aggregate.total.passRate}%`);
+  console.log(`Duration:        ${aggregate.total.duration.toFixed(DECIMAL_PLACES)}s`);
+  console.log('');
+  console.log('Coverage:');
+
+  COVERAGE_METRICS.forEach(metric => {
+    const label = metric.charAt(0).toUpperCase() + metric.slice(1);
+    const padding = ' '.repeat(15 - label.length);
+    console.log(
+      `  ${label}:${padding}${aggregate.coverage[metric].pct}% ${qualityBadges[metric].emoji}`
+    );
+  });
+
+  console.log('');
+  console.log(`✅ Report generated: ${OUTPUT_FILE}`);
+}
+
 function analyzeTestArtifacts() {
   console.log('🔍 Analyzing test artifacts...\n');
 
-  const testTypes = ['unit', 'integration', 'e2e'];
-  const testResults = testTypes.map(analyzeTestType);
-
-  // Calculate aggregates
+  const testResults = TEST_TYPES.map(analyzeTestType);
   const aggregate = calculateAggregates(testResults);
-
-  // Generate quality badges
   const qualityBadges = generateQualityBadges(aggregate.coverage);
 
-  // Build final report
   const report = {
     metadata: {
       generatedAt: new Date().toISOString(),
       testReportsDir: TEST_REPORTS_DIR,
       coverageDir: COVERAGE_DIR,
-      version: '1.0.0',
+      version: REPORT_VERSION,
     },
     summary: {
       aggregate,
       qualityBadges,
-      status: aggregate.total.failed === 0 && aggregate.total.errors === 0 ? 'passed' : 'failed',
+      status: determineStatus(aggregate),
     },
     testTypes: {},
   };
 
-  // Add detailed results for each test type
   testResults.forEach(result => {
     report.testTypes[result.testType] = result;
   });
 
-  // Write report
   const outputDir = path.dirname(OUTPUT_FILE);
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
@@ -308,29 +353,7 @@ function analyzeTestArtifacts() {
 
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(report, null, 2));
 
-  // Print summary
-  console.log('📊 Analysis Summary:');
-  console.log('─'.repeat(50));
-  console.log(`Total Tests:     ${aggregate.total.tests}`);
-  console.log(`✅ Passed:       ${aggregate.total.passed}`);
-  console.log(`❌ Failed:       ${aggregate.total.failed}`);
-  console.log(`⏭️  Skipped:      ${aggregate.total.skipped}`);
-  console.log(`Pass Rate:       ${aggregate.total.passRate}%`);
-  console.log(`Duration:        ${aggregate.total.duration.toFixed(2)}s`);
-  console.log('');
-  console.log('Coverage:');
-  console.log(`  Lines:         ${aggregate.coverage.lines.pct}% ${qualityBadges.lines.emoji}`);
-  console.log(
-    `  Statements:    ${aggregate.coverage.statements.pct}% ${qualityBadges.statements.emoji}`
-  );
-  console.log(
-    `  Functions:     ${aggregate.coverage.functions.pct}% ${qualityBadges.functions.emoji}`
-  );
-  console.log(
-    `  Branches:      ${aggregate.coverage.branches.pct}% ${qualityBadges.branches.emoji}`
-  );
-  console.log('');
-  console.log(`✅ Report generated: ${OUTPUT_FILE}`);
+  printSummary(aggregate, qualityBadges);
 
   return report;
 }
