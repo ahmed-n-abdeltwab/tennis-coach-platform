@@ -4,7 +4,7 @@
  * Centralized constants for test utilities to avoid magic strings and numbers
  */
 
-import { Decimal } from "@prisma/client/runtime/client";
+import { Decimal } from '@prisma/client/runtime/client';
 
 // JWT Constants
 export const JWT_CONSTANTS = {

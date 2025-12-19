@@ -37,7 +37,10 @@ import { RequestType, TypeSafeHttpClient, TypedResponse } from '../http/type-saf
  * );
  * ```
  */
-export class ProtectedRouteTester<TModuleName extends string = string, E extends Record<string, any> = Endpoints> {
+export class ProtectedRouteTester<
+  TModuleName extends string = string,
+  E extends Record<string, any> = Endpoints,
+> {
   private authHelper: AuthTestHelper;
   private httpClient: TypeSafeHttpClient<TModuleName, E>;
 
