@@ -9,6 +9,7 @@ import { Test } from '@nestjs/testing';
 
 import { PrismaService } from '../../../../src/app/prisma/prisma.service';
 import { BaseTest } from '../core/base-test';
+import { AssertionsMixin } from '../mixins/assertions.mixin';
 import { MockMixin } from '../mixins/mock.mixin';
 
 /**
@@ -114,68 +115,5 @@ export class ServiceTest<TService, TRepository = PrismaService> extends BaseTest
     if (this._module) {
       await this._module.close();
     }
-  }
-
-  /**
-   * Creates test data for the service
-   */
-  createTestData(): Record<string, unknown> {
-    return {
-      id: 'test-id',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-  }
-
-  /**
-   * Creates multiple test data items
-   */
-  createTestDataArray(count = 3): Record<string, unknown>[] {
-    return Array.from({ length: count }, (_, index) => ({
-      ...this.createTestData(),
-      id: `test-id-${index + 1}`,
-    }));
-  }
-
-  /**
-   * Sets up a mock method to return specific data
-   */
-  mockReturn<T>(mockMethod: jest.Mock | jest.MockInstance<any, any[]>, returnValue: T): void {
-    mockMethod.mockResolvedValue(returnValue);
-  }
-
-  /**
-   * Sets up a mock method to throw an error
-   */
-  mockThrow(mockMethod: jest.Mock | jest.MockInstance<any, any[]>, error: Error | string): void {
-    const errorToThrow = typeof error === 'string' ? new Error(error) : error;
-    mockMethod.mockRejectedValue(errorToThrow);
-  }
-
-  /**
-   * Resets all mocks
-   */
-  resetMocks(): void {
-    jest.clearAllMocks();
-  }
-
-  /**
-   * Creates a partial object for testing updates
-   */
-  createPartialData(overrides: Record<string, any> = {}): Record<string, any> {
-    return {
-      updatedAt: new Date(),
-      ...overrides,
-    };
-  }
-
-  /**
-   * Creates pagination parameters for testing
-   */
-  createPaginationParams(page = 1, limit = 10): { skip: number; take: number } {
-    return {
-      skip: (page - 1) * limit,
-      take: limit,
-    };
   }
 }

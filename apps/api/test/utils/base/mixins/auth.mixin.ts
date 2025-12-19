@@ -483,7 +483,7 @@ export class AuthMixin {
     // Import dynamically to avoid circular dependencies
     const { AuthenticatedHttpClient } = await import('../../auth/authenticated-client');
     const authToken = token ?? (await this.createUserToken());
-    return new AuthenticatedHttpClient(app, authToken);
+    return new AuthenticatedHttpClient<E>(app, authToken);
   }
 
   /**

@@ -9,6 +9,7 @@ import type {
   ExtractRequestParams,
   ExtractResponseType,
   HttpMethod,
+  PathsForRoute,
   PathsWithMethod,
 } from '@test-utils';
 import request from 'supertest';
@@ -513,7 +514,7 @@ export class TypeSafeHttpClient<
   async moduleGet<P extends PathsForRoute<TModuleName, 'GET', E>>(
     path: P,
     payload?: RequestType<P, 'GET', E>,
-    options?: ons
+    options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
     return this.request(path, 'GET', payload, options);
   }
