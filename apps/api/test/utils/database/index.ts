@@ -5,38 +5,81 @@
  * - TestDatabaseManager for managing test database lifecycle
  * - DatabaseSeeder for creating consistent test data
  * - Simple database helpers for common operations
+ * - Performance optimization utilities (connection pooling, batch cleanup)
+ *
+ * @deprecated For new code, prefer using DatabaseMixin through IntegrationTest
+ * or E2ETest classes. These standalone utilities are maintained for backward
+ * compatibility and advanced use cases.
+ *
+ * @example Recommended approach
+ * ```typescript
+ * import { IntegrationTest } from '@test-utils/base';
+ *
+ * const test = new IntegrationTest({ modules: [MyModule] });
+ * await test.setup(); // Automatically handles database setup
+ * const user = await test.db.createTestUser();
+ * await test.cleanup(); // Automatically handles database cleanup
+ * ```
+ *
+ * @example Legacy approach (still supported)
+ * ```typescript
+ * import { cleanDatabase, seedTestDatabase } from '@test-utils/database';
+ *
+ * await cleanDatabase(prisma);
+ * await seedTestDatabase(prisma);
+ * ```
+ *
+ * @module database
  */
 
 /**
  * Simple database helper functions
- * For quick database operations in tests
  *
- * Note: These functions now delegate to DatabaseMixin internally.
- * For new code, consider using IntegrationTest or E2ETest classes
- * which provide access to DatabaseMixin through the `db` property.
+ * Provides quick database operations for tests including:
+ * - cleanDatabase: Clean all test data from database
+ * - seedTestDatabase: Seed database with test data
+ * - createTestUser: Create a test user
+ * - createTestCoach: Create a test coach
+ *
+ * @deprecated These functions now delegate to DatabaseMixin internally.
+ * For new code, use IntegrationTest or E2ETest classes which provide
+ * access to DatabaseMixin through the `db` property.
  */
 export * from './database-helpers';
 
 /**
  * Database seeder utilities
- * For creating consistent test data
  *
- * Note: DatabaseSeeder now delegates to DatabaseMixin internally.
- * For new code, consider using IntegrationTest or E2ETest classes.
+ * Provides DatabaseSeeder class for creating consistent test data with
+ * configurable options for user count, coach count, sessions, etc.
+ *
+ * @deprecated DatabaseSeeder now delegates to DatabaseMixin internally.
+ * For new code, use IntegrationTest or E2ETest classes.
  */
 export * from './database-seeder';
 
 /**
  * Test database manager
- * For managing test database lifecycle
+ *
+ * Manages test database lifecycle including creation, isolation, and cleanup.
+ * Useful for advanced scenarios requiring multiple isolated test databases.
  */
 export * from './test-database-manager';
 
 /**
- * Performance optimization utilities
- * For improved test performance through connection pooling and batch operations
+ * Batch cleanup manager
+ *
+ * Provides optimized batch cleanup operations for improved test performance.
+ * Automatically used by DatabaseMixin for efficient database cleanup.
  */
 export * from './batch-cleanup-manager';
+
+/**
+ * Connection pool manager
+ *
+ * Manages database connection pooling for improved test performance.
+ * Automatically used by test infrastructure for efficient connection reuse.
+ */
 export * from './connection-pool-manager';
 
 // Re-import for convenience functions below

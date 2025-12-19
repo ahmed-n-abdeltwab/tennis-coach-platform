@@ -9,6 +9,8 @@ import TestAgent from 'supertest/lib/agent';
 
 import { PrismaService } from '../../src/app/prisma/prisma.service';
 
+import { suppressConsoleOutput } from './shared';
+
 export class NestE2ETestContext {
   public app: INestApplication;
   public prisma: PrismaService;

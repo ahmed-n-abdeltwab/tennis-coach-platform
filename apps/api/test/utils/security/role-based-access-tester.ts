@@ -68,9 +68,12 @@ export interface RoleAccessTestResult {
  * });
  * ```
  */
-export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
+export class RoleBasedAccessTester<
+  TModuleName extends string = string,
+  E extends Record<string, any> = Endpoints,
+> {
   private authHelper: AuthTestHelper;
-  private httpClient: TypeSafeHttpClient<E>;
+  private httpClient: TypeSafeHttpClient<TModuleName, E>;
 
   /**
    * Create a new RoleBasedAccessTester
@@ -80,7 +83,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
    */
   constructor(app: INestApplication, jwtSecret?: string) {
     this.authHelper = new AuthTestHelper(jwtSecret);
-    this.httpClient = new TypeSafeHttpClient<E>(app);
+    this.httpClient = new TypeSafeHttpClient<TModuleName, E>(app);
   }
 
   /**
@@ -355,7 +358,7 @@ export class RoleBasedAccessTester<E extends Record<string, any> = Endpoints> {
    *
    * @returns The TypeSafeHttpClient instance
    */
-  getHttpClient(): TypeSafeHttpClient<E> {
+  getHttpClient(): TypeSafeHttpClient<TModuleName, E> {
     return this.httpClient;
   }
 }

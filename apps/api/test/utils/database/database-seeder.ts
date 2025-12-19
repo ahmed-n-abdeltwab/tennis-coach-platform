@@ -21,6 +21,7 @@ import {
   Session,
   TimeSlot,
 } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/client';
 import { hash } from 'bcryptjs';
 
 import { PrismaService } from '../../../src/app/prisma/prisma.service';
@@ -182,27 +183,27 @@ export class DatabaseSeeder implements DatabaseCapable {
       {
         name: 'Individual Lesson',
         description: 'One-on-one personalized tennis instruction',
-        basePrice: 75.0,
+        basePrice: new Decimal(75.0),
       },
       {
         name: 'Group Lesson (2-4 players)',
         description: 'Small group tennis instruction for 2-4 players',
-        basePrice: 45.0,
+        basePrice: new Decimal(45.0),
       },
       {
         name: 'Intensive Training',
         description: '90-minute intensive training session',
-        basePrice: 100.0,
+        basePrice: new Decimal(100.0),
       },
       {
         name: 'Match Play Coaching',
         description: 'On-court coaching during practice matches',
-        basePrice: 60.0,
+        basePrice: new Decimal(60.0),
       },
       {
         name: 'Video Analysis Session',
         description: 'Detailed video analysis of technique and strategy',
-        basePrice: 50.0,
+        basePrice: new Decimal(50.0),
       },
     ] as const;
 
@@ -270,21 +271,21 @@ export class DatabaseSeeder implements DatabaseCapable {
     const discountData = [
       {
         code: 'FIRST10',
-        amount: 10.0,
+        amount: new Decimal(10.0),
         maxUsage: 100,
         useCount: 5,
         isActive: true,
       },
       {
         code: 'SUMMER25',
-        amount: 25.0,
+        amount: new Decimal(25.0),
         maxUsage: 50,
         useCount: 12,
         isActive: true,
       },
       {
         code: 'EXPIRED',
-        amount: 15.0,
+        amount: new Decimal(15.0),
         maxUsage: 10,
         useCount: 10,
         isActive: false,
@@ -358,7 +359,7 @@ export class DatabaseSeeder implements DatabaseCapable {
       const session: Session = await this.dbMixin.createTestSession({
         dateTime: timeSlot.dateTime,
         durationMin: timeSlot.durationMin,
-        price: finalPrice,
+        price: new Decimal(finalPrice),
         isPaid: i % 2 === 0, // Half are paid
         status: statuses[i % statuses.length],
         notes:

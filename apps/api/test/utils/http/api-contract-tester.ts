@@ -63,11 +63,14 @@ export interface HttpErrorTestCase {
  * });
  * ```
  */
-export class ApiContractTester<E extends Record<string, any> = Endpoints> {
-  private httpClient: TypeSafeHttpClient<E>;
+export class ApiContractTester<
+  TModuleName extends string = string,
+  E extends Record<string, any> = Endpoints,
+> {
+  private httpClient: TypeSafeHttpClient<TModuleName, E>;
 
   constructor(app: INestApplication) {
-    this.httpClient = new TypeSafeHttpClient<E>(app);
+    this.httpClient = new TypeSafeHttpClient<TModuleName, E>(app);
   }
 
   /**
@@ -300,7 +303,7 @@ export class ApiContractTester<E extends Record<string, any> = Endpoints> {
    *
    * @returns The TypeSafeHttpClient instance
    */
-  getHttpClient(): TypeSafeHttpClient<E> {
+  getHttpClient(): TypeSafeHttpClient<TModuleName, E> {
     return this.httpClient;
   }
 }

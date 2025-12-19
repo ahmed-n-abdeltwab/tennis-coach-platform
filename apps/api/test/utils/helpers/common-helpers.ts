@@ -123,6 +123,7 @@ export function generateUniqueEmail(prefix: string, domain = 'example.com'): str
  * Checks if a value is defined (not null or undefined)
  * @param value - Value to check
  * @returns True if value is defined
+ * @deprecated Use isDefined from '@test-utils/types' instead
  */
 export function isDefined<T>(value: T | null | undefined): value is T {
   return value !== null && value !== undefined;

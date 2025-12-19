@@ -4,6 +4,8 @@
  * Centralized constants for test utilities to avoid magic strings and numbers
  */
 
+import { Decimal } from "@prisma/client/runtime/client";
+
 // JWT Constants
 export const JWT_CONSTANTS = {
   DEFAULT_SECRET: 'test-secret',
@@ -39,7 +41,7 @@ export const DEFAULT_TEST_COACH = {
 export const DEFAULT_TEST_BOOKING_TYPE = {
   NAME: 'Test Booking Type',
   DESCRIPTION: 'Test booking type description',
-  BASE_PRICE: 75.0,
+  BASE_PRICE: new Decimal(75.0),
 } as const;
 
 // Default Test Session Data
@@ -61,7 +63,7 @@ export const DEFAULT_TEST_TIME_SLOT = {
 
 // Default Test Discount Data
 export const DEFAULT_TEST_DISCOUNT = {
-  AMOUNT: 10.0,
+  AMOUNT: new Decimal(10.0),
   IS_ACTIVE: true,
   EXPIRY_OFFSET_DAYS: 2,
   USE_COUNT: 0,
@@ -135,12 +137,12 @@ export const SEED_DATA_CONSTANTS = {
     {
       name: 'Individual Lesson',
       description: 'One-on-one tennis coaching session',
-      basePrice: 75.0,
+      basePrice: new Decimal(75.0),
     },
     {
       name: 'Group Lesson',
       description: 'Small group tennis coaching session',
-      basePrice: 50.0,
+      basePrice: new Decimal(50.0),
     },
   ],
   DEFAULT_TIME_SLOT_OFFSET_HOURS: 10,
