@@ -8,8 +8,11 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 
 import type { AuthHeaders } from '../../auth/auth-test-helper';
-import type { RequestOptions, RequestType } from '../../http/type-safe-http-client';
-import { TypeSafeHttpClient } from '../../http/type-safe-http-client';
+import {
+  type RequestOptions,
+  type RequestType,
+  TypeSafeHttpClient,
+} from '../../http/type-safe-http-client';
 import {
   type Endpoints,
   type ExtractMethods,
@@ -38,10 +41,21 @@ export class HttpMethodsMixin<
   TModuleName extends string = string,
   E extends Record<string, any> = Endpoints,
 > {
-  private readonly httpClient: TypeSafeHttpClient<TModuleName, E>;
+  private _httpClient?: TypeSafeHttpClient<TModuleName, E>;
 
   constructor(private readonly host: HttpCapable) {
-    this.httpClient = new TypeSafeHttpClient<TModuleName, E>(host.application);
+    // Don't initialize httpClient here - it will be lazily initialized
+    // when first HTTP request is made, after setup() has been called
+  }
+
+  /**
+   * Lazy getter for httpClient
+   * Creates the TypeSafeHttpClient only when first accessed,
+   * ensuring the application is initialized
+   */
+  private get httpClient(): TypeSafeHttpClient<TModuleName, E> {
+    this._httpClient ??= new TypeSafeHttpClient<TModuleName, E>(this.host.application);
+    return this._httpClient;
   }
 
   /**
