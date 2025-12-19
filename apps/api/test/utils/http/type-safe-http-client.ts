@@ -108,6 +108,7 @@ export interface RequestType<
  * - Request data structure (must match endpoint's expected input)
  * - Response data structure (automatically typed based on endpoint)
  *
+ * @template TModuleName - Optional module name for module-scoped requests
  * @template E - The Endpoints interface type (defaults to auto-imported Endpoints)
  *
  * @example Basic Usage
@@ -195,9 +196,35 @@ export interface RequestType<
  *   timeout: 5000
  * });
  * ```
+ *
+ * @example Module-Scoped Requests
+ * ```typescript
+ * // Create client with module name for type-safe module-scoped requests
+ * const client = new TypeSafeHttpClient(app, 'sessions');
+ *
+ * // Module-scoped GET (only shows paths for 'sessions' module)
+ * const response = await client.moduleGet('/api/sessions');
+ *
+ * // Module-scoped authenticated POST
+ * const newSession = await client.moduleAuthenticatedPost('/api/sessions', token, {
+ *   body: { bookingTypeId: 'booking-123' }
+ * });
+ * ```
  */
-export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
-  constructor(private app: INestApplication) {}
+export class TypeSafeHttpClient<
+  TModuleName extends string = string,
+  E extends Record<string, any> = Endpoints,
+> {
+  /**
+   * Create a new TypeSafeHttpClient
+   *
+   * @param app - NestJS application instance
+   * @param moduleName - Optional module name for module-scoped requests
+   */
+  constructor(
+    private app: INestApplication,
+    private moduleName?: TModuleName
+  ) {}
 
   /**
    * Make a type-safe request to any endpoint
@@ -212,6 +239,8 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
    * @param data - Request data (body for POST/PUT/PATCH, params for GET/DELETE)
    * @param options - Additional request options
    * @returns Typed response with proper response body type
+   *
+   * @throws {Error} If an invalid HTTP method is provided
    */
   async request<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
@@ -224,9 +253,42 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
     // Build path with params
     const builtPath = this.buildPathWithParams(path, params as Record<string, string | number>);
 
-    // Build request
-    const normalizedMethod = method.toLowerCase() as Lowercase<M>;
-    let req = request(this.app.getHttpServer())[normalizedMethod](builtPath);
+    // Normalize and validate method for security
+    const normalizedMethod = method.toLowerCase();
+    const allowedMethods = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'];
+    if (!allowedMethods.includes(normalizedMethod)) {
+      throw new Error(`Invalid HTTP method: ${method}`);
+    }
+
+    // Build request using explicit switch for type safety and security
+    const agent = request(this.app.getHttpServer());
+    let req: request.Test;
+
+    switch (normalizedMethod) {
+      case 'get':
+        req = agent.get(builtPath);
+        break;
+      case 'post':
+        req = agent.post(builtPath);
+        break;
+      case 'put':
+        req = agent.put(builtPath);
+        break;
+      case 'patch':
+        req = agent.patch(builtPath);
+        break;
+      case 'delete':
+        req = agent.delete(builtPath);
+        break;
+      case 'head':
+        req = agent.head(builtPath);
+        break;
+      case 'options':
+        req = agent.options(builtPath);
+        break;
+      default:
+        throw new Error(`Unsupported HTTP method: ${normalizedMethod}`);
+    }
 
     // headers
     if (options?.headers) {
@@ -420,6 +482,222 @@ export class TypeSafeHttpClient<E extends Record<string, any> = Endpoints> {
     options?: Omit<RequestOptions, 'headers'>
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
     return this.patch(path, payload, {
+      ...options,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  // ============================================================================
+  // Module-Scoped HTTP Methods
+  // ============================================================================
+
+  /**
+   * Type-safe GET request scoped to the module specified in constructor
+   *
+   * Only allows paths that belong to the module specified when creating the client.
+   * Provides additional type safety by restricting available endpoints.
+   *
+   * @template P - The API path (must be in the module and support GET)
+   * @param path - The API endpoint path
+   * @param payload - Request payload (params)
+   * @param options - Additional request options
+   * @returns Typed response with discriminated union
+   *
+   * @example
+   * ```typescript
+   * const client = new TypeSafeHttpClient(app, 'sessions');
+   * // Only paths starting with /api/sessions are allowed
+   * const response = await client.moduleGet('/api/sessions');
+   * ```
+   */
+  async moduleGet<P extends PathsForRoute<TModuleName, 'GET', E>>(
+    path: P,
+    payload?: RequestType<P, 'GET', E>,
+    options?: ons
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
+    return this.request(path, 'GET', payload, options);
+  }
+
+  /**
+   * Type-safe POST request scoped to the module
+   *
+   * @template P - The API path (must be in the module and support POST)
+   * @param path - The API endpoint path
+   * @param payload - Request payload (body)
+   * @param options - Additional request options
+   * @returns Typed response with discriminated union
+   */
+  async modulePost<P extends PathsForRoute<TModuleName, 'POST', E>>(
+    path: P,
+    payload?: RequestType<P, 'POST', E>,
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
+    return this.request(path, 'POST', payload, options);
+  }
+
+  /**
+   * Type-safe PUT request scoped to the module
+   *
+   * @template P - The API path (must be in the module and support PUT)
+   * @param path - The API endpoint path
+   * @param payload - Request payload (body)
+   * @param options - Additional request options
+   * @returns Typed response with discriminated union
+   */
+  async modulePut<P extends PathsForRoute<TModuleName, 'PUT', E>>(
+    path: P,
+    payload?: RequestType<P, 'PUT', E>,
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
+    return this.request(path, 'PUT', payload, options);
+  }
+
+  /**
+   * Type-safe PATCH request scoped to the module
+   *
+   * @template P - The API path (must be in the module and support PATCH)
+   * @param path - The API endpoint path
+   * @param payload - Request payload (body)
+   * @param options - Additional request options
+   * @returns Typed response with discriminated union
+   */
+  async modulePatch<P extends PathsForRoute<TModuleName, 'PATCH', E>>(
+    path: P,
+    payload?: RequestType<P, 'PATCH', E>,
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
+    return this.request(path, 'PATCH', payload, options);
+  }
+
+  /**
+   * Type-safe DELETE request scoped to the module
+   *
+   * @template P - The API path (must be in the module and support DELETE)
+   * @param path - The API endpoint path
+   * @param payload - Request payload (params)
+   * @param options - Additional request options
+   * @returns Typed response with discriminated union
+   */
+  async moduleDelete<P extends PathsForRoute<TModuleName, 'DELETE', E>>(
+    path: P,
+    payload?: RequestType<P, 'DELETE', E>,
+    options?: RequestOptions
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
+    return this.request(path, 'DELETE', payload, options);
+  }
+
+  /**
+   * Type-safe authenticated GET request scoped to the module
+   *
+   * @template P - The API path (must be in the module and support GET)
+   * @param path - The API endpoint path
+   * @param token - JWT authentication token
+   * @param payload - Request payload (params)
+   * @param options - Additional request options (headers will be merged with auth)
+   * @returns Typed response with discriminated union
+   *
+   * @example
+   * ```typescript
+   * const client = new TypeSafeHttpClient(app, 'sessions');
+   * const token = 'jwt-token-here';
+   * const response = await client.moduleAuthenticatedGet('/api/sessions', token);
+   * ```
+   */
+  async moduleAuthenticatedGet<P extends PathsForRoute<TModuleName, 'GET', E>>(
+    path: P,
+    token: string,
+    payload?: RequestType<P, 'GET', E>,
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
+    return this.get(path, payload, {
+      ...options,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  /**
+   * Type-safe authenticated POST request scoped to the module
+   *
+   * @template P - The API path (must be in the module and support POST)
+   * @param path - The API endpoint path
+   * @param token - JWT authentication token
+   * @param payload - Request payload (body)
+   * @param options - Additional request options (headers will be merged with auth)
+   * @returns Typed response with discriminated union
+   */
+  async moduleAuthenticatedPost<P extends PathsForRoute<TModuleName, 'POST', E>>(
+    path: P,
+    token: string,
+    payload?: RequestType<P, 'POST', E>,
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
+    return this.post(path, payload, {
+      ...options,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  /**
+   * Type-safe authenticated PUT request scoped to the module
+   *
+   * @template P - The API path (must be in the module and support PUT)
+   * @param path - The API endpoint path
+   * @param token - JWT authentication token
+   * @param payload - Request payload (body)
+   * @param options - Additional request options (headers will be merged with auth)
+   * @returns Typed response with discriminated union
+   */
+  async moduleAuthenticatedPut<P extends PathsForRoute<TModuleName, 'PUT', E>>(
+    path: P,
+    token: string,
+    payload?: RequestType<P, 'PUT', E>,
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
+    return this.put(path, payload, {
+      ...options,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  /**
+   * Type-safe authenticated PATCH request scoped to the module
+   *
+   * @template P - The API path (must be in the module and support PATCH)
+   * @param path - The API endpoint path
+   * @param token - JWT authentication token
+   * @param payload - Request payload (body)
+   * @param options - Additional request options (headers will be merged with auth)
+   * @returns Typed response with discriminated union
+   */
+  async moduleAuthenticatedPatch<P extends PathsForRoute<TModuleName, 'PATCH', E>>(
+    path: P,
+    token: string,
+    payload?: RequestType<P, 'PATCH', E>,
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
+    return this.patch(path, payload, {
+      ...options,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  /**
+   * Type-safe authenticated DELETE request scoped to the module
+   *
+   * @template P - The API path (must be in the module and support DELETE)
+   * @param path - The API endpoint path
+   * @param token - JWT authentication token
+   * @param payload - Request payload (params)
+   * @param options - Additional request options (headers will be merged with auth)
+   * @returns Typed response with discriminated union
+   */
+  async moduleAuthenticatedDelete<P extends PathsForRoute<TModuleName, 'DELETE', E>>(
+    path: P,
+    token: string,
+    payload?: RequestType<P, 'DELETE', E>,
+    options?: Omit<RequestOptions, 'headers'>
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
+    return this.delete(path, payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
     });
