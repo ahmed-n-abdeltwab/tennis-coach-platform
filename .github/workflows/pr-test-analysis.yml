@@ -1,8 +1,9 @@
 name: PR Test Analysis & Report
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
 
 permissions:
   contents: read
@@ -22,30 +23,59 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Get PR details
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pullRequests } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `${context.repo.owner}:${context.payload.workflow_run.head_branch}`
+            });
+
+            if (pullRequests.length === 0) {
+              console.log('No open PR found for this branch');
+              return;
+            }
+
+            const pr = pullRequests[0];
+            core.setOutput('number', pr.number);
+            core.setOutput('head_sha', context.payload.workflow_run.head_sha);
+            core.setOutput('head_ref', context.payload.workflow_run.head_branch);
+
       - name: Checkout code
+        if: steps.pr.outputs.number
         uses: actions/checkout@v6
         with:
+          ref: ${{ steps.pr.outputs.head_sha }}
           fetch-depth: 0
 
       - name: Setup pnpm
+        if: steps.pr.outputs.number
         uses: pnpm/action-setup@v4
         with:
           version: "10"
           run_install: false
 
       - name: Setup Node.js
+        if: steps.pr.outputs.number
         uses: actions/setup-node@v6
         with:
           node-version: "20"
           cache: "pnpm"
 
       - name: Install dependencies
+        if: steps.pr.outputs.number
         run: pnpm install --frozen-lockfile
 
       - name: Set up Nx SHAs for affected detection
+        if: steps.pr.outputs.number
         uses: nrwl/nx-set-shas@v4
 
       - name: Get affected projects
+        if: steps.pr.outputs.number
         id: affected
         run: |
           set -e
@@ -73,42 +103,20 @@ jobs:
           echo "$AFFECTED_LIBS" > affected_libs.txt
 
       - name: Check CI status
+        if: steps.pr.outputs.number
         id: ci_status
         run: |
-          RESPONSE=$(gh api repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha }}/check-runs)
-          CI_CHECKS=$(echo "$RESPONSE" | jq -r '.check_runs[] | select(.name != "Analyze Tests & Generate Report") | select(.name | test("Test -|Build|Lint|Security")) | "\(.name):\(.status):\(.conclusion)"')
-
-          if [ -z "$CI_CHECKS" ]; then
-            echo "all_passed=pending" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          PENDING=$(echo "$CI_CHECKS" | grep -c "in_progress\|queued" || echo 0)
-          if [ "$PENDING" -gt 0 ]; then
-            echo "all_passed=in_progress" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          FAILURES=$(echo "$CI_CHECKS" | grep -c ":failure" || echo 0)
-          if [ "$FAILURES" -eq 0 ]; then
+          if [ "${{ github.event.workflow_run.conclusion }}" = "success" ]; then
             echo "all_passed=true" >> $GITHUB_OUTPUT
           else
             echo "all_passed=false" >> $GITHUB_OUTPUT
           fi
-        env:
-          GH_TOKEN: ${{ github.token }}
 
       - name: Download test artifacts from CI
+        if: steps.pr.outputs.number
         id: download
         run: |
-          CI_RUN_ID=$(gh api repos/${{ github.repository }}/actions/workflows/ci.yml/runs \
-            --jq ".workflow_runs[] | select(.head_sha == \"${{ github.event.pull_request.head.sha }}\") | .id" | head -1)
-
-          if [ -z "$CI_RUN_ID" ]; then
-            echo "⚠️  No CI run found"
-            exit 0
-          fi
-
+          CI_RUN_ID="${{ github.event.workflow_run.id }}"
           echo "ci_run_id=$CI_RUN_ID" >> $GITHUB_OUTPUT
 
           gh api repos/${{ github.repository }}/actions/runs/$CI_RUN_ID/jobs \
@@ -142,6 +150,7 @@ jobs:
         continue-on-error: true
 
       - name: Analyze test artifacts
+        if: steps.pr.outputs.number
         id: analyze
         run: |
           node scripts/analyze-test-artifacts.js test-reports/analysis.json
@@ -152,6 +161,7 @@ jobs:
           fi
 
       - name: Generate PR report
+        if: steps.pr.outputs.number
         id: report
         run: |
           set -e
@@ -159,7 +169,7 @@ jobs:
           ANALYSIS_FILE="test-reports/analysis.json"
           CI_RUN_ID="${{ steps.download.outputs.ci_run_id }}"
           REPO="${{ github.repository }}"
-          PR_NUM="${{ github.event.number }}"
+          PR_NUM="${{ steps.pr.outputs.number }}"
 
           create_progress_bar() {
             local pct=$1
@@ -453,8 +463,8 @@ jobs:
             echo "| | |"
             echo "|---|---|"
             echo "| **PR** | #${PR_NUM} |"
-            echo "| **Branch** | \`${{ github.head_ref }}\` |"
-            echo "| **Commit** | \`${{ github.event.pull_request.head.sha }}\` |"
+            echo "| **Branch** | \`${{ steps.pr.outputs.head_ref }}\` |"
+            echo "| **Commit** | \`${{ steps.pr.outputs.head_sha }}\` |"
             [ -n "$CI_RUN_ID" ] && echo "| **CI Run** | [View →](https://github.com/${REPO}/actions/runs/${CI_RUN_ID}) |"
             echo ""
 
@@ -490,13 +500,13 @@ jobs:
 
             echo "---"
             echo ""
-            echo "<sub>🤖 Automated by [Test Analysis Bot](https://github.com/${REPO}/blob/${{ github.head_ref }}/.github/workflows/pr-test-analysis.yml) • Report generated in ${{ github.run_id }}</sub>"
+            echo "<sub>🤖 Automated by [Test Analysis Bot](https://github.com/${REPO}/blob/${{ steps.pr.outputs.head_ref }}/.github/workflows/pr-test-analysis.yml) • Report generated in ${{ github.run_id }}</sub>"
           } > report.md
 
           cat report.md > $GITHUB_STEP_SUMMARY
 
       - name: Upload analysis artifact
-        if: steps.analyze.outputs.analysis_available == 'true'
+        if: steps.pr.outputs.number && steps.analyze.outputs.analysis_available == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: test-analysis
@@ -504,8 +514,10 @@ jobs:
           retention-days: 30
 
       - name: Comment on PR
+        if: steps.pr.outputs.number
         uses: thollander/actions-comment-pull-request@v3
         with:
+          pr-number: ${{ steps.pr.outputs.number }}
           file-path: report.md
           comment-tag: comprehensive-pr-report
           mode: recreate
