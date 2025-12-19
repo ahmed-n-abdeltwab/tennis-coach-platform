@@ -43,6 +43,7 @@ export class ServiceTest<TService, TRepository = PrismaService> extends BaseTest
 
   // Compose mixins for clean separation of concerns
   readonly mock: MockMixin;
+  readonly assert: AssertionsMixin;
 
   constructor(config: ServiceTestConfig<TService>) {
     super();
@@ -50,6 +51,7 @@ export class ServiceTest<TService, TRepository = PrismaService> extends BaseTest
 
     // Initialize mixins
     this.mock = new MockMixin();
+    this.assert = new AssertionsMixin();
   }
 
   /**
@@ -175,20 +177,5 @@ export class ServiceTest<TService, TRepository = PrismaService> extends BaseTest
       skip: (page - 1) * limit,
       take: limit,
     };
-  }
-
-  /**
-   * Asserts that a mock was not called
-   */
-  assertNotCalled(mockMethod: jest.Mock | jest.MockInstance<any, any[]>): void {
-    expect(mockMethod).not.toHaveBeenCalled();
-  }
-
-  /**
-   * Asserts that a service method returns an array
-   */
-  assertReturnsArray<T>(result: T[], minLength = 0): void {
-    expect(Array.isArray(result)).toBe(true);
-    expect(result.length).toBeGreaterThanOrEqual(minLength);
   }
 }
