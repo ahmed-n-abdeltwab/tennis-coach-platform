@@ -18,7 +18,7 @@ permissions:
 env:
   NODE_VERSION: "20"
   PNPM_VERSION: "10"
-  # Set to 'true' to enable Nx Cloud (requires active subscription)
+  # Nx Cloud disabled - using custom GitHub Actions bots instead
   NX_CLOUD_ENABLED: "false"
 
 jobs:
@@ -209,7 +209,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test_${{ matrix.test-type }}
 
       - name: Run ${{ matrix.test-type }} tests
-        run: pnpm exec nx run api:test:${{ matrix.test-type }} -- --coverage
+        run: pnpm exec nx run api:test:${{ matrix.test-type }} -- --coverage --coverageReporters=json-summary --coverageReporters=lcov
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ env.NX_CLOUD_ENABLED == 'true' && secrets.NX_CLOUD_ACCESS_TOKEN || '' }}
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tennis_coach_test_${{ matrix.test-type }}
@@ -246,43 +246,393 @@ jobs:
             **/coverage/
           retention-days: 30
 
-      - name: Upload ${{ matrix.test-type }} coverage
-        uses: codecov/codecov-action@v5
-        if: always()
-        with:
-          files: coverage/apps/api/${{ matrix.test-type }}/lcov.info
-          flags: ${{ matrix.test-type }}
-          name: ${{ matrix.test-type }}-tests
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
-        continue-on-error: true
-
   # ============================================================================
-  # STAGE 4: Reporting (aggregates test results)
+  # STAGE 4: PR Test Analysis & Report
   # ============================================================================
 
-  test-results:
-    name: Publish Test Results
+  pr-analysis:
+    name: PR Test Analysis & Report
     runs-on: ubuntu-latest
-    needs: test
-    if: always()
+    needs: [lint, security, build, test]
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+
+    env:
+      QUALITY_THRESHOLD_EXCELLENT: 80
+      QUALITY_THRESHOLD_GOOD: 60
+      PROGRESS_BAR_WIDTH: 20
+      PROGRESS_BAR_SCALE: 5
 
     steps:
-      - name: Download all test reports
-        uses: actions/download-artifact@v7
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set up Nx SHAs for affected detection
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Get affected projects
+        id: affected
+        run: |
+          set -e
+
+          AFFECTED_APPS=$(pnpm exec nx show projects --affected --type app 2>/dev/null || echo "")
+          AFFECTED_LIBS=$(pnpm exec nx show projects --affected --type lib 2>/dev/null || echo "")
+
+          if [ -n "$AFFECTED_APPS" ]; then
+            APP_COUNT=$(echo "$AFFECTED_APPS" | grep -c .)
+          else
+            APP_COUNT=0
+          fi
+
+          if [ -n "$AFFECTED_LIBS" ]; then
+            LIB_COUNT=$(echo "$AFFECTED_LIBS" | grep -c .)
+          else
+            LIB_COUNT=0
+          fi
+
+          echo "total=$((APP_COUNT + LIB_COUNT))" >> $GITHUB_OUTPUT
+          echo "apps=$APP_COUNT" >> $GITHUB_OUTPUT
+          echo "libs=$LIB_COUNT" >> $GITHUB_OUTPUT
+
+          echo "$AFFECTED_APPS" > affected_apps.txt
+          echo "$AFFECTED_LIBS" > affected_libs.txt
+
+      - name: Download test artifacts
+        uses: actions/download-artifact@v6
         with:
           pattern: test-reports-*
+          path: downloaded-reports
           merge-multiple: true
-          path: test-reports
 
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+      - name: Organize test artifacts
+        run: |
+          mkdir -p test-reports coverage/apps/api/{unit,integration,e2e}
+
+          find ./downloaded-reports -type f -name "*.xml" -exec cp {} test-reports/ \;
+          find ./downloaded-reports -type f -name "test-report-*.json" -exec cp {} test-reports/ \;
+
+          for test_type in unit integration e2e; do
+            COVERAGE_FILE=$(find ./downloaded-reports -type f -path "*/api/${test_type}/coverage-summary.json" | head -1)
+            if [ -n "$COVERAGE_FILE" ]; then
+              cp "$COVERAGE_FILE" "coverage/apps/api/${test_type}/coverage-summary.json"
+            fi
+          done
+
+      - name: Analyze test artifacts
+        id: analyze
+        run: |
+          node scripts/analyze-test-artifacts.js test-reports/analysis.json
+          if [ -f "test-reports/analysis.json" ]; then
+            echo "analysis_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "analysis_available=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate PR report
+        id: report
+        run: |
+          set -e
+
+          ANALYSIS_FILE="test-reports/analysis.json"
+          REPO="${{ github.repository }}"
+          PR_NUM="${{ github.event.number }}"
+
+          create_progress_bar() {
+            local pct=$1
+            local filled=$(awk "BEGIN {print int($pct / $PROGRESS_BAR_SCALE)}")
+            local empty=$(($PROGRESS_BAR_WIDTH - filled))
+            printf "[%s%s]" "$(printf '█%.0s' $(seq 1 $filled))" "$(printf '░%.0s' $(seq 1 $empty))"
+          }
+
+          get_quality_badge() {
+            local pct=$1
+            if [ "$pct" = "N/A" ]; then
+              echo "⚪ N/A"
+              return
+            fi
+
+            local num=$(echo "$pct" | awk '{print int($1)}')
+            if [ "$num" -ge $QUALITY_THRESHOLD_EXCELLENT ]; then
+              echo "🟢 Excellent"
+            elif [ "$num" -ge $QUALITY_THRESHOLD_GOOD ]; then
+              echo "🟡 Good"
+            else
+              echo "🔴 Needs Work"
+            fi
+          }
+
+          format_percentage() {
+            local value=$1
+            if [ "$value" = "N/A" ]; then
+              echo "N/A"
+            else
+              echo "${value}%"
+            fi
+          }
+
+          format_duration() {
+            local value=$1
+            if [ "$value" = "0" ] || [ "$value" = "N/A" ]; then
+              echo "N/A"
+            else
+              echo "${value}s"
+            fi
+          }
+
+          {
+            echo "# 🎯 Test & Coverage Report"
+            echo ""
+            echo "## ✅ All Tests Passed"
+            echo ""
+
+            if [ "${{ steps.analyze.outputs.analysis_available }}" != "true" ]; then
+              echo "> ⚠️ Test analysis data not available"
+              echo ""
+            else
+              TOTAL_TESTS=$(jq -r '.summary.aggregate.total.tests' "$ANALYSIS_FILE")
+              TOTAL_PASSED=$(jq -r '.summary.aggregate.total.passed' "$ANALYSIS_FILE")
+              TOTAL_FAILED=$(jq -r '.summary.aggregate.total.failed' "$ANALYSIS_FILE")
+              TOTAL_SKIPPED=$(jq -r '.summary.aggregate.total.skipped' "$ANALYSIS_FILE")
+              PASS_RATE=$(jq -r '.summary.aggregate.total.passRate' "$ANALYSIS_FILE")
+
+              echo "## 📊 Test Suite Overview"
+              echo ""
+              echo "| Suite | Tests | Pass Rate | Duration | Lines | Statements | Functions | Branches | Quality |"
+              echo "|-------|-------|-----------|----------|-------|------------|-----------|----------|---------|"
+
+              for test_type in unit integration e2e; do
+                HAS_DATA=$(jq -r ".testTypes.${test_type}.hasData" "$ANALYSIS_FILE")
+
+                if [ "$HAS_DATA" = "true" ]; then
+                  TESTS=$(jq -r ".testTypes.${test_type}.junit.tests // 0" "$ANALYSIS_FILE")
+                  PASSED=$(jq -r ".testTypes.${test_type}.junit.passed // 0" "$ANALYSIS_FILE")
+                  FAILED=$(jq -r ".testTypes.${test_type}.junit.failures // 0" "$ANALYSIS_FILE")
+                  DURATION=$(jq -r ".testTypes.${test_type}.junit.time // 0" "$ANALYSIS_FILE")
+
+                  if [ "$TESTS" -gt 0 ]; then
+                    PASS_RATE=$(awk "BEGIN {printf \"%.1f\", ($PASSED / $TESTS) * 100}")
+                  else
+                    PASS_RATE="N/A"
+                    TESTS="N/A"
+                  fi
+
+                  COV_LINES=$(jq -r ".testTypes.${test_type}.coverage.lines.pct // \"N/A\"" "$ANALYSIS_FILE")
+                  COV_STATEMENTS=$(jq -r ".testTypes.${test_type}.coverage.statements.pct // \"N/A\"" "$ANALYSIS_FILE")
+                  COV_FUNCTIONS=$(jq -r ".testTypes.${test_type}.coverage.functions.pct // \"N/A\"" "$ANALYSIS_FILE")
+                  COV_BRANCHES=$(jq -r ".testTypes.${test_type}.coverage.branches.pct // \"N/A\"" "$ANALYSIS_FILE")
+
+                  QUALITY=$(get_quality_badge "$COV_LINES")
+                else
+                  TESTS="N/A"
+                  PASS_RATE="N/A"
+                  DURATION="0"
+                  COV_LINES="N/A"
+                  COV_STATEMENTS="N/A"
+                  COV_FUNCTIONS="N/A"
+                  COV_BRANCHES="N/A"
+                  QUALITY="🔴 Needs Work"
+                fi
+
+                PASS_RATE=$(format_percentage "$PASS_RATE")
+                DURATION=$(format_duration "$DURATION")
+                COV_LINES=$(format_percentage "$COV_LINES")
+                COV_STATEMENTS=$(format_percentage "$COV_STATEMENTS")
+                COV_FUNCTIONS=$(format_percentage "$COV_FUNCTIONS")
+                COV_BRANCHES=$(format_percentage "$COV_BRANCHES")
+
+                echo "| **${test_type^}** | $TESTS | $PASS_RATE | $DURATION | $COV_LINES | $COV_STATEMENTS | $COV_FUNCTIONS | $COV_BRANCHES | $QUALITY |"
+              done
+
+              echo ""
+              echo "> **Quality Legend:** 🟢 Excellent (≥${QUALITY_THRESHOLD_EXCELLENT}%) • 🟡 Good (≥${QUALITY_THRESHOLD_GOOD}%) • 🔴 Needs Work (<${QUALITY_THRESHOLD_GOOD}%)"
+              echo ""
+
+              echo "## 📈 Summary"
+              echo ""
+              echo "| Metric | Value |"
+              echo "|--------|-------|"
+              echo "| **Total Tests** | $TOTAL_TESTS |"
+              echo "| ✅ Passed | $TOTAL_PASSED |"
+              echo "| ❌ Failed | $TOTAL_FAILED |"
+              echo "| ⏭️ Skipped | $TOTAL_SKIPPED |"
+              echo "| **Pass Rate** | ${PASS_RATE}% |"
+              echo ""
+
+              for test_type in unit integration e2e; do
+                HAS_DATA=$(jq -r ".testTypes.${test_type}.hasData" "$ANALYSIS_FILE")
+                if [ "$HAS_DATA" != "true" ]; then
+                  continue
+                fi
+
+                echo "<details>"
+                echo "<summary><b>📋 ${test_type^} Tests</b> — Detailed Results</summary>"
+                echo ""
+
+                TESTS=$(jq -r ".testTypes.${test_type}.junit.tests // 0" "$ANALYSIS_FILE")
+                PASSED=$(jq -r ".testTypes.${test_type}.junit.passed // 0" "$ANALYSIS_FILE")
+                FAILED=$(jq -r ".testTypes.${test_type}.junit.failures // 0" "$ANALYSIS_FILE")
+                SKIPPED=$(jq -r ".testTypes.${test_type}.junit.skipped // 0" "$ANALYSIS_FILE")
+                DURATION=$(jq -r ".testTypes.${test_type}.junit.time // 0" "$ANALYSIS_FILE")
+
+                echo "### Test Execution"
+                echo ""
+                if [ "$TESTS" -gt 0 ]; then
+                  SUITE_PASS_RATE=$(awk "BEGIN {printf \"%.1f\", ($PASSED / $TESTS) * 100}")
+
+                  echo "| Metric | Value |"
+                  echo "|--------|-------|"
+                  echo "| Total | $TESTS |"
+                  echo "| ✅ Passed | $PASSED |"
+                  echo "| ❌ Failed | $FAILED |"
+                  echo "| ⏭️ Skipped | $SKIPPED |"
+                  echo "| Success Rate | ${SUITE_PASS_RATE}% |"
+                  echo "| Duration | ${DURATION}s |"
+                else
+                  echo "⚠️ No test results found"
+                fi
+                echo ""
+
+                COV_LINES_PCT=$(jq -r ".testTypes.${test_type}.coverage.lines.pct // null" "$ANALYSIS_FILE")
+
+                echo "### Code Coverage"
+                echo ""
+                if [ "$COV_LINES_PCT" != "null" ]; then
+                  COV_LINES_COVERED=$(jq -r ".testTypes.${test_type}.coverage.lines.covered" "$ANALYSIS_FILE")
+                  COV_LINES_TOTAL=$(jq -r ".testTypes.${test_type}.coverage.lines.total" "$ANALYSIS_FILE")
+                  COV_STATEMENTS_PCT=$(jq -r ".testTypes.${test_type}.coverage.statements.pct" "$ANALYSIS_FILE")
+                  COV_FUNCTIONS_PCT=$(jq -r ".testTypes.${test_type}.coverage.functions.pct" "$ANALYSIS_FILE")
+                  COV_BRANCHES_PCT=$(jq -r ".testTypes.${test_type}.coverage.branches.pct" "$ANALYSIS_FILE")
+
+                  COV_NUM=$(echo "$COV_LINES_PCT" | awk '{print int($1)}')
+                  if [ "$COV_NUM" -ge $QUALITY_THRESHOLD_EXCELLENT ]; then
+                    BADGE="🟢"
+                  elif [ "$COV_NUM" -ge $QUALITY_THRESHOLD_GOOD ]; then
+                    BADGE="🟡"
+                  else
+                    BADGE="🔴"
+                  fi
+
+                  echo "**$BADGE Quality**"
+                  echo ""
+                  echo "| Metric | Coverage | Visual |"
+                  echo "|--------|----------|--------|"
+                  echo "| **Lines** | **${COV_LINES_PCT}%** | $(create_progress_bar $COV_LINES_PCT) |"
+                  echo "| Statements | ${COV_STATEMENTS_PCT}% | $(create_progress_bar $COV_STATEMENTS_PCT) |"
+                  echo "| Functions | ${COV_FUNCTIONS_PCT}% | $(create_progress_bar $COV_FUNCTIONS_PCT) |"
+                  echo "| Branches | ${COV_BRANCHES_PCT}% | $(create_progress_bar $COV_BRANCHES_PCT) |"
+                  echo ""
+                  echo "_${COV_LINES_COVERED} of ${COV_LINES_TOTAL} lines covered • $((COV_LINES_TOTAL - COV_LINES_COVERED)) lines remaining_"
+                else
+                  echo "> **No coverage data available**"
+                fi
+                echo ""
+
+                echo "</details>"
+                echo ""
+              done
+            fi
+
+            TOTAL=${{ steps.affected.outputs.total }}
+            if [ "$TOTAL" -gt 0 ]; then
+              echo "---"
+              echo ""
+              echo "## 📦 Impact Analysis"
+              echo ""
+              echo "<details>"
+              echo "<summary><b>${TOTAL} projects affected</b> by this PR</summary>"
+              echo ""
+
+              if [ ${{ steps.affected.outputs.apps }} -gt 0 ]; then
+                echo "**Applications** (${{ steps.affected.outputs.apps }})"
+                echo '```'
+                cat affected_apps.txt
+                echo '```'
+                echo ""
+              fi
+
+              if [ ${{ steps.affected.outputs.libs }} -gt 0 ]; then
+                echo "**Libraries** (${{ steps.affected.outputs.libs }})"
+                echo '```'
+                cat affected_libs.txt
+                echo '```'
+              fi
+
+              echo "</details>"
+              echo ""
+            fi
+
+            echo "---"
+            echo ""
+            echo "## 📋 Metadata"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| **PR** | #${PR_NUM} |"
+            echo "| **Branch** | \`${{ github.head_ref }}\` |"
+            echo "| **Commit** | \`${{ github.event.pull_request.head.sha }}\` |"
+            echo "| **CI Run** | [View →](https://github.com/${REPO}/actions/runs/${{ github.run_id }}) |"
+            echo ""
+
+            echo "<details>"
+            echo "<summary><b>💡 Developer Commands</b></summary>"
+            echo ""
+            echo "\`\`\`bash"
+            echo "# See what's affected"
+            echo "pnpm exec nx show projects --affected"
+            echo ""
+            echo "# Run affected tests"
+            echo "pnpm exec nx affected -t test"
+            echo ""
+            echo "# View dependency graph"
+            echo "pnpm exec nx graph --affected"
+            echo ""
+            echo "# Run with coverage"
+            echo "pnpm exec nx run api:test:unit -- --coverage"
+            echo "\`\`\`"
+            echo ""
+            echo "</details>"
+            echo ""
+
+            echo "---"
+            echo ""
+            echo "<sub>🤖 Automated by [Test Analysis Bot](https://github.com/${REPO}/blob/${{ github.head_ref }}/.github/workflows/ci.yml) • Report generated in ${{ github.run_id }}</sub>"
+          } > report.md
+
+          cat report.md > $GITHUB_STEP_SUMMARY
+
+      - name: Upload analysis artifact
+        if: steps.analyze.outputs.analysis_available == 'true'
+        uses: actions/upload-artifact@v6
         with:
-          files: test-reports/**/junit*.xml
-          check_name: Test Results (All)
-          comment_mode: always
-          compare_to_earlier_commit: true
-        continue-on-error: true
+          name: test-analysis
+          path: test-reports/analysis.json
+          retention-days: 30
+
+      - name: Comment on PR
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          file-path: report.md
+          comment-tag: comprehensive-pr-report
+          mode: recreate
 
   # ============================================================================
   # STAGE 5: Deployment (only runs after all checks pass)
