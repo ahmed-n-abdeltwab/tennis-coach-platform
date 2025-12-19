@@ -44,6 +44,8 @@ jest.mock('@prisma/client', () => ({
   })),
 }));
 
+import { suppressConsoleOutput } from './shared';
+
 // Set up test environment
 beforeEach(() => {
   // Clear all mocks before each test
@@ -55,13 +57,5 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-// Global test utilities
-global.console = {
-  ...console,
-  // Suppress console.log in tests unless explicitly needed
-  log: jest.fn(),
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: console.warn,
-  error: console.error,
-};
+// Suppress console output in unit tests
+suppressConsoleOutput();

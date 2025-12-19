@@ -6,6 +6,7 @@
 import { Test } from '@nestjs/testing';
 
 import { PrismaService } from './../../src/app/prisma/prisma.service';
+import { suppressConsoleOutput } from './shared';
 
 export class NestIntegrationTestContext {
   public prismaService: PrismaService;
@@ -45,11 +46,4 @@ export class NestIntegrationTestContext {
 global.NestIntegrationTestContext = NestIntegrationTestContext;
 
 // Suppress console output in integration tests
-global.console = {
-  ...console,
-  log: jest.fn(),
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: console.warn,
-  error: console.error,
-};
+suppressConsoleOutput();

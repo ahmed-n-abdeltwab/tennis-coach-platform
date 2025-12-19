@@ -75,9 +75,9 @@ const config: Config = {
   cache: true,
   cacheDirectory: '<rootDir>/../../node_modules/.cache/jest/e2e',
 
-  // Global setup and teardown for full application
-  globalSetup: '<rootDir>/test/setup/e2e-global.setup.ts',
-  globalTeardown: '<rootDir>/test/setup/e2e-global.teardown.ts',
+  // Global setup and teardown - using consolidated files
+  globalSetup: '<rootDir>/test/setup/global.setup.ts',
+  globalTeardown: '<rootDir>/test/setup/global.teardown.ts',
 
   detectOpenHandles: true,
 
