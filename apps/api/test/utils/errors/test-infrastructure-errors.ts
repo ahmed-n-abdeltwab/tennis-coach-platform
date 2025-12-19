@@ -142,7 +142,7 @@ export class TransactionError extends TestInfrastructureError {
     context: Record<string, unknown> = {},
     originalError?: Error
   ) {
-    const message = `[TransactionManager] ${operation} failed: ${details}`;
+    const message = `[Transaction] ${operation} failed: ${details}`;
     super(message, code, context, originalError);
     this.name = 'TransactionError';
   }

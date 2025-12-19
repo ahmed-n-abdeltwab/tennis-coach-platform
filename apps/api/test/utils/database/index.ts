@@ -4,8 +4,6 @@
  * This module exports all database-related testing utilities including:
  * - TestDatabaseManager for managing test database lifecycle
  * - DatabaseSeeder for creating consistent test data
- * - TransactionManager for transaction-based test isolation
- * - MigrationManager for handling database migrations in tests
  * - Simple database helpers for common operations
  */
 
@@ -35,18 +33,6 @@ export * from './database-seeder';
 export * from './test-database-manager';
 
 /**
- * Transaction manager
- * For transaction-based test isolation
- */
-export * from './transaction-manager';
-
-/**
- * Migration manager
- * For handling database migrations in tests
- */
-export * from './migration-manager';
-
-/**
  * Performance optimization utilities
  * For improved test performance through connection pooling and batch operations
  */
@@ -55,15 +41,13 @@ export * from './connection-pool-manager';
 
 // Re-import for convenience functions below
 import { createDatabaseSeeder, DatabaseSeeder, SeedDataOptions } from './database-seeder';
-import { MigrationOptions } from './migration-manager';
 import { DatabaseConnection, testDatabaseManager } from './test-database-manager';
-import { createTransactionManager, TransactionManager } from './transaction-manager';
 
 /**
  * Convenience function to setup a complete test database environment
  *
  * This function combines all the utilities to create a fully configured
- * test database with migrations, seeding, and transaction support.
+ * test database with seeding support.
  */
 export async function setupTestDatabaseEnvironment(
   testSuite: string,
@@ -71,22 +55,14 @@ export async function setupTestDatabaseEnvironment(
     type?: 'unit' | 'integration' | 'e2e';
     seedData?: boolean;
     seedOptions?: SeedDataOptions;
-    migrationOptions?: MigrationOptions;
     verbose?: boolean;
   } = {}
 ): Promise<{
   connection: DatabaseConnection;
   seeder: DatabaseSeeder;
-  transactionManager: TransactionManager;
   cleanup: () => Promise<void>;
 }> {
-  const {
-    type = 'integration',
-    seedData = true,
-    seedOptions = {},
-    // migrationOptions = {},
-    verbose = false,
-  } = options;
+  const { type = 'integration', seedData = true, seedOptions = {}, verbose = false } = options;
 
   if (verbose) {
     console.log(`Setting up test database environment for: ${testSuite}`);
@@ -111,9 +87,6 @@ export async function setupTestDatabaseEnvironment(
     await seeder.seedAll(seedOptions);
   }
 
-  // Create transaction manager
-  const txManager = createTransactionManager();
-
   // Cleanup function
   const cleanup = async () => {
     if (verbose) {
@@ -129,7 +102,6 @@ export async function setupTestDatabaseEnvironment(
   return {
     connection,
     seeder,
-    transactionManager: txManager,
     cleanup,
   };
 }
