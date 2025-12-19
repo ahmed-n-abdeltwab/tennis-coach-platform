@@ -1,7 +1,7 @@
 import { JwtPayload } from '@common';
 import { Role } from '@prisma/client';
 
-import { AuthHeaders, AuthTestHelper } from '../auth/auth-test-helper';
+import { AuthHeaders, AuthTestHelper } from '../auth';
 
 /**
  * Helper class for creating test users with different roles

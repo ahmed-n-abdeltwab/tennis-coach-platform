@@ -8,7 +8,7 @@ import {
   RequestType,
 } from '@test-utils';
 
-import { AuthTestHelper } from '../auth/auth-test-helper';
+import { AuthTestHelper } from '../auth';
 import { TypeSafeHttpClient, TypedResponse } from '../http/type-safe-http-client';
 
 /**

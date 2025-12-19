@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { Endpoints, ExtractMethods, ExtractPaths, ExtractResponseType } from '@test-utils';
 
-import { AuthTestHelper } from '../auth/auth-test-helper';
+import { AuthTestHelper } from '../auth';
 import { RequestType, TypeSafeHttpClient, TypedResponse } from '../http/type-safe-http-client';
 
 /**

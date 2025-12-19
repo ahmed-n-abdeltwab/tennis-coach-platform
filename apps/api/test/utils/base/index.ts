@@ -40,6 +40,9 @@ export { DatabaseMixin, type DatabaseCapable } from './mixins/database.mixin';
 export { HttpMethodsMixin, type HttpCapable } from './mixins/http-methods.mixin';
 export { MockMixin } from './mixins/mock.mixin';
 
+// Re-export AuthHeaders type for backward compatibility
+export type { AuthHeaders } from '../auth/auth-test-helper';
+
 // Implementations
 export { ControllerTest, type ControllerTestConfig } from './implementations/controller-test';
 export { E2ETest, type E2ETestConfig } from './implementations/e2e-test';
