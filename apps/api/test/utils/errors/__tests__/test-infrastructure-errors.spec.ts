@@ -99,7 +99,7 @@ describe('TransactionError', () => {
       { transactionId: 'tx_123' }
     );
 
-    expect(error.message).toContain('[TransactionManager]');
+    expect(error.message).toContain('[Transaction]');
     expect(error.message).toContain('rollback failed');
     expect(error.message).toContain('Timeout occurred');
     expect(error.code).toBe(TestErrorCode.TRANSACTION_ROLLBACK_FAILED);

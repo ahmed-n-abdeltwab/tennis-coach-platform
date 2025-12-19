@@ -1,10 +1,74 @@
 /**
- * Test utilities index
- * Exports all test utility functions and classes
+ * Test Utilities Index
+ *
+ * Central export point for all test utilities in the application.
+ * This module provides a comprehensive set of tools for writing tests including:
+ * - Base test classes with mixins (recommended approach)
+ * - Type-safe HTTP clients
+ * - Authentication utilities
+ * - Database helpers and seeders
+ * - Mock factories
+ * - Property-based testing utilities
+ * - Performance monitoring
+ *
+ * @module test-utils
  */
 
-// Base test utilities
-export * from './database'; // Includes database helpers
+// ============================================================================
+// Legacy Exports - Maintained for Backward Compatibility
+// ============================================================================
+
+/**
+ * Database utilities
+ *
+ * Provides database helpers, seeders, and test data management.
+ *
+ * @deprecated For new code, prefer using IntegrationTest or E2ETest classes
+ * which provide access to DatabaseMixin through the `db` property.
+ * These standalone functions are maintained for backward compatibility.
+ *
+ * @example Legacy approach (still supported)
+ * ```typescript
+ * import { cleanDatabase, seedTestDatabase } from '@test-utils';
+ * await cleanDatabase(prisma);
+ * await seedTestDatabase(prisma);
+ * ```
+ *
+ * @example Recommended approach
+ * ```typescript
+ * import { IntegrationTest } from '@test-utils';
+ * const test = new IntegrationTest({ modules: [MyModule] });
+ * await test.setup(); // Automatically handles database setup
+ * const user = await test.db.createTestUser();
+ * await test.cleanup(); // Automatically handles database cleanup
+ * ```
+ */
+export * from './database';
+
+/**
+ * Test data factories
+ *
+ * Provides factories for creating test data with sensible defaults.
+ *
+ * @deprecated For new code, prefer using DatabaseMixin methods through
+ * IntegrationTest or E2ETest classes (e.g., test.db.createTestUser()).
+ * These factories are maintained for backward compatibility.
+ *
+ * @example Legacy approach (still supported)
+ * ```typescript
+ * import { AccountFactory } from '@test-utils';
+ * const factory = new AccountFactory(prisma);
+ * const user = await factory.createUser();
+ * ```
+ *
+ * @example Recommended approach
+ * ```typescript
+ * import { IntegrationTest } from '@test-utils';
+ * const test = new IntegrationTest({ modules: [MyModule] });
+ * await test.setup();
+ * const user = await test.db.createTestUser();
+ * ```
+ */
 export * from './factories';
 
 // ============================================================================
@@ -90,13 +154,26 @@ export * from './base';
  *
  * Provides helpers for creating JWT tokens and authenticated HTTP clients.
  *
- * @example
+ * @deprecated For new code, prefer using AuthMixin through IntegrationTest,
+ * ControllerTest, or E2ETest classes (e.g., test.auth.createTestJwtToken()).
+ * These standalone utilities are maintained for backward compatibility.
+ *
+ * @example Legacy approach (still supported)
  * ```typescript
  * import { AuthTestHelper, AuthenticatedHttpClient } from '@test-utils';
  *
  * const authHelper = new AuthTestHelper();
  * const token = authHelper.createUserToken();
  * const client = new AuthenticatedHttpClient(app, token);
+ * ```
+ *
+ * @example Recommended approach
+ * ```typescript
+ * import { IntegrationTest } from '@test-utils';
+ * const test = new IntegrationTest({ modules: [MyModule] });
+ * await test.setup();
+ * const token = await test.auth.createTestJwtToken();
+ * const response = await test.http.authenticatedGet('/api/endpoint', token);
  * ```
  */
 export * from './auth';
@@ -145,6 +222,8 @@ export * from './http';
  *
  * Provides helpers for testing protected routes and role-based access control.
  *
+ * These utilities remain recommended for security-focused testing scenarios.
+ *
  * @example
  * ```typescript
  * import { ProtectedRouteTester, RoleBasedAccessTester } from '@test-utils';
@@ -161,27 +240,52 @@ export * from './security';
  *
  * Provides helpers for creating test users with different roles.
  *
- * @example
+ * @deprecated For new code, prefer using AuthMixin through test classes
+ * (e.g., test.auth.createRoleToken(Role.USER)).
+ * These utilities are maintained for backward compatibility.
+ *
+ * @example Legacy approach (still supported)
  * ```typescript
  * import { UserRoleHelper } from '@test-utils';
  *
  * const roleHelper = new UserRoleHelper();
  * const userHeaders = roleHelper.createStandardUserHeaders();
  * ```
+ *
+ * @example Recommended approach
+ * ```typescript
+ * import { IntegrationTest } from '@test-utils';
+ * const test = new IntegrationTest({ modules: [MyModule] });
+ * await test.setup();
+ * const token = await test.auth.createRoleToken(Role.USER);
+ * ```
  */
 export * from './roles';
 
 /**
- * Mocks management utilities
+ * Mock utilities
  *
- * Provides helpers for creating mocks for the test users.
+ * Provides mock data and mock service creation utilities.
  *
- * @example
+ * @deprecated For new code, prefer using MockMixin through test classes
+ * (e.g., test.mock.createMockPrismaService()).
+ * These utilities are maintained for backward compatibility.
+ *
+ * @example Legacy approach (still supported)
  * ```typescript
  * import { MockBookingType } from '@test-utils';
+ * const mockData = MockBookingType.create();
+ * ```
  *
- * const roleHelper = new UserRoleHelper();
- * const userHeaders = roleHelper.createStandardUserHeaders();
+ * @example Recommended approach
+ * ```typescript
+ * import { ServiceTest } from '@test-utils';
+ * const test = new ServiceTest({
+ *   serviceClass: MyService,
+ *   mocks: [mockPrisma],
+ * });
+ * await test.setup();
+ * const mockPrisma = test.mock.createMockPrismaService();
  * ```
  */
 export * from './mocks';
@@ -194,6 +298,8 @@ export * from './mocks';
  * - MockRequest/MockResponse: Type-safe mock HTTP objects
  * - Type guards: Runtime type checking utilities
  * - Utility types: RequireProps, OptionalProps, Merge, etc.
+ *
+ * These type utilities are framework-agnostic and remain recommended for all test code.
  *
  * @example
  * ```typescript
@@ -215,6 +321,10 @@ export * from './types';
  * Property-based testing validates that properties hold true across
  * many randomly generated inputs, providing stronger correctness guarantees
  * than example-based tests.
+ *
+ * These utilities are essential for implementing correctness properties
+ * from the design document and remain the recommended approach for
+ * property-based testing.
  *
  * @example
  * ```typescript
@@ -244,6 +354,8 @@ export * from './property-testing';
  * - Slow test detection
  * - Performance warnings and reports
  *
+ * These utilities remain recommended for monitoring test suite performance.
+ *
  * @example
  * ```typescript
  * import { performanceMonitor } from '@test-utils';
@@ -267,6 +379,9 @@ export * from './performance';
  * - Automatic cache invalidation
  * - Cache statistics
  *
+ * Note: DatabaseMixin automatically uses testDataCache internally.
+ * These exports are provided for advanced use cases and monitoring.
+ *
  * @example
  * ```typescript
  * import { testDataCache } from '@test-utils';
@@ -282,3 +397,51 @@ export * from './performance';
  * ```
  */
 export * from './cache';
+
+/**
+ * Test constants
+ *
+ * Provides default values and constants used across test utilities.
+ * These constants ensure consistency in test data creation.
+ *
+ * @example
+ * ```typescript
+ * import { DEFAULT_TEST_USER, DEFAULT_TEST_COACH } from '@test-utils';
+ *
+ * const userData = {
+ *   ...DEFAULT_TEST_USER,
+ *   email: 'custom@example.com',
+ * };
+ * ```
+ */
+export * from './constants';
+
+/**
+ * Helper utilities
+ *
+ * Provides common helper functions for test data generation and manipulation.
+ *
+ * @example
+ * ```typescript
+ * import { generateUniqueEmail, getFutureDate } from '@test-utils';
+ *
+ * const email = generateUniqueEmail('test-user');
+ * const futureDate = getFutureDate(24); // 24 hours from now
+ * ```
+ */
+export * from './helpers';
+
+/**
+ * Error utilities
+ *
+ * Provides custom error types for test infrastructure.
+ * These errors provide better context when test setup or cleanup fails.
+ *
+ * @example
+ * ```typescript
+ * import { TestSetupError, TestCleanupError } from '@test-utils';
+ *
+ * throw new TestSetupError('Failed to initialize database', originalError);
+ * ```
+ */
+export * from './errors';

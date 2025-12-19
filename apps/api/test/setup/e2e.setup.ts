@@ -9,6 +9,8 @@ import TestAgent from 'supertest/lib/agent';
 
 import { PrismaService } from '../../src/app/prisma/prisma.service';
 
+import { suppressConsoleOutput } from './shared';
+
 export class NestE2ETestContext {
   public app: INestApplication;
   public prisma: PrismaService;
@@ -49,12 +51,6 @@ export class NestE2ETestContext {
 }
 
 global.NestE2ETestContext = NestE2ETestContext;
+
 // Suppress console output in e2e tests
-global.console = {
-  ...console,
-  log: jest.fn(),
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: console.warn,
-  error: console.error,
-};
+suppressConsoleOutput();

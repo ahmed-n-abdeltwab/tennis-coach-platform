@@ -1,11 +1,8 @@
 import { JwtPayload } from '@common';
 import { INestApplication } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
-import { parseJwtTime } from '@utils';
 
-import { AuthenticatedHttpClient } from '../auth/authenticated-client';
-import { DEFAULT_TEST_USER, HTTP_CONSTANTS, JWT_CONSTANTS } from '../constants';
+import { AuthMixin } from '../base/mixins/auth.mixin';
 
 /**
  * Authentication headers structure
@@ -24,28 +21,31 @@ export interface AuthHeaders {
  * - Creating authentication headers
  * - Decoding and verifying tokens
  *
+ * @deprecated This class is now a wrapper around AuthMixin for backward compatibility.
+ * Consider using AuthMixin directly from '@test-utils/base' for new code.
+ *
  * @example
  * ```typescript
  * const authHelper = new AuthTestHelper();
  *
  * // Create a user token
- * const userToken = authHelper.createUserToken();
+ * const userToken = await authHelper.createUserToken();
  *
  * // Create a coach token with custom data
- * const coachToken = authHelper.createCoachToken({
+ * const coachToken = await authHelper.createCoachToken({
  *   id: 'custom-coach-id',
  *   email: 'custom@coach.com'
  * });
  *
  * // Create auth headers
- * const headers = authHelper.createAuthHeaders(userToken);
+ * const headers = await authHelper.createAuthHeaders(userToken);
  *
  * // Create expired token for testing
- * const expiredToken = authHelper.createExpiredToken();
+ * const expiredToken = await authHelper.createExpiredToken();
  * ```
  */
 export class AuthTestHelper {
-  private jwtService: JwtService;
+  private authMixin: AuthMixin;
 
   /**
    * Create a new AuthTestHelper instance
@@ -53,12 +53,7 @@ export class AuthTestHelper {
    * @param jwtSecret - Optional JWT secret (defaults to process.env.JWT_SECRET or JWT_CONSTANTS.DEFAULT_SECRET)
    */
   constructor(jwtSecret?: string) {
-    this.jwtService = new JwtService({
-      secret: jwtSecret ?? process.env.JWT_SECRET ?? JWT_CONSTANTS.DEFAULT_SECRET,
-      signOptions: {
-        expiresIn: parseJwtTime(process.env.JWT_EXPIRES_IN, JWT_CONSTANTS.DEFAULT_EXPIRY),
-      },
-    });
+    this.authMixin = new AuthMixin(jwtSecret);
   }
 
   /**
@@ -69,7 +64,7 @@ export class AuthTestHelper {
    *
    * @example
    * ```typescript
-   * const token = authHelper.createToken({
+   * const token = await authHelper.createToken({
    *   sub: 'user-123',
    *   email: 'user@example.com',
    *   role: Role.USER
@@ -77,81 +72,75 @@ export class AuthTestHelper {
    * ```
    */
   async createToken(payload: Partial<JwtPayload>): Promise<string> {
-    const defaultPayload: JwtPayload = {
-      sub: DEFAULT_TEST_USER.ID,
-      email: DEFAULT_TEST_USER.EMAIL,
-      role: Role.USER,
-      ...payload,
-    };
-    return await this.jwtService.signAsync(defaultPayload);
+    return this.authMixin.createTestJwtToken(payload);
   }
 
   /**
    * Create a USER role token
    *
-   * @param overrides - Optional overrides for user data
+   * @param payload - Optional payload overrides
    * @returns Signed JWT token for a USER
    *
    * @example
    * ```typescript
-   * const token = authHelper.createUserToken();
-   * const customToken = authHelper.createUserToken({
+   * const token = await authHelper.createUserToken();
+   * const customToken = await authHelper.createUserToken({
    *   sub: 'custom-id',
    *   email: 'custom@user.com'
    * });
    * ```
    */
   async createUserToken(payload?: Partial<JwtPayload>): Promise<string> {
-    return this.createRoleToken(Role.USER, payload);
+    return this.authMixin.createUserToken(payload);
   }
 
   /**
    * Create a COACH role token
    *
-   * @param overrides - Optional overrides for coach data
+   * @param payload - Optional payload overrides
    * @returns Signed JWT token for a COACH
    *
    * @example
    * ```typescript
-   * const token = authHelper.createCoachToken();
-   * const customToken = authHelper.createCoachToken({
+   * const token = await authHelper.createCoachToken();
+   * const customToken = await authHelper.createCoachToken({
    *   sub: 'coach-123',
    *   email: 'coach@example.com'
    * });
    * ```
    */
   async createCoachToken(payload?: Partial<JwtPayload>): Promise<string> {
-    return this.createRoleToken(Role.COACH, payload);
+    return this.authMixin.createCoachToken(payload);
   }
 
   /**
    * Create an ADMIN role token
    *
-   * @param overrides - Optional overrides for admin data
+   * @param payload - Optional payload overrides
    * @returns Signed JWT token for an ADMIN
    *
    * @example
    * ```typescript
-   * const token = authHelper.createAdminToken();
+   * const token = await authHelper.createAdminToken();
    * ```
    */
   async createAdminToken(payload?: Partial<JwtPayload>): Promise<string> {
-    return this.createRoleToken(Role.ADMIN, payload);
+    return this.authMixin.createAdminToken(payload);
   }
 
   /**
    * Create a PREMIUM_USER role token
    *
-   * @param overrides - Optional overrides for premium user data
+   * @param payload - Optional payload overrides
    * @returns Signed JWT token for a PREMIUM_USER
    *
    * @example
    * ```typescript
-   * const token = authHelper.createPremiumUserToken();
+   * const token = await authHelper.createPremiumUserToken();
    * ```
    */
   async createPremiumUserToken(payload?: Partial<JwtPayload>): Promise<string> {
-    return this.createRoleToken(Role.PREMIUM_USER, payload);
+    return this.authMixin.createPremiumUserToken(payload);
   }
 
   /**
@@ -162,22 +151,12 @@ export class AuthTestHelper {
    *
    * @example
    * ```typescript
-   * const expiredToken = authHelper.createExpiredToken();
+   * const expiredToken = await authHelper.createExpiredToken();
    * // Use this to test that endpoints reject expired tokens
    * ```
    */
   async createExpiredToken(payload?: Partial<JwtPayload>): Promise<string> {
-    const expiredJwtService = new JwtService({
-      secret: process.env.JWT_SECRET ?? JWT_CONSTANTS.DEFAULT_SECRET,
-      signOptions: { expiresIn: JWT_CONSTANTS.EXPIRED_TOKEN_EXPIRY },
-    });
-    const defaultPayload: JwtPayload = {
-      sub: DEFAULT_TEST_USER.ID,
-      email: DEFAULT_TEST_USER.EMAIL,
-      role: Role.USER,
-      ...payload,
-    };
-    return expiredJwtService.signAsync(defaultPayload);
+    return this.authMixin.createExpiredToken(payload);
   }
 
   /**
@@ -188,79 +167,74 @@ export class AuthTestHelper {
    *
    * @example
    * ```typescript
-   * const headers = authHelper.createAuthHeaders();
+   * const headers = await authHelper.createAuthHeaders();
    * // { Authorization: 'Bearer eyJhbGc...' }
    *
-   * const customHeaders = authHelper.createAuthHeaders(customToken);
+   * const customHeaders = await authHelper.createAuthHeaders(customToken);
    * ```
    */
   async createAuthHeaders(token?: string): Promise<AuthHeaders> {
-    const authToken = token ?? (await this.createUserToken());
-    return { [HTTP_CONSTANTS.AUTHORIZATION_HEADER]: `${HTTP_CONSTANTS.BEARER_PREFIX}${authToken}` };
+    return this.authMixin.createAuthHeaders(token);
   }
 
   /**
    * Create USER authentication headers
    *
-   * @param overrides - Optional user data overrides
+   * @param payload - Optional payload overrides
    * @returns Object with Authorization header for a USER
    *
    * @example
    * ```typescript
-   * const headers = authHelper.createUserAuthHeaders();
+   * const headers = await authHelper.createUserAuthHeaders();
    * ```
    */
   async createUserAuthHeaders(payload?: Partial<JwtPayload>): Promise<AuthHeaders> {
-    const token = await this.createUserToken(payload);
-    return await this.createAuthHeaders(token);
+    return this.authMixin.createUserAuthHeaders(payload);
   }
 
   /**
    * Create COACH authentication headers
    *
-   * @param overrides - Optional coach data overrides
+   * @param payload - Optional payload overrides
    * @returns Object with Authorization header for a COACH
    *
    * @example
    * ```typescript
-   * const headers = authHelper.createCoachAuthHeaders();
+   * const headers = await authHelper.createCoachAuthHeaders();
    * ```
    */
   async createCoachAuthHeaders(payload?: Partial<JwtPayload>): Promise<AuthHeaders> {
-    const token = await this.createCoachToken(payload);
-    return await this.createAuthHeaders(token);
+    return this.authMixin.createCoachAuthHeaders(payload);
   }
 
   /**
    * Create ADMIN authentication headers
    *
-   * @param overrides - Optional admin data overrides
+   * @param payload - Optional payload overrides
    * @returns Object with Authorization header for an ADMIN
    *
    * @example
    * ```typescript
-   * const headers = authHelper.createAdminAuthHeaders();
+   * const headers = await authHelper.createAdminAuthHeaders();
    * ```
    */
   async createAdminAuthHeaders(payload?: Partial<JwtPayload>): Promise<AuthHeaders> {
-    const token = await this.createAdminToken(payload);
-    return await this.createAuthHeaders(token);
+    return this.authMixin.createAdminAuthHeaders(payload);
   }
 
   /**
    * Create PREMIUM_USER authentication headers
    *
-   * @param overrides - Optional premium user data overrides
+   * @param payload - Optional payload overrides
    * @returns Object with Authorization header for a PREMIUM_USER
    *
    * @example
    * ```typescript
-   * const headers = authHelper.createPremiumUserAuthHeaders();
+   * const headers = await authHelper.createPremiumUserAuthHeaders();
    * ```
    */
   async createPremiumUserAuthHeaders(payload?: Partial<JwtPayload>): Promise<AuthHeaders> {
-    const token = await this.createPremiumUserToken(payload);
-    return await this.createAuthHeaders(token);
+    return this.authMixin.createPremiumUserAuthHeaders(payload);
   }
 
   /**
@@ -271,13 +245,12 @@ export class AuthTestHelper {
    *
    * @example
    * ```typescript
-   * const headers = authHelper.createExpiredAuthHeaders();
+   * const headers = await authHelper.createExpiredAuthHeaders();
    * // Use to test that endpoints reject expired tokens
    * ```
    */
   async createExpiredAuthHeaders(payload?: Partial<JwtPayload>): Promise<AuthHeaders> {
-    const token = await this.createExpiredToken(payload);
-    return await this.createAuthHeaders(token);
+    return this.authMixin.createExpiredAuthHeaders(payload);
   }
 
   /**
@@ -288,16 +261,12 @@ export class AuthTestHelper {
    *
    * @example
    * ```typescript
-   * const payload = authHelper.decodeToken(token);
+   * const payload = await authHelper.decodeToken(token);
    * console.log(payload.email); // 'user@example.com'
    * ```
    */
   async decodeToken(token: string): Promise<JwtPayload | null> {
-    try {
-      return this.jwtService.decode(token);
-    } catch {
-      return null;
-    }
+    return this.authMixin.decodeToken(token);
   }
 
   /**
@@ -308,7 +277,7 @@ export class AuthTestHelper {
    *
    * @example
    * ```typescript
-   * const payload = authHelper.verifyToken(token);
+   * const payload = await authHelper.verifyToken(token);
    * if (payload) {
    *   console.log('Token is valid');
    * } else {
@@ -317,11 +286,7 @@ export class AuthTestHelper {
    * ```
    */
   async verifyToken(token: string): Promise<JwtPayload | null> {
-    try {
-      return await this.jwtService.verifyAsync<JwtPayload>(token);
-    } catch {
-      return null;
-    }
+    return this.authMixin.verifyToken(token);
   }
 
   /**
@@ -338,7 +303,7 @@ export class AuthTestHelper {
    * @example
    * ```typescript
    * const authHelper = new AuthTestHelper();
-   * const client = authHelper.createAuthenticatedClient(app);
+   * const client = await authHelper.createAuthenticatedClient(app);
    *
    * // All requests automatically include authentication
    * const profile = await client.get('/api/accounts/me');
@@ -347,11 +312,8 @@ export class AuthTestHelper {
   async createAuthenticatedClient<E extends Record<string, any>>(
     app: INestApplication,
     token?: string
-  ): Promise<AuthenticatedHttpClient<E>> {
-    // Import dynamically to avoid circular dependencies
-    const authToken = token ?? (await this.createUserToken());
-    // Type assertion needed because require() returns untyped module
-    return new AuthenticatedHttpClient(app, authToken);
+  ): Promise<any> {
+    return this.authMixin.createAuthenticatedClient<E>(app, token);
   }
 
   /**
@@ -363,24 +325,14 @@ export class AuthTestHelper {
    *
    * @example
    * ```typescript
-   * const shortLivedToken = authHelper.createTokenWithExpiry(
+   * const shortLivedToken = await authHelper.createTokenWithExpiry(
    *   { sub: 'user-id', email: 'user@example.com', role: Role.USER },
    *   '5m'
    * );
    * ```
    */
   async createTokenWithExpiry(payload?: Partial<JwtPayload>, expiresIn?: string): Promise<string> {
-    const customJwtService = new JwtService({
-      secret: process.env.JWT_SECRET ?? JWT_CONSTANTS.DEFAULT_SECRET,
-      signOptions: { expiresIn: parseJwtTime(expiresIn, JWT_CONSTANTS.DEFAULT_EXPIRY) },
-    });
-    const fullPayload: JwtPayload = {
-      sub: DEFAULT_TEST_USER.ID,
-      email: DEFAULT_TEST_USER.EMAIL,
-      role: Role.USER,
-      ...payload,
-    };
-    return await customJwtService.signAsync(fullPayload);
+    return this.authMixin.createTokenWithExpiry(payload, expiresIn);
   }
 
   /**
@@ -392,54 +344,47 @@ export class AuthTestHelper {
    *
    * @example
    * ```typescript
-   * const soonToExpireToken = authHelper.createSoonToExpireToken();
+   * const soonToExpireToken = await authHelper.createSoonToExpireToken();
    * // Wait a few seconds and test token refresh logic
    * ```
    */
   async createSoonToExpireToken(
     payload?: Partial<JwtPayload>,
-    secondsUntilExpiry: number = JWT_CONSTANTS.SHORT_LIVED_EXPIRY_SECONDS
+    secondsUntilExpiry?: number
   ): Promise<string> {
-    return await this.createTokenWithExpiry(payload, `${secondsUntilExpiry}s`);
+    return this.authMixin.createSoonToExpireToken(payload, secondsUntilExpiry);
   }
 
   /**
    * Create a token for a specific role
    *
    * @param role - Role to create token for
-   * @param overrides - Optional user data overrides
+   * @param payload - Optional payload overrides
    * @returns JWT token for the specified role
    *
    * @example
    * ```typescript
-   * const token = authHelper.createRoleToken(Role.COACH);
+   * const token = await authHelper.createRoleToken(Role.COACH);
    * ```
    */
   async createRoleToken(role: Role, payload?: Partial<JwtPayload>): Promise<string> {
-    const user: JwtPayload = {
-      sub: `test-${role.toLowerCase()}-id`,
-      email: `${role.toLowerCase()}@example.com`,
-      role,
-      ...payload,
-    };
-    return await this.createToken(user);
+    return this.authMixin.createRoleToken(role, payload);
   }
 
   /**
    * Create authentication headers for a specific role
    *
    * @param role - Role to create headers for
-   * @param overrides - Optional user data overrides
+   * @param payload - Optional payload overrides
    * @returns Authentication headers for the specified role
    *
    * @example
    * ```typescript
-   * const headers = authHelper.createRoleAuthHeaders(Role.ADMIN);
+   * const headers = await authHelper.createRoleAuthHeaders(Role.ADMIN);
    * ```
    */
   async createRoleAuthHeaders(role: Role, payload?: Partial<JwtPayload>): Promise<AuthHeaders> {
-    const token = await this.createRoleToken(role, payload);
-    return await this.createAuthHeaders(token);
+    return this.authMixin.createRoleAuthHeaders(role, payload);
   }
 
   /**
@@ -450,14 +395,11 @@ export class AuthTestHelper {
    *
    * @example
    * ```typescript
-   * const token = authHelper.extractTokenFromHeader('Bearer eyJhbGc...');
+   * const token = await authHelper.extractTokenFromHeader('Bearer eyJhbGc...');
    * ```
    */
   async extractTokenFromHeader(authHeader: string): Promise<string | null> {
-    if (!authHeader?.startsWith(HTTP_CONSTANTS.BEARER_PREFIX)) {
-      return null;
-    }
-    return authHeader.substring(HTTP_CONSTANTS.BEARER_PREFIX.length);
+    return this.authMixin.extractTokenFromHeader(authHeader);
   }
 
   /**
@@ -468,16 +410,12 @@ export class AuthTestHelper {
    *
    * @example
    * ```typescript
-   * const tokens = authHelper.createMultipleRoleTokens([Role.USER, Role.COACH, Role.ADMIN]);
+   * const tokens = await authHelper.createMultipleRoleTokens([Role.USER, Role.COACH, Role.ADMIN]);
    * const userToken = tokens.get(Role.USER);
    * ```
    */
-  createMultipleRoleTokens(roles: Role[]): Map<Role, string> {
-    const tokens = new Map<Role, string>();
-    roles.forEach(async role => {
-      tokens.set(role, await this.createRoleToken(role));
-    });
-    return tokens;
+  async createMultipleRoleTokens(roles: Role[]): Promise<Map<Role, string>> {
+    return this.authMixin.createMultipleRoleTokens(roles);
   }
 
   /**
@@ -488,15 +426,11 @@ export class AuthTestHelper {
    *
    * @example
    * ```typescript
-   * const headers = authHelper.createMultipleRoleHeaders([Role.USER, Role.COACH]);
+   * const headers = await authHelper.createMultipleRoleHeaders([Role.USER, Role.COACH]);
    * const userHeaders = headers.get(Role.USER);
    * ```
    */
-  createMultipleRoleHeaders(roles: Role[]): Map<Role, AuthHeaders> {
-    const headers = new Map<Role, AuthHeaders>();
-    roles.forEach(async role => {
-      headers.set(role, await this.createRoleAuthHeaders(role));
-    });
-    return headers;
+  async createMultipleRoleHeaders(roles: Role[]): Promise<Map<Role, AuthHeaders>> {
+    return this.authMixin.createMultipleRoleHeaders(roles);
   }
 }

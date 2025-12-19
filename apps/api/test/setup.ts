@@ -1,37 +1,11 @@
-// Set NODE_ENV to test for all tests
-process.env.NODE_ENV = 'test';
+import { setupTestEnvironment } from './setup/shared';
 
-// Ensure DATABASE_URL is set for test database manager
-// If not set, use a default test database URL
-process.env.DATABASE_URL ??=
-  'postgresql://postgres:password@localhost:5432/tennis_coach_test?connection_limit=5&pool_timeout=2';
-
-// Set required environment variables for validation
-process.env.JWT_SECRET ??= 'test-jwt-secret-key-minimum-32-characters';
-process.env.JWT_EXPIRES_IN ??= '1h';
-process.env.JWT_REFRESH_SECRET ??= 'test-jwt-refresh-secret-key-minimum-32-characters';
-process.env.JWT_REFRESH_EXPIRES_IN ??= '7d';
-process.env.BCRYPT_SALT_ROUNDS ??= '4';
-
-// PayPal configuration
-process.env.PAYPAL_CLIENT_ID ??= 'test-paypal-client-id';
-process.env.PAYPAL_CLIENT_SECRET ??= 'test-paypal-client-secret';
-process.env.PAYPAL_ENVIRONMENT ??= 'sandbox';
-
-// Google OAuth configuration
-process.env.GOOGLE_CLIENT_ID ??= 'test-google-client-id';
-process.env.GOOGLE_CLIENT_SECRET ??= 'test-google-client-secret';
-process.env.GOOGLE_REDIRECT_URI ??= 'http://localhost:3333/auth/google/callback';
-
-// Email configuration
-process.env.SMTP_SENDER_EMAIL ??= 'test@example.com';
-process.env.SMTP_TOKEN ??= 'test-token';
-
-// App configuration
-process.env.PORT ??= '3333';
-process.env.FRONTEND_URL ??= 'http://localhost:4200';
-process.env.npm_package_version ??= '1.0.0';
-process.env.LOG_LEVEL ??= 'error';
+// Set up common test environment variables
+setupTestEnvironment({
+  databaseSuffix: 'test',
+  port: '3333',
+  useStrictAssignment: true, // Use ??= for base setup to allow overrides
+});
 
 // Mock Redis to prevent connection issues in tests
 jest.mock('../src/app/redis/redis.service', () => {

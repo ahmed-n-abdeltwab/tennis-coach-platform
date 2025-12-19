@@ -3,14 +3,14 @@
  * This file runs once after all integration tests complete
  */
 
+import { delayForCleanup, performGarbageCollection } from './shared';
+
 export default async function integrationGlobalTeardown(): Promise<void> {
   console.log('🧹 Integration tests global teardown completed');
 
   // Force garbage collection if available
-  if (global.gc) {
-    global.gc();
-  }
+  performGarbageCollection();
 
   // Allow time for connections to close
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  await delayForCleanup(1000);
 }

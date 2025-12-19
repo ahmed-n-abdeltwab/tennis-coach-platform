@@ -5,7 +5,7 @@
  * For more advanced database testing utilities, see:
  * - TestDatabaseManager for database lifecycle management
  * - DatabaseSeeder for consistent test data creation
- * - TransactionManager for transaction-based test isolation
+ * - DatabaseMixin for transaction support (use IntegrationTest or E2ETest classes)
  */
 
 import { Account, BookingType, Prisma, Role } from '@prisma/client';
@@ -162,7 +162,7 @@ export async function seedTestDatabase(prisma: PrismaClient): Promise<{
  * Creates a test database transaction
  *
  * Wraps a callback in a Prisma transaction for test isolation.
- * For more advanced transaction management, use TransactionManager.
+ * For more advanced transaction management, use DatabaseMixin.withTransaction().
  *
  * @param prisma - PrismaService instance
  * @param callback - Function to execute within the transaction

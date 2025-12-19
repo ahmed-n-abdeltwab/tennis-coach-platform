@@ -85,9 +85,9 @@ const config: Config = {
   cache: true,
   cacheDirectory: '<rootDir>/../../node_modules/.cache/jest/integration',
 
-  // Global setup and teardown for database management
-  globalSetup: '<rootDir>/test/setup/integration-global.setup.ts',
-  globalTeardown: '<rootDir>/test/setup/integration-global.teardown.ts',
+  // Global setup and teardown - using consolidated files
+  globalSetup: '<rootDir>/test/setup/global.setup.ts',
+  globalTeardown: '<rootDir>/test/setup/global.teardown.ts',
 
   detectOpenHandles: true,
 

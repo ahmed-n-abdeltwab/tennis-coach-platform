@@ -86,6 +86,10 @@ const config: Config = {
   cache: true,
   cacheDirectory: '<rootDir>/../../node_modules/.cache/jest/all',
 
+  // Global setup and teardown - using consolidated files
+  globalSetup: '<rootDir>/test/setup/global.setup.ts',
+  globalTeardown: '<rootDir>/test/setup/global.teardown.ts',
+
   // Custom reporters
   reporters: ['default', ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }]],
 };

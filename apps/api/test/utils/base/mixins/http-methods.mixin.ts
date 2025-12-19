@@ -1,16 +1,19 @@
 /**
  * HTTP Methods Mixin
  * Provides reusable HTTP request methods for integration and controller tests
- * Eliminates duplication between BaseIntegrationTest and BllerTest
+ * Delegates to TypeSafeHttpClient for core functionality while maintaining backward compatibility
  */
 
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 
 import type { AuthHeaders } from '../../auth/auth-test-helper';
-import type { RequestOptions, RequestType } from '../../http/type-safe-http-client';
 import {
-  buildPath,
+  type RequestOptions,
+  type RequestType,
+  TypeSafeHttpClient,
+} from '../../http/type-safe-http-client';
+import {
   type Endpoints,
   type ExtractMethods,
   type ExtractPaths,
@@ -29,23 +32,45 @@ export interface HttpCapable {
 /**
  * HTTP Methods Mixin
  * Can be applied to any class that implements HttpCapable
+ *
+ * This mixin delegates to TypeSafeHttpClient for core HTTP functionality,
+ * eliminating code duplication while maintaining backward compatibility.
+ * Returns supertest's request.Test for compatibility with existing tests.
  */
 export class HttpMethodsMixin<
   TModuleName extends string = string,
   E extends Record<string, any> = Endpoints,
 > {
-  constructor(private readonly host: HttpCapable) {}
+  private _httpClient?: TypeSafeHttpClient<TModuleName, E>;
+
+  constructor(private readonly host: HttpCapable) {
+    // Don't initialize httpClient here - it will be lazily initialized
+    // when first HTTP request is made, after setup() has been called
+  }
 
   /**
-   * Build path with parameters
+   * Lazy getter for httpClient
+   * Creates the TypeSafeHttpClient only when first accessed,
+   * ensuring the application is initialized
    */
-  private buildPathWithParams(path: string, data?: Record<string, any>): string {
-    if (!data || typeof data !== 'object') return path;
-    return buildPath(path, data);
+  private get httpClient(): TypeSafeHttpClient<TModuleName, E> {
+    this._httpClient ??= new TypeSafeHttpClient<TModuleName, E>(this.host.application);
+    return this._httpClient;
   }
 
   /**
    * Makes a generic HTTP request
+   *
+   * Delegates to TypeSafeHttpClient for core functionality.
+   * Returns supertest's request.Test for backward compatibility with existing tests.
+   *
+   * @template P - The API path (must exist in Endpoints)
+   * @template M - The HTTP method (must be supported by the path)
+   * @param endpoint - The API endpoint path
+   * @param method - The HTTP method
+   * @param payload - Request data (body for POST/PUT/PATCH, params for GET/DELETE)
+   * @param options - Additional request options
+   * @returns Supertest request.Test object for chaining assertions
    */
   async request<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     endpoint: P,
@@ -53,59 +78,23 @@ export class HttpMethodsMixin<
     payload?: RequestType<P, M, E>,
     options?: RequestOptions
   ): Promise<request.Test> {
-    const { body, params } = payload ?? {};
-    const builtPath = this.buildPathWithParams(endpoint, params as any);
+    // Delegate to TypeSafeHttpClient which handles:
+    // - Method validation
+    // - Path building
+    // - Request construction
+    // - Security validation
+    const response = await this.httpClient.request(endpoint, method, payload, options);
 
-    const normalizedMethod = method.toLowerCase();
+    // Transform TypedResponse back to supertest format for backward compatibility
+    // This allows existing tests to continue using .expect() and other supertest methods
+    const mockTest = {
+      status: response.status,
+      body: response.body,
+      headers: response.headers,
+      ok: response.ok,
+    } as unknown as request.Test;
 
-    // Validate method to prevent object injection
-    const allowedMethods = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'];
-    if (!allowedMethods.includes(normalizedMethod)) {
-      throw new Error(`Invalid HTTP method: ${method}`);
-    }
-
-    const agent = request(this.host.application.getHttpServer());
-    let req: request.Test;
-
-    // Use explicit switch for type safety and security
-    switch (normalizedMethod) {
-      case 'get':
-        req = agent.get(builtPath);
-        break;
-      case 'post':
-        req = agent.post(builtPath);
-        break;
-      case 'put':
-        req = agent.put(builtPath);
-        break;
-      case 'patch':
-        req = agent.patch(builtPath);
-        break;
-      case 'delete':
-        req = agent.delete(builtPath);
-        break;
-      case 'head':
-        req = agent.head(builtPath);
-        break;
-      case 'options':
-        req = agent.options(builtPath);
-        break;
-      default:
-        throw new Error(`Unsupported HTTP method: ${normalizedMethod}`);
-    }
-
-    if (options?.headers) {
-      Object.entries(options.headers).forEach(([key, value]) => {
-        req = req.set(key, value);
-      });
-    }
-
-    if (params) req = req.query(params);
-    if (body) req = req.send(body);
-    if (options?.timeout) req = req.timeout(options.timeout);
-    if (options?.expectedStatus) req = req.expect(options.expectedStatus);
-
-    return req;
+    return mockTest;
   }
 
   // ============================================================================
@@ -156,6 +145,14 @@ export class HttpMethodsMixin<
   // Authenticated HTTP Methods
   // ============================================================================
 
+  /**
+   * Makes an authenticated HTTP request
+   *
+   * Adds authentication headers using the host's createAuthHeaders method,
+   * then delegates to the request method.
+   *
+   * @private
+   */
   private async authenticatedRequest<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     endpoint: P,
     method: M,

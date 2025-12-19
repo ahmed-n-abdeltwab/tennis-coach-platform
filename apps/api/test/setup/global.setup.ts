@@ -1,31 +1,35 @@
 /**
  * Global setup for all Jest test types
  * This file runs once before all tests start
+ *
+ * Detects the test type from Jest config and applies appropriate settings
  */
 
+import { setupTestEnvironment } from './shared';
+
 export default async function globalSetup(): Promise<void> {
-  // Set test environment variables
-  process.env.NODE_ENV = 'test';
-  process.env.DATABASE_URL =
-    process.env.DATABASE_URL?.replace('tennis_coach_dev', 'tennis_coach_test') ??
-    'postgresql://postgres:password@localhost:5432/tennis_coach_test?connection_limit=5&pool_timeout=2';
+  // Detect test type from Jest's displayName or test patterns
+  const jestConfig = (global as any).jestConfig;
+  const displayName = jestConfig?.displayName || '';
 
-  // Set test-specific JWT configuration
-  process.env.JWT_SECRET = 'e2e-test-jwt-secret-key';
-  process.env.JWT_EXPIRES_IN = '1h';
-  process.env.BCRYPT_SALT_ROUNDS = '4';
-  process.env.JWT_REFRESH_SECRET = 'e2e-test-jwt-secret-key-for-refresh-tokens-only';
-  process.env.JWT_REFRESH_EXPIRES_IN = '7d';
+  // Determine database suffix and port based on test type
+  let databaseSuffix = 'test';
+  let port = '0'; // Default to random port
 
-  // Disable external services in test environment
-  process.env.SMTP_TOKEN = 'test-token';
-  process.env.PAYPAL_CLIENT_ID = 'test-paypal-client-id';
-  process.env.PAYPAL_CLIENT_SECRET = 'test-paypal-client-secret';
-  process.env.PAYPAL_ENVIRONMENT = 'sandbox';
+  if (displayName.includes('Integration') || process.env.JEST_TEST_TYPE === 'integration') {
+    databaseSuffix = 'test_integration';
+    port = '3333';
+  } else if (displayName.includes('E2E') || process.env.JEST_TEST_TYPE === 'e2e') {
+    databaseSuffix = 'test_e2e';
+    port = '0';
+  }
 
-  // Set test-specific configurations
-  process.env.PORT = '0'; // Let the system assign a random port
-  process.env.FRONTEND_URL = 'http://localhost:3000';
+  // Set up common test environment variables
+  setupTestEnvironment({
+    databaseSuffix,
+    port,
+    useStrictAssignment: false, // Use ??= to preserve CI variables
+  });
 
-  console.log('🚀 Global Jest setup completed');
+  console.log(`🚀 Global Jest setup completed (${databaseSuffix})`);
 }

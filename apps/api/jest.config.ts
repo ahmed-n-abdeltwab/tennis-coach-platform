@@ -65,6 +65,10 @@ const config: Config = {
   // Run integration tests sequentially to avoid database conflicts
   maxWorkers: 1,
 
+  // Global setup and teardown - using consolidated files
+  globalSetup: '<rootDir>/test/setup/global.setup.ts',
+  globalTeardown: '<rootDir>/test/setup/global.teardown.ts',
+
   // Custom reporters
   reporters: [
     'default',

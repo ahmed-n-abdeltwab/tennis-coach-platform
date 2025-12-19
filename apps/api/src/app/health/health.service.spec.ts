@@ -41,7 +41,7 @@ describe('HealthService', () => {
 
   describe('check', () => {
     it('should return health check with connected database', async () => {
-      test.mockReturn(test.prisma.$queryRaw, [{ result: 1 }]);
+      test.mock.mockReturn(test.prisma.$queryRaw, [{ result: 1 }]);
 
       const result = await test.service.check();
 
@@ -58,7 +58,7 @@ describe('HealthService', () => {
     });
 
     it('should return health check with disconnected database on error', async () => {
-      test.mockThrow(test.prisma.$queryRaw, 'Database connection failed');
+      test.mock.mockThrow(test.prisma.$queryRaw, 'Database connection failed');
 
       const result = await test.service.check();
 
@@ -88,7 +88,7 @@ describe('HealthService', () => {
 
   describe('readiness', () => {
     it('should return ready status when database is accessible', async () => {
-      test.mockReturn(test.prisma.$queryRaw, [{ result: 1 }]);
+      test.mock.mockReturn(test.prisma.$queryRaw, [{ result: 1 }]);
 
       const result = await test.service.readiness();
 
@@ -100,7 +100,7 @@ describe('HealthService', () => {
     });
 
     it('should return not ready status when database is not accessible', async () => {
-      test.mockThrow(test.prisma.$queryRaw, 'Database connection failed');
+      test.mock.mockThrow(test.prisma.$queryRaw, 'Database connection failed');
 
       const result = await test.service.readiness();
 

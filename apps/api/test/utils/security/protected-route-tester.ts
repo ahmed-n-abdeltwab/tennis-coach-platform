@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { Endpoints, ExtractMethods, ExtractPaths, ExtractResponseType } from '@test-utils';
 
-import { AuthTestHelper } from '../auth/auth-test-helper';
+import { AuthTestHelper } from '../auth';
 import { RequestType, TypeSafeHttpClient, TypedResponse } from '../http/type-safe-http-client';
 
 /**
@@ -37,9 +37,12 @@ import { RequestType, TypeSafeHttpClient, TypedResponse } from '../http/type-saf
  * );
  * ```
  */
-export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
+export class ProtectedRouteTester<
+  TModuleName extends string = string,
+  E extends Record<string, any> = Endpoints,
+> {
   private authHelper: AuthTestHelper;
-  private httpClient: TypeSafeHttpClient<E>;
+  private httpClient: TypeSafeHttpClient<TModuleName, E>;
 
   /**
    * Create a new ProtectedRouteTester
@@ -49,7 +52,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
    */
   constructor(app: INestApplication, jwtSecret?: string) {
     this.authHelper = new AuthTestHelper(jwtSecret);
-    this.httpClient = new TypeSafeHttpClient<E>(app);
+    this.httpClient = new TypeSafeHttpClient<TModuleName, E>(app);
   }
 
   /**
@@ -312,7 +315,7 @@ export class ProtectedRouteTester<E extends Record<string, any> = Endpoints> {
    * const response = await httpClient.get('/api/public/health');
    * ```
    */
-  getHttpClient(): TypeSafeHttpClient<E> {
+  getHttpClient(): TypeSafeHttpClient<TModuleName, E> {
     return this.httpClient;
   }
 }

@@ -4,16 +4,13 @@
  * This test suite verifies that all database management utilities work correctly:
  * - TestDatabaseManager
  * - TestDatabaseSeeder
- * - TransactionManager
- * - MigrationManager
  */
 
-import { Account, Prisma, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 import { setupMinimalTestDatabase, setupTestDatabaseEnvironment } from '..';
 import { createDatabaseSeeder, DatabaseSeeder, SeedDataOptions } from '../database-seeder';
 import { TestDatabaseConfig, testDatabaseManager } from '../test-database-manager';
-import { transactionManager } from '../transaction-manager';
 
 describe('Database Utilities', () => {
   const testSuiteName = 'database-utilities-test';
@@ -181,122 +178,6 @@ describe('Database Utilities', () => {
     });
   });
 
-  describe('TransactionManager', () => {
-    beforeEach(async () => {
-      const connection = await testDatabaseManager.createTestDatabase(
-        `${testSuiteName}-transaction`,
-        { seedData: false } as TestDatabaseConfig
-      );
-      testClient = connection.client;
-    });
-
-    afterEach(async () => {
-      await testDatabaseManager.cleanupTestDatabase(`${testSuiteName}-transaction`);
-    });
-
-    it('should rollback transaction automatically', async () => {
-      let createdUserId: string;
-
-      // Execute operation in transaction
-      await transactionManager.withTransaction(testClient, async tx => {
-        const user = await tx.account.create({
-          data: {
-            email: 'transaction-test@example.com',
-            name: 'Transaction Test User',
-            passwordHash: '$2b$10$test.hash',
-          },
-        });
-        createdUserId = user.id;
-
-        // Verify user exists within transaction
-        const foundUser = await tx.account.findUnique({
-          where: { id: createdUserId },
-        });
-        expect(foundUser).toBeDefined();
-      });
-
-      // Verify user was rolled back
-      const users = await testClient.account.findMany();
-      expect(users).toHaveLength(0);
-    });
-
-    it('should commit transaction when using withCommittedTransaction', async () => {
-      let createdUserId = '';
-
-      // Execute operation in committed transaction
-      await transactionManager.withCommittedTransaction(testClient, async tx => {
-        const user: Account = await tx.account.create({
-          data: {
-            email: 'committed-test@example.com',
-            name: 'Committed Test User',
-            passwordHash: '$2b$10$test.hash',
-          },
-        });
-        createdUserId = user.id;
-      });
-
-      // Verify user was committed
-      const user = await testClient.account.findUnique({
-        where: { id: createdUserId },
-      });
-      expect(user).toBeDefined();
-      expect(user?.email).toBe('committed-test@example.com');
-    });
-
-    it('should handle multiple transactions independently', async () => {
-      const callbacks = [
-        async (tx: Prisma.TransactionClient) => {
-          return tx.account.create({
-            data: {
-              email: 'user1@example.com',
-              name: 'User 1',
-              passwordHash: '$2b$10$test.hash',
-            },
-          });
-        },
-        async (tx: Prisma.TransactionClient) => {
-          return tx.account.create({
-            data: {
-              email: 'user2@example.com',
-              name: 'User 2',
-              passwordHash: '$2b$10$test.hash',
-            },
-          });
-        },
-      ];
-
-      const results = await transactionManager.withMultipleTransactions(testClient, callbacks);
-
-      expect(results).toHaveLength(2);
-      expect(results[0]?.email).toBe('user1@example.com');
-      expect(results[1]?.email).toBe('user2@example.com');
-
-      // Verify users were rolled back
-      const users = await testClient.account.findMany();
-      expect(users).toHaveLength(0);
-    });
-
-    it('should create transaction test helper', async () => {
-      const helper = transactionManager.createTransactionTestHelper(testClient);
-
-      const setupResult = await helper.setup(async tx => {
-        return tx.account.create({
-          data: {
-            email: 'helper-test@example.com',
-            name: 'Helper Test User',
-            passwordHash: '$2b$10$test.hash',
-          },
-        });
-      });
-
-      expect(setupResult.email).toBe('helper-test@example.com');
-
-      // Verify rollback
-      const users = await testClient.account.findMany();
-      expect(users).toHaveLength(0);
-    });
-  });
-
   describe('Integration Tests', () => {
     it('should setup complete test database environment', async () => {
       const testName = `${testSuiteName}-integration`;
@@ -314,32 +195,12 @@ describe('Database Utilities', () => {
 
       expect(environment.connection).toBeDefined();
       expect(environment.seeder).toBeInstanceOf(DatabaseSeeder);
-      expect(environment.transactionManager).toBeDefined();
       expect(environment.cleanup).toBeInstanceOf(Function);
 
       // Verify seeded data
       const users = await environment.connection.client.account.findMany();
 
       expect(users).toHaveLength(3);
-
-      // Test transaction functionality
-      await environment.transactionManager.withTransaction(
-        environment.connection.client,
-        async tx => {
-          const newUser = await tx.account.create({
-            data: {
-              email: 'tx-test@example.com',
-              name: 'Transaction Test',
-              passwordHash: '$2b$10$test.hash',
-            },
-          });
-          expect(newUser).toBeDefined();
-        }
-      );
-
-      // Verify transaction was rolled back
-      const usersAfterTx = await environment.connection.client.account.findMany();
-      expect(usersAfterTx).toHaveLength(3); // Same as before
 
       // Cleanup
       await environment.cleanup();

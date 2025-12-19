@@ -1,5 +1,45 @@
 /**
- * Factory exports for easy importing in tests
+ * Test Data Factories
+ *
+ * Provides factories for creating test data with sensible defaults.
+ *
+ * @deprecated For new code, prefer using DatabaseMixin methods through
+ * IntegrationTest or E2ETest classes (e.g., test.db.createTestUser()).
+ * These factories create mock data objects, while DatabaseMixin creates
+ * real database records. These factories are maintained for backward
+ * compatibility and unit testing scenarios.
+ *
+ * @example Recommended approach (creates real database records)
+ * ```typescript
+ * import { IntegrationTest } from '@test-utils/base';
+ *
+ * const test = new IntegrationTest({ modules: [MyModule] });
+ * await test.setup();
+ * const user = await test.db.createTestUser();
+ * const coach = await test.db.createTestCoach();
+ * ```
+ *
+ * @example Legacy approach (creates mock objects, still supported)
+ * ```typescript
+ * import { userFactory, coachFactory } from '@test-utils/factories';
+ *
+ * const user = userFactory.create();
+ * const coach = coachFactory.create();
+ * ```
+ *
+ * @example Convenience scenarios
+ * ```typescript
+ * import { createTestScenario, createBookingScenario } from '@test-utils/factories';
+ *
+ * // Create related test data
+ * const scenario = createTestScenario();
+ * // Returns: { user, coach, bookingType, timeSlot, session }
+ *
+ * // Create booking scenario with discount
+ * const bookingScenario = createBookingScenario({ withDiscount: true });
+ * ```
+ *
+ * @module factories
  */
 
 import { MockDiscount } from '../mocks';
