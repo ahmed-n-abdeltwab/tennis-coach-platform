@@ -4,6 +4,7 @@
     "outDir": "../../dist/out-tsc/apps/api-test",
     "types": ["jest", "node"],
     "noEmit": true,
+    "isolatedModules": true,
 
     // Relax some strict checks for tests
     "strictPropertyInitialization": false,

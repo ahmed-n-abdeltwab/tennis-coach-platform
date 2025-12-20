@@ -148,6 +148,13 @@ playwright-report/
 test-results.xml
 junit.xml
 
+# Compiled test files (except reporters - needed for CI)
+apps/api/test/utils/**/*.js
+!apps/api/test/utils/jest-custom-reporter.js
+!apps/api/test/utils/test-reporter.js
+!apps/api/test/utils/build-reporter.js
+!apps/api/test/utils/**/*.spec.js
+
 # E2E test artifacts
 /tests/e2e/screenshots/
 /tests/e2e/videos/
