@@ -236,6 +236,17 @@ jobs:
           npm_package_version: 1.0.0
           LOG_LEVEL: error
 
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/apps/api/${{ matrix.test-type }}/lcov.info
+          flags: ${{ matrix.test-type }}
+          name: ${{ matrix.test-type }}-coverage
+          fail_ci_if_error: false
+          verbose: true
+
       - name: Upload test reports
         uses: actions/upload-artifact@v6
         if: always()

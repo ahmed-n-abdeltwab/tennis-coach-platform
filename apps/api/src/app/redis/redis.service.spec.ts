@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import { Test, TestingModule } from '@nestjs/testing';
+import { createServiceTest } from '@test-utils';
 
 import { RedisService } from './redis.service';
 
@@ -8,7 +8,7 @@ describe('RedisService', () => {
 
   const mockConfigService = {
     get: jest.fn((key: string) => {
-      const config: Record<string, any> = {
+      const config: Record<string, string | number | undefined> = {
         'redis.host': 'localhost',
         'redis.port': 6379,
         'redis.password': undefined,
@@ -19,28 +19,31 @@ describe('RedisService', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        {
-          provide: RedisService,
-          useValue: {
-            set: jest.fn(),
-            get: jest.fn(),
-            invalidate: jest.fn(),
-            ping: jest.fn(),
-          },
-        },
-        {
-          provide: ConfigService,
-          useValue: mockConfigService,
-        },
-      ],
-    }).compile();
+    const mockRedisService = {
+      set: jest.fn(),
+      get: jest.fn(),
+      invalidate: jest.fn(),
+      ping: jest.fn(),
+    };
 
-    service = module.get<RedisService>(RedisService);
+    const result = await createServiceTest({
+      serviceClass: RedisService,
+      mocks: [
+        { provide: RedisService, useValue: mockRedisService },
+        { provide: ConfigService, useValue: mockConfigService },
+      ],
+    });
+
+    service = result.service;
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('constructor', () => {
+    it('should be defined', () => {
+      expect(service).toBeDefined();
+    });
   });
 });
