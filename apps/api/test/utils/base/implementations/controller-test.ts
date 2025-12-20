@@ -1,11 +1,41 @@
 /**
  * Controller Test Implementation
  * Clean composition of mixins for controller testing
- * Replaces the monolithic BaseControllerTest
+ * Follows the pattern from tasks.md for consistent, simple testing
+ *
+ * @example Simple approach (recommended for new tests):
+ * ```typescript
+ * describe('SessionsController', () => {
+ *   let controller: SessionsController;
+ *   let service: jest.Mocked<SessionsService>;
+ *
+ *   beforeEach(async () => {
+ *     const mockService = {
+ *       create: jest.fn(),
+ *       findByUser: jest.fn(),
+ *       findOne: jest.fn(),
+ *       update: jest.fn(),
+ *       cancel: jest.fn(),
+ *     };
+ *
+ *     const module = await Test.createTestingModule({
+ *       controllers: [SessionsController],
+ *       providers: [{ provide: SessionsService, useValue: mockService }],
+ *     }).compile();
+ *
+ *     controller = module.get<SessionsController>(SessionsController);
+ *     service = module.get(SessionsService);
+ *   });
+ *
+ *   afterEach(() => {
+ *     jest.clearAllMocks();
+ *   });
+ * });
+ * ```
  */
 
 import { Provider, Type } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 
 import type { Endpoints } from '../../types/type-utils';
 import { BaseTest } from '../core/base-test';
@@ -13,6 +43,93 @@ import { AssertionsMixin } from '../mixins/assertions.mixin';
 import { AuthMixin } from '../mixins/auth.mixin';
 import { HttpCapable, HttpMethodsMixin } from '../mixins/http-methods.mixin';
 import { MockMixin } from '../mixins/mock.mixin';
+
+/**
+ * Configuration for the simplified createControllerTest function
+ */
+export interface CreateControllerTestConfig<TController, TService> {
+  /** The controller class to test */
+  controllerClass: Type<TController>;
+  /** The service class */
+  serviceClass: Type<TService>;
+  /** Mock service object with jest.fn() methods */
+  mockService: Partial<Record<keyof TService, jest.Mock>>;
+  /** Additional providers */
+  providers?: Provider[];
+}
+
+/**
+ * Result from createControllerTest function
+ */
+export interface ControllerTestResult<TController, TService> {
+  /** The controller instance being tested */
+  controller: TController;
+  /** The mocked service */
+  service: jest.Mocked<TService>;
+  /** The testing module (for advanced use cases) */
+  module: TestingModule;
+}
+
+/**
+ * Creates a controller test setup following the tasks.md pattern.
+ * This is the recommended approach for new tests.
+ *
+ * @example
+ * ```typescript
+ * describe('SessionsController', () => {
+ *   let controller: SessionsController;
+ *   let service: jest.Mocked<SessionsService>;
+ *
+ *   beforeEach(async () => {
+ *     const mockService = {
+ *       create: jest.fn(),
+ *       findByUser: jest.fn(),
+ *       findOne: jest.fn(),
+ *       update: jest.fn(),
+ *       cancel: jest.fn(),
+ *     };
+ *
+ *     const result = await createControllerTest({
+ *       controllerClass: SessionsController,
+ *       serviceClass: SessionsService,
+ *       mockService,
+ *     });
+ *     controller = result.controller;
+ *     service = result.service;
+ *   });
+ *
+ *   afterEach(() => {
+ *     jest.clearAllMocks();
+ *   });
+ *
+ *   it('should create a session', async () => {
+ *     service.create.mockResolvedValue(expectedSession);
+ *     const result = await controller.create(createDto);
+ *     expect(result).toEqual(expectedSession);
+ *     expect(service.create).toHaveBeenCalledWith(createDto);
+ *   });
+ * });
+ * ```
+ */
+export async function createControllerTest<TController, TService>(
+  config: CreateControllerTestConfig<TController, TService>
+): Promise<ControllerTestResult<TController, TService>> {
+  const module = await Test.createTestingModule({
+    controllers: [config.controllerClass],
+    providers: [
+      {
+        provide: config.serviceClass,
+        useValue: config.mockService,
+      },
+      ...(config.providers ?? []),
+    ],
+  }).compile();
+
+  const controller = module.get<TController>(config.controllerClass);
+  const service = module.get(config.serviceClass) as jest.Mocked<TService>;
+
+  return { controller, service, module };
+}
 
 export interface ControllerTestConfigBase<TController, TModuleName extends string> {
   /** The controller class to test */
@@ -145,9 +262,10 @@ export class ControllerTest<
   }
 
   /**
-   * Cleanup method - closes app and module
+   * Cleanup method - closes app, module, and clears all mocks
    */
   async cleanup(): Promise<void> {
+    jest.clearAllMocks();
     if (this._app) {
       await this._app.close();
     }

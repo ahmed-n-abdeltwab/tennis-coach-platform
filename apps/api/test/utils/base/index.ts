@@ -258,7 +258,7 @@ export type { IntegrationTestConfig } from './implementations/integration-test';
  *
  * Use this for testing controller logic in isolation with mocked dependencies.
  *
- * @example
+ * @example Using ControllerTest class (with HTTP testing)
  * ```typescript
  * const test = new ControllerTest({
  *   controllerClass: BookingTypesController,
@@ -272,8 +272,34 @@ export type { IntegrationTestConfig } from './implementations/integration-test';
  * test.assert.assertArrayResponse(result);
  * await test.cleanup();
  * ```
+ *
+ * @example Using createControllerTest function (recommended for simple tests)
+ * ```typescript
+ * let controller: SessionsController;
+ * let service: jest.Mocked<SessionsService>;
+ *
+ * beforeEach(async () => {
+ *   const mockService = {
+ *     create: jest.fn(),
+ *     findByUser: jest.fn(),
+ *     findOne: jest.fn(),
+ *   };
+ *
+ *   const result = await createControllerTest({
+ *     controllerClass: SessionsController,
+ *     serviceClass: SessionsService,
+ *     mockService,
+ *   });
+ *   controller = result.controller;
+ *   service = result.service;
+ * });
+ *
+ * afterEach(() => {
+ *   jest.clearAllMocks();
+ * });
+ * ```
  */
-export { ControllerTest } from './implementations/controller-test';
+export { ControllerTest, createControllerTest } from './implementations/controller-test';
 
 /**
  * Configuration for ControllerTest
@@ -282,7 +308,11 @@ export { ControllerTest } from './implementations/controller-test';
  * @property providers - Providers (typically mocked services)
  * @property moduleName - Optional module name for type-safe routing
  */
-export type { ControllerTestConfig } from './implementations/controller-test';
+export type {
+  ControllerTestConfig,
+  ControllerTestResult,
+  CreateControllerTestConfig,
+} from './implementations/controller-test';
 
 /**
  * Service Test
@@ -292,7 +322,7 @@ export type { ControllerTestConfig } from './implementations/controller-test';
  *
  * Use this for testing service logic in isolation with mocked database access.
  *
- * @example
+ * @example Using ServiceTest class (legacy approach)
  * ```typescript
  * const test = new ServiceTest({
  *   serviceClass: BookingTypesService,
@@ -305,8 +335,29 @@ export type { ControllerTestConfig } from './implementations/controller-test';
  * test.assert.assertArrayResponse(result);
  * await test.cleanup();
  * ```
+ *
+ * @example Using createServiceTest function (recommended)
+ * ```typescript
+ * let service: SessionsService;
+ * let prisma: jest.Mocked<PrismaService>;
+ *
+ * beforeEach(async () => {
+ *   const result = await createServiceTest({
+ *     serviceClass: SessionsService,
+ *     mockPrisma: {
+ *       session: { create: jest.fn(), findMany: jest.fn() },
+ *     },
+ *   });
+ *   service = result.service;
+ *   prisma = result.prisma;
+ * });
+ *
+ * afterEach(() => {
+ *   jest.clearAllMocks();
+ * });
+ * ```
  */
-export { ServiceTest } from './implementations/service-test';
+export { ServiceTest, createServiceTest } from './implementations/service-test';
 
 /**
  * Configuration for ServiceTest
@@ -314,7 +365,11 @@ export { ServiceTest } from './implementations/service-test';
  * @property serviceClass - Service class to test
  * @property mocks - Mock providers (typically PrismaService)
  */
-export type { ServiceTestConfig } from './implementations/service-test';
+export type {
+  CreateServiceTestConfig,
+  ServiceTestConfig,
+  ServiceTestResult,
+} from './implementations/service-test';
 
 /**
  * E2E Test
