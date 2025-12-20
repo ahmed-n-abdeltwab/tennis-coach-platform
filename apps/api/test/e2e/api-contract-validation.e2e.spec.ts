@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { Role } from '@prisma/client';
-import { coachFactory, userFactory } from '@test-utils';
-
-import { AuthTestHelper } from '../utils/auth';
+import { AuthMixin, coachFactory, userFactory } from '@test-utils';
 
 import { ApiContractTester } from './../utils/http/api-contract-tester';
 import { TypeSafeHttpClient } from './../utils/http/type-safe-http-client';
@@ -13,7 +11,7 @@ import { TypeSafeHttpClient } from './../utils/http/type-safe-http-client';
  */
 
 describe('API Contract Validation and Error Handling (E2E)', () => {
-  let authHelper: AuthTestHelper;
+  let authMixin: AuthMixin;
   let httpClient: TypeSafeHttpClient;
   let contractTester: ApiContractTester;
   let userToken: string;
@@ -22,7 +20,7 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
   let testCoach: any;
 
   beforeAll(() => {
-    authHelper = new AuthTestHelper();
+    authMixin = new AuthMixin();
     httpClient = new TypeSafeHttpClient(global.testApp);
     contractTester = new ApiContractTester(global.testApp);
   });

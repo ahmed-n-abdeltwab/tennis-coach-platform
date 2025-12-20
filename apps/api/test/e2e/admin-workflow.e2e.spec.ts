@@ -8,16 +8,16 @@ import { Role } from '@prisma/client';
 
 import {
   ApiContractTester,
+  AuthMixin,
   bookingTypeFactory,
   coachFactory,
   sessionFactory,
   TypeSafeHttpClient,
   userFactory,
 } from '../utils';
-import { AuthTestHelper } from '../utils/auth';
 
 describe('Admin Workflow (E2E)', () => {
-  let authHelper: AuthTestHelper;
+  let authMixin: AuthMixin;
   let httpHelper: TypeSafeHttpClient;
   let contractHelper: ApiContractTester;
   let adminToken: string;
@@ -28,7 +28,7 @@ describe('Admin Workflow (E2E)', () => {
   let testUser: any;
 
   beforeAll(() => {
-    authHelper = new AuthTestHelper();
+    authMixin = new AuthMixin();
     httpHelper = new TypeSafeHttpClient(global.testApp);
     contractHelper = new ApiContractTester(global.testApp);
   });

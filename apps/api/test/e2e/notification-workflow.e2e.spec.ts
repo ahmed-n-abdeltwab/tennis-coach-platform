@@ -4,13 +4,17 @@
  */
 
 import { Role } from '@prisma/client';
-import { ApiContractTester, coachFactory, TypeSafeHttpClient, userFactory } from '@test-utils';
-
-import { AuthTestHelper } from '../utils/auth';
+import {
+  ApiContractTester,
+  AuthMixin,
+  coachFactory,
+  TypeSafeHttpClient,
+  userFactory,
+} from '@test-utils';
 
 describe('Notification Workflow (E2E)', () => {
   let httpHelper: TypeSafeHttpClient;
-  let _authHelper: AuthTestHelper;
+  let _authMixin: AuthMixin;
   let _contractHelper: ApiContractTester;
   let _userToken: string;
   let _coachToken: string;
@@ -18,7 +22,7 @@ describe('Notification Workflow (E2E)', () => {
   let testCoach: any;
 
   beforeAll(() => {
-    _authHelper = new AuthTestHelper();
+    _authMixin = new AuthMixin();
     httpHelper = new TypeSafeHttpClient(global.testApp);
     _contractHelper = new ApiContractTester(global.testApp);
   });

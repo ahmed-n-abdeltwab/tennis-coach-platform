@@ -1,22 +1,23 @@
 /**
  * HTTP Methods Mixin
  * Provides reusable HTTP request methods for integration and controller tests
- * Delegates to TypeSafeHttpClient for core functionality while maintaining backward compatibility
+ * Delegates to TypeSafeHttpClient for core functionality with full type safety
  */
 
 import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
 
-import type { AuthHeaders } from '../../auth/auth-test-helper';
+import type { AuthHeaders } from '../../auth/auth.types';
 import {
   type RequestOptions,
   type RequestType,
+  type TypedResponse,
   TypeSafeHttpClient,
 } from '../../http/type-safe-http-client';
 import {
   type Endpoints,
   type ExtractMethods,
   type ExtractPaths,
+  type ExtractResponseType,
   type PathsForRoute,
   type PathsWithMethod,
 } from '../../types/type-utils';
@@ -34,8 +35,8 @@ export interface HttpCapable {
  * Can be applied to any class that implements HttpCapable
  *
  * This mixin delegates to TypeSafeHttpClient for core HTTP functionality,
- * eliminating code duplication while maintaining backward compatibility.
- * Returns supertest's request.Test for compatibility with existing tests.
+ * providing full type safety and eliminating code duplication.
+ * Returns TypedResponse<T> for type-safe response handling.
  */
 export class HttpMethodsMixin<
   TModuleName extends string = string,
@@ -62,7 +63,7 @@ export class HttpMethodsMixin<
    * Makes a generic HTTP request
    *
    * Delegates to TypeSafeHttpClient for core functionality.
-   * Returns supertest's request.Test for backward compatibility with existing tests.
+   * Returns TypedResponse<T> for type-safe response handling.
    *
    * @template P - The API path (must exist in Endpoints)
    * @template M - The HTTP method (must be supported by the path)
@@ -70,31 +71,15 @@ export class HttpMethodsMixin<
    * @param method - The HTTP method
    * @param payload - Request data (body for POST/PUT/PATCH, params for GET/DELETE)
    * @param options - Additional request options
-   * @returns Supertest request.Test object for chaining assertions
+   * @returns TypedResponse with discriminated union for success/error handling
    */
   async request<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     endpoint: P,
     method: M,
     payload?: RequestType<P, M, E>,
     options?: RequestOptions
-  ): Promise<request.Test> {
-    // Delegate to TypeSafeHttpClient which handles:
-    // - Method validation
-    // - Path building
-    // - Request construction
-    // - Security validation
-    const response = await this.httpClient.request(endpoint, method, payload, options);
-
-    // Transform TypedResponse back to supertest format for backward compatibility
-    // This allows existing tests to continue using .expect() and other supertest methods
-    const mockTest = {
-      status: response.status,
-      body: response.body,
-      headers: response.headers,
-      ok: response.ok,
-    } as unknown as request.Test;
-
-    return mockTest;
+  ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
+    return this.httpClient.request(endpoint, method, payload, options);
   }
 
   // ============================================================================
@@ -105,7 +90,7 @@ export class HttpMethodsMixin<
     endpoint: P,
     payload?: RequestType<P, 'GET', E>,
     options?: RequestOptions
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
     return this.request(endpoint, 'GET', payload, options);
   }
 
@@ -113,7 +98,7 @@ export class HttpMethodsMixin<
     endpoint: P,
     payload?: RequestType<P, 'POST', E>,
     options?: RequestOptions
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
     return this.request(endpoint, 'POST', payload, options);
   }
 
@@ -121,7 +106,7 @@ export class HttpMethodsMixin<
     endpoint: P,
     payload?: RequestType<P, 'PUT', E>,
     options?: RequestOptions
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
     return this.request(endpoint, 'PUT', payload, options);
   }
 
@@ -129,7 +114,7 @@ export class HttpMethodsMixin<
     endpoint: P,
     payload?: RequestType<P, 'PATCH', E>,
     options?: RequestOptions
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
     return this.request(endpoint, 'PATCH', payload, options);
   }
 
@@ -137,7 +122,7 @@ export class HttpMethodsMixin<
     endpoint: P,
     payload?: RequestType<P, 'DELETE', E>,
     options?: RequestOptions
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
     return this.request(endpoint, 'DELETE', payload, options);
   }
 
@@ -159,7 +144,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, M, E>,
     options?: RequestOptions
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
     const authHeaders = await this.host.createAuthHeaders(token);
     return this.request(endpoint, method, payload, {
       ...options,
@@ -172,7 +157,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, 'GET', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
     return this.authenticatedRequest(endpoint, 'GET', token, payload, options);
   }
 
@@ -181,7 +166,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, 'POST', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
     return this.authenticatedRequest(endpoint, 'POST', token, payload, options);
   }
 
@@ -190,7 +175,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, 'PUT', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
     return this.authenticatedRequest(endpoint, 'PUT', token, payload, options);
   }
 
@@ -199,7 +184,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, 'PATCH', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
     return this.authenticatedRequest(endpoint, 'PATCH', token, payload, options);
   }
 
@@ -208,7 +193,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, 'DELETE', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
     return this.authenticatedRequest(endpoint, 'DELETE', token, payload, options);
   }
 
@@ -220,7 +205,7 @@ export class HttpMethodsMixin<
     endpoint: P,
     payload?: RequestType<P, 'GET', E>,
     options?: RequestOptions
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
     return this.request(endpoint, 'GET', payload, options);
   }
 
@@ -228,7 +213,7 @@ export class HttpMethodsMixin<
     endpoint: P,
     payload?: RequestType<P, 'POST', E>,
     options?: RequestOptions
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
     return this.request(endpoint, 'POST', payload, options);
   }
 
@@ -236,7 +221,7 @@ export class HttpMethodsMixin<
     endpoint: P,
     payload?: RequestType<P, 'PUT', E>,
     options?: RequestOptions
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
     return this.request(endpoint, 'PUT', payload, options);
   }
 
@@ -244,7 +229,7 @@ export class HttpMethodsMixin<
     endpoint: P,
     payload?: RequestType<P, 'PATCH', E>,
     options?: RequestOptions
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
     return this.request(endpoint, 'PATCH', payload, options);
   }
 
@@ -252,7 +237,7 @@ export class HttpMethodsMixin<
     endpoint: P,
     payload?: RequestType<P, 'DELETE', E>,
     options?: RequestOptions
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
     return this.request(endpoint, 'DELETE', payload, options);
   }
 
@@ -261,7 +246,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, 'GET', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
     return this.authenticatedRequest(endpoint, 'GET', token, payload, options);
   }
 
@@ -270,7 +255,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, 'POST', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
     return this.authenticatedRequest(endpoint, 'POST', token, payload, options);
   }
 
@@ -279,7 +264,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, 'PUT', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
     return this.authenticatedRequest(endpoint, 'PUT', token, payload, options);
   }
 
@@ -288,7 +273,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, 'PATCH', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
     return this.authenticatedRequest(endpoint, 'PATCH', token, payload, options);
   }
 
@@ -297,7 +282,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, 'DELETE', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<request.Test> {
+  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
     return this.authenticatedRequest(endpoint, 'DELETE', token, payload, options);
   }
 }

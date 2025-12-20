@@ -208,9 +208,9 @@ export { MockMixin } from './mixins/mock.mixin';
  * Authentication headers type
  *
  * Used for adding authentication to HTTP requests.
- * Re-exported from auth utilities for backward compatibility.
+ * Re-exported from auth utilities for convenience.
  */
-export type { AuthHeaders } from '../auth/auth-test-helper';
+export type { AuthHeaders } from '../auth/auth.types';
 
 // ============================================================================
 // Test Implementations

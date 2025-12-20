@@ -5,14 +5,13 @@
  */
 
 import { Role } from '@prisma/client';
-import { ApiContractTester, TypeSafeHttpClient, userFactory } from '@test-utils';
+import { ApiContractTester, AuthMixin, TypeSafeHttpClient, userFactory } from '@test-utils';
 
 import { E2ETest } from '../utils';
-import { AuthTestHelper } from '../utils/auth';
 
 describe('User Registration and Authentication Flow (E2E)', () => {
   let test: E2ETest;
-  let authHelper: AuthTestHelper;
+  let authMixin: AuthMixin;
   let contractHelper: ApiContractTester;
   let httpClient: TypeSafeHttpClient;
 
@@ -20,7 +19,7 @@ describe('User Registration and Authentication Flow (E2E)', () => {
     test = new E2ETest();
     await test.setup();
 
-    authHelper = new AuthTestHelper();
+    authMixin = new AuthMixin();
     contractHelper = new ApiContractTester(test.application);
     httpClient = new TypeSafeHttpClient(test.application);
   });
