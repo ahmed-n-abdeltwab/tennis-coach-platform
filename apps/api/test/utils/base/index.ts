@@ -406,3 +406,59 @@ export { E2ETest } from './implementations/e2e-test';
  * @property timeout - Optional timeout for setup/cleanup operations
  */
 export type { E2ETestConfig } from './implementations/e2e-test';
+
+/**
+ * Gateway Test
+ *
+ * WebSocket gateway testing with mocked services.
+ * Provides access to the gateway instance, mock socket clients, and assertions.
+ *
+ * Use this for testing WebSocket gateway logic in isolation with mocked dependencies.
+ *
+ * @example Using createGatewayTest function (recommended)
+ * ```typescript
+ * let gateway: MessagesGateway;
+ * let service: jest.Mocked<MessagesService>;
+ * let mockSocket: MockSocketClient;
+ * let mockServer: jest.Mocked<Server>;
+ *
+ * beforeEach(async () => {
+ *   const result = await createGatewayTest({
+ *     gatewayClass: MessagesGateway,
+ *     serviceClass: MessagesService,
+ *     mockService: {
+ *       create: jest.fn(),
+ *       findAll: jest.fn(),
+ *     },
+ *   });
+ *   gateway = result.gateway;
+ *   service = result.service;
+ *   mockSocket = result.mockSocket;
+ *   mockServer = result.mockServer;
+ * });
+ *
+ * afterEach(() => {
+ *   jest.clearAllMocks();
+ * });
+ * ```
+ */
+export {
+  GatewayTest,
+  createGatewayTest,
+  createMockServer,
+  createMockSocket,
+} from './implementations/gateway-test';
+
+/**
+ * Configuration for GatewayTest
+ *
+ * @property gatewayClass - Gateway class to test
+ * @property serviceClass - Service class for accessing mocked service
+ * @property mockService - Mock service object with jest.fn() methods
+ */
+export type {
+  CreateGatewayTestConfig,
+  GatewayTestConfig,
+  GatewayTestResult,
+  MockSocketClient,
+} from './implementations/gateway-test';
