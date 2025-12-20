@@ -474,7 +474,7 @@ jobs:
               echo "| ✅ Passed | $TOTAL_PASSED |"
               echo "| ❌ Failed | $TOTAL_FAILED |"
               echo "| ⏭️ Skipped | $TOTAL_SKIPPED |"
-              echo "| **Pass Rate** | ${PASS_RATE}% |"
+              echo "| **Pass Rate** | ${PASS_RATE} |"
               echo ""
 
               for test_type in unit integration e2e; do
