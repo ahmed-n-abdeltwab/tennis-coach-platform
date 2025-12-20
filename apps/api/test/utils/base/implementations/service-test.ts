@@ -1,11 +1,34 @@
 /**
  * Service Test Implementation
  * Clean composition of mixins for service testing
- * Replaces the monolithic BaseServiceTest
+ * Follows the pattern from tasks.md for consistent, simple testing
+ *
+ * @example
+ * ```typescript
+ * describe('SessionsService', () => {
+ *   let service: SessionsService;
+ *   let prisma: jest.Mocked<PrismaService>;
+ *
+ *   beforeEach(async () => {
+ *     const { service: svc, prisma: p } = await createServiceTest({
+ *       serviceClass: SessionsService,
+ *       mockPrisma: {
+ *         session: { create: jest.fn(), findMany: jest.fn() },
+ *       },
+ *     });
+ *     service = svc;
+ *     prisma = p;
+ *   });
+ *
+ *   afterEach(() => {
+ *     jest.clearAllMocks();
+ *   });
+ * });
+ * ```
  */
 
 import { Provider, Type } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from '../../../../src/app/prisma/prisma.service';
 import { BaseTest } from '../core/base-test';
@@ -33,8 +56,108 @@ export interface ServiceTestConfig<TService> {
 }
 
 /**
- * Service Test Class
- * Provides service testing capabilities through composition
+ * Configuration for the simplified createServiceTest function
+ */
+export interface CreateServiceTestConfig<TService> {
+  /** The service class to test */
+  serviceClass: Type<TService>;
+  /** Custom mock for PrismaService - only include the models/methods you need */
+  mockPrisma?: Partial<Record<string, Record<string, jest.Mock>>>;
+  /** Additional mock providers for other dependencies */
+  mocks?: Provider[];
+  /** Additional providers */
+  providers?: Provider[];
+}
+
+/**
+ * Result from createServiceTest function
+ */
+export interface ServiceTestResult<TService> {
+  /** The service instance being tested */
+  service: TService;
+  /** The mocked PrismaService */
+  prisma: jest.Mocked<PrismaService>;
+  /** The testing module (for advanced use cases) */
+  module: TestingModule;
+}
+
+/**
+ * Creates a service test setup following the tasks.md pattern.
+ * This is the recommended approach for new tests.
+ *
+ * @example
+ * ```typescript
+ * describe('SessionsService', () => {
+ *   let service: SessionsService;
+ *   let prisma: jest.Mocked<PrismaService>;
+ *
+ *   beforeEach(async () => {
+ *     const result = await createServiceTest({
+ *       serviceClass: SessionsService,
+ *       mockPrisma: {
+ *         session: {
+ *           create: jest.fn(),
+ *           findMany: jest.fn(),
+ *           findUnique: jest.fn(),
+ *           update: jest.fn(),
+ *           delete: jest.fn(),
+ *         },
+ *         bookingType: {
+ *           findUnique: jest.fn(),
+ *         },
+ *       },
+ *     });
+ *     service = result.service;
+ *     prisma = result.prisma;
+ *   });
+ *
+ *   afterEach(() => {
+ *     jest.clearAllMocks();
+ *   });
+ *
+ *   it('should create a session', async () => {
+ *     prisma.session.create.mockResolvedValue(mockSession);
+ *     const result = await service.create(createDto);
+ *     expect(result).toEqual(mockSession);
+ *     expect(prisma.session.create).toHaveBeenCalledWith({ data: expect.any(Object) });
+ *   });
+ * });
+ * ```
+ */
+export async function createServiceTest<TService>(
+  config: CreateServiceTestConfig<TService>
+): Promise<ServiceTestResult<TService>> {
+  const mockPrisma = {
+    $connect: jest.fn(),
+    $disconnect: jest.fn(),
+    $transaction: jest.fn(),
+    $executeRaw: jest.fn(),
+    $queryRaw: jest.fn(),
+    ...config.mockPrisma,
+  };
+
+  const module = await Test.createTestingModule({
+    providers: [
+      config.serviceClass,
+      {
+        provide: PrismaService,
+        useValue: mockPrisma,
+      },
+      ...(config.mocks ?? []),
+      ...(config.providers ?? []),
+    ],
+  }).compile();
+
+  const service = module.get<TService>(config.serviceClass);
+  const prisma = module.get(PrismaService) as jest.Mocked<PrismaService>;
+
+  return { service, prisma, module };
+}
+
+/**
+ * Service Test Class (Legacy)
+ * Provides service testing capabilities through composition.
+ * For new tests, consider using createServiceTest() function instead.
  */
 export class ServiceTest<TService, TRepository = PrismaService> extends BaseTest {
   private config: ServiceTestConfig<TService>;
@@ -87,14 +210,12 @@ export class ServiceTest<TService, TRepository = PrismaService> extends BaseTest
    * Setup method - creates testing module and initializes service
    */
   async setup(): Promise<void> {
-    const providers = [
-      this.config.serviceClass,
-      ...(this.config.providers ?? []),
-      ...(this.config.mocks ?? []),
-    ];
-
     this._module = await Test.createTestingModule({
-      providers,
+      providers: [
+        this.config.serviceClass,
+        ...(this.config.providers ?? []),
+        ...(this.config.mocks ?? []),
+      ],
     }).compile();
 
     this._service = this._module.get<TService>(this.config.serviceClass);
@@ -109,9 +230,10 @@ export class ServiceTest<TService, TRepository = PrismaService> extends BaseTest
   }
 
   /**
-   * Cleanup method - closes module
+   * Cleanup method - closes module and clears all mocks
    */
   async cleanup(): Promise<void> {
+    jest.clearAllMocks();
     if (this._module) {
       await this._module.close();
     }

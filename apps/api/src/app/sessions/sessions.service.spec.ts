@@ -97,11 +97,16 @@ describe('SessionsService', () => {
 
       const result = await test.service.findByUser(userId, Role.USER);
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]).toMatchObject({
         id: 'session-1',
         userId,
         status: 'scheduled',
+      });
+      expect(result.meta).toMatchObject({
+        page: 1,
+        total: 1,
+        totalPages: 1,
       });
       expect(test.prisma.session.findMany).toHaveBeenCalledWith({
         where: {
@@ -160,7 +165,7 @@ describe('SessionsService', () => {
 
       const result = await test.service.findByUser(coachId, Role.COACH);
 
-      expect(result).toHaveLength(1);
+      expect(result.data).toHaveLength(1);
       expect(test.prisma.session.findMany).toHaveBeenCalledWith({
         where: {
           coachId,

@@ -1,4 +1,4 @@
-import { CurrentUser, JwtPayload } from '@common';
+import { CurrentUser, JwtPayload, PaginatedResponseDto } from '@common';
 import { Body, Controller, Get, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
@@ -23,7 +23,7 @@ export class SessionsController {
   async findByUser(
     @Query() query: GetSessionsQuery,
     @CurrentUser() user: JwtPayload
-  ): Promise<SessionResponseDto[]> {
+  ): Promise<PaginatedResponseDto<SessionResponseDto>> {
     return this.sessionsService.findByUser(user.sub, user.role, query);
   }
 

@@ -1,3 +1,4 @@
+import { PaginatedResponseDto } from '@common';
 import {
   BadRequestException,
   ForbiddenException,
@@ -123,7 +124,7 @@ export class SessionsService {
     userId: string,
     role: Role,
     query?: GetSessionsQuery
-  ): Promise<SessionResponseDto[]> {
+  ): Promise<PaginatedResponseDto<SessionResponseDto>> {
     let status, startDate, endDate;
     if (query) {
       status = query.status;
@@ -165,7 +166,19 @@ export class SessionsService {
       orderBy: { dateTime: 'desc' },
     });
 
-    return sessions.map(session => this.toResponseDto(session));
+    const data = sessions.map(session => this.toResponseDto(session));
+
+    return {
+      data,
+      meta: {
+        page: 1,
+        limit: data.length,
+        total: data.length,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      },
+    };
   }
 
   async findUnique(id: string) {
@@ -277,7 +290,7 @@ export class SessionsService {
         coachId: bookingType.coachId,
         bookingTypeId,
         timeSlotId,
-        discountId: discount?.code,
+        discountId: discount?.id,
         dateTime: timeSlot.dateTime,
         durationMin: timeSlot.durationMin,
         price,
