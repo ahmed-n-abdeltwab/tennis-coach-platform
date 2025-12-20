@@ -61,7 +61,6 @@ class TestReporter {
     console.log(`📊 HTML report generated: ${filepath}`);
   }
   createHtmlReport(reportData) {
-    var _a, _b, _c, _d, _e;
     const summary = reportData.summary;
     const statusColor = summary.success ? '#28a745' : '#dc3545';
     const statusIcon = summary.success ? '✅' : '❌';
@@ -99,23 +98,23 @@ class TestReporter {
         <div class="content">
             <div class="summary">
                 <div class="metric">
-                    <div class="metric-value">${(_a = summary.total) !== null && _a !== void 0 ? _a : 0}</div>
+                    <div class="metric-value">${summary.total ?? 0}</div>
                     <div class="metric-label">Total Tests</div>
                 </div>
                 <div class="metric">
-                    <div class="metric-value" style="color: #28a745">${(_b = summary.passed) !== null && _b !== void 0 ? _b : 0}</div>
+                    <div class="metric-value" style="color: #28a745">${summary.passed ?? 0}</div>
                     <div class="metric-label">Passed</div>
                 </div>
                 <div class="metric">
-                    <div class="metric-value" style="color: #dc3545">${(_c = summary.failed) !== null && _c !== void 0 ? _c : 0}</div>
+                    <div class="metric-value" style="color: #dc3545">${summary.failed ?? 0}</div>
                     <div class="metric-label">Failed</div>
                 </div>
                 <div class="metric">
-                    <div class="metric-value" style="color: #ffc107">${(_d = summary.pending) !== null && _d !== void 0 ? _d : 0}</div>
+                    <div class="metric-value" style="color: #ffc107">${summary.pending ?? 0}</div>
                     <div class="metric-label">Pending</div>
                 </div>
                 <div class="metric">
-                    <div class="metric-value">${(((_e = summary.duration) !== null && _e !== void 0 ? _e : 0) / 1000).toFixed(2)}s</div>
+                    <div class="metric-value">${((summary.duration ?? 0) / 1000).toFixed(2)}s</div>
                     <div class="metric-label">Duration</div>
                 </div>
             </div>
@@ -175,7 +174,7 @@ class TestReporter {
   generateConsoleSummary(reportData) {
     const statusIcon = reportData.summary.success ? '✅' : '❌';
     const duration = (reportData.summary.duration / 1000).toFixed(2);
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${'='.repeat(60)}`);
     console.log(`${statusIcon} TEST SUMMARY - ${reportData.testType.toUpperCase()}`);
     console.log('='.repeat(60));
     console.log(`📊 Total Tests: ${reportData.summary.total}`);
@@ -191,7 +190,7 @@ class TestReporter {
       console.log(`Statements: ${reportData.coverage.statements.pct.toFixed(1)}%`);
       console.log(`Branches: ${reportData.coverage.branches.pct.toFixed(1)}%`);
     }
-    console.log('='.repeat(60) + '\n');
+    console.log(`${'='.repeat(60)}\n`);
   }
   extractCoverageData(coverageMap) {
     if (!coverageMap) return null;
@@ -291,11 +290,11 @@ class TestReporter {
     // In a real implementation, you would use axios or fetch to send this
     console.log('📱 Slack notification payload:', JSON.stringify(payload, null, 2));
   }
-  sendEmailNotification(reportData) {
+  sendEmailNotification(_reportData) {
     // Email notification implementation would go here
     console.log('📧 Email notification would be sent with test results');
   }
-  sendWebhookNotification(reportData) {
+  sendWebhookNotification(_reportData) {
     const webhookUrl = process.env.TEST_WEBHOOK_URL;
     if (!webhookUrl) return;
     // Webhook notification implementation would go here

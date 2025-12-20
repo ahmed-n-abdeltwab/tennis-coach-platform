@@ -10,7 +10,7 @@ import { Role } from '@prisma/client';
 import { parseJwtTime } from '@utils';
 
 import { JwtPayload } from '../../../../src/common';
-import type { AuthHeaders } from '../../auth/auth-test-helper';
+import type { AuthHeaders } from '../../auth/auth.types';
 import { DEFAULT_TEST_USER, HTTP_CONSTANTS, JWT_CONSTANTS } from '../../constants/test-constants';
 
 /**

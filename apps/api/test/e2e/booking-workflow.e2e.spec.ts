@@ -5,6 +5,7 @@
  */
 
 import {
+  AuthMixin,
   bookingTypeFactory,
   coachFactory,
   createBookingScenario,
@@ -13,12 +14,10 @@ import {
   userFactory,
 } from '@test-utils';
 
-import { AuthTestHelper } from '../utils/auth';
-
 import { ApiContractTester } from './../utils/http/api-contract-tester';
 
 describe('Booking Workflow (E2E)', () => {
-  let authHelper: AuthTestHelper;
+  let authMixin: AuthMixin;
   let httpHelper: TypeSafeHttpClient;
   let contractHelper: ApiContractTester;
   let userToken: string;
@@ -27,7 +26,7 @@ describe('Booking Workflow (E2E)', () => {
   let testCoach: any;
 
   beforeAll(() => {
-    authHelper = new AuthTestHelper();
+    authMixin = new AuthMixin();
     httpHelper = new TypeSafeHttpClient(global.testApp);
     contractHelper = new ApiContractTester(global.testApp);
   });

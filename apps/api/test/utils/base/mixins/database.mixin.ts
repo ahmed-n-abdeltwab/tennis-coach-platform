@@ -25,9 +25,10 @@ import {
   DEFAULT_TEST_SESSION,
   DEFAULT_TEST_TIME_SLOT,
   DEFAULT_TEST_USER,
+  SEED_DATA_CONSTANTS,
 } from '../../constants/test-constants';
 import { batchCleanupManager } from '../../database/batch-cleanup-manager';
-import { seedTestDatabase } from '../../database/database-helpers';
+import { createDatabaseError } from '../../errors/test-infrastructure-errors';
 import {
   generateUniqueEmail,
   getFutureDate,
@@ -75,8 +76,93 @@ export class DatabaseMixin {
     testDataCache.clear();
   }
 
+  /**
+   * Seeds the database with basic test data
+   *
+   * Creates a minimal set of test data including users, coaches, and booking types.
+   */
   async seedTestData(): Promise<void> {
-    this.testData = await seedTestDatabase(this.host.database);
+    try {
+      // Create test users using seed data constants
+      const users = await Promise.all(
+        SEED_DATA_CONSTANTS.DEFAULT_USERS.map(userData =>
+          this.host.database.account.create({
+            data: {
+              ...userData,
+              role: Role.USER,
+            },
+          })
+        )
+      );
+
+      // Create test coaches using seed data constants
+      const coaches = await Promise.all(
+        SEED_DATA_CONSTANTS.DEFAULT_COACHES.map(coachData =>
+          this.host.database.account.create({
+            data: {
+              ...coachData,
+              role: Role.COACH,
+            },
+          })
+        )
+      );
+
+      // Ensure at least one coach exists before creating booking types
+      if (coaches.length === 0) {
+        throw createDatabaseError(
+          'seed test database',
+          'No coaches were created. Cannot create booking types without a coach.',
+          {
+            operation: 'seedTestDatabase',
+            coachesCount: coaches.length,
+          }
+        );
+      }
+
+      // Extract the first coach for booking types
+      const firstCoach = coaches[0];
+
+      // Verify the coach exists in the database before creating booking types
+      const verifyCoach = await this.host.database.account.findUnique({
+        where: { id: firstCoach.id },
+      });
+
+      if (!verifyCoach) {
+        throw createDatabaseError(
+          'seed test database',
+          `Coach with id ${firstCoach.id} was not found in database after creation`,
+          {
+            operation: 'seedTestDatabase',
+            coachId: firstCoach.id,
+          }
+        );
+      }
+
+      // Create test booking types using seed data constants sequentially to avoid race conditions
+      const bookingTypes: BookingType[] = [];
+      for (const bookingTypeData of SEED_DATA_CONSTANTS.DEFAULT_BOOKING_TYPES) {
+        const bookingType = await this.host.database.bookingType.create({
+          data: {
+            ...bookingTypeData,
+            coachId: firstCoach.id,
+            isActive: true,
+          },
+        });
+        bookingTypes.push(bookingType);
+      }
+
+      this.testData = { users, coaches, bookingTypes };
+    } catch (error) {
+      throw createDatabaseError(
+        'seed test database',
+        error instanceof Error ? error.message : String(error),
+        {
+          operation: 'seedTestDatabase',
+          errorType: error instanceof Error ? error.constructor.name : typeof error,
+        },
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   // ============================================================================

@@ -14,7 +14,6 @@ const config: Config = {
       'ts-jest',
       {
         tsconfig: '<rootDir>/tsconfig.spec.json',
-        isolatedModules: true,
       },
     ],
   },
@@ -91,7 +90,11 @@ const config: Config = {
   globalTeardown: '<rootDir>/test/setup/global.teardown.ts',
 
   // Custom reporters
-  reporters: ['default', ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }]],
+  reporters: [
+    'default',
+    // Custom reporter temporarily disabled - see test/REPORTER_SETUP.md
+    // ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }],
+  ],
 };
 
 export default config;

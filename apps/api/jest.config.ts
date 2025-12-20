@@ -13,7 +13,6 @@ const config: Config = {
       'ts-jest',
       {
         tsconfig: '<rootDir>/tsconfig.spec.json',
-        isolatedModules: true,
       },
     ],
   },
@@ -83,7 +82,8 @@ const config: Config = {
         usePathForSuiteName: true,
       },
     ],
-    ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }],
+    // Custom reporter temporarily disabled - see test/REPORTER_SETUP.md
+    // ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }],
   ],
 };
 

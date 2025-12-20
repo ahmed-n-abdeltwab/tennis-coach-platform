@@ -158,8 +158,6 @@ describe('Booking System Integration', () => {
         expect(createSessionResponse.body.coachId).toBe(testCoach.id);
       }
     });
-
-    it.todo('should handle booking with discount code');
   });
 
   describe('Session Management Workflow', () => {
@@ -382,17 +380,8 @@ describe('Booking System Integration', () => {
     });
   });
 
-  describe('Time Slot Management Workflow', () => {
-    it.todo('should allow coach to manage their time slots');
-
-    it.todo('should filter available time slots by coach');
-
-    it.todo('should filter time slots by date range');
-  });
-
-  describe('Booking Type Management Workflow', () => {
-    it.todo('should allow coach to manage their booking types');
-  });
+  // TODO: Add Time Slot Management Workflow tests
+  // TODO: Add Booking Type Management Workflow tests
 
   describe('Error Handling and Edge Cases', () => {
     it('should handle booking unavailable time slot', async () => {
@@ -449,10 +438,8 @@ describe('Booking System Integration', () => {
       }
     });
 
-    it.todo('should handle booking inactive booking type');
-
-    it.todo('should handle invalid discount code');
-
-    it.todo('should prevent cancelling past sessions');
+    // TODO: Add tests for booking inactive booking type
+    // TODO: Add tests for invalid discount code
+    // TODO: Add tests for preventing cancellation of past sessions
   });
 });

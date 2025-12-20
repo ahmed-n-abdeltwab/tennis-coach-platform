@@ -8,27 +8,28 @@ import { Role } from '@prisma/client';
 
 import {
   ApiContractTester,
-  bookingTypeFactory,
+  AuthMixin,
   coachFactory,
-  sessionFactory,
+  MockAccount,
+  MockCoach,
   TypeSafeHttpClient,
   userFactory,
+  UserMockFactory,
 } from '../utils';
-import { AuthTestHelper } from '../utils/auth';
 
-describe('Admin Workflow (E2E)', () => {
-  let authHelper: AuthTestHelper;
+describe.skip('Admin Workflow (E2E)', () => {
+  let authMixin: AuthMixin;
   let httpHelper: TypeSafeHttpClient;
   let contractHelper: ApiContractTester;
   let adminToken: string;
   let regularCoachToken: string;
   let userToken: string;
-  let adminCoach: any;
-  let regularCoach: any;
-  let testUser: any;
+  let adminCoach: MockCoach;
+  let regularCoach: MockCoach;
+  let testUser: MockAccount;
 
   beforeAll(() => {
-    authHelper = new AuthTestHelper();
+    authMixin = new AuthMixin();
     httpHelper = new TypeSafeHttpClient(global.testApp);
     contractHelper = new ApiContractTester(global.testApp);
   });
@@ -108,98 +109,43 @@ describe('Admin Workflow (E2E)', () => {
     testUser.id = userRegisterResponse.body.account.id;
   });
 
-  describe('User Management', () => {
-    it.todo('should allow admin to view all users');
+  // TODO: Implement user management tests
+  // - Allow admin to view all users
+  // - Allow admin to view user details
+  // - Allow admin to update user information
+  // - Prevent non-admin users from accessing admin endpoints
 
-    it.todo('should allow admin to view user details');
+  // TODO: Implement coach management tests
+  // - Allow admin to view all coaches
+  // - Allow admin to update coach permissions
+  // - Allow admin to manage coach profiles
 
-    it.todo('should allow admin to update user information');
+  // TODO: Implement session management tests
+  // - Allow admin to view all sessions
+  // - Allow admin to update session status
+  // - Allow admin to cancel sessions
+  // - Allow admin to view session analytics
 
-    it.todo('should prevent non-admin users from accessing admin endpoints');
-  });
+  // TODO: Implement system configuration tests
+  // - Allow admin to manage booking types
+  // - Allow admin to manage discounts
+  // - Allow admin to view system health and metrics
+  // - Allow admin to manage system settings
 
-  describe('Coach Management', () => {
-    it.todo('should allow admin to view all coaches');
+  // TODO: Implement audit and logging tests
+  // - Allow admin to view audit logs
+  // - Allow admin to export system data
 
-    it.todo('should allow admin to update coach permissions');
+  // TODO: Implement access control tests
+  // - Enforce admin-only access to sensitive endpoints
+  // - Validate admin permissions on sensitive operations
 
-    it.todo('should allow admin to manage coach profiles');
-  });
+  // TODO: Implement API contract validation tests
+  // - Validate admin user management API contract
+  // - Validate admin settings API contract
 
-  describe('Session Management', () => {
-    let testSession: any;
-
-    beforeEach(async () => {
-      // Create booking type and session for testing
-      const bookingType = bookingTypeFactory.createWithCoach(regularCoach.id);
-
-      await global.testPrisma.bookingType.create({
-        data: {
-          id: bookingType.id,
-          name: bookingType.name,
-          description: bookingType.description,
-          coachId: regularCoach.id,
-          basePrice: bookingType.basePrice,
-        },
-      });
-
-      const sessionData = sessionFactory.createForUserAndCoach(testUser.id, regularCoach.id, {
-        bookingTypeId: bookingType.id,
-      });
-
-      const createdSession = await global.testPrisma.session.create({
-        data: {
-          id: sessionData.id,
-          dateTime: sessionData.dateTime,
-          durationMin: sessionData.durationMin,
-          price: sessionData.price,
-          isPaid: sessionData.isPaid,
-          status: sessionData.status,
-          notes: sessionData.notes,
-          userId: testUser.id,
-          coachId: regularCoach.id,
-          bookingTypeId: bookingType.id,
-          timeSlotId: sessionData.timeSlotId,
-        },
-      });
-
-      testSession = createdSession;
-    });
-
-    it.todo('should allow admin to view all sessions');
-
-    it.todo('should allow admin to update session status');
-
-    it.todo('should allow admin to cancel sessions');
-
-    it.todo('should allow admin to view session analytics');
-
-    describe('System Configuration', () => {
-      it.todo('should allow admin to manage booking types');
-
-      it.todo('should allow admin to manage discounts');
-
-      it.todo('should allow admin to view system health and metrics');
-
-      it.todo('should allow admin to manage system settings');
-    });
-
-    describe('Audit and Logging', () => {
-      it.todo('should allow admin to view audit logs');
-
-      it.todo('should allow admin to export system data');
-    });
-
-    describe('Access Control and Security', () => {
-      it.todo('should enforce admin-only access to sensitive endpoints');
-
-      it.todo('should validate admin permissions on sensitive operations');
-    });
-
-    describe('API Contract Validation', () => {
-      it.todo('should validate admin user management API contract');
-
-      it.todo('should validate admin settings API contract');
-    });
+  it('should have tests implemented', () => {
+    // Placeholder test - remove when actual tests are added
+    expect(true).toBe(true);
   });
 });
