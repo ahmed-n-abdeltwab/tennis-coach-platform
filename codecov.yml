@@ -1,0 +1,79 @@
+# Codecov Configuration
+# https://docs.codecov.com/docs/codecov-yaml
+
+# Coverage settings
+coverage:
+  precision: 2
+  round: down
+  range: "60...90"
+
+  status:
+    # Overall project coverage
+    project:
+      default:
+        target: 80%
+        threshold: 2%
+        base: auto
+        if_ci_failed: error
+
+    # Per-patch coverage (for PRs)
+    patch:
+      default:
+        target: 80%
+        threshold: 5%
+        base: auto
+        if_ci_failed: error
+
+# Comment settings for PRs
+comment:
+  layout: "headers, components, footer"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+
+# Ignore paths
+ignore:
+  - "**/*.spec.ts"
+  - "**/*.test.ts"
+  - "**/*.e2e-spec.ts"
+  - "**/test/**"
+  - "**/tests/**"
+  - "**/__tests__/**"
+  - "**/__mocks__/**"
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/coverage/**"
+  - "**/*.config.js"
+  - "**/*.config.ts"
+  - "**/migrations/**"
+  - "**/*.d.ts"
+
+# Flags for different test types
+flags:
+  unit:
+    paths:
+      - apps/api/src/
+    carryforward: true
+
+  integration:
+    paths:
+      - apps/api/src/
+    carryforward: true
+
+  e2e:
+    paths:
+      - apps/api/src/
+    carryforward: true
+
+# Component settings (per-app coverage)
+component_management:
+  individual_components:
+    - component_id: api
+      name: API
+      paths:
+        - apps/api/src/**
+
+# GitHub checks
+github_checks:
+  annotations: true
