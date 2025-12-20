@@ -120,7 +120,7 @@ export class DatabaseMixin {
       }
 
       // Extract the first coach for booking types
-      const firstCoach = coaches[0];
+      const firstCoach = coaches[0]!;
 
       // Verify the coach exists in the database before creating booking types
       const verifyCoach = await this.host.database.account.findUnique({
@@ -130,7 +130,7 @@ export class DatabaseMixin {
       if (!verifyCoach) {
         throw createDatabaseError(
           'seed test database',
-          `Coach with id ${firstCoach.id} was not found in database after creation`,
+          `Coach with id ${firstCoach?.id} was not found in database after creation`,
           {
             operation: 'seedTestDatabase',
             coachId: firstCoach.id,
@@ -281,19 +281,20 @@ export class DatabaseMixin {
     }
 
     const sessionData = {
-      coachId,
-      userId,
       notes: DEFAULT_TEST_SESSION.NOTES,
       dateTime: getFutureDate(DEFAULT_TEST_SESSION.FUTURE_OFFSET_HOURS),
       durationMin: DEFAULT_TEST_SESSION.DURATION_MIN,
       status: DEFAULT_TEST_SESSION.STATUS,
       price: DEFAULT_TEST_SESSION.PRICE,
       isPaid: DEFAULT_TEST_SESSION.IS_PAID,
-      bookingTypeId,
-      timeSlotId,
       createdAt: new Date(),
       updatedAt: new Date(),
       ...overrides,
+      // Ensure required IDs are not overwritten by undefined values in overrides
+      coachId: overrides.coachId ?? coachId,
+      userId: overrides.userId ?? userId,
+      bookingTypeId: overrides.bookingTypeId ?? bookingTypeId,
+      timeSlotId: overrides.timeSlotId ?? timeSlotId,
     };
 
     return this.host.database.session.create({ data: sessionData });
