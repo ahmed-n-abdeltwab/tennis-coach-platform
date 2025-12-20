@@ -87,14 +87,12 @@ export class ServiceTest<TService, TRepository = PrismaService> extends BaseTest
    * Setup method - creates testing module and initializes service
    */
   async setup(): Promise<void> {
-    const providers = [
-      this.config.serviceClass,
-      ...(this.config.providers ?? []),
-      ...(this.config.mocks ?? []),
-    ];
-
     this._module = await Test.createTestingModule({
-      providers,
+      providers: [
+        this.config.serviceClass,
+        ...(this.config.providers ?? []),
+        ...(this.config.mocks ?? []),
+      ],
     }).compile();
 
     this._service = this._module.get<TService>(this.config.serviceClass);
