@@ -1,54 +1,48 @@
-## Description
+## Summary
 
-Brief description of the changes introduced by this PR.
+<!-- Provide a brief, clear description of what this PR does -->
 
 ## Type of Change
 
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to
-      not work as expected)
+- [ ] Bug fix (non-breaking change that fixes an issue)
+- [ ] New feature (non-breaking change that adds functionality)
+- [ ] Breaking change (fix or feature that causes existing functionality to
+      change)
 - [ ] Documentation update
 - [ ] Performance improvement
-- [ ] Code refactoring
+- [ ] Refactor (no functional changes)
 - [ ] Test improvements
+- [ ] Configuration/build changes
 
 ## Related Issues
 
-Closes #(issue number)
+<!-- Link related issues using keywords: Closes #123, Fixes #456, Relates to #789 -->
 
-## Changes Made
+## Changes
 
-- List the main changes made in this PR
-- Use bullet points for clarity
-- Include any API changes
+<!-- List the key changes. Be specific but concise -->
 
-## Testing
+-
 
-- [ ] Unit tests pass
-- [ ] E2E tests pass
-- [ ] Manual testing completed
-- [ ] New tests added (if applicable)
+## How to Test
 
-## Screenshots (if applicable)
+<!-- Describe how reviewers can verify your changes -->
 
-Add screenshots or GIFs to help explain your changes.
+1.
 
 ## Checklist
 
-- [ ] My code follows the project's style guidelines
-- [ ] I have performed a self-review of my code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
-- [ ] Any dependent changes have been merged and published
+- [ ] Self-reviewed my code
+- [ ] Added/updated tests for changes
+- [ ] All tests pass locally
+- [ ] No new linting warnings
+- [ ] Updated documentation if needed
+- [ ] Considered backward compatibility
 
-## Deployment Notes
+## Screenshots
 
-Any special instructions for deployment or configuration changes.
+<!-- If applicable, add screenshots or recordings -->
 
-## Breaking Changes
+## Notes for Reviewers
 
-List any breaking changes and migration steps required.
+<!-- Any context that would help reviewers, areas to focus on, or questions -->

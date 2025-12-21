@@ -15,6 +15,7 @@ coverage:
         threshold: 2%
         base: auto
         if_ci_failed: error
+        informational: false
 
     # Per-patch coverage (for PRs)
     patch:
@@ -24,13 +25,19 @@ coverage:
         base: auto
         if_ci_failed: error
 
-# Comment settings for PRs
+# Comment settings for PRs - Enhanced for rich reports
 comment:
-  layout: "headers, components, footer"
+  # Full layout with all available sections
+  layout: "header, diff, flags, components, files, footer"
+  # Options: reach, diff, flags, files, components, header, footer, newfooter
   behavior: default
   require_changes: false
   require_base: false
   require_head: true
+  # Show coverage for files changed in the PR
+  show_carryforward_flags: true
+  # Hide project coverage if unchanged
+  hide_project_coverage: false
 
 # Ignore paths
 ignore:
@@ -48,6 +55,8 @@ ignore:
   - "**/*.config.ts"
   - "**/migrations/**"
   - "**/*.d.ts"
+  - "**/main.ts"
+  - "**/*.module.ts"
 
 # Flags for different test types
 flags:
@@ -68,12 +77,35 @@ flags:
 
 # Component settings (per-app coverage)
 component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: 80%
+      - type: patch
+        target: 80%
   individual_components:
     - component_id: api
-      name: API
+      name: API Backend
       paths:
         - apps/api/src/**
+    - component_id: web
+      name: Web Frontend
+      paths:
+        - apps/web/src/**
+    - component_id: libs
+      name: Shared Libraries
+      paths:
+        - libs/**
 
 # GitHub checks
 github_checks:
   annotations: true
+
+# Parsers
+parsers:
+  gcov:
+    branch_detection:
+      conditional: true
+      loop: true
+      macro: false
+      method: false
