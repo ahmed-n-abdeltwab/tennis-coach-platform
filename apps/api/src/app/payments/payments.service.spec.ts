@@ -1,8 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import { Test, TestingModule } from '@nestjs/testing';
 import { Role } from '@prisma/client';
+import { ServiceTest } from '@test-utils';
 
+import { PrismaService } from '../prisma/prisma.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { TimeSlotsService } from '../time-slots/time-slots.service';
 
@@ -14,7 +15,7 @@ import { PaymentsService } from './payments.service';
 global.fetch = jest.fn();
 
 describe('PaymentsService', () => {
-  let service: PaymentsService;
+  let test: ServiceTest<PaymentsService, PrismaService>;
   let sessionsService: jest.Mocked<SessionsService>;
   let timeSlotsService: jest.Mocked<TimeSlotsService>;
   let mockConfig: ConfigType<typeof paymentsConfig>;
@@ -39,31 +40,23 @@ describe('PaymentsService', () => {
       update: jest.fn(),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        PaymentsService,
-        {
-          provide: paymentsConfig.KEY,
-          useValue: mockConfig,
-        },
-        {
-          provide: SessionsService,
-          useValue: mockSessionsService,
-        },
-        {
-          provide: TimeSlotsService,
-          useValue: mockTimeSlotsService,
-        },
+    test = new ServiceTest({
+      serviceClass: PaymentsService,
+      mocks: [
+        { provide: paymentsConfig.KEY, useValue: mockConfig },
+        { provide: SessionsService, useValue: mockSessionsService },
+        { provide: TimeSlotsService, useValue: mockTimeSlotsService },
       ],
-    }).compile();
+    });
 
-    service = module.get<PaymentsService>(PaymentsService);
-    sessionsService = module.get(SessionsService);
-    timeSlotsService = module.get(TimeSlotsService);
+    await test.setup();
+
+    sessionsService = mockSessionsService as unknown as jest.Mocked<SessionsService>;
+    timeSlotsService = mockTimeSlotsService as unknown as jest.Mocked<TimeSlotsService>;
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
+  afterEach(async () => {
+    await test.cleanup();
   });
 
   describe('createOrder', () => {
@@ -110,7 +103,7 @@ describe('PaymentsService', () => {
         json: async () => mockPayPalOrder,
       });
 
-      const result = await service.createOrder(createDto, userId);
+      const result = await test.service.createOrder(createDto, userId);
 
       expect(result).toEqual({
         orderId: 'paypal-order-123',
@@ -135,8 +128,10 @@ describe('PaymentsService', () => {
 
       sessionsService.findUnique.mockResolvedValue(mockSession as any);
 
-      await expect(service.createOrder(createDto, userId)).rejects.toThrow(BadRequestException);
-      await expect(service.createOrder(createDto, userId)).rejects.toThrow('Invalid session');
+      await expect(test.service.createOrder(createDto, userId)).rejects.toThrow(
+        BadRequestException
+      );
+      await expect(test.service.createOrder(createDto, userId)).rejects.toThrow('Invalid session');
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
@@ -155,8 +150,12 @@ describe('PaymentsService', () => {
 
       sessionsService.findUnique.mockResolvedValue(mockSession as any);
 
-      await expect(service.createOrder(createDto, userId)).rejects.toThrow(BadRequestException);
-      await expect(service.createOrder(createDto, userId)).rejects.toThrow('Session already paid');
+      await expect(test.service.createOrder(createDto, userId)).rejects.toThrow(
+        BadRequestException
+      );
+      await expect(test.service.createOrder(createDto, userId)).rejects.toThrow(
+        'Session already paid'
+      );
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
@@ -188,7 +187,9 @@ describe('PaymentsService', () => {
           json: async () => ({ error: 'PayPal error' }),
         });
 
-      await expect(service.createOrder(createDto, userId)).rejects.toThrow(BadRequestException);
+      await expect(test.service.createOrder(createDto, userId)).rejects.toThrow(
+        BadRequestException
+      );
 
       // Reset and setup mocks for second assertion
       (global.fetch as jest.Mock)
@@ -201,7 +202,7 @@ describe('PaymentsService', () => {
           json: async () => ({ error: 'PayPal error' }),
         });
 
-      await expect(service.createOrder(createDto, userId)).rejects.toThrow(
+      await expect(test.service.createOrder(createDto, userId)).rejects.toThrow(
         'Failed to create PayPal order'
       );
     });
@@ -252,7 +253,7 @@ describe('PaymentsService', () => {
       sessionsService.update.mockResolvedValue(mockUpdatedSession as any);
       timeSlotsService.update.mockResolvedValue({} as any);
 
-      const result = await service.captureOrder(captureDto, userId);
+      const result = await test.service.captureOrder(captureDto, userId);
 
       expect(result).toEqual({
         success: true,
@@ -288,8 +289,12 @@ describe('PaymentsService', () => {
 
       sessionsService.findUnique.mockResolvedValue(mockSession as any);
 
-      await expect(service.captureOrder(captureDto, userId)).rejects.toThrow(BadRequestException);
-      await expect(service.captureOrder(captureDto, userId)).rejects.toThrow('Invalid session');
+      await expect(test.service.captureOrder(captureDto, userId)).rejects.toThrow(
+        BadRequestException
+      );
+      await expect(test.service.captureOrder(captureDto, userId)).rejects.toThrow(
+        'Invalid session'
+      );
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
@@ -320,7 +325,9 @@ describe('PaymentsService', () => {
           json: async () => ({ error: 'Capture failed' }),
         });
 
-      await expect(service.captureOrder(captureDto, userId)).rejects.toThrow(BadRequestException);
+      await expect(test.service.captureOrder(captureDto, userId)).rejects.toThrow(
+        BadRequestException
+      );
 
       // Reset and setup mocks for second assertion
       (global.fetch as jest.Mock)
@@ -333,7 +340,7 @@ describe('PaymentsService', () => {
           json: async () => ({ error: 'Capture failed' }),
         });
 
-      await expect(service.captureOrder(captureDto, userId)).rejects.toThrow(
+      await expect(test.service.captureOrder(captureDto, userId)).rejects.toThrow(
         'Payment capture failed'
       );
       expect(sessionsService.update).not.toHaveBeenCalled();
@@ -367,7 +374,9 @@ describe('PaymentsService', () => {
           json: async () => ({ id: 'capture-123', status: 'PENDING' }),
         });
 
-      await expect(service.captureOrder(captureDto, userId)).rejects.toThrow(BadRequestException);
+      await expect(test.service.captureOrder(captureDto, userId)).rejects.toThrow(
+        BadRequestException
+      );
 
       // Reset and setup mocks for second assertion
       (global.fetch as jest.Mock)
@@ -380,7 +389,7 @@ describe('PaymentsService', () => {
           json: async () => ({ id: 'capture-123', status: 'PENDING' }),
         });
 
-      await expect(service.captureOrder(captureDto, userId)).rejects.toThrow(
+      await expect(test.service.captureOrder(captureDto, userId)).rejects.toThrow(
         'Payment capture failed'
       );
       expect(sessionsService.update).not.toHaveBeenCalled();
