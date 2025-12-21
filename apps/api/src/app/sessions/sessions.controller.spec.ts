@@ -58,7 +58,7 @@ describe('SessionsController', () => {
         },
       ];
 
-      mockService.findByUser.mockResolvedValue(mockSessions);
+      mockService.findByUser.mockResolvedValue(mockSessions as any);
 
       const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: 'user-123',
@@ -75,7 +75,7 @@ describe('SessionsController', () => {
     it('should call findByUser service method for coach', async () => {
       const mockSessions: SessionResponseDto[] = [];
 
-      mockService.findByUser.mockResolvedValue(mockSessions);
+      mockService.findByUser.mockResolvedValue(mockSessions as any);
 
       const coachToken = await test.auth.createRoleToken(Role.COACH, {
         sub: 'coach-123',
