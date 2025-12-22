@@ -166,8 +166,8 @@ importers:
         specifier: ^11.1.9
         version: 11.1.9(@nestjs/common@11.1.9(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.9)(@nestjs/platform-express@11.1.10)
       '@nx/eslint':
-        specifier: 22.2.7
-        version: 22.2.7(@babel/traverse@7.28.5)(@swc-node/register@1.11.1(@swc/core@1.15.5(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.5(@swc/helpers@0.5.17))(@zkochan/js-yaml@0.0.7)(eslint@9.39.2(jiti@2.6.1))(nx@22.2.7(@swc-node/register@1.11.1(@swc/core@1.15.5(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.5(@swc/helpers@0.5.17)))
+        specifier: 22.3.3
+        version: 22.3.3(@babel/traverse@7.28.5)(@swc-node/register@1.11.1(@swc/core@1.15.5(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.5(@swc/helpers@0.5.17))(@zkochan/js-yaml@0.0.7)(eslint@9.39.2(jiti@2.6.1))(nx@22.2.7(@swc-node/register@1.11.1(@swc/core@1.15.5(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.5(@swc/helpers@0.5.17)))
       '@nx/eslint-plugin':
         specifier: 22.2.7
         version: 22.2.7(@babel/traverse@7.28.5)(@swc-node/register@1.11.1(@swc/core@1.15.5(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.5(@swc/helpers@0.5.17))(@typescript-eslint/parser@8.50.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint-config-prettier@10.1.8(eslint@9.39.2(jiti@2.6.1)))(eslint@9.39.2(jiti@2.6.1))(nx@22.2.7(@swc-node/register@1.11.1(@swc/core@1.15.5(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.5(@swc/helpers@0.5.17)))(typescript@5.9.3)
@@ -2056,6 +2056,15 @@ packages:
 
   '@nx/eslint@22.2.7':
     resolution: {integrity: sha512-3y17RvECsoFGs6/Y3TY5CzzOSN+Uzj3Eey2BN0M4LgMEiPy/O/CS9z5Nbobmi1YBsu3MsB0RRLvQLmv0J0vKgQ==}
+    peerDependencies:
+      '@zkochan/js-yaml': 0.0.7
+      eslint: ^8.0.0 || ^9.0.0
+    peerDependenciesMeta:
+      '@zkochan/js-yaml':
+        optional: true
+
+  '@nx/eslint@22.3.3':
+    resolution: {integrity: sha512-iG/LvrYf2CFAm2A0kfmRU4VeCTAN5PjUw8xc6oD1zfQ/KTmE/gFG2P1aJBo2mTIyzk9k8ZI0dqIhPLdl/AAtxg==}
     peerDependencies:
       '@zkochan/js-yaml': 0.0.7
       eslint: ^8.0.0 || ^9.0.0
@@ -12522,6 +12531,25 @@ snapshots:
     dependencies:
       '@nx/devkit': 22.2.7(nx@22.2.7(@swc-node/register@1.11.1(@swc/core@1.15.5(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.5(@swc/helpers@0.5.17)))
       '@nx/js': 22.2.7(@babel/traverse@7.28.5)(@swc-node/register@1.11.1(@swc/core@1.15.5(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.5(@swc/helpers@0.5.17))(nx@22.2.7(@swc-node/register@1.11.1(@swc/core@1.15.5(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.5(@swc/helpers@0.5.17)))
+      eslint: 9.39.2(jiti@2.6.1)
+      semver: 7.7.3
+      tslib: 2.8.1
+      typescript: 5.9.3
+    optionalDependencies:
+      '@zkochan/js-yaml': 0.0.7
+    transitivePeerDependencies:
+      - '@babel/traverse'
+      - '@swc-node/register'
+      - '@swc/core'
+      - debug
+      - nx
+      - supports-color
+      - verdaccio
+
+  '@nx/eslint@22.3.3(@babel/traverse@7.28.5)(@swc-node/register@1.11.1(@swc/core@1.15.5(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.5(@swc/helpers@0.5.17))(@zkochan/js-yaml@0.0.7)(eslint@9.39.2(jiti@2.6.1))(nx@22.2.7(@swc-node/register@1.11.1(@swc/core@1.15.5(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.5(@swc/helpers@0.5.17)))':
+    dependencies:
+      '@nx/devkit': 22.3.3(nx@22.2.7(@swc-node/register@1.11.1(@swc/core@1.15.5(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.5(@swc/helpers@0.5.17)))
+      '@nx/js': 22.3.3(@babel/traverse@7.28.5)(@swc-node/register@1.11.1(@swc/core@1.15.5(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.5(@swc/helpers@0.5.17))(nx@22.2.7(@swc-node/register@1.11.1(@swc/core@1.15.5(@swc/helpers@0.5.17))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.5(@swc/helpers@0.5.17)))
       eslint: 9.39.2(jiti@2.6.1)
       semver: 7.7.3
       tslib: 2.8.1
