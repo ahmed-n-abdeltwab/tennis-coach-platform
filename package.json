@@ -133,7 +133,7 @@
     "@nx/react": "22.2.7",
     "@nx/vite": "22.3.3",
     "@nx/webpack": "22.2.7",
-    "@nx/workspace": "22.2.7",
+    "@nx/workspace": "22.3.3",
     "@swc-node/register": "~1.11.1",
     "@swc/core": "~1.15.5",
     "@swc/helpers": "0.5.17",
