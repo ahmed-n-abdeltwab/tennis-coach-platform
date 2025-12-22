@@ -8,16 +8,11 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
-    reviewers:
-      - "team-leads"
     assignees:
-      - "maintainer"
+      - "ahmed-n-abdeltwab"
     commit-message:
       prefix: "chore"
       include: "scope"
-    labels:
-      - "dependencies"
-      - "javascript"
 
   # Enable version updates for Docker
   - package-ecosystem: "docker"
@@ -27,14 +22,9 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 5
-    reviewers:
-      - "team-leads"
     commit-message:
       prefix: "chore"
       include: "scope"
-    labels:
-      - "dependencies"
-      - "docker"
 
   # Enable version updates for GitHub Actions
   - package-ecosystem: "github-actions"
@@ -44,11 +34,6 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 5
-    reviewers:
-      - "team-leads"
     commit-message:
       prefix: "chore"
       include: "scope"
-    labels:
-      - "dependencies"
-      - "github-actions"

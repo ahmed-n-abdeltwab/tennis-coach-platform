@@ -73,7 +73,7 @@
     "deps:check": "pnpm outdated"
   },
   "dependencies": {
-    "@nestjs/common": "^11.1.9",
+    "@nestjs/common": "^11.1.10",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.9",
     "@nestjs/jwt": "^11.0.2",
@@ -82,7 +82,7 @@
     "@nestjs/platform-socket.io": "^11.1.9",
     "@nestjs/swagger": "^11.2.3",
     "@nestjs/websockets": "^11.1.9",
-    "@prisma/adapter-pg": "^7.1.0",
+    "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.1.0",
     "@prisma/config": "^7.1.0",
     "axios": "^1.13.2",
@@ -133,7 +133,7 @@
     "@nx/react": "22.2.7",
     "@nx/vite": "22.3.3",
     "@nx/webpack": "22.2.7",
-    "@nx/workspace": "22.2.7",
+    "@nx/workspace": "22.3.3",
     "@swc-node/register": "~1.11.1",
     "@swc/core": "~1.15.5",
     "@swc/helpers": "0.5.17",
