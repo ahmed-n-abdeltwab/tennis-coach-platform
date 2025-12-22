@@ -328,7 +328,7 @@ jobs:
           echo "$AFFECTED_LIBS" > affected_libs.txt
 
       - name: Download test artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: test-reports-*
           path: downloaded-reports
