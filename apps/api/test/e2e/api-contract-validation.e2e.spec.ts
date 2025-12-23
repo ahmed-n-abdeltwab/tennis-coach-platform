@@ -1,28 +1,28 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { Role } from '@prisma/client';
-import { AuthMixin, coachFactory, userFactory } from '@test-utils';
 
-import { ApiContractTester } from './../utils/http/api-contract-tester';
-import { TypeSafeHttpClient } from './../utils/http/type-safe-http-client';
+import { coachFactory, E2ETest, userFactory } from '../utils';
+
 /**
  * E2E Tests: API Contract Validation and Error Response Handling
  * Tests API contracts, error responses, and validation across all endpoints
  */
 
 describe('API Contract Validation and Error Handling (E2E)', () => {
-  let authMixin: AuthMixin;
-  let httpClient: TypeSafeHttpClient;
-  let contractTester: ApiContractTester;
+  let test: E2ETest;
   let userToken: string;
   let coachToken: string;
-  let testUser: any;
-  let testCoach: any;
+  let testUser: ReturnType<typeof userFactory.createWithMinimalData>;
+  let testCoach: ReturnType<typeof coachFactory.create>;
 
-  beforeAll(() => {
-    authMixin = new AuthMixin();
-    httpClient = new TypeSafeHttpClient(global.testApp);
-    contractTester = new ApiContractTester(global.testApp);
+  beforeAll(async () => {
+    test = new E2ETest();
+    await test.setup();
+  });
+
+  afterAll(async () => {
+    await test.cleanup();
   });
 
   beforeEach(async () => {
@@ -38,7 +38,7 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
     });
 
     // Register user
-    const userRegisterResponse = await httpClient.post('/api/authentication/signup', {
+    const userRegisterResponse = await test.http.post('/api/authentication/signup', {
       body: {
         email: testUser.email,
         name: testUser.name,
@@ -52,7 +52,7 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
     }
 
     // Register coach
-    const coachRegisterResponse = await httpClient.post('/api/authentication/signup', {
+    const coachRegisterResponse = await test.http.post('/api/authentication/signup', {
       body: {
         email: testCoach.email,
         name: testCoach.name,

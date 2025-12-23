@@ -51,14 +51,14 @@ export const DEFAULT_TEST_SESSION = {
   STATUS: 'SCHEDULED',
   PRICE: 75.0,
   IS_PAID: false,
-  FUTURE_OFFSET_HOURS: 24, // Tomorrow
+  FUTURE_OFFSET_HOURS: 24,
 } as const;
 
 // Default Test Time Slot Data
 export const DEFAULT_TEST_TIME_SLOT = {
   DURATION_MIN: 60,
   IS_AVAILABLE: true,
-  FUTURE_OFFSET_HOURS: 48, // Day after tomorrow
+  FUTURE_OFFSET_HOURS: 48,
 } as const;
 
 // Default Test Discount Data
@@ -91,7 +91,7 @@ export const DATABASE_CONSTANTS = {
   WAIT_FOR_RECORD_INTERVAL_MS: 100,
 } as const;
 
-// Seed Data Constants - Functions to generate unique data
+// Seed Data Constants
 export const SEED_DATA_CONSTANTS = {
   get DEFAULT_USERS() {
     const timestamp = Date.now();

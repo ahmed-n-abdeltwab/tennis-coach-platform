@@ -2,9 +2,17 @@
  * TimeSlot mock factory for creating test time slot data
  */
 
-import { MockTimeSlot } from '../mocks';
-
 import { BaseMockFactory } from './base-factory';
+
+export interface MockTimeSlot {
+  id: string;
+  dateTime: Date;
+  durationMin: number;
+  isAvailable: boolean;
+  coachId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export class TimeSlotMockFactory extends BaseMockFactory<MockTimeSlot> {
   create(overrides?: Partial<MockTimeSlot>): MockTimeSlot {

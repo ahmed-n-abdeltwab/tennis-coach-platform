@@ -2,9 +2,18 @@
  * BookingType mock factory for creating test booking type data
  */
 
-import { MockBookingType } from '../mocks';
-
 import { BaseMockFactory } from './base-factory';
+
+export interface MockBookingType {
+  id: string;
+  name: string;
+  description?: string;
+  basePrice: number;
+  isActive: boolean;
+  coachId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
   create(overrides?: Partial<MockBookingType>): MockBookingType {

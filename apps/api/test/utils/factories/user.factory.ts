@@ -4,9 +4,11 @@
 
 import { Role } from '@prisma/client';
 
-import { MockAccount } from '../mocks';
-
+import { MockAccount } from './account.factory';
 import { BaseMockFactory } from './base-factory';
+
+// Legacy alias for backward compatibility
+export type MockUser = MockAccount;
 
 export class UserMockFactory extends BaseMockFactory<MockAccount> {
   create(overrides?: Partial<MockAccount>): MockAccount {

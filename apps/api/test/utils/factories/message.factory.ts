@@ -4,9 +4,18 @@
 
 import { Role } from '@prisma/client';
 
-import { MockMessage } from '../mocks';
-
 import { BaseMockFactory } from './base-factory';
+
+export interface MockMessage {
+  id: string;
+  content: string;
+  sentAt: Date;
+  senderId?: string;
+  receiverId?: string;
+  sessionId?: string;
+  senderType: Role;
+  receiverType: Role;
+}
 
 export class MessageMockFactory extends BaseMockFactory<MockMessage> {
   create(overrides?: Partial<MockMessage>): MockMessage {

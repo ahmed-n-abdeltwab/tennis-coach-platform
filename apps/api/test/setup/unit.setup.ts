@@ -1,61 +1,34 @@
 /**
- * Unit test setup
- * This file runs before each unit test file
+ * Unit Test Setup (setupFilesAfterEnv)
+ * Runs AFTER Jest environment is set up, before each test file
+ *
+ * This file handles:
+ * - Test lifecycle hooks (beforeEach/afterEach)
+ * - Console output suppression
+ *
+ * Module-level mocks (Prisma, Redis, nodemailer) are in setup.ts
+ * Mock factories for use in tests are in MockMixin (test/utils/base/mixins/mock.mixin.ts)
  */
-
-// Mock external dependencies for unit tests
-jest.mock('nodemailer', () => ({
-  createTransport: jest.fn(() => ({
-    sendMail: jest.fn().mockResolvedValue({ messageId: 'test-message-id' }),
-    verify: jest.fn().mockResolvedValue(true),
-  })),
-}));
-
-jest.mock('bcryptjs', () => ({
-  hash: jest.fn().mockResolvedValue('hashed-password'),
-  compare: jest.fn().mockResolvedValue(true),
-  genSalt: jest.fn().mockResolvedValue('salt'),
-}));
-
-// Mock Prisma Client for unit tests
-jest.mock('@prisma/client', () => ({
-  PrismaClient: jest.fn().mockImplementation(() => ({
-    $connect: jest.fn().mockResolvedValue(undefined),
-    $disconnect: jest.fn().mockResolvedValue(undefined),
-    $transaction: jest.fn().mockImplementation(callback => callback({})),
-    account: {
-      create: jest.fn(),
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      findFirst: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-    },
-    session: {
-      create: jest.fn(),
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      findFirst: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-    },
-  })),
-}));
 
 import { suppressConsoleOutput } from './shared';
 
-// Set up test environment
+// =============================================================================
+// Test Lifecycle Hooks
+// =============================================================================
+
 beforeEach(() => {
-  // Clear all mocks before each test
+  // Clear all mocks before each test for isolation
   jest.clearAllMocks();
 });
 
 afterEach(() => {
-  // Clean up after each test
+  // Restore any spied methods to original implementations
   jest.restoreAllMocks();
 });
 
-// Suppress console output in unit tests
+// =============================================================================
+// Console Output
+// =============================================================================
+
+// Suppress console output in unit tests to keep test output clean
 suppressConsoleOutput();

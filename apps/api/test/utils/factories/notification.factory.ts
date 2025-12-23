@@ -2,9 +2,25 @@
  * Notification mock factory for creating test notification data
  */
 
-import { MockEmailResult, MockNotification } from '../mocks';
-
 import { BaseMockFactory } from './base-factory';
+
+export interface MockNotification {
+  id: string;
+  to: string;
+  subject: string;
+  text?: string;
+  html?: string;
+  sentAt: Date;
+  success: boolean;
+  messageId?: string;
+  error?: string;
+}
+
+export interface MockEmailResult {
+  success: boolean;
+  messageId?: string;
+  error?: string;
+}
 
 export class NotificationMockFactory extends BaseMockFactory<MockNotification> {
   create(overrides?: Partial<MockNotification>): MockNotification {

@@ -6,11 +6,13 @@
 
 import { MessagesModule } from '../../src/app/messages/messages.module';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
-import { IntegrationTest } from '../utils';
-import { CoachMockFactory } from '../utils/factories/coach.factory';
-import { MessageMockFactory } from '../utils/factories/message.factory';
-import { SessionMockFactory } from '../utils/factories/session.factory';
-import { UserMockFactory } from '../utils/factories/user.factory';
+import {
+  CoachMockFactory,
+  IntegrationTest,
+  MessageMockFactory,
+  SessionMockFactory,
+  UserMockFactory,
+} from '../utils';
 
 describe('Messages Integration', () => {
   let test: IntegrationTest;

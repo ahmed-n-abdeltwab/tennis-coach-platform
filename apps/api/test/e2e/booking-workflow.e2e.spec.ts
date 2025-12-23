@@ -5,30 +5,28 @@
  */
 
 import {
-  AuthMixin,
   bookingTypeFactory,
   coachFactory,
   createBookingScenario,
+  E2ETest,
   timeSlotFactory,
-  TypeSafeHttpClient,
   userFactory,
-} from '@test-utils';
-
-import { ApiContractTester } from './../utils/http/api-contract-tester';
+} from '../utils';
 
 describe('Booking Workflow (E2E)', () => {
-  let authMixin: AuthMixin;
-  let httpHelper: TypeSafeHttpClient;
-  let contractHelper: ApiContractTester;
+  let test: E2ETest;
   let userToken: string;
   let coachToken: string;
-  let testUser: any;
-  let testCoach: any;
+  let testUser: ReturnType<typeof userFactory.createWithMinimalData>;
+  let testCoach: ReturnType<typeof coachFactory.create>;
 
-  beforeAll(() => {
-    authMixin = new AuthMixin();
-    httpHelper = new TypeSafeHttpClient(global.testApp);
-    contractHelper = new ApiContractTester(global.testApp);
+  beforeAll(async () => {
+    test = new E2ETest();
+    await test.setup();
+  });
+
+  afterAll(async () => {
+    await test.cleanup();
   });
 
   beforeEach(async () => {
@@ -44,7 +42,7 @@ describe('Booking Workflow (E2E)', () => {
     });
 
     // Register user
-    const userRegisterResponse = await httpHelper.post('/api/authentication/signup', {
+    const userRegisterResponse = await test.http.post('/api/authentication/signup', {
       body: { email: testUser.email, name: testUser.name, password: 'UserPassword123!' },
     });
     if (userRegisterResponse.ok) {
@@ -53,7 +51,7 @@ describe('Booking Workflow (E2E)', () => {
     }
 
     // Register coach
-    const coachRegisterResponse = await httpHelper.post('/api/authentication/signup', {
+    const coachRegisterResponse = await test.http.post('/api/authentication/signup', {
       body: { email: testCoach.email, name: testCoach.name, password: 'CoachPassword123!' },
     });
     if (coachRegisterResponse.ok) {
@@ -69,8 +67,8 @@ describe('Booking Workflow (E2E)', () => {
   });
 
   describe('Time Slot Selection and Booking', () => {
-    let bookingType: any;
-    let timeSlot: any;
+    let bookingType: ReturnType<typeof bookingTypeFactory.createWithCoach>;
+    let timeSlot: ReturnType<typeof timeSlotFactory.createWithCoach>;
 
     beforeEach(async () => {
       // Create booking type and time slot in database
@@ -78,7 +76,7 @@ describe('Booking Workflow (E2E)', () => {
       timeSlot = timeSlotFactory.createWithCoach(testCoach.id);
 
       // Insert test data into database
-      await global.testPrisma.bookingType.create({
+      await test.database.bookingType.create({
         data: {
           id: bookingType.id,
           name: bookingType.name,
@@ -88,7 +86,7 @@ describe('Booking Workflow (E2E)', () => {
         },
       });
 
-      await global.testPrisma.timeSlot.create({
+      await test.database.timeSlot.create({
         data: {
           id: timeSlot.id,
           isAvailable: timeSlot.isAvailable,
@@ -107,14 +105,14 @@ describe('Booking Workflow (E2E)', () => {
   });
 
   describe('Session Management', () => {
-    let session: any;
+    let session: unknown;
 
     beforeEach(async () => {
       // Create a test session
       const bookingType = bookingTypeFactory.createWithCoach(testCoach.id);
       const timeSlot = timeSlotFactory.createWithCoach(testCoach.id);
 
-      await global.testPrisma.bookingType.create({
+      await test.database.bookingType.create({
         data: {
           id: bookingType.id,
           name: bookingType.name,
@@ -124,7 +122,7 @@ describe('Booking Workflow (E2E)', () => {
         },
       });
 
-      await global.testPrisma.timeSlot.create({
+      await test.database.timeSlot.create({
         data: {
           id: timeSlot.id,
           isAvailable: timeSlot.isAvailable,
@@ -134,22 +132,13 @@ describe('Booking Workflow (E2E)', () => {
         },
       });
 
-      const bookingDate = new Date();
-      bookingDate.setDate(bookingDate.getDate() + 7);
-
-      const createSessionResponse = await httpHelper.post(
-        '/api/sessions',
-        {
-          body: {
-            bookingTypeId: bookingType.id,
-            timeSlotId: timeSlot.id,
-            notes: 'Test session for management',
-          },
+      const createSessionResponse = await test.http.authenticatedPost('/api/sessions', userToken, {
+        body: {
+          bookingTypeId: bookingType.id,
+          timeSlotId: timeSlot.id,
+          notes: 'Test session for management',
         },
-        {
-          headers: { Authorization: `Bearer ${userToken}` },
-        }
-      );
+      });
 
       session = createSessionResponse.body;
     });
@@ -162,13 +151,13 @@ describe('Booking Workflow (E2E)', () => {
   });
 
   describe('Payment Integration', () => {
-    let session: any;
+    let session: unknown;
 
     beforeEach(async () => {
       // Create a session for payment testing
       const scenario = createBookingScenario({ isPaid: false });
 
-      await global.testPrisma.bookingType.create({
+      await test.database.bookingType.create({
         data: {
           id: scenario.bookingType.id,
           name: scenario.bookingType.name,
@@ -178,7 +167,7 @@ describe('Booking Workflow (E2E)', () => {
         },
       });
 
-      await global.testPrisma.timeSlot.create({
+      await test.database.timeSlot.create({
         data: {
           id: scenario.timeSlot.id,
           isAvailable: scenario.timeSlot.isAvailable,
@@ -188,18 +177,9 @@ describe('Booking Workflow (E2E)', () => {
         },
       });
 
-      const bookingDate = new Date();
-      bookingDate.setDate(bookingDate.getDate() + 7);
-
-      const createSessionResponse = await httpHelper.post(
-        '/api/sessions',
-        {
-          body: { bookingTypeId: scenario.bookingType.id, timeSlotId: scenario.timeSlot.id },
-        },
-        {
-          headers: { Authorization: `Bearer ${userToken}` },
-        }
-      );
+      const createSessionResponse = await test.http.authenticatedPost('/api/sessions', userToken, {
+        body: { bookingTypeId: scenario.bookingType.id, timeSlotId: scenario.timeSlot.id },
+      });
 
       session = createSessionResponse.body;
     });
@@ -210,28 +190,31 @@ describe('Booking Workflow (E2E)', () => {
   });
 
   describe('Discount Application', () => {
-    let session: any;
-    let discount: any;
+    let session: unknown;
+    let discount: ReturnType<typeof createBookingScenario>['discount'];
 
     beforeEach(async () => {
       // Create discount and session
       const scenario = createBookingScenario({ withDiscount: true });
       discount = scenario.discount;
       session = scenario.session;
-      await global.testPrisma.discount.create({
-        data: {
-          id: discount.id,
-          code: discount.code,
-          isActive: discount.isActive,
-          coachId: testCoach.id,
-          amount: discount.amount,
-          expiry: discount.expiry,
-          maxUsage: discount.maxUsage,
-          useCount: discount.useCount,
-        },
-      });
 
-      await global.testPrisma.bookingType.create({
+      if (discount) {
+        await test.database.discount.create({
+          data: {
+            id: discount.id,
+            code: discount.code,
+            isActive: discount.isActive,
+            coachId: testCoach.id,
+            amount: discount.amount,
+            expiry: discount.expiry,
+            maxUsage: discount.maxUsage,
+            useCount: discount.useCount,
+          },
+        });
+      }
+
+      await test.database.bookingType.create({
         data: {
           id: scenario.bookingType.id,
           name: scenario.bookingType.name,
@@ -241,7 +224,7 @@ describe('Booking Workflow (E2E)', () => {
         },
       });
 
-      await global.testPrisma.timeSlot.create({
+      await test.database.timeSlot.create({
         data: {
           id: scenario.timeSlot.id,
           isAvailable: scenario.timeSlot.isAvailable,

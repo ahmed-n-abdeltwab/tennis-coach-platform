@@ -4,9 +4,11 @@
 
 import { Role } from '@prisma/client';
 
-import { MockCoach } from '../mocks';
-
+import { MockAccount } from './account.factory';
 import { BaseMockFactory } from './base-factory';
+
+// MockCoach extends MockAccount with COACH role
+export interface MockCoach extends MockAccount {}
 
 export class CoachMockFactory extends BaseMockFactory<MockCoach> {
   create(overrides?: Partial<MockCoach>): MockCoach {

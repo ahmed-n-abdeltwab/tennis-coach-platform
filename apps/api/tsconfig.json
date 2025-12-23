@@ -24,6 +24,9 @@
       "@config": ["src/config/index"],
       "@config/*": ["src/config/*"],
       "@test-utils": ["./test/utils/index"],
+      "@test-utils/*": ["./test/utils/*"],
+      "@test-infrastructure": ["./test/infrastructure/index"],
+      "@test-infrastructure/*": ["./test/infrastructure/*"],
       "@test/*": ["test/*"]
     }
   },
