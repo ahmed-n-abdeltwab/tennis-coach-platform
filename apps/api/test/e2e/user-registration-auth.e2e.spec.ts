@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * E2E Tests: User Registration and Authentication Flow
  * Tests complete user registration, login, and profile management workflows

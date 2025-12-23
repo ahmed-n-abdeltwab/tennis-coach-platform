@@ -124,7 +124,7 @@ export class DatabaseMixin {
 
       // Extract the first coach for booking types
       const firstCoach = coaches[0];
-      if (!firstCoach || !firstCoach.id) {
+      if (!firstCoach?.id) {
         throw createDatabaseError('seed test database', 'First coach is undefined or has no id', {
           operation: 'seedTestDatabase',
           firstCoach: firstCoach ? JSON.stringify(firstCoach) : 'undefined',
