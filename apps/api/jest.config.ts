@@ -40,6 +40,15 @@ const config: Config = {
   // Root directory
   rootDir: '.',
 
+  // Test file patterns - exclude integration and e2e tests
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '\\.integration\\.spec\\.ts$',
+    '\\.e2e\\.spec\\.ts$',
+    '/test/integration/',
+    '/test/e2e/',
+  ],
+
   // Coverage configuration
   collectCoverageFrom: [
     'src/**/*.ts',
