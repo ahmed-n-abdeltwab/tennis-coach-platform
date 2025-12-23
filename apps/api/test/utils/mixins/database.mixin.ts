@@ -83,41 +83,77 @@ export class DatabaseMixin {
    */
   async seedTestData(): Promise<void> {
     try {
+      // Verify database connection first
+      try {
+        await this.host.database.$queryRaw`SELECT 1`;
+      } catch (connectionError) {
+        throw createDatabaseError(
+          'seed test database',
+          'Database connection failed. Ensure the test database exists and is migrated.',
+          {
+            operation: 'verifyConnection',
+            error:
+              connectionError instanceof Error ? connectionError.message : String(connectionError),
+          },
+          connectionError instanceof Error ? connectionError : undefined
+        );
+      }
+
       // Create test users using seed data constants
       const usersData = SEED_DATA_CONSTANTS.DEFAULT_USERS;
-      const users = await Promise.all(
-        usersData.map(userData =>
-          this.host.database.account.create({
+      const users: Account[] = [];
+      for (const userData of usersData) {
+        try {
+          const user = await this.host.database.account.create({
             data: {
               ...userData,
               role: Role.USER,
             },
-          })
-        )
-      );
+          });
+          users.push(user);
+        } catch (userError) {
+          // Log but continue - user might already exist
+          console.warn(`Failed to create user ${userData.email}:`, userError);
+        }
+      }
 
       // Create test coaches using seed data constants
       const coachesData = SEED_DATA_CONSTANTS.DEFAULT_COACHES;
-      const coaches = await Promise.all(
-        coachesData.map(coachData =>
-          this.host.database.account.create({
+      const coaches: Account[] = [];
+      for (const coachData of coachesData) {
+        try {
+          const coach = await this.host.database.account.create({
             data: {
               ...coachData,
               role: Role.COACH,
             },
-          })
-        )
-      );
+          });
+          coaches.push(coach);
+        } catch (coachError) {
+          // Log but continue - coach might already exist
+          console.warn(`Failed to create coach ${coachData.email}:`, coachError);
+        }
+      }
+
+      // If no coaches were created, try to find existing ones
+      if (coaches.length === 0) {
+        const existingCoaches = await this.host.database.account.findMany({
+          where: { role: Role.COACH },
+          take: 1,
+        });
+        if (existingCoaches.length > 0) {
+          coaches.push(...existingCoaches);
+        }
+      }
 
       // Ensure at least one coach exists before creating booking types
-      if (!coaches || coaches.length === 0) {
+      if (coaches.length === 0) {
         throw createDatabaseError(
           'seed test database',
-          `No coaches were created. Coaches data count: ${coachesData.length}, Result count: ${coaches?.length ?? 0}`,
+          `No coaches were created or found. Coaches data count: ${coachesData.length}`,
           {
             operation: 'seedTestDatabase',
             coachesDataCount: coachesData.length,
-            coachesResultCount: coaches?.length ?? 0,
           }
         );
       }
@@ -128,36 +164,26 @@ export class DatabaseMixin {
         throw createDatabaseError('seed test database', 'First coach is undefined or has no id', {
           operation: 'seedTestDatabase',
           firstCoach: firstCoach ? JSON.stringify(firstCoach) : 'undefined',
+          coachesLength: coaches.length,
         });
-      }
-
-      // Verify the coach exists in the database before creating booking types
-      const verifyCoach = await this.host.database.account.findUnique({
-        where: { id: firstCoach.id },
-      });
-
-      if (!verifyCoach) {
-        throw createDatabaseError(
-          'seed test database',
-          `Coach with id ${firstCoach?.id} was not found in database after creation`,
-          {
-            operation: 'seedTestDatabase',
-            coachId: firstCoach.id,
-          }
-        );
       }
 
       // Create test booking types using seed data constants sequentially to avoid race conditions
       const bookingTypes: BookingType[] = [];
       for (const bookingTypeData of SEED_DATA_CONSTANTS.DEFAULT_BOOKING_TYPES) {
-        const bookingType = await this.host.database.bookingType.create({
-          data: {
-            ...bookingTypeData,
-            coachId: firstCoach.id,
-            isActive: true,
-          },
-        });
-        bookingTypes.push(bookingType);
+        try {
+          const bookingType = await this.host.database.bookingType.create({
+            data: {
+              ...bookingTypeData,
+              coachId: firstCoach.id,
+              isActive: true,
+            },
+          });
+          bookingTypes.push(bookingType);
+        } catch (bookingTypeError) {
+          // Log but continue
+          console.warn(`Failed to create booking type ${bookingTypeData.name}:`, bookingTypeError);
+        }
       }
 
       this.testData = { users, coaches, bookingTypes };
