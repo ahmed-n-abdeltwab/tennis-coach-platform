@@ -14,6 +14,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - tennis-coach-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tennis_coach_dev"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 5s
 
   redis:
     image: redis:7-alpine
