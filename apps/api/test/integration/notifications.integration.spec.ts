@@ -8,8 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import notificationsConfig from '../../src/app/notifications/config/notifications.config';
 import { NotificationsModule } from '../../src/app/notifications/notifications.module';
-import { IntegrationTest } from '../utils';
-import { NotificationMockFactory } from '../utils/factories/notification.factory';
+import { IntegrationTest, NotificationMockFactory } from '../utils';
 
 // Mock nodemailer
 const mockSendMail = jest.fn();

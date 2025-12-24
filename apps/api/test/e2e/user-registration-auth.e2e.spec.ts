@@ -1,27 +1,18 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * E2E Tests: User Registration and Authentication Flow
  * Tests complete user registration, login, and profile management workflows
  */
 
 import { Role } from '@prisma/client';
-import { ApiContractTester, AuthMixin, TypeSafeHttpClient, userFactory } from '@test-utils';
 
-import { E2ETest } from '../utils';
+import { E2ETest, userFactory } from '../utils';
 
 describe('User Registration and Authentication Flow (E2E)', () => {
   let test: E2ETest;
-  let authMixin: AuthMixin;
-  let contractHelper: ApiContractTester;
-  let httpClient: TypeSafeHttpClient;
 
   beforeAll(async () => {
     test = new E2ETest();
     await test.setup();
-
-    authMixin = new AuthMixin();
-    contractHelper = new ApiContractTester(test.application);
-    httpClient = new TypeSafeHttpClient(test.application);
   });
 
   afterAll(async () => {
@@ -36,7 +27,7 @@ describe('User Registration and Authentication Flow (E2E)', () => {
       });
 
       // Step 1: Register new user
-      const registerResponse = await httpClient.post(
+      const registerResponse = await test.http.post(
         '/api/authentication/signup',
         {
           body: {
@@ -48,6 +39,7 @@ describe('User Registration and Authentication Flow (E2E)', () => {
         },
         { expectedStatus: 201 }
       );
+
       let accessToken = 'no-accessToken';
       if (registerResponse.ok) {
         expect(registerResponse.status).toBe(201);
@@ -57,13 +49,15 @@ describe('User Registration and Authentication Flow (E2E)', () => {
 
         accessToken = registerResponse.body.accessToken;
       }
+
       // Step 2: Verify user can access protected profile endpoint
-      const profileResponse = await httpClient.authenticatedGet(
+      const profileResponse = await test.http.authenticatedGet(
         '/api/accounts/me',
         accessToken,
         undefined,
         { expectedStatus: 200 }
       );
+
       if (profileResponse.ok) {
         expect(profileResponse.status).toBe(200);
         expect(profileResponse.body.email).toBe(userData.email);

@@ -29,6 +29,8 @@ const config: Config = {
     '^@config$': '<rootDir>/src/config/index',
     '^@config/(.*)$': '<rootDir>/src/config/$1',
     '^@test-utils$': '<rootDir>/test/utils/index',
+    '^@test-infrastructure$': '<rootDir>/test/infrastructure/index',
+    '^@test-infrastructure/(.*)$': '<rootDir>/test/infrastructure/$1',
     '^@test/(.*)$': '<rootDir>/test/$1',
   },
 
@@ -37,6 +39,15 @@ const config: Config = {
 
   // Root directory
   rootDir: '.',
+
+  // Test file patterns - exclude integration and e2e tests
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '\\.integration\\.spec\\.ts$',
+    '\\.e2e\\.spec\\.ts$',
+    '/test/integration/',
+    '/test/e2e/',
+  ],
 
   // Coverage configuration
   collectCoverageFrom: [
@@ -82,8 +93,7 @@ const config: Config = {
         usePathForSuiteName: true,
       },
     ],
-    // Custom reporter temporarily disabled - see test/REPORTER_SETUP.md
-    // ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }],
+    ['<rootDir>/test/reporters/jest-custom-reporter.js', { verbose: false }],
   ],
 };
 

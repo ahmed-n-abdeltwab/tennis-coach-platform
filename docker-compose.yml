@@ -1,0 +1,168 @@
+# Docker Compose with profiles for different environments
+# Usage:
+#   Development: docker compose --profile dev up -d
+#   Production:  docker compose --profile prod up -d
+#   All:         docker compose --profile dev --profile prod up -d
+
+services:
+  # =============================================================================
+  # Infrastructure Services (shared between dev and prod)
+  # =============================================================================
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: tennis-coach-postgres
+    profiles: ["dev", "prod"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-tennis_coach_dev}
+      # Fix collation issues for Prisma shadow database
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    networks:
+      - tennis-coach-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-tennis_coach_dev}",
+        ]
+      interval: ${HEALTHCHECK_INTERVAL:-5s}
+      timeout: 5s
+      retries: 15
+      start_period: 5s
+
+  redis:
+    image: redis:7-alpine
+    container_name: tennis-coach-redis
+    profiles: ["dev", "prod"]
+    restart: unless-stopped
+    command: >
+      sh -c "
+        if [ -n \"$$REDIS_PASSWORD\" ]; then
+          redis-server --requirepass $$REDIS_PASSWORD
+        else
+          redis-server
+        fi
+      "
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - tennis-coach-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: ${HEALTHCHECK_INTERVAL:-10s}
+      timeout: 5s
+      retries: 5
+
+  # =============================================================================
+  # Development-only Services
+  # =============================================================================
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: tennis-coach-mailhog
+    profiles: ["dev"]
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - tennis-coach-network
+
+  # =============================================================================
+  # Production-only Services
+  # =============================================================================
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: tennis-coach-api
+    profiles: ["prod"]
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-tennis_coach}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      SMTP_SENDER_EMAIL: ${SMTP_SENDER_EMAIL}
+      SMTP_TOKEN: ${SMTP_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tennis-coach-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3333/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: tennis-coach-web
+    profiles: ["prod"]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - tennis-coach-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  backup:
+    image: postgres:15-alpine
+    container_name: tennis-coach-backup
+    profiles: ["prod"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-tennis_coach}
+    volumes:
+      - ./backups:/backups
+      - ./scripts/backup.sh:/backup.sh
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tennis-coach-network
+    command: |
+      sh -c "
+        echo '0 2 * * * /backup.sh' | crontab -
+        crond -f
+      "
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  tennis-coach-network:
+    driver: bridge

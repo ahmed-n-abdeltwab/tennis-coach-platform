@@ -1,78 +1,79 @@
 /**
- * Test Data Factories
+ * Mock Data Factories
  *
- * Provides factories for creating test data with sensible defaults.
+ * Provides factories for creating in-memory mock objects.
+ * Use these for unit tests where no database is needed.
  *
- * @deprecated For new code, prefer using DatabaseMixin methods through
- * IntegrationTest or E2ETest classes (e.g., test.db.createTestUser()).
- * These factories create mock data objects, while DatabaseMixin creates
- * real database records. These factories are maintained for backward
- * compatibility and unit testing scenarios.
+ * For real database records, use DatabaseMixin instead.
  *
- * @example Recommended approach (creates real database records)
- * ```typescript
- * import { IntegrationTest } from '@test-utils/base';
- *
- * const test = new IntegrationTest({ modules: [MyModule] });
- * await test.setup();
- * const user = await test.db.createTestUser();
- * const coach = await test.db.createTestCoach();
- * ```
- *
- * @example Legacy approach (creates mock objects, still supported)
- * ```typescript
- * import { userFactory, coachFactory } from '@test-utils/factories';
- *
- * const user = userFactory.create();
- * const coach = coachFactory.create();
- * ```
- *
- * @example Convenience scenarios
- * ```typescript
- * import { createTestScenario, createBookingScenario } from '@test-utils/factories';
- *
- * // Create related test data
- * const scenario = createTestScenario();
- * // Returns: { user, coach, bookingType, timeSlot, session }
- *
- * // Create booking scenario with discount
- * const bookingScenario = createBookingScenario({ withDiscount: true });
- * ```
- *
- * @module factories
+ * @module base/factories
  */
 
-import { MockDiscount } from '../mocks';
+// Base factory
+export { BaseMockFactory } from './base-factory';
+export type { MockFactory } from './base-factory';
 
+// Domain entity factories and types
+export { BookingTypeMockFactory } from './booking-type.factory';
+export type { MockBookingType } from './booking-type.factory';
+
+export { CoachMockFactory } from './coach.factory';
+export type { MockCoach } from './coach.factory';
+
+export { DiscountMockFactory } from './discount.factory';
+export type { MockDiscount } from './discount.factory';
+
+export { MessageMockFactory } from './message.factory';
+export type { MockMessage } from './message.factory';
+
+export { SessionMockFactory } from './session.factory';
+export type { MockSession } from './session.factory';
+
+export { TimeSlotMockFactory } from './time-slot.factory';
+export type { MockTimeSlot } from './time-slot.factory';
+
+export { UserMockFactory } from './user.factory';
+export type { MockUser } from './user.factory';
+
+// Infrastructure factories and types
+export { AccountMockFactory } from './account.factory';
+export type { MockAccount } from './account.factory';
+
+export { AuthMockFactory } from './auth.factory';
+export type { MockAuthHeaders, MockAuthPayload, MockAuthResponse } from './auth.factory';
+
+export { HttpMockFactory } from './http.factory';
+export type {
+  CreateRequestOptions,
+  MockHttpResponse,
+  MockRequest,
+  MockRequestOverrides,
+  MockResponse,
+} from './http.factory';
+
+export { NotificationMockFactory } from './notification.factory';
+export type { MockEmailResult, MockNotification } from './notification.factory';
+
+export { PaymentMockFactory } from './payment.factory';
+export type { MockPayment, MockPayPalCapture, MockPayPalOrder } from './payment.factory';
+
+// Factory instances for convenience
 import { AccountMockFactory } from './account.factory';
 import { AuthMockFactory } from './auth.factory';
 import { BookingTypeMockFactory } from './booking-type.factory';
 import { CoachMockFactory } from './coach.factory';
-import { DiscountMockFactory } from './discount.factory';
-import { HttpMockFactory } from './http/http.factory';
+import { DiscountMockFactory, MockDiscount } from './discount.factory';
+import { HttpMockFactory } from './http.factory';
 import { MessageMockFactory } from './message.factory';
+import { NotificationMockFactory } from './notification.factory';
 import { PaymentMockFactory } from './payment.factory';
 import { SessionMockFactory } from './session.factory';
 import { TimeSlotMockFactory } from './time-slot.factory';
 import { UserMockFactory } from './user.factory';
 
-// Export factory classes
-export {
-  AccountMockFactory,
-  AuthMockFactory,
-  BookingTypeMockFactory,
-  CoachMockFactory,
-  DiscountMockFactory,
-  HttpMockFactory,
-  MessageMockFactory,
-  PaymentMockFactory,
-  SessionMockFactory,
-  TimeSlotMockFactory,
-  UserMockFactory,
-};
-
-// Export factory instances for convenience
-export const accountFactory = new AccountMockFactory();
+/**
+ * Singleton instances of mock factories
+ */
 export const userFactory = new UserMockFactory();
 export const coachFactory = new CoachMockFactory();
 export const bookingTypeFactory = new BookingTypeMockFactory();
@@ -80,11 +81,14 @@ export const timeSlotFactory = new TimeSlotMockFactory();
 export const sessionFactory = new SessionMockFactory();
 export const discountFactory = new DiscountMockFactory();
 export const messageFactory = new MessageMockFactory();
-export const paymentFactory = new PaymentMockFactory();
+export const accountFactory = new AccountMockFactory();
 export const authFactory = new AuthMockFactory();
 export const httpFactory = new HttpMockFactory();
+export const notificationFactory = new NotificationMockFactory();
+export const paymentFactory = new PaymentMockFactory();
 
-// Convenience function to create related test data
+// Convenience functions for creating test scenarios
+
 export function createTestScenario() {
   const user = userFactory.create();
   const coach = coachFactory.create();
@@ -97,30 +101,22 @@ export function createTestScenario() {
     timeSlotId: timeSlot.id,
   });
 
-  return {
-    user,
-    coach,
-    bookingType,
-    timeSlot,
-    session,
-  };
+  return { user, coach, bookingType, timeSlot, session };
 }
 
-// Convenience function to create a complete booking scenario
 export function createBookingScenario(options?: {
   withDiscount?: boolean;
   sessionStatus?: string;
   isPaid?: boolean;
 }) {
   const scenario = createTestScenario();
-
   let discount: MockDiscount | null = null;
 
   if (options?.withDiscount) {
     discount = discountFactory.createWithCoach(scenario.coach.id);
     scenario.session.discountId = discount.id;
     scenario.session.discountCode = discount.code;
-    scenario.session.price = scenario.session.price * 0.8; // Apply discount
+    scenario.session.price = scenario.session.price * 0.8;
   }
 
   if (options?.sessionStatus) {
@@ -134,21 +130,13 @@ export function createBookingScenario(options?: {
     }
   }
 
-  return {
-    ...scenario,
-    discount,
-  };
+  return { ...scenario, discount };
 }
 
-// Convenience function to create message conversation
 export function createConversationScenario(messageCount = 5) {
   const user = userFactory.create();
   const coach = coachFactory.create();
   const messages = messageFactory.createConversation(user.id, coach.id, messageCount);
 
-  return {
-    user,
-    coach,
-    messages,
-  };
+  return { user, coach, messages };
 }

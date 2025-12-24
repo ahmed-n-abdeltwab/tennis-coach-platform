@@ -4,27 +4,23 @@
  */
 
 import { Role } from '@prisma/client';
-import {
-  ApiContractTester,
-  AuthMixin,
-  coachFactory,
-  TypeSafeHttpClient,
-  userFactory,
-} from '@test-utils';
+
+import { coachFactory, E2ETest, userFactory } from '../utils';
 
 describe('Notification Workflow (E2E)', () => {
-  let httpHelper: TypeSafeHttpClient;
-  let _authMixin: AuthMixin;
-  let _contractHelper: ApiContractTester;
+  let test: E2ETest;
   let _userToken: string;
   let _coachToken: string;
-  let testUser: any;
-  let testCoach: any;
+  let testUser: ReturnType<typeof userFactory.createWithMinimalData>;
+  let testCoach: ReturnType<typeof coachFactory.create>;
 
-  beforeAll(() => {
-    _authMixin = new AuthMixin();
-    httpHelper = new TypeSafeHttpClient(global.testApp);
-    _contractHelper = new ApiContractTester(global.testApp);
+  beforeAll(async () => {
+    test = new E2ETest();
+    await test.setup();
+  });
+
+  afterAll(async () => {
+    await test.cleanup();
   });
 
   beforeEach(async () => {
@@ -40,7 +36,7 @@ describe('Notification Workflow (E2E)', () => {
     });
 
     // Register user
-    const userRegisterResponse = await httpHelper.post('/api/authentication/signup', {
+    const userRegisterResponse = await test.http.post('/api/authentication/signup', {
       body: {
         email: testUser.email,
         name: testUser.name,
@@ -54,7 +50,7 @@ describe('Notification Workflow (E2E)', () => {
     }
 
     // Register coach
-    const coachRegisterResponse = await httpHelper.post('/api/authentication/signup', {
+    const coachRegisterResponse = await test.http.post('/api/authentication/signup', {
       body: {
         email: testCoach.email,
         name: testCoach.name,

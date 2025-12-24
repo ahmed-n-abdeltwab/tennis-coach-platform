@@ -1,7 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { buildPath } from '@routes-helpers';
 import type {
-  DeepPartial,
   Endpoints,
   ExtractMethods,
   ExtractPaths,
@@ -11,8 +9,20 @@ import type {
   HttpMethod,
   PathsForRoute,
   PathsWithMethod,
-} from '@test-utils';
+} from '@routes-helpers';
+import { buildPath } from '@routes-helpers';
 import request from 'supertest';
+
+/**
+ * DeepPartial utility type
+ * Makes all properties of an object optional recursively
+ */
+export type DeepPartial<T> = T extends object
+  ? {
+      [P in keyof T]?: DeepPartial<T[P]>;
+    }
+  : T;
+
 /**
  * Standard error response structure from NestJS
  */

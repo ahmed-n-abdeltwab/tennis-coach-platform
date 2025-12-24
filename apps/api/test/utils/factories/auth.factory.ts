@@ -5,9 +5,29 @@
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
 
-import { MockAuthHeaders, MockAuthPayload, MockAuthResponse } from '../mocks';
-
 import { BaseMockFactory } from './base-factory';
+
+export interface MockAuthPayload {
+  sub: string;
+  email: string;
+  role: Role;
+  iat?: number;
+  exp?: number;
+}
+
+export interface MockAuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    id: string;
+    email: string;
+    role: Role;
+  };
+}
+
+export interface MockAuthHeaders {
+  Authorization: string;
+}
 
 export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {
   private jwtService?: JwtService;

@@ -5,8 +5,8 @@ const config: Config = {
   testEnvironment: 'node',
   displayName: 'API Integration Tests',
 
-  // Set NODE_ENV for tests
-  setupFiles: ['<rootDir>/test/setup.ts'],
+  // Set NODE_ENV for tests - use integration-specific setup that doesn't mock Prisma
+  setupFiles: ['<rootDir>/test/setup/integration-env.setup.ts'],
 
   // TypeScript configuration
   transform: {
@@ -104,8 +104,7 @@ const config: Config = {
         usePathForSuiteName: true,
       },
     ],
-    // Custom reporter temporarily disabled - see test/REPORTER_SETUP.md
-    // ['<rootDir>/test/utils/jest-custom-reporter.js', { verbose: false }],
+    ['<rootDir>/test/reporters/jest-custom-reporter.js', { verbose: false }],
   ],
 };
 
