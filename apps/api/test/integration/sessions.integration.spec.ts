@@ -528,7 +528,7 @@ describe('Sessions Integration', () => {
         if (response.ok) {
           expect(response.status).toBe(200);
           expect(response.body.id).toBe(session.id);
-          expect(response.body.status).toBe('cancelled');
+          expect(response.body.status).toBe(SessionStatus.CANCELLED);
         }
       });
 
