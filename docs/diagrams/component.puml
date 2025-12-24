@@ -1,49 +1,93 @@
 @startuml
 package "Frontend (React/Vite)" {
   [Booking UI]
-  [Profile/Coach Page]
+  [Profile Page]
   [Chat Component]
   [Admin Dashboard]
 }
 
 package "Backend (NestJS/TypeScript)" {
-  [Auth Module]
-  [BookingType Module]
-  [Session Module]
-  [User Module]
-  [TimeSlot Module]
-  [Coach Module]
-  [Payment Module]
-  [Discount Module]
-  [CRM/Analytics Module]
+  [IAM Module] <<Authentication/Authorization>>
+  [Accounts Module] <<Unified User/Coach>>
+  [BookingTypes Module]
+  [Sessions Module]
+  [TimeSlots Module]
+  [Payments Module]
+  [Discounts Module]
+  [Messages Module]
+  [Calendar Module]
+  [Notifications Module]
+  [Health Module]
+  [Prisma Module] <<Database Access>>
+  [Redis Module] <<Caching>>
+  [Logger Module]
 }
 
-database "Postgres" {
-  [Users Table]
-  [Coaches Table]
-  [BookingTypes Table]
-  [Sessions Table]
-  [Discounts Table]
-  [Messages Table]
-  [TimeSlots Table]
+database "PostgreSQL" {
+  [accounts] <<Unified Table>>
+  [booking_types]
+  [sessions]
+  [time_slots]
+  [discounts]
+  [messages]
+  [refresh_tokens]
 }
 
-package "Services/Third-party" {
+cloud "External Services" {
   [PayPal Gateway]
   [Google Calendar API]
+  [SMTP Service]
 }
 
-[Booking UI] --> [BookingType Module]
-[Booking UI] --> [Session Module]
-[Profile/Coach Page] --> [Coach Module]
-[Admin Dashboard] --> [BookingType Module]
-[Chat Component] --> [Messages Table]
-[Auth Module] <--> [Users Table]
-[Coach Module] <--> [Coaches Table]
-[BookingType Module] <--> [BookingTypes Table]
-[Session Module] <--> [Sessions Table]
-[Payment Module] --> [PayPal Gateway]
-[Session Module] --> [Google Calendar API]
-[Discount Module] <--> [Discounts Table]
-[CRM/Analytics Module] <--> [Sessions Table]
+cache "Redis" {
+  [Session Cache]
+  [Rate Limiting]
+}
+
+' Frontend to Backend connections
+[Booking UI] --> [BookingTypes Module]
+[Booking UI] --> [Sessions Module]
+[Booking UI] --> [TimeSlots Module]
+[Profile Page] --> [Accounts Module]
+[Admin Dashboard] --> [Accounts Module]
+[Admin Dashboard] --> [Sessions Module]
+[Chat Component] --> [Messages Module]
+
+' Authentication flow
+[IAM Module] <--> [accounts]
+[IAM Module] <--> [refresh_tokens]
+
+' Module to Database connections
+[Accounts Module] <--> [accounts]
+[BookingTypes Module] <--> [booking_types]
+[Sessions Module] <--> [sessions]
+[TimeSlots Module] <--> [time_slots]
+[Discounts Module] <--> [discounts]
+[Messages Module] <--> [messages]
+
+' External service connections
+[Payments Module] --> [PayPal Gateway]
+[Calendar Module] --> [Google Calendar API]
+[Notifications Module] --> [SMTP Service]
+
+' Redis connections
+[Redis Module] <--> [Session Cache]
+[Redis Module] <--> [Rate Limiting]
+
+' Internal module dependencies
+[Sessions Module] --> [Payments Module]
+[Sessions Module] --> [Calendar Module]
+[Sessions Module] --> [Notifications Module]
+
+note right of [accounts]
+  Single unified table for all user types.
+  Role field (USER, PREMIUM_USER, ADMIN, COACH)
+  determines capabilities and permissions.
+end note
+
+note bottom of [IAM Module]
+  Handles JWT authentication,
+  refresh tokens, and role-based
+  authorization guards.
+end note
 @enduml

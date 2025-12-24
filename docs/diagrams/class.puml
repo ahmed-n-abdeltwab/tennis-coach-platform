@@ -1,35 +1,43 @@
 @startuml
-class User {
+enum Role {
+  USER
+  PREMIUM_USER
+  ADMIN
+  COACH
+}
+
+enum SessionStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+class Account {
   id: UUID
   email: string
   passwordHash: string
   name: string
+  role: Role
   gender: string
   age: int
   height: float
   weight: float
-  disabilityStatus: boolean
-  country: string
-  address: string
-  sessions: Session[]
-  notes: string
-  +sendMessage(to: User|Coach, content: string)
-}
-
-class Coach {
-  id: UUID
-  email: string
-  passwordHash: string
-  name: string
   bio: string
   credentials: string
   philosophy: string
   profileImage: string
-  bookingTypes: BookingType[]
-  availabilities: TimeSlot[]
-  sessions: Session[]
-  discounts: Discount[]
-  messages: Message[]
+  disability: boolean
+  disabilityCause: string
+  country: string
+  address: string
+  notes: string
+  isActive: boolean
+  isOnline: boolean
+  createdAt: DateTime
+  updatedAt: DateTime
+  +sendMessage(to: Account, content: string)
   +setAvailability(times: TimeSlot[])
   +manageBookingType()
   +createDiscount()
@@ -39,66 +47,94 @@ class BookingType {
   id: UUID
   name: string
   description: string
-  basePrice: float
-  coach: Coach
+  basePrice: Decimal
   isActive: boolean
-  sessions: Session[]
+  createdAt: DateTime
+  updatedAt: DateTime
   +updatePrice(amount: float)
   +renameType(label: string)
 }
 
 class Session {
   id: UUID
-  bookingType: BookingType
   dateTime: DateTime
-  duration: int
-  price: float
-  user: User
-  coach: Coach
-  notes: string
+  durationMin: int
+  price: Decimal
   isPaid: boolean
-  discountCode: string
+  status: SessionStatus
+  notes: string
   paymentId: string
-  status: string
+  discountCode: string
   calendarEventId: string
+  createdAt: DateTime
+  updatedAt: DateTime
 }
 
 class Discount {
+  id: UUID
   code: string
-  amount: float
-  timeWindow: string
+  amount: Decimal
   expiry: DateTime
   useCount: int
   maxUsage: int
   isActive: boolean
-  coach: Coach
+  createdAt: DateTime
+  updatedAt: DateTime
 }
 
 class Message {
   id: UUID
-  sender: User|Coach
-  receiver: User|Coach
   content: string
   sentAt: DateTime
-  sessionId: UUID
+  senderType: Role
+  receiverType: Role
 }
 
 class TimeSlot {
   id: UUID
-  coach: Coach
   dateTime: DateTime
-  duration: int
+  durationMin: int
   isAvailable: boolean
+  createdAt: DateTime
+  updatedAt: DateTime
 }
 
-Coach "1" -- "N" BookingType
-Coach "1" -- "N" Session
-Coach "1" -- "N" Discount
-Coach "1" -- "N" Message
-Coach "1" -- "N" TimeSlot
-User "1" -- "N" Session
-Session "1" -- "1" BookingType
-Session "0..1" -- Discount
-Session "0..N" -- Message
-BookingType "1" -- "N" Session
+class RefreshToken {
+  id: UUID
+  token: string
+  expiresAt: DateTime
+  createdAt: DateTime
+}
+
+' Account relationships (Coach role)
+Account "1" -- "N" BookingType : coach creates >
+Account "1" -- "N" TimeSlot : coach manages >
+Account "1" -- "N" Discount : coach creates >
+
+' Account relationships (User/Coach sessions)
+Account "1" -- "N" Session : user books >
+Account "1" -- "N" Session : coach provides >
+
+' Account relationships (Messages)
+Account "1" -- "N" Message : sends >
+Account "1" -- "N" Message : receives >
+
+' Account relationships (Auth)
+Account "1" -- "N" RefreshToken : has >
+
+' Session relationships
+Session "N" -- "1" BookingType : has type >
+Session "N" -- "1" TimeSlot : scheduled at >
+Session "N" -- "0..1" Discount : applies >
+Session "1" -- "N" Message : contains >
+
+note right of Account
+  Unified model for all user types.
+  Role field determines capabilities:
+  - USER: Can book sessions
+  - PREMIUM_USER: Enhanced user features
+  - ADMIN: System administration
+  - COACH: Can create booking types,
+    manage availability, create discounts
+end note
 @enduml
