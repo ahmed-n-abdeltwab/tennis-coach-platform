@@ -22,6 +22,14 @@ enum Role {
   COACH
 }
 
+enum SessionStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
 // ========================= //
 // MODELS
 // ========================= //
@@ -103,18 +111,18 @@ model TimeSlot {
 }
 
 model Session {
-  id              String   @id @default(cuid())
+  id              String        @id @default(cuid())
   dateTime        DateTime
-  durationMin     Int      @default(60)
-  price           Decimal  @db.Decimal(10, 2)
-  isPaid          Boolean  @default(false)
-  status          String   @default("scheduled")
+  durationMin     Int           @default(60)
+  price           Decimal       @db.Decimal(10, 2)
+  isPaid          Boolean       @default(false)
+  status          SessionStatus @default(SCHEDULED)
   notes           String?
   paymentId       String?
   discountCode    String?
   calendarEventId String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   // Relations
   userId        String
@@ -132,6 +140,8 @@ model Session {
 
   @@index([userId])
   @@index([coachId])
+  @@index([status])
+  @@index([dateTime])
   @@map("sessions")
 }
 

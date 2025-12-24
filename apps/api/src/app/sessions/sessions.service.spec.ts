@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { Role, SessionStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 import { ServiceTest } from '@test-utils';
 
@@ -67,7 +67,7 @@ describe('SessionsService', () => {
           durationMin: 60,
           price: new Decimal(99.99),
           isPaid: false,
-          status: 'scheduled',
+          status: SessionStatus.SCHEDULED,
           notes: null,
           paymentId: null,
           discountCode: null,
@@ -101,7 +101,7 @@ describe('SessionsService', () => {
       expect(result.data[0]).toMatchObject({
         id: 'session-1',
         userId,
-        status: 'scheduled',
+        status: SessionStatus.SCHEDULED,
       });
       expect(result.meta).toMatchObject({
         page: 1,
@@ -135,7 +135,7 @@ describe('SessionsService', () => {
           durationMin: 60,
           price: new Decimal(99.99),
           isPaid: false,
-          status: 'scheduled',
+          status: SessionStatus.SCHEDULED,
           notes: null,
           paymentId: null,
           discountCode: null,
@@ -183,7 +183,7 @@ describe('SessionsService', () => {
     it('should filter sessions by query parameters', async () => {
       const userId = 'user-123';
       const query: GetSessionsQuery = {
-        status: 'completed',
+        status: SessionStatus.COMPLETED,
         startDate: '2024-11-01',
         endDate: '2024-11-30',
       };
@@ -195,7 +195,7 @@ describe('SessionsService', () => {
       expect(test.prisma.session.findMany).toHaveBeenCalledWith({
         where: {
           userId,
-          status: 'completed',
+          status: SessionStatus.COMPLETED,
           dateTime: {
             gte: new Date('2024-11-01'),
             lte: new Date('2024-11-30'),
@@ -221,7 +221,7 @@ describe('SessionsService', () => {
         durationMin: 60,
         price: new Decimal(99.99),
         isPaid: false,
-        status: 'scheduled',
+        status: SessionStatus.SCHEDULED,
         notes: null,
         paymentId: null,
         discountCode: null,
@@ -279,7 +279,7 @@ describe('SessionsService', () => {
         durationMin: 60,
         price: new Decimal(99.99),
         isPaid: false,
-        status: 'scheduled',
+        status: SessionStatus.SCHEDULED,
         notes: null,
         paymentId: null,
         discountCode: null,
@@ -353,7 +353,7 @@ describe('SessionsService', () => {
         durationMin: 60,
         price: new Decimal(100),
         isPaid: false,
-        status: 'scheduled',
+        status: SessionStatus.SCHEDULED,
         notes: 'Test notes',
         paymentId: null,
         discountCode: null,
@@ -441,7 +441,7 @@ describe('SessionsService', () => {
         durationMin: 60,
         price: new Decimal(80),
         isPaid: false,
-        status: 'scheduled',
+        status: SessionStatus.SCHEDULED,
         notes: null,
         paymentId: null,
         discountCode: 'SAVE20',
@@ -532,7 +532,7 @@ describe('SessionsService', () => {
         durationMin: 60,
         price: new Decimal(99.99),
         isPaid: false,
-        status: 'scheduled',
+        status: SessionStatus.SCHEDULED,
         notes: null,
         paymentId: null,
         discountCode: null,
@@ -591,7 +591,7 @@ describe('SessionsService', () => {
         durationMin: 60,
         price: new Decimal(99.99),
         isPaid: false,
-        status: 'cancelled',
+        status: SessionStatus.CANCELLED,
         notes: null,
         paymentId: null,
         discountCode: null,
@@ -618,16 +618,16 @@ describe('SessionsService', () => {
 
       test.prisma.session.findUnique.mockResolvedValue({
         ...mockCancelledSession,
-        status: 'scheduled',
+        status: SessionStatus.SCHEDULED,
       });
       test.prisma.session.update.mockResolvedValue(mockCancelledSession);
 
       const result = await test.service.cancel(sessionId, userId, Role.USER);
 
-      expect(result.status).toBe('cancelled');
+      expect(result.status).toBe(SessionStatus.CANCELLED);
       expect(test.prisma.session.update).toHaveBeenCalledWith({
         where: { id: sessionId },
-        data: { status: 'cancelled' },
+        data: { status: SessionStatus.CANCELLED },
         include: expect.any(Object),
       });
     });
@@ -640,7 +640,7 @@ describe('SessionsService', () => {
         id: sessionId,
         userId,
         dateTime: new Date(Date.now() + ONE_DAY_MS).toISOString(),
-        status: 'cancelled',
+        status: SessionStatus.CANCELLED,
       };
 
       test.prisma.session.findUnique.mockResolvedValue({
@@ -689,7 +689,7 @@ describe('SessionsService', () => {
         id: sessionId,
         userId,
         dateTime: new Date(Date.now() - ONE_DAY_MS).toISOString(),
-        status: 'scheduled',
+        status: SessionStatus.SCHEDULED,
       };
 
       test.prisma.session.findUnique.mockResolvedValue({
@@ -746,7 +746,7 @@ describe('SessionsService', () => {
         durationMin: 60,
         price: new Decimal(99.99),
         isPaid: false,
-        status: 'scheduled',
+        status: SessionStatus.SCHEDULED,
         notes: null,
         paymentId: null,
         discountCode: null,

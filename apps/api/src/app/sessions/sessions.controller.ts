@@ -1,6 +1,9 @@
-import { CurrentUser, JwtPayload, PaginatedResponseDto } from '@common';
+import { PaginatedResponseDto } from '@common';
 import { Body, Controller, Get, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+
+import { CurrentUser } from '../iam/authentication/decorators/current-user.decorator';
+import { JwtPayload } from '../iam/interfaces/jwt.types';
 
 import {
   CreateSessionDto,

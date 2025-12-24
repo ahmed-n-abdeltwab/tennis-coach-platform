@@ -1,4 +1,3 @@
-import { CurrentUser, Roles } from '@common';
 import {
   Body,
   Controller,
@@ -14,7 +13,9 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 
 import { Auth } from '../iam/authentication/decorators/auth.decorator';
+import { CurrentUser } from '../iam/authentication/decorators/current-user.decorator';
 import { AuthType } from '../iam/authentication/enums/auth-type.enum';
+import { Roles } from '../iam/authorization/decorators/roles.decorator';
 
 import { BookingTypesService } from './booking-types.service';
 import {

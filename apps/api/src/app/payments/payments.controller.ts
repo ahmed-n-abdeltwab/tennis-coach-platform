@@ -1,6 +1,7 @@
-import { CurrentUser } from '@common';
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+
+import { CurrentUser } from '../iam/authentication/decorators/current-user.decorator';
 
 import {
   CapturePaymentApiResponses,

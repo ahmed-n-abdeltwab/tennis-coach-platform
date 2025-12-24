@@ -22,19 +22,14 @@ setupTestEnvironment({
 // =============================================================================
 // Mock: RedisService (still needed for integration tests)
 // Prevents actual Redis connections
+// NOTE: This implementation must be inline because jest.mock runs before imports.
+// The canonical MockRedisService is in @test-infrastructure (apps/api/test/infrastructure/redis/index.ts)
+// Keep this implementation in sync with the canonical version.
 // =============================================================================
 jest.mock('../../src/app/redis/redis.service', () => {
+  // Inline MockRedisService - must match @test-infrastructure/redis/MockRedisService
   class MockRedisService {
     private store: Map<string, { value: string; expiry?: number }> = new Map();
-
-    async set(key: string, value: string, ...args: unknown[]): Promise<'OK'> {
-      let expiry: number | undefined;
-      if (args[0] === 'EX' && typeof args[1] === 'number') {
-        expiry = Date.now() + (args[1] as number) * 1000;
-      }
-      this.store.set(key, { value, expiry });
-      return 'OK';
-    }
 
     async get(key: string): Promise<string | null> {
       const item = this.store.get(key);
@@ -46,19 +41,28 @@ jest.mock('../../src/app/redis/redis.service', () => {
       return item.value;
     }
 
-    async del(key: string): Promise<number> {
-      const existed = this.store.has(key);
-      this.store.delete(key);
-      return existed ? 1 : 0;
+    async set(key: string, value: string, flag?: string, ttl?: number): Promise<'OK'> {
+      let expiry: number | undefined;
+      if (flag === 'EX' && typeof ttl === 'number') {
+        expiry = Date.now() + ttl * 1000;
+      }
+      this.store.set(key, { value, expiry });
+      return 'OK';
     }
 
     async validate(key: string, value: string): Promise<boolean> {
-      const stored = await this.get(key);
-      return stored === value;
+      const storedValue = await this.get(key);
+      return value === storedValue;
     }
 
     async invalidate(key: string): Promise<void> {
       this.store.delete(key);
+    }
+
+    async del(key: string): Promise<number> {
+      const existed = this.store.has(key);
+      this.store.delete(key);
+      return existed ? 1 : 0;
     }
 
     async ping(): Promise<string> {
@@ -72,6 +76,14 @@ jest.mock('../../src/app/redis/redis.service', () => {
 
     getClient() {
       return this;
+    }
+
+    clear(): void {
+      this.store.clear();
+    }
+
+    keys(): string[] {
+      return Array.from(this.store.keys());
     }
   }
 

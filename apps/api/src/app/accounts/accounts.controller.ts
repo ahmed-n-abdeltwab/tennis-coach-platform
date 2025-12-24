@@ -1,7 +1,10 @@
-import { CurrentUser, JwtPayload, Roles } from '@common';
 import { Body, Controller, Delete, Get, Param, Patch } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
+
+import { CurrentUser } from '../iam/authentication/decorators/current-user.decorator';
+import { Roles } from '../iam/authorization/decorators/roles.decorator';
+import { JwtPayload } from '../iam/interfaces/jwt.types';
 
 import { AccountsService } from './accounts.service';
 import { AccountApiResponses, AccountResponseDto, UpdateAccountDto } from './dto/account.dto';

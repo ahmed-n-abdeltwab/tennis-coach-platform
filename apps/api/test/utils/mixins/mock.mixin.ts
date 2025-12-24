@@ -16,6 +16,9 @@ export interface BcryptMockState {
 
 /**
  * Redis mock service interface for MockMixin
+ * NOTE: This is a jest.Mock-based interface for unit tests that need to verify mock calls.
+ * For integration tests or when you don't need call verification, use MockRedisService
+ * from @test-infrastructure which provides a simpler class-based implementation.
  */
 export interface IMockRedisService {
   get: jest.Mock;
@@ -382,8 +385,14 @@ export class MockMixin {
   }
 
   /**
-   * Creates a mock RedisService with in-memory store
+   * Creates a mock RedisService with in-memory store and jest.Mock methods
    * Simulates Redis behavior for unit tests without actual Redis connection
+   *
+   * NOTE: This creates a jest.Mock-based mock for verifying calls in unit tests.
+   * For integration tests or simpler mocking, use MockRedisService from @test-infrastructure:
+   * ```typescript
+   * import { MockRedisService, createMockRedisProvider } from '@test-infrastructure';
+   * ```
    *
    * @returns IMockRedisService with all methods and internal store
    * @example
@@ -396,6 +405,7 @@ export class MockMixin {
    * await mockRedis.set('key', 'value');
    * const result = await mockRedis.get('key');
    * expect(result).toBe('value');
+   * expect(mockRedis.set).toHaveBeenCalledWith('key', 'value');
    * ```
    */
   createMockRedisService(): IMockRedisService {

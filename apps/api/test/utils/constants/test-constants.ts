@@ -4,6 +4,7 @@
  * Centralized constants for test utilities to avoid magic strings and numbers
  */
 
+import { SessionStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 
 // JWT Constants
@@ -48,7 +49,7 @@ export const DEFAULT_TEST_BOOKING_TYPE = {
 export const DEFAULT_TEST_SESSION = {
   NOTES: 'Test session notes',
   DURATION_MIN: 60,
-  STATUS: 'SCHEDULED',
+  STATUS: SessionStatus.SCHEDULED,
   PRICE: 75.0,
   IS_PAID: false,
   FUTURE_OFFSET_HOURS: 24,

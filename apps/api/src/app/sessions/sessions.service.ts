@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Discount, Role, Session } from '@prisma/client';
+import { Discount, Role, Session, SessionStatus } from '@prisma/client';
 import type { Decimal } from '@prisma/client/runtime/client';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -371,7 +371,7 @@ export class SessionsService {
   async cancel(id: string, userId: string, role: Role): Promise<SessionResponseDto> {
     const session = await this.findOne(id, userId, role);
 
-    if (session.status === 'cancelled') {
+    if (session.status === SessionStatus.CANCELLED) {
       throw new BadRequestException('Session already cancelled');
     }
 
@@ -381,7 +381,7 @@ export class SessionsService {
 
     const cancelledSession = await this.prisma.session.update({
       where: { id },
-      data: { status: 'cancelled' },
+      data: { status: SessionStatus.CANCELLED },
       include: {
         user: {
           select: {

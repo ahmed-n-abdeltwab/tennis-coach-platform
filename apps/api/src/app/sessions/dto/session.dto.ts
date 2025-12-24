@@ -1,5 +1,6 @@
 import { BaseResponseDto, createTypedApiDecorators } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SessionStatus } from '@prisma/client';
 import type { Decimal } from '@prisma/client/runtime/client';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsDateString, IsOptional, IsString } from 'class-validator';
@@ -30,10 +31,9 @@ export class UpdateSessionDto {
   @IsString()
   notes?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: SessionStatus, example: SessionStatus.COMPLETED })
   @IsOptional()
-  @IsString()
-  status?: string;
+  status?: SessionStatus;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -52,10 +52,9 @@ export class UpdateSessionDto {
 }
 
 export class GetSessionsQuery {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: SessionStatus, example: SessionStatus.COMPLETED })
   @IsOptional()
-  @IsString()
-  status?: string;
+  status?: SessionStatus;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -82,8 +81,8 @@ export class SessionResponseDto extends BaseResponseDto {
   @ApiProperty({ example: false, description: 'Whether the session has been paid for' })
   isPaid: boolean;
 
-  @ApiProperty({ example: 'scheduled', description: 'Session status' })
-  status: string;
+  @ApiPropertyOptional({ enum: SessionStatus, example: SessionStatus.COMPLETED })
+  status: SessionStatus;
 
   @ApiProperty({ required: false, example: 'Please bring comfortable workout clothes' })
   @IsOptional()

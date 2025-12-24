@@ -1,6 +1,5 @@
 import { randomUUID } from 'crypto';
 
-import { JwtPayload } from '@common';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -10,6 +9,7 @@ import { parseJwtTime } from '@utils';
 import { PrismaService } from '../../prisma/prisma.service';
 import jwtConfig from '../config/jwt.config';
 import { HashingService } from '../hashing/hashing.service';
+import { JwtPayload } from '../interfaces/jwt.types';
 
 import { RedisService } from './../../redis/redis.service';
 import { AuthResponseDto, LoginDto, RefreshResponseDto, SignUpDto } from './dto';

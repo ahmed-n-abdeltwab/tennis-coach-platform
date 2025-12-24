@@ -1,0 +1,79 @@
+# Kubernetes Ingress Configuration for Tennis Coach API
+# ======================================================
+#
+# This Ingress routes external traffic to the tennis-coach-api-service.
+# Configured for nginx ingress controller with TLS termination.
+#
+# Prerequisites:
+#   1. nginx-ingress controller installed in cluster
+#   2. TLS certificate secret created (tennis-coach-tls)
+#   3. DNS configured to point to ingress controller's external IP
+#
+# TLS Certificate Setup:
+#   Option 1: Manual certificate
+#     kubectl create secret tls tennis-coach-tls \
+#       --namespace=tennis-coach \
+#       --cert=path/to/tls.crt \
+#       --key=path/to/tls.key
+#
+#   Option 2: cert-manager (recommended for auto-renewal)
+#     Add annotation: cert-manager.io/cluster-issuer: "letsencrypt-prod"
+#
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tennis-coach-ingress
+  namespace: tennis-coach
+  labels:
+    app: tennis-coach-api
+  annotations:
+    # Ingress controller class
+    kubernetes.io/ingress.class: nginx
+
+    # SSL/TLS configuration
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+    # Request body size limit (for file uploads if needed)
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+
+    # Timeouts for long-running requests
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+
+    # Rate limiting (optional - uncomment to enable)
+    # nginx.ingress.kubernetes.io/limit-rps: "100"
+    # nginx.ingress.kubernetes.io/limit-connections: "50"
+
+    # CORS headers (if not handled by application)
+    # nginx.ingress.kubernetes.io/enable-cors: "true"
+    # nginx.ingress.kubernetes.io/cors-allow-origin: "https://tenniscoach.app"
+
+    # Uncomment for cert-manager auto-provisioning
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  # Ingress class name (Kubernetes 1.18+)
+  ingressClassName: nginx
+
+  # TLS configuration
+  tls:
+    - hosts:
+        - api.tenniscoach.app
+      # Secret containing TLS certificate and key
+      # Create this secret before applying ingress, or use cert-manager
+      secretName: tennis-coach-tls
+
+  # Routing rules
+  rules:
+    - host: api.tenniscoach.app
+      http:
+        paths:
+          # Route all traffic to the API service
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tennis-coach-api-service
+                port:
+                  number: 80

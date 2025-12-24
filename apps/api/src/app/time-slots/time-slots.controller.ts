@@ -1,17 +1,13 @@
-import {
-  ApiConflictResponse,
-  ApiForbiddenResponse,
-  ApiNotFoundResponse,
-  CurrentUser,
-  JwtPayload,
-  Roles,
-} from '@common';
+import { ApiConflictResponse, ApiForbiddenResponse, ApiNotFoundResponse } from '@common';
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 
 import { Auth } from '../iam/authentication/decorators/auth.decorator';
+import { CurrentUser } from '../iam/authentication/decorators/current-user.decorator';
 import { AuthType } from '../iam/authentication/enums/auth-type.enum';
+import { Roles } from '../iam/authorization/decorators/roles.decorator';
+import { JwtPayload } from '../iam/interfaces/jwt.types';
 
 import {
   CreateTimeSlotDto,

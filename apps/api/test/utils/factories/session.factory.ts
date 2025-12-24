@@ -2,6 +2,8 @@
  * Session mock factory for creating test session data
  */
 
+import { SessionStatus } from '@prisma/client';
+
 import { BaseMockFactory } from './base-factory';
 
 export interface MockSession {
@@ -10,7 +12,7 @@ export interface MockSession {
   durationMin: number;
   price: number;
   isPaid: boolean;
-  status: string;
+  status: SessionStatus;
   notes?: string;
   paymentId?: string;
   discountCode?: string;
@@ -37,7 +39,7 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
       durationMin: this.randomDuration(),
       price: this.randomPrice(),
       isPaid: false,
-      status: 'scheduled',
+      status: SessionStatus.SCHEDULED,
       notes: this.randomNotes(),
       userId: this.generateId(),
       coachId: this.generateId(),
@@ -61,7 +63,7 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
 
   createScheduled(overrides?: Partial<MockSession>): MockSession {
     return this.create({
-      status: 'scheduled',
+      status: SessionStatus.SCHEDULED,
       isPaid: false,
       ...overrides,
     });
@@ -69,7 +71,7 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
 
   createCompleted(overrides?: Partial<MockSession>): MockSession {
     return this.create({
-      status: 'completed',
+      status: SessionStatus.COMPLETED,
       isPaid: true,
       dateTime: this.generatePastDate(7),
       paymentId: `pay_${this.generateId()}`,
@@ -79,7 +81,7 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
 
   createCancelled(overrides?: Partial<MockSession>): MockSession {
     return this.create({
-      status: 'cancelled',
+      status: SessionStatus.CANCELLED,
       isPaid: false,
       ...overrides,
     });

@@ -89,7 +89,7 @@ export class MessagesService {
     const message = await this.prisma.message.create({
       data: {
         content,
-        sessionId: sessionId || null,
+        sessionId: sessionId ?? null,
         senderId: userId,
         receiverId,
         senderType: role,

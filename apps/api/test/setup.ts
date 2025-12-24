@@ -85,8 +85,12 @@ jest.mock('@prisma/client', () => ({
 // =============================================================================
 // Mock: RedisService
 // Prevents actual Redis connections in unit tests
+// NOTE: This implementation must be inline because jest.mock runs before imports.
+// The canonical MockRedisService is in @test-infrastructure (apps/api/test/infrastructure/redis/index.ts)
+// Keep this implementation in sync with the canonical version.
 // =============================================================================
 jest.mock('../src/app/redis/redis.service', () => {
+  // Inline MockRedisService - must match @test-infrastructure/redis/MockRedisService
   class MockRedisService {
     private store: Map<string, { value: string; expiry?: number }> = new Map();
 
@@ -100,10 +104,10 @@ jest.mock('../src/app/redis/redis.service', () => {
       return item.value;
     }
 
-    async set(key: string, value: string, ...args: unknown[]): Promise<'OK'> {
+    async set(key: string, value: string, flag?: string, ttl?: number): Promise<'OK'> {
       let expiry: number | undefined;
-      if (args[0] === 'EX' && typeof args[1] === 'number') {
-        expiry = Date.now() + (args[1] as number) * 1000;
+      if (flag === 'EX' && typeof ttl === 'number') {
+        expiry = Date.now() + ttl * 1000;
       }
       this.store.set(key, { value, expiry });
       return 'OK';
@@ -135,6 +139,14 @@ jest.mock('../src/app/redis/redis.service', () => {
 
     getClient() {
       return this;
+    }
+
+    clear(): void {
+      this.store.clear();
+    }
+
+    keys(): string[] {
+      return Array.from(this.store.keys());
     }
   }
 

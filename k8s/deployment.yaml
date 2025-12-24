@@ -1,3 +1,12 @@
+# Kubernetes Deployment and Service for Tennis Coach API
+# ======================================================
+#
+# Image Versioning Convention:
+#   - Use semantic versioning: v{MAJOR}.{MINOR}.{PATCH}
+#   - Examples: v1.0.0, v1.2.3, v2.0.0-beta.1
+#   - NEVER use 'latest' in production - it's unpredictable
+#   - CI/CD should update the image tag on each release
+#
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,23 +26,88 @@ spec:
     spec:
       containers:
         - name: api
-          image: tennis-coach/api:latest
+          # Image tag follows semantic versioning (see comment at top of file)
+          # Update this tag via CI/CD pipeline on each release
+          image: tennis-coach/api:v1.0.0
           ports:
             - containerPort: 3333
           env:
+            # =================================================================
+            # DATABASE CONFIGURATION
+            # =================================================================
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
                   name: tennis-coach-secrets
                   key: database-url
+
+            # =================================================================
+            # JWT AUTHENTICATION SECRETS
+            # =================================================================
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: tennis-coach-secrets
                   key: jwt-secret
+            - name: JWT_REFRESH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tennis-coach-secrets
+                  key: jwt-refresh-secret
+
+            # =================================================================
+            # PAYPAL PAYMENT INTEGRATION
+            # =================================================================
+            - name: PAYPAL_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tennis-coach-secrets
+                  key: paypal-client-id
+            - name: PAYPAL_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tennis-coach-secrets
+                  key: paypal-client-secret
+
+            # =================================================================
+            # GOOGLE OAUTH / CALENDAR INTEGRATION
+            # =================================================================
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tennis-coach-secrets
+                  key: google-client-id
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tennis-coach-secrets
+                  key: google-client-secret
+            - name: GOOGLE_REDIRECT_URI
+              valueFrom:
+                secretKeyRef:
+                  name: tennis-coach-secrets
+                  key: google-redirect-uri
+
+            # =================================================================
+            # EMAIL / SMTP CONFIGURATION
+            # =================================================================
+            - name: SMTP_SENDER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: tennis-coach-secrets
+                  key: smtp-sender-email
+            - name: SMTP_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: tennis-coach-secrets
+                  key: smtp-token
+
+          # Non-sensitive configuration from ConfigMap
           envFrom:
             - configMapRef:
                 name: tennis-coach-config
+
+          # Health probes for Kubernetes to monitor pod health
           livenessProbe:
             httpGet:
               path: /api/health/liveness
@@ -46,6 +120,8 @@ spec:
               port: 3333
             initialDelaySeconds: 5
             periodSeconds: 5
+
+          # Resource limits to prevent runaway containers
           resources:
             requests:
               memory: "256Mi"
@@ -59,6 +135,8 @@ kind: Service
 metadata:
   name: tennis-coach-api-service
   namespace: tennis-coach
+  labels:
+    app: tennis-coach-api
 spec:
   selector:
     app: tennis-coach-api
