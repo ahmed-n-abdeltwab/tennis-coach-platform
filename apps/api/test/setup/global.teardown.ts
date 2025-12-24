@@ -55,8 +55,9 @@ export default async function globalTeardown(): Promise<void> {
     cleanupDelay = 2000;
   }
 
-  // Drop test database for integration and e2e tests
-  if (testType === 'integration' || testType === 'e2e') {
+  // Drop test database for integration and e2e tests (skip in CI)
+  const isCI = process.env.CI === 'true';
+  if ((testType === 'integration' || testType === 'e2e') && !isCI) {
     const databaseSuffix = testType === 'integration' ? 'test_integration' : 'test_e2e';
     const databaseName = `tennis_coach_${databaseSuffix}`;
     const dbPassword = process.env.DB_PASSWORD ?? 'password';
