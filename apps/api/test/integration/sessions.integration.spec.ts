@@ -79,7 +79,7 @@ describe('Sessions Integration', () => {
           expect(response.body.userId).toBe(userId);
           expect(response.body.coachId).toBe(coachId);
           expect(response.body.notes).toBe('Test session notes');
-          expect(response.body.status).toBe('scheduled');
+          expect(response.body.status).toBe(SessionStatus.SCHEDULED);
           expect(response.body.isPaid).toBe(false);
         }
       });
@@ -246,7 +246,7 @@ describe('Sessions Integration', () => {
           expect(response.body).toHaveProperty('data');
           expect(Array.isArray(response.body.data)).toBe(true);
           response.body.data?.forEach(session => {
-            expect(session.status).toBe('scheduled');
+            expect(session.status).toBe(SessionStatus.SCHEDULED);
           });
         }
       });
@@ -420,7 +420,7 @@ describe('Sessions Integration', () => {
         if (response.ok) {
           expect(response.status).toBe(200);
           expect(response.body.id).toBe(session.id);
-          expect(response.body.status).toBe('confirmed');
+          expect(response.body.status).toBe(SessionStatus.CONFIRMED);
         }
       });
 
@@ -508,7 +508,7 @@ describe('Sessions Integration', () => {
         if (response.ok) {
           expect(response.status).toBe(200);
           expect(response.body.id).toBe(session.id);
-          expect(response.body.status).toBe('cancelled');
+          expect(response.body.status).toBe(SessionStatus.CANCELLED);
         }
       });
 
