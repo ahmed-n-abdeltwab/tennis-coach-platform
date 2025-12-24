@@ -4,7 +4,7 @@
  * Demonstrates using BaseIntegrationTest with custom test data setup
  */
 
-import { Account, BookingType, Prisma, Session, TimeSlot } from '@prisma/client';
+import { Account, BookingType, Prisma, Session, SessionStatus, TimeSlot } from '@prisma/client';
 
 import { AccountsModule } from '../../src/app/accounts/accounts.module';
 import { BookingTypesModule } from '../../src/app/booking-types/booking-types.module';
@@ -95,7 +95,7 @@ describe('Booking System Integration', () => {
       coachId: testCoach.id,
       bookingTypeId: testBookingType.id,
       timeSlotId: testTimeSlot.id,
-      status: 'SCHEDULED',
+      status: SessionStatus.SCHEDULED,
       dateTime: new Date('2025-12-25T10:00:00Z'),
     });
     return testSession;
@@ -206,7 +206,7 @@ describe('Booking System Integration', () => {
         userToken,
         {
           body: {
-            status: 'CONFIRMED',
+            status: SessionStatus.CONFIRMED,
           },
         }
       );
@@ -239,7 +239,7 @@ describe('Booking System Integration', () => {
         userToken,
         {
           body: {
-            status: 'CANCELLED',
+            status: SessionStatus.CANCELLED,
           },
         }
       );
@@ -269,7 +269,7 @@ describe('Booking System Integration', () => {
         coachId: testCoach.id,
         bookingTypeId: testBookingType.id,
         timeSlotId: testTimeSlot.id,
-        status: 'SCHEDULED',
+        status: SessionStatus.SCHEDULED,
         dateTime: new Date('2025-12-25T10:00:00Z'),
       });
 
@@ -286,7 +286,7 @@ describe('Booking System Integration', () => {
         coachId: testCoach.id,
         bookingTypeId: testBookingType.id,
         timeSlotId: timeSlot2.id,
-        status: 'CONFIRMED',
+        status: SessionStatus.CONFIRMED,
         dateTime: new Date('2025-12-26T10:00:00Z'),
       });
 
@@ -332,7 +332,7 @@ describe('Booking System Integration', () => {
         coachId: testCoach.id,
         bookingTypeId: testBookingType.id,
         timeSlotId: testTimeSlot.id,
-        status: 'SCHEDULED',
+        status: SessionStatus.SCHEDULED,
         dateTime: new Date('2025-12-20T10:00:00Z'),
       });
 
@@ -349,7 +349,7 @@ describe('Booking System Integration', () => {
         coachId: testCoach.id,
         bookingTypeId: testBookingType.id,
         timeSlotId: timeSlot2.id,
-        status: 'SCHEDULED',
+        status: SessionStatus.SCHEDULED,
         dateTime: new Date('2025-12-28T10:00:00Z'),
       });
 

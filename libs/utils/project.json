@@ -15,6 +15,13 @@
         "main": "libs/utils/src/index.ts",
         "assets": ["libs/utils/*.md"]
       }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/utils/**/*.ts"]
+      }
     }
   }
 }

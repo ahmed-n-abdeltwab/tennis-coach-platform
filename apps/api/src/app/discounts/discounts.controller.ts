@@ -1,7 +1,9 @@
-import { CurrentUser, Roles } from '@common';
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
+
+import { CurrentUser } from '../iam/authentication/decorators/current-user.decorator';
+import { Roles } from '../iam/authorization/decorators/roles.decorator';
 
 import { DiscountsService } from './discounts.service';
 import {

@@ -1,3 +1,5 @@
+import { SessionStatus } from '@prisma/client';
+
 import { BookingTypesModule } from '../../src/app/booking-types/booking-types.module';
 import { IamModule } from '../../src/app/iam/iam.module';
 import { SessionsModule } from '../../src/app/sessions/sessions.module';
@@ -229,9 +231,9 @@ describe('Sessions Integration', () => {
 
       it('should filter sessions by status', async () => {
         // Create sessions with different statuses
-        await test.db.createTestSession({ userId, coachId, status: 'scheduled' });
-        await test.db.createTestSession({ userId, coachId, status: 'confirmed' });
-        await test.db.createTestSession({ userId, coachId, status: 'cancelled' });
+        await test.db.createTestSession({ userId, coachId, status: SessionStatus.SCHEDULED });
+        await test.db.createTestSession({ userId, coachId, status: SessionStatus.CONFIRMED });
+        await test.db.createTestSession({ userId, coachId, status: SessionStatus.CANCELLED });
 
         const response = await test.http.authenticatedGet(
           '/api/sessions?status=scheduled' as '/api/sessions',
@@ -396,10 +398,14 @@ describe('Sessions Integration', () => {
       });
 
       it('should allow coach to update session status', async () => {
-        const session = await test.db.createTestSession({ userId, coachId, status: 'scheduled' });
+        const session = await test.db.createTestSession({
+          userId,
+          coachId,
+          status: SessionStatus.SCHEDULED,
+        });
 
         const updateData = {
-          status: 'confirmed',
+          status: SessionStatus.CONFIRMED,
         };
 
         const response = await test.http.authenticatedPut(
@@ -487,7 +493,11 @@ describe('Sessions Integration', () => {
 
     describe('PUT /api/sessions/:id/cancel', () => {
       it('should allow user to cancel their own session', async () => {
-        const session = await test.db.createTestSession({ userId, coachId, status: 'scheduled' });
+        const session = await test.db.createTestSession({
+          userId,
+          coachId,
+          status: SessionStatus.SCHEDULED,
+        });
 
         const response = await test.http.authenticatedPut(
           `/api/sessions/${session.id}/cancel` as '/api/sessions/{id}/cancel',
@@ -503,7 +513,11 @@ describe('Sessions Integration', () => {
       });
 
       it('should allow coach to cancel session', async () => {
-        const session = await test.db.createTestSession({ userId, coachId, status: 'scheduled' });
+        const session = await test.db.createTestSession({
+          userId,
+          coachId,
+          status: SessionStatus.SCHEDULED,
+        });
 
         const response = await test.http.authenticatedPut(
           `/api/sessions/${session.id}/cancel` as '/api/sessions/{id}/cancel',
@@ -523,7 +537,7 @@ describe('Sessions Integration', () => {
         const session = await test.db.createTestSession({
           userId: otherUser.id,
           coachId,
-          status: 'scheduled',
+          status: SessionStatus.SCHEDULED,
         });
 
         const response = await test.http.authenticatedPut(

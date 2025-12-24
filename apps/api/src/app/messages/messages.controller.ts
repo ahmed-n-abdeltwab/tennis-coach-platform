@@ -1,6 +1,8 @@
-import { CurrentUser, JwtPayload } from '@common';
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+
+import { CurrentUser } from '../iam/authentication/decorators/current-user.decorator';
+import { JwtPayload } from '../iam/interfaces/jwt.types';
 
 import {
   CreateMessageDto,
