@@ -7,6 +7,7 @@ import { generateApiRoutes } from '@routes-helpers';
 import { AppModule } from './app/app.module';
 import { AppLoggerService } from './app/logger/app-logger.service';
 import { HttpLoggingInterceptor } from './app/logger/http-logging.interceptor';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 async function bootstrap() {
   // Configure logger with environment-based log levels before application initialization
@@ -20,6 +21,9 @@ async function bootstrap() {
 
   // Register HTTP logging interceptor globally
   app.useGlobalInterceptors(new HttpLoggingInterceptor(appLogger));
+
+  // Register global exception filter for consistent error responses
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Global prefix
   app.setGlobalPrefix('api');
