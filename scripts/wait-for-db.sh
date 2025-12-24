@@ -41,6 +41,29 @@ done
 # Additional wait to ensure database is fully accepting connections
 sleep 2
 
+# Fix template1 collation issue (Prisma shadow database requirement)
+# This fixes: "template database template1 has a collation version mismatch"
+fix_template1_collation() {
+  echo ""
+  echo "Checking template1 collation..."
+
+  # Check if template1 has collation issues by attempting a test
+  if docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -c "CREATE DATABASE _prisma_collation_test WITH TEMPLATE template1;" 2>&1 | grep -q "collation version"; then
+    echo "Fixing template1 collation issue..."
+    docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -c "ALTER DATABASE template1 IS_TEMPLATE false;" 2>/dev/null || true
+    docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -c "DROP DATABASE IF EXISTS template1;" 2>/dev/null || true
+    docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -c "CREATE DATABASE template1 WITH TEMPLATE = template0 ENCODING = 'UTF8' LC_COLLATE = 'C' LC_CTYPE = 'C';" 2>/dev/null || true
+    docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -c "ALTER DATABASE template1 IS_TEMPLATE true;" 2>/dev/null || true
+    echo "template1 collation fixed!"
+  else
+    # Clean up test database if it was created
+    docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -c "DROP DATABASE IF EXISTS _prisma_collation_test;" 2>/dev/null || true
+    echo "template1 collation is OK."
+  fi
+}
+
+fix_template1_collation
+
 # Function to create database if it doesn't exist (using docker exec)
 create_db_if_not_exists() {
   local db_name=$1
