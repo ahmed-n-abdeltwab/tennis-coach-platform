@@ -35,7 +35,7 @@ describe('TestInfrastructureError', () => {
     expect(error.timestamp).toBeInstanceOf(Date);
   });
 
-  it('should format erro logging', () => {
+  it('should format error for logging', () => {
     const error = new TestInfrastructureError('Test error', TestErrorCode.UNKNOWN_ERROR, {
       operation: 'test',
       value: 123,

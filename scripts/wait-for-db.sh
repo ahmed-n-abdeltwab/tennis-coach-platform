@@ -9,6 +9,7 @@ MAX_RETRIES="${MAX_RETRIES:-30}"
 RETRY_INTERVAL="${RETRY_INTERVAL:-2}"
 DB_USER="${DB_USER:-postgres}"
 DB_PASSWORD="${DB_PASSWORD:-password}"
+CONTAINER_NAME="${POSTGRES_CONTAINER:-tennis-coach-postgres}"
 
 # Database names
 DEV_DB="tennis_coach_dev"
@@ -16,24 +17,19 @@ TEST_DB="tennis_coach_test"
 TEST_INTEGRATION_DB="tennis_coach_test_integration"
 TEST_E2E_DB="tennis_coach_test_e2e"
 
-echo "Waiting for PostgreSQL at $HOST:$PORT..."
+echo "Waiting for PostgreSQL container to be ready..."
 
+# Wait for container to be healthy
 for i in $(seq 1 $MAX_RETRIES); do
-  if pg_isready -h "$HOST" -p "$PORT" > /dev/null 2>&1; then
-    echo "PostgreSQL is ready!"
+  # Check if container is running and healthy
+  HEALTH=$(docker inspect --format='{{.State.Health.Status}}' "$CONTAINER_NAME" 2>/dev/null || echo "not_found")
+
+  if [ "$HEALTH" = "healthy" ]; then
+    echo "PostgreSQL container is healthy!"
     break
   fi
 
-  # Fallback: try connecting with psql or nc if pg_isready isn't available
-  if command -v nc &> /dev/null; then
-    if nc -z "$HOST" "$PORT" 2>/dev/null; then
-      echo "PostgreSQL port is open, waiting for full readiness..."
-      sleep 2
-      break
-    fi
-  fi
-
-  echo "Attempt $i/$MAX_RETRIES: PostgreSQL not ready yet, retrying in ${RETRY_INTERVAL}s..."
+  echo "Attempt $i/$MAX_RETRIES: PostgreSQL not ready yet (status: $HEALTH), retrying in ${RETRY_INTERVAL}s..."
   sleep $RETRY_INTERVAL
 
   if [ $i -eq $MAX_RETRIES ]; then
@@ -42,16 +38,20 @@ for i in $(seq 1 $MAX_RETRIES); do
   fi
 done
 
-# Function to create database if it doesn't exist
+# Additional wait to ensure database is fully accepting connections
+sleep 2
+
+# Function to create database if it doesn't exist (using docker exec)
 create_db_if_not_exists() {
   local db_name=$1
   echo "Checking if database '$db_name' exists..."
 
-  if PGPASSWORD=$DB_PASSWORD psql -h "$HOST" -p "$PORT" -U "$DB_USER" -lqt | cut -d \| -f 1 | grep -qw "$db_name"; then
+  # Use docker exec to run psql inside the container
+  if docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -lqt 2>/dev/null | cut -d \| -f 1 | grep -qw "$db_name"; then
     echo "Database '$db_name' already exists."
   else
     echo "Creating database '$db_name'..."
-    PGPASSWORD=$DB_PASSWORD psql -h "$HOST" -p "$PORT" -U "$DB_USER" -c "CREATE DATABASE $db_name;" 2>/dev/null || true
+    docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -c "CREATE DATABASE $db_name;" 2>/dev/null || true
     echo "Database '$db_name' created."
   fi
 }
