@@ -236,7 +236,7 @@ describe('Sessions Integration', () => {
         await test.db.createTestSession({ userId, coachId, status: SessionStatus.CANCELLED });
 
         const response = await test.http.authenticatedGet(
-          '/api/sessions?status=scheduled' as '/api/sessions',
+          `/api/sessions?status=${SessionStatus.SCHEDULED}` as '/api/sessions',
           userToken
         );
 
