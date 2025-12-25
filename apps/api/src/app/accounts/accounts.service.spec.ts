@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Role } from '@prisma/client';
-import { ServiceTest } from '@test-utils';
+import { ServiceTest, TestDataFactory } from '@test-utils';
 
 import { HashingService } from '../iam/hashing/hashing.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -11,6 +11,7 @@ import { CreateAccountDto, UpdateAccountDto } from './dto/account.dto';
 describe('AccountsService', () => {
   let test: ServiceTest<AccountsService, PrismaService>;
   let mockHashingService: jest.Mocked<HashingService>;
+  let testDataFactory: TestDataFactory;
 
   beforeEach(async () => {
     const mockPrisma = {
@@ -40,6 +41,7 @@ describe('AccountsService', () => {
     });
 
     await test.setup();
+    testDataFactory = new TestDataFactory();
   });
 
   afterEach(async () => {
@@ -55,33 +57,10 @@ describe('AccountsService', () => {
         role: Role.USER,
       };
 
-      const mockAccount = {
-        id: 'test-id',
-        email: createDto.email,
-        name: createDto.name,
-        passwordHash: 'hashed-password',
-        role: Role.USER,
-        gender: null,
-        age: null,
-        height: null,
-        weight: null,
-        disability: false,
-        disabilityCause: null,
-        country: null,
-        address: null,
-        notes: null,
-        bio: null,
-        credentials: null,
-        philosophy: null,
-        profileImage: null,
-        isActive: true,
-        isOnline: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      const mockUsers = testDataFactory.createUser({ ...createDto, id: 'test-id' });
 
       test.prisma.account.findUnique.mockResolvedValue(null);
-      test.prisma.account.create.mockResolvedValue(mockAccount);
+      test.prisma.account.create.mockResolvedValue(mockUsers);
       mockHashingService.hash.mockResolvedValue('hashed-password');
 
       const result = await test.service.create(createDto);
@@ -90,7 +69,7 @@ describe('AccountsService', () => {
         id: 'test-id',
         email: createDto.email,
         name: createDto.name,
-        role: Role.USER,
+        role: createDto.role,
       });
       expect(result).not.toHaveProperty('passwordHash');
       expect(test.prisma.account.findUnique).toHaveBeenCalledWith({

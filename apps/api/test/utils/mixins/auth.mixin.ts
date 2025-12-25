@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
 import { parseJwtTime } from '@utils';
 
-import { JwtPayload } from '../../../src/common';
+import { JwtPayload } from '../../../src/app/iam/interfaces/jwt.types';
 import { DEFAULT_TEST_USER, HTTP_CONSTANTS, JWT_CONSTANTS } from '../constants/test-constants';
 
 /**
@@ -472,14 +472,14 @@ export class AuthMixin {
    *
    * @example
    * ```typescript
-   * const userPayload = authMixin.createUserPayload(Role.USER);
-   * const customPayload = authMixin.createUserPayload(Role.COACH, {
+   * const userPayload = authMixin.createRolePayload(Role.USER);
+   * const customPayload = authMixin.createRolePayload(Role.COACH, {
    *   sub: 'custom-id',
    *   email: 'custom@example.com'
    * });
    * ```
    */
-  createUserPayload(role: Role, overrides?: Partial<JwtPayload>): JwtPayload {
+  createRolePayload(role: Role, overrides?: Partial<JwtPayload>): JwtPayload {
     return {
       sub: `test-${role.toLowerCase()}-id`,
       email: `${role.toLowerCase()}@example.com`,
@@ -514,25 +514,25 @@ export class AuthMixin {
 
     for (let i = 0; i < count; i++) {
       users.push(
-        this.createUserPayload(Role.USER, {
+        this.createRolePayload(Role.USER, {
           sub: `test-user-${i}`,
           email: `user${i}@example.com`,
         })
       );
       coaches.push(
-        this.createUserPayload(Role.COACH, {
+        this.createRolePayload(Role.COACH, {
           sub: `test-coach-${i}`,
           email: `coach${i}@example.com`,
         })
       );
       admins.push(
-        this.createUserPayload(Role.ADMIN, {
+        this.createRolePayload(Role.ADMIN, {
           sub: `test-admin-${i}`,
           email: `admin${i}@example.com`,
         })
       );
       premiumUsers.push(
-        this.createUserPayload(Role.PREMIUM_USER, {
+        this.createRolePayload(Role.PREMIUM_USER, {
           sub: `test-premium-user-${i}`,
           email: `premium${i}@example.com`,
         })

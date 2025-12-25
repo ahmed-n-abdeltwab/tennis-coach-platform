@@ -22,6 +22,7 @@ import {
 } from '../http/type-safe-http-client';
 
 import type { AuthHeaders } from './auth.mixin';
+import { BaseMixin } from './base-mixin';
 
 /**
  * Interface for classes that can use HTTP methods
@@ -42,13 +43,8 @@ export interface HttpCapable {
 export class HttpMethodsMixin<
   TModuleName extends string = string,
   E extends Record<string, any> = Endpoints,
-> {
+> extends BaseMixin<HttpCapable> {
   private _httpClient?: TypeSafeHttpClient<TModuleName, E>;
-
-  constructor(private readonly host: HttpCapable) {
-    // Don't initialize httpClient here - it will be lazily initialized
-    // when first HTTP request is made, after setup() has been called
-  }
 
   /**
    * Lazy getter for httpClient

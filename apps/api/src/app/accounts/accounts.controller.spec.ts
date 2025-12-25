@@ -1,13 +1,13 @@
 import { Role } from '@prisma/client';
-import { ControllerTest } from '@test-utils';
+import { ControllerTest, TestDataFactory } from '@test-utils';
 
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
-import { AccountResponseDto } from './dto/account.dto';
 
 describe('AccountsController', () => {
   let test: ControllerTest<AccountsController, AccountsService, 'accounts'>;
   let mockService: jest.Mocked<AccountsService>;
+  let testDataFactory: TestDataFactory;
 
   beforeEach(async () => {
     mockService = {
@@ -30,6 +30,7 @@ describe('AccountsController', () => {
     });
 
     await test.setup();
+    testDataFactory = new TestDataFactory();
   });
 
   afterEach(async () => {
@@ -38,22 +39,12 @@ describe('AccountsController', () => {
 
   describe('GET /accounts', () => {
     it('should call findUsers service method', async () => {
-      const mockAccounts: AccountResponseDto[] = [
-        {
-          id: 'user-1',
-          email: 'user1@example.com',
-          name: 'User One',
-          role: Role.USER,
-          isActive: true,
-          isOnline: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
+      const mockUsers = testDataFactory.createUsers(1);
 
-      mockService.findUsers.mockResolvedValue(mockAccounts);
+      mockService.findUsers.mockResolvedValue(mockUsers);
 
       const adminToken = await test.auth.createRoleToken(Role.ADMIN);
+
       await test.http.authenticatedGet('/api/accounts', adminToken);
 
       expect(mockService.findUsers).toHaveBeenCalledTimes(1);
@@ -62,75 +53,48 @@ describe('AccountsController', () => {
 
   describe('GET /accounts/me', () => {
     it('should call findById with current user id', async () => {
-      const mockAccount: AccountResponseDto = {
-        id: 'current-user-id',
-        email: 'current@example.com',
-        name: 'Current User',
-        role: Role.USER,
-        isActive: true,
-        isOnline: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      const mockUsers = testDataFactory.createUser({ id: 'current-user-id' });
 
-      mockService.findById.mockResolvedValue(mockAccount);
+      mockService.findById.mockResolvedValue(mockUsers);
 
       const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: 'current-user-id',
       });
       await test.http.authenticatedGet('/api/accounts/me', userToken);
 
-      expect(mockService.findById).toHaveBeenCalledWith('current-user-id');
+      expect(mockService.findById).toHaveBeenCalledWith(mockUsers.id);
     });
   });
 
   describe('GET /accounts/:id', () => {
     it('should call findById with the provided id for admin', async () => {
-      const mockAccount: AccountResponseDto = {
-        id: 'target-user-id',
-        email: 'target@example.com',
-        name: 'Target User',
-        role: Role.USER,
-        isActive: true,
-        isOnline: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      const mockUsers = testDataFactory.createUser({ id: 'target-user-id' });
 
-      mockService.findById.mockResolvedValue(mockAccount);
+      mockService.findById.mockResolvedValue(mockUsers);
 
       const adminToken = await test.auth.createRoleToken(Role.ADMIN);
       await test.http.authenticatedGet(
-        `/api/accounts/${mockAccount.id}` as '/api/accounts/{id}',
+        `/api/accounts/${mockUsers.id}` as '/api/accounts/{id}',
         adminToken
       );
 
-      expect(mockService.findById).toHaveBeenCalledWith(mockAccount.id);
+      expect(mockService.findById).toHaveBeenCalledWith(mockUsers.id);
     });
 
     it('should call findById with own id for regular user', async () => {
-      const mockAccount: AccountResponseDto = {
-        id: 'current-user-id',
-        email: 'current@example.com',
-        name: 'Current User',
-        role: Role.USER,
-        isActive: true,
-        isOnline: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      const mockUsers = testDataFactory.createUser({ id: 'current-user-id' });
 
-      mockService.findById.mockResolvedValue(mockAccount);
+      mockService.findById.mockResolvedValue(mockUsers);
 
       const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: mockAccount.id,
+        sub: mockUsers.id,
       });
       await test.http.authenticatedGet(
-        `/api/accounts/${mockAccount.id}` as '/api/accounts/{id}',
+        `/api/accounts/${mockUsers.id}` as '/api/accounts/{id}',
         userToken
       );
 
-      expect(mockService.findById).toHaveBeenCalledWith(mockAccount.id);
+      expect(mockService.findById).toHaveBeenCalledWith(mockUsers.id);
     });
   });
 
@@ -139,62 +103,42 @@ describe('AccountsController', () => {
       const updateData = {
         name: 'Updated Name',
       };
+      const mockUsers = testDataFactory.createUser({ id: 'target-user-id', name: 'Name' });
 
-      const mockUpdatedAccount: AccountResponseDto = {
-        id: 'target-user-id',
-        email: 'target@example.com',
-        name: 'Updated Name',
-        role: Role.USER,
-        isActive: true,
-        isOnline: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      mockService.update.mockResolvedValue(mockUpdatedAccount);
+      mockService.update.mockResolvedValue(mockUsers);
 
       const adminToken = await test.auth.createRoleToken(Role.ADMIN);
       await test.http.authenticatedPatch(
-        `/api/accounts/${mockUpdatedAccount.id}` as '/api/accounts/{id}',
+        `/api/accounts/${mockUsers.id}` as '/api/accounts/{id}',
         adminToken,
         {
           body: updateData,
         }
       );
 
-      expect(mockService.update).toHaveBeenCalledWith(mockUpdatedAccount.id, updateData);
+      expect(mockService.update).toHaveBeenCalledWith(mockUsers.id, updateData);
     });
 
     it('should call update with own id for regular user', async () => {
       const updateData = {
         name: 'Updated Name',
       };
+      const mockUsers = testDataFactory.createUser({ id: 'current-user-id', name: 'Name' });
 
-      const mockUpdatedAccount: AccountResponseDto = {
-        id: 'current-user-id',
-        email: 'current@example.com',
-        name: 'Updated Name',
-        role: Role.USER,
-        isActive: true,
-        isOnline: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      mockService.update.mockResolvedValue(mockUpdatedAccount);
+      mockService.update.mockResolvedValue(mockUsers);
 
       const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: 'current-user-id',
       });
       await test.http.authenticatedPatch(
-        `/api/accounts/${mockUpdatedAccount.id}` as '/api/accounts/{id}',
+        `/api/accounts/${mockUsers.id}` as '/api/accounts/{id}',
         userToken,
         {
           body: updateData,
         }
       );
 
-      expect(mockService.update).toHaveBeenCalledWith(mockUpdatedAccount.id, updateData);
+      expect(mockService.update).toHaveBeenCalledWith(mockUsers.id, updateData);
     });
   });
 

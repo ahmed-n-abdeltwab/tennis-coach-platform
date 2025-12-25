@@ -36,6 +36,22 @@ import {
 } from '../constants/test-constants';
 
 /**
+ * Test data structure created during database seeding
+ */
+export interface TestData {
+  users: Account[];
+  coaches: Account[];
+  bookingTypes: BookingType[];
+}
+
+/**
+ * Base class for mixins that require a host implementing a capability interface
+ */
+export abstract class BaseMixin<THost> {
+  constructor(protected readonly host: THost) {}
+}
+
+/**
  * Interface for classes that can use database operations
  */
 export interface DatabaseCapable {
@@ -46,12 +62,10 @@ export interface DatabaseCapable {
  * Database Mixin
  * Handles all database operations, cleanup, and test data creation
  */
-export class DatabaseMixin {
+export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
   private cachedCoach?: Account;
   private cachedUser?: Account;
-  public testData: any;
-
-  constructor(private readonly host: DatabaseCapable) {}
+  public testData: TestData;
 
   // ============================================================================
   // Setup & Cleanup
