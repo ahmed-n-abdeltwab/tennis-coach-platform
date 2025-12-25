@@ -561,6 +561,15 @@ export class MockMixin {
 import { Role, SessionStatus } from '@prisma/client';
 
 import {
+  DEFAULT_TEST_BOOKING_TYPE,
+  DEFAULT_TEST_COACH,
+  DEFAULT_TEST_DISCOUNT,
+  DEFAULT_TEST_MESSAGE,
+  DEFAULT_TEST_SESSION,
+  DEFAULT_TEST_TIME_SLOT,
+  DEFAULT_TEST_USER,
+} from '../constants/test-constants';
+import {
   MockAccount,
   MockBookingType,
   MockCoach,
@@ -623,41 +632,42 @@ export class TestDataFactory {
     return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 5)}@example.com`;
   }
 
-  private generateFutureDate(daysFromNow = 7): Date {
-    const date = new Date();
-    date.setDate(date.getDate() + Math.floor(Math.random() * daysFromNow) + 1);
-    return date;
-  }
-
-  private generatePastDate(daysAgo = 30): Date {
-    const date = new Date();
-    date.setDate(date.getDate() - Math.floor(Math.random() * daysAgo) - 1);
-    return date;
-  }
-
   createUser(overrides?: Partial<MockAccount>): MockAccount {
     const id = this.generateId();
     const now = new Date();
-    return {
+    const base: MockAccount = {
       id,
       email: this.generateEmail('user'),
-      name: `Test User ${id.slice(-8)}`,
-      passwordHash: '$2b$10$test.hash.for.testing.purposes.only',
-      gender: 'male',
-      age: 25,
-      height: 175,
-      weight: 70,
+      name: DEFAULT_TEST_USER.NAME,
+      passwordHash: DEFAULT_TEST_USER.PASSWORD_HASH,
+      bio: null,
+      credentials: null,
+      philosophy: null,
+      profileImage: null,
+      gender: DEFAULT_TEST_USER.GENDER,
+      age: DEFAULT_TEST_USER.AGE,
+      height: DEFAULT_TEST_USER.HEIGHT,
+      weight: DEFAULT_TEST_USER.WEIGHT,
       disability: false,
-      country: 'USA',
-      address: '123 Test St',
+      disabilityCause: null,
+      country: DEFAULT_TEST_USER.COUNTRY,
+      address: DEFAULT_TEST_USER.ADDRESS,
       notes: `Test notes for user ${id.slice(-8)}`,
       createdAt: now,
       updatedAt: now,
       role: Role.USER,
       isActive: true,
       isOnline: true,
-      ...overrides,
     };
+
+    if (!overrides) return base;
+
+    // Filter out undefined values from overrides
+    const filtered = Object.fromEntries(
+      Object.entries(overrides).filter(([, v]) => v !== undefined)
+    );
+
+    return { ...base, ...filtered } as MockAccount;
   }
 
   createUsers(count: number, overrides?: Partial<MockAccount>): MockAccount[] {
@@ -667,23 +677,39 @@ export class TestDataFactory {
   createCoach(overrides?: Partial<MockCoach>): MockCoach {
     const id = this.generateId();
     const now = new Date();
-    return {
+    const base: MockCoach = {
       id,
       email: this.generateEmail('coach'),
-      name: `Coach ${id.slice(-8)}`,
-      passwordHash: '$2b$10$test.hash.for.testing.purposes.only',
-      bio: 'Experienced tennis coach with 10+ years of professional training.',
-      credentials: 'USPTA Certified Professional',
-      philosophy: 'Focus on fundamentals and consistent improvement.',
-      profileImage: `https://example.com/images/coach_${id.slice(-8)}.jpg`,
+      name: DEFAULT_TEST_COACH.NAME,
+      passwordHash: DEFAULT_TEST_USER.PASSWORD_HASH,
+      bio: DEFAULT_TEST_COACH.BIO,
+      credentials: DEFAULT_TEST_COACH.CREDENTIALS,
+      philosophy: DEFAULT_TEST_COACH.PHILOSOPHY,
+      profileImage: DEFAULT_TEST_COACH.PROFILE_IMAGE,
+      gender: null,
+      age: null,
+      height: null,
+      weight: null,
       disability: false,
+      disabilityCause: null,
+      country: null,
+      address: null,
+      notes: null,
       createdAt: now,
       updatedAt: now,
       isOnline: true,
       isActive: true,
       role: Role.COACH,
-      ...overrides,
     };
+
+    if (!overrides) return base;
+
+    // Filter out undefined values from overrides
+    const filtered = Object.fromEntries(
+      Object.entries(overrides).filter(([, v]) => v !== undefined)
+    );
+
+    return { ...base, ...filtered } as MockCoach;
   }
 
   createCoaches(count: number, overrides?: Partial<MockCoach>): MockCoach[] {
@@ -703,9 +729,9 @@ export class TestDataFactory {
     const now = new Date();
     return {
       id,
-      name: 'Individual Lesson',
-      description: 'One-on-one personalized coaching session',
-      basePrice: 75,
+      name: DEFAULT_TEST_BOOKING_TYPE.NAME,
+      description: DEFAULT_TEST_BOOKING_TYPE.DESCRIPTION,
+      basePrice: Number(DEFAULT_TEST_BOOKING_TYPE.BASE_PRICE),
       isActive: true,
       coachId: this.generateId(),
       createdAt: now,
@@ -724,11 +750,13 @@ export class TestDataFactory {
   createTimeSlot(overrides?: Partial<MockTimeSlot>): MockTimeSlot {
     const id = this.generateId();
     const now = new Date();
+    const futureDate = new Date();
+    futureDate.setHours(futureDate.getHours() + DEFAULT_TEST_TIME_SLOT.FUTURE_OFFSET_HOURS);
     return {
       id,
-      dateTime: this.generateFutureDate(14),
-      durationMin: 60,
-      isAvailable: true,
+      dateTime: futureDate,
+      durationMin: DEFAULT_TEST_TIME_SLOT.DURATION_MIN,
+      isAvailable: DEFAULT_TEST_TIME_SLOT.IS_AVAILABLE,
       coachId: this.generateId(),
       createdAt: now,
       updatedAt: now,
@@ -743,14 +771,16 @@ export class TestDataFactory {
   createSession(overrides?: Partial<MockSession>): MockSession {
     const id = this.generateId();
     const now = new Date();
+    const futureDate = new Date();
+    futureDate.setHours(futureDate.getHours() + DEFAULT_TEST_SESSION.FUTURE_OFFSET_HOURS);
     return {
       id,
-      dateTime: this.generateFutureDate(14),
-      durationMin: 60,
-      price: 75,
-      isPaid: false,
-      status: SessionStatus.SCHEDULED,
-      notes: 'Focus on backhand technique',
+      dateTime: futureDate,
+      durationMin: DEFAULT_TEST_SESSION.DURATION_MIN,
+      price: DEFAULT_TEST_SESSION.PRICE,
+      isPaid: DEFAULT_TEST_SESSION.IS_PAID,
+      status: DEFAULT_TEST_SESSION.STATUS,
+      notes: DEFAULT_TEST_SESSION.NOTES,
       userId: this.generateId(),
       coachId: this.generateId(),
       bookingTypeId: this.generateId(),
@@ -764,14 +794,16 @@ export class TestDataFactory {
   createDiscount(overrides?: Partial<MockDiscount>): MockDiscount {
     const id = this.generateId();
     const now = new Date();
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + DEFAULT_TEST_DISCOUNT.EXPIRY_OFFSET_DAYS);
     return {
       id,
       code: `DISCOUNT_${id.slice(-8)}`,
-      amount: 20,
-      isActive: true,
-      expiry: this.generateFutureDate(30),
-      useCount: 0,
-      maxUsage: 100,
+      amount: Number(DEFAULT_TEST_DISCOUNT.AMOUNT),
+      isActive: DEFAULT_TEST_DISCOUNT.IS_ACTIVE,
+      expiry: expiryDate,
+      useCount: DEFAULT_TEST_DISCOUNT.USE_COUNT,
+      maxUsage: DEFAULT_TEST_DISCOUNT.MAX_USAGE,
       coachId: this.generateId(),
       createdAt: now,
       updatedAt: now,
@@ -783,7 +815,7 @@ export class TestDataFactory {
     const id = this.generateId();
     return {
       id,
-      content: `Test message ${id.slice(-8)}`,
+      content: DEFAULT_TEST_MESSAGE.CONTENT,
       senderId: this.generateId(),
       receiverId: this.generateId(),
       sessionId: this.generateId(),

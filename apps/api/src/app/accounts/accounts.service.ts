@@ -27,8 +27,8 @@ export class AccountsService {
     const { passwordHash: _passwordHash, ...safeData } = account;
     return {
       ...safeData,
-      createdAt: account.createdAt.toISOString(),
-      updatedAt: account.updatedAt.toISOString(),
+      createdAt: account.createdAt,
+      updatedAt: account.updatedAt,
     } as AccountResponseDto;
   }
 

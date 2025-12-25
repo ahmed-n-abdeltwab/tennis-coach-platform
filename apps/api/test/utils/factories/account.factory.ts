@@ -15,19 +15,19 @@ export interface MockAccount {
   passwordHash: string;
 
   // Profile details
-  gender?: string;
-  age?: number;
-  height?: number;
-  weight?: number;
-  bio?: string;
-  credentials?: string;
-  philosophy?: string;
-  profileImage?: string;
+  gender: string | null;
+  age: number | null;
+  height: number | null;
+  weight: number | null;
+  bio: string | null;
+  credentials: string | null;
+  philosophy: string | null;
+  profileImage: string | null;
   disability: boolean;
-  disabilityCause?: string;
-  country?: string;
-  address?: string;
-  notes?: string;
+  disabilityCause: string | null;
+  country: string | null;
+  address: string | null;
+  notes: string | null;
 
   // State
   createdAt: Date;
@@ -52,12 +52,12 @@ export class AccountMockFactory extends BaseMockFactory<MockAccount> {
       age: this.randomAge(),
       height: this.randomHeight(),
       weight: this.randomWeight(),
-      bio: role === Role.COACH ? this.randomBio() : undefined,
-      credentials: role === Role.COACH ? this.randomCredentials() : undefined,
-      philosophy: role === Role.COACH ? this.randomPhilosophy() : undefined,
+      bio: role === Role.COACH ? this.randomBio() : null,
+      credentials: role === Role.COACH ? this.randomCredentials() : null,
+      philosophy: role === Role.COACH ? this.randomPhilosophy() : null,
       profileImage: this.randomProfileImage(),
       disability: false,
-      disabilityCause: undefined,
+      disabilityCause: null,
       country: this.randomCountry(),
       address: this.randomAddress(),
       notes: `Test notes for account ${id.slice(-8)}`,
@@ -76,13 +76,13 @@ export class AccountMockFactory extends BaseMockFactory<MockAccount> {
     this.validateRequired(account.passwordHash, 'passwordHash');
 
     // Validate optional numeric fields if present
-    if (account.age !== undefined && account.age !== null) {
+    if (account.age) {
       this.validatePositive(account.age, 'age');
     }
-    if (account.height !== undefined && account.height !== null) {
+    if (account.height) {
       this.validatePositive(account.height, 'height');
     }
-    if (account.weight !== undefined && account.weight !== null) {
+    if (account.weight) {
       this.validatePositive(account.weight, 'weight');
     }
 
