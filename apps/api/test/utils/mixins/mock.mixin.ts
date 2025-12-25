@@ -558,7 +558,7 @@ export class MockMixin {
 // Test Data Creation (merged from MockDataMixin)
 // ============================================================================
 
-import { Role } from '@prisma/client';
+import { Role, SessionStatus } from '@prisma/client';
 
 import {
   MockAccount,
@@ -749,7 +749,7 @@ export class TestDataFactory {
       durationMin: 60,
       price: 75,
       isPaid: false,
-      status: 'scheduled',
+      status: SessionStatus.SCHEDULED,
       notes: 'Focus on backhand technique',
       userId: this.generateId(),
       coachId: this.generateId(),
@@ -810,7 +810,7 @@ export class TestDataFactory {
 
   createBookingScenario(options?: {
     withDiscount?: boolean;
-    sessionStatus?: string;
+    sessionStatus?: SessionStatus;
     isPaid?: boolean;
   }): BookingScenario {
     const scenario = this.createTestScenario();
