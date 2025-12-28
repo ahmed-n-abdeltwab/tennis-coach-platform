@@ -55,7 +55,7 @@ describe('AccountsService', () => {
         role: Role.USER,
       };
 
-      const mockUsers = test.factory.createUserWithNulls({ ...createDto, id: 'test-id' });
+      const mockUsers = test.factory.account.createUserWithNulls({ ...createDto, id: 'test-id' });
 
       test.prisma.account.findUnique.mockResolvedValue(null);
       test.prisma.account.create.mockResolvedValue(mockUsers);
@@ -84,7 +84,7 @@ describe('AccountsService', () => {
         name: 'Test User',
       };
 
-      const existingAccount = test.factory.createUserWithNulls({
+      const existingAccount = test.factory.account.createUserWithNulls({
         ...createDto,
         id: 'existing-id',
         name: 'Existing User',
@@ -116,7 +116,7 @@ describe('AccountsService', () => {
 
   describe('findById', () => {
     it('should return account by id', async () => {
-      const mockAccount = test.factory.createUserWithNulls();
+      const mockAccount = test.factory.account.createUserWithNulls();
 
       test.prisma.account.findUnique.mockResolvedValue(mockAccount);
 
@@ -145,7 +145,7 @@ describe('AccountsService', () => {
 
   describe('findByEmail', () => {
     it('should return account by email', async () => {
-      const mockAccount = test.factory.createUserWithNulls();
+      const mockAccount = test.factory.account.createUserWithNulls();
 
       test.prisma.account.findUnique.mockResolvedValue(mockAccount);
 
@@ -177,7 +177,7 @@ describe('AccountsService', () => {
         bio: 'Updated bio',
       };
 
-      const existingAccount = test.factory.createUserWithNulls({ id: 'test-id' });
+      const existingAccount = test.factory.account.createUserWithNulls({ id: 'test-id' });
 
       const updatedAccount = {
         ...existingAccount,
@@ -220,7 +220,7 @@ describe('AccountsService', () => {
 
   describe('delete', () => {
     it('should delete account successfully', async () => {
-      const existingAccount = test.factory.createUserWithNulls({ id: 'test-id' });
+      const existingAccount = test.factory.account.createUserWithNulls({ id: 'test-id' });
 
       test.prisma.account.findUnique.mockResolvedValue(existingAccount);
       test.prisma.account.delete.mockResolvedValue(existingAccount);

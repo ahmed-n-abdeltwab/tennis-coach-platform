@@ -2,7 +2,7 @@ import { BaseResponseDto, createTypedApiDecorators } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Decimal } from '@prisma/client/runtime/client';
 import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 export class CoachDto {
   @IsString()
   id: string;
@@ -37,9 +37,9 @@ export class BookingTypeResponseDto extends BaseResponseDto {
   coachId: string;
 }
 export class GetAllBookingTypeResponseDto extends BookingTypeResponseDto {
-  @ValidateNested()
-  @Type(() => CoachDto)
-  coach: CoachDto;
+  // @ValidateNested()
+  // @Type(() => CoachDto)
+  // coach: CoachDto;
 }
 
 export class CreateBookingTypeDto {

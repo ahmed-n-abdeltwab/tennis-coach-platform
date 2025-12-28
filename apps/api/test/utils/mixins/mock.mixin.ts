@@ -562,32 +562,26 @@ import { SessionStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 
 import {
-  bookingTypeFactory,
-  coachFactory,
-  createBookingScenario,
-  createConversationScenario,
-  createTestScenario,
-  discountFactory,
-  messageFactory,
-  sessionFactory,
-  timeSlotFactory,
-  userFactory,
+  AccountMockFactory,
+  BookingTypeMockFactory,
+  DiscountMockFactory,
+  MessageMockFactory,
+  SessionMockFactory,
+  TimeSlotMockFactory,
   type MockAccount,
   type MockBookingType,
-  type MockCoach,
   type MockDiscount,
   type MockMessage,
   type MockSession,
   type MockTimeSlot,
 } from '../factories';
-import { Nullified } from '../factories/base-factory';
 
 /**
  * Test scenario with related entities
  */
 export interface TestScenario {
   user: MockAccount;
-  coach: MockCoach;
+  coach: MockAccount;
   bookingType: MockBookingType;
   timeSlot: MockTimeSlot;
   session: MockSession;
@@ -605,7 +599,7 @@ export interface BookingScenario extends TestScenario {
  */
 export interface ConversationScenario {
   user: MockAccount;
-  coach: MockCoach;
+  coach: MockAccount;
   messages: MockMessage[];
 }
 
@@ -613,7 +607,7 @@ export interface ConversationScenario {
  * Test Data Factory
  *
  * Creates in-memory mock data objects for unit tests using the factory system.
- * Provides nullify options for service mocks vs DTOs.
+ * Provides direct access to factory instances for clean API usage.
  *
  * Use this when you don't need real database records.
  * For real database records, use DatabaseMixin instead.
@@ -622,195 +616,32 @@ export interface ConversationScenario {
  * ```typescript
  * const factory = new TestDataFactory();
  *
- * // For DTOs (keeps undefined)
- * const user = factory.createUser({ bio: undefined });
- *
- * // For service mocks (converts undefined to null)
- * const userMock = factory.createUser('nullify', { bio: undefined });
- * // or
- * const userMock = factory.createUserWithNulls({ bio: undefined });
+ * // Direct access to factory methods
+ * const user = factory.account.createUser({ bio: undefined });
+ * const coach = factory.account.createCoach();
+ * const session = factory.session.create();
  *
  * // Create related scenarios
  * const scenario = factory.createTestScenario();
  * ```
  */
 export class TestDataFactory {
-  /**
-   * Creates a user account (keeps undefined values)
-   * @param overrides Optional property overrides
-   * @returns MockAccount with undefined values preserved
-   */
-  createUser(overrides?: Partial<MockAccount>): MockAccount {
-    return userFactory.create(overrides);
-  }
+  // Compose factories for clean separation of concerns
+  readonly account: AccountMockFactory;
+  readonly bookingType: BookingTypeMockFactory;
+  readonly timeSlot: TimeSlotMockFactory;
+  readonly session: SessionMockFactory;
+  readonly discount: DiscountMockFactory;
+  readonly message: MessageMockFactory;
 
-  /**
-   * Creates a user account (converts undefined to null)
-   * @param overrides Optional property overrides
-   * @returns MockAccount with undefined values converted to null
-   */
-  createUserWithNulls(overrides?: Partial<MockAccount>): Nullified<MockAccount> {
-    return userFactory.createWithNulls(overrides);
-  }
-
-  /**
-   * Creates multiple users
-   * @param count Number of users to create
-   * @param overrides Optional property overrides for all users
-   * @returns Array of MockAccount objects
-   */
-  createUsers(count: number, overrides?: Partial<MockAccount>): MockAccount[] {
-    return userFactory.createMany(count, overrides);
-  }
-
-  /**
-   * Creates a coach account (keeps undefined values)
-   * @param overrides Optional property overrides
-   * @returns MockCoach with undefined values preserved
-   */
-  createCoach(overrides?: Partial<MockCoach>): MockCoach {
-    return coachFactory.create(overrides);
-  }
-
-  /**
-   * Creates a coach account (converts undefined to null)
-   * @param overrides Optional property overrides
-   * @returns MockCoach with undefined values converted to null
-   */
-  createCoachWithNulls(overrides?: Partial<MockCoach>): Nullified<MockCoach> {
-    return coachFactory.createWithNulls(overrides);
-  }
-
-  /**
-   * Creates multiple coaches
-   * @param count Number of coaches to create
-   * @param overrides Optional property overrides for all coaches
-   * @returns Array of MockCoach objects
-   */
-  createCoaches(count: number, overrides?: Partial<MockCoach>): MockCoach[] {
-    return coachFactory.createMany(count, overrides);
-  }
-
-  /**
-   * Creates an admin account
-   * @param overrides Optional property overrides
-   * @returns MockCoach with ADMIN role
-   */
-  createAdmin(overrides?: Partial<MockCoach>): MockCoach {
-    return coachFactory.createAdmin(overrides);
-  }
-
-  /**
-   * Creates a booking type (keeps undefined values)
-   * @param overrides Optional property overrides
-   * @returns MockBookingType with undefined values preserved
-   */
-  createBookingType(overrides?: Partial<MockBookingType>): MockBookingType {
-    return bookingTypeFactory.create(overrides);
-  }
-
-  /**
-   * Creates a booking type (converts undefined to null)
-   * @param overrides Optional property overrides
-   * @returns MockBookingType with undefined values converted to null
-   */
-  createBookingTypeWithNulls(overrides?: Partial<MockBookingType>): Nullified<MockBookingType> {
-    return bookingTypeFactory.createWithNulls(overrides);
-  }
-
-  /**
-   * Creates a booking type for a specific coach
-   * @param coachId The coach ID to associate with the booking type
-   * @param overrides Optional property overrides
-   * @returns MockBookingType linked to the specified coach
-   */
-  createBookingTypeForCoach(
-    coachId: string,
-    overrides?: Partial<MockBookingType>
-  ): MockBookingType {
-    return bookingTypeFactory.createWithCoach(coachId, overrides);
-  }
-
-  /**
-   * Creates a time slot (keeps undefined values)
-   * @param overrides Optional property overrides
-   * @returns MockTimeSlot with undefined values preserved
-   */
-  createTimeSlot(overrides?: Partial<MockTimeSlot>): MockTimeSlot {
-    return timeSlotFactory.create(overrides);
-  }
-
-  /**
-   * Creates a time slot (converts undefined to null)
-   * @param overrides Optional property overrides
-   * @returns MockTimeSlot with undefined values converted to null
-   */
-  createTimeSlotWithNulls(overrides?: Partial<MockTimeSlot>): Nullified<MockTimeSlot> {
-    return timeSlotFactory.createWithNulls(overrides);
-  }
-
-  /**
-   * Creates a time slot for a specific coach
-   * @param coachId The coach ID to associate with the time slot
-   * @param overrides Optional property overrides
-   * @returns MockTimeSlot linked to the specified coach
-   */
-  createTimeSlotForCoach(coachId: string, overrides?: Partial<MockTimeSlot>): MockTimeSlot {
-    return timeSlotFactory.createWithCoach(coachId, overrides);
-  }
-
-  /**
-   * Creates a session (keeps undefined values)
-   * @param overrides Optional property overrides
-   * @returns MockSession with undefined values preserved
-   */
-  createSession(overrides?: Partial<MockSession>): MockSession {
-    return sessionFactory.create(overrides);
-  }
-
-  /**
-   * Creates a session (converts undefined to null)
-   * @param overrides Optional property overrides
-   * @returns MockSession with undefined values converted to null
-   */
-  createSessionWithNulls(overrides?: Partial<MockSession>): Nullified<MockSession> {
-    return sessionFactory.createWithNulls(overrides);
-  }
-
-  /**
-   * Creates a discount (keeps undefined values)
-   * @param overrides Optional property overrides
-   * @returns MockDiscount with undefined values preserved
-   */
-  createDiscount(overrides?: Partial<MockDiscount>): MockDiscount {
-    return discountFactory.create(overrides);
-  }
-
-  /**
-   * Creates a discount (converts undefined to null)
-   * @param overrides Optional property overrides
-   * @returns MockDiscount with undefined values converted to null
-   */
-  createDiscountWithNulls(overrides?: Partial<MockDiscount>): Nullified<MockDiscount> {
-    return discountFactory.createWithNulls(overrides);
-  }
-
-  /**
-   * Creates a message (keeps undefined values)
-   * @param overrides Optional property overrides
-   * @returns MockMessage with undefined values preserved
-   */
-  createMessage(overrides?: Partial<MockMessage>): MockMessage {
-    return messageFactory.create(overrides);
-  }
-
-  /**
-   * Creates a message (converts undefined to null)
-   * @param overrides Optional property overrides
-   * @returns MockMessage with undefined values converted to null
-   */
-  createMessageWithNulls(overrides?: Partial<MockMessage>): Nullified<MockMessage> {
-    return messageFactory.createWithNulls(overrides);
+  constructor() {
+    // Initialize mixins
+    this.account = new AccountMockFactory();
+    this.bookingType = new BookingTypeMockFactory();
+    this.timeSlot = new TimeSlotMockFactory();
+    this.session = new SessionMockFactory();
+    this.discount = new DiscountMockFactory();
+    this.message = new MessageMockFactory();
   }
 
   /**
@@ -819,13 +650,41 @@ export class TestDataFactory {
    * @returns TestScenario with user, coach, bookingType, timeSlot, and session
    */
   createTestScenario(overrides?: {
-    user?: Partial<MockAccount>;
-    coach?: Partial<MockCoach>;
-    bookingType?: Partial<MockBookingType>;
-    timeSlot?: Partial<MockTimeSlot>;
-    session?: Partial<MockSession>;
+    user?: MockAccount;
+    coach?: MockAccount;
+    bookingType?: MockBookingType;
+    timeSlot?: MockTimeSlot;
+    session?: MockSession;
   }): TestScenario {
-    return createTestScenario(overrides);
+    // Create coach first (needed for booking type and time slot)
+    const coach = overrides?.coach ?? this.account.createCoach({ ...overrides?.coach });
+
+    const user = overrides?.user ?? this.account.createUser({ ...overrides?.user });
+
+    // Create booking type for this coach
+    const bookingType =
+      overrides?.bookingType ?? this.bookingType.createWithCoach(coach?.id, overrides?.bookingType);
+
+    // Create time slot for this coach
+    const timeSlot =
+      overrides?.timeSlot ?? this.timeSlot.createWithCoach(coach?.id, overrides?.timeSlot);
+
+    // Create session that connects everything together
+    const sessionOverrides = {
+      userId: user.id,
+      coachId: coach.id,
+      bookingTypeId: bookingType.id,
+      timeSlotId: timeSlot.id,
+      // Ensure session dateTime matches time slot
+      dateTime: timeSlot.dateTime,
+      // Set appropriate price based on booking type
+      price: bookingType.basePrice,
+      ...overrides?.session,
+    };
+
+    const session = overrides?.session ?? this.session.create(sessionOverrides);
+
+    return { user, coach, bookingType, timeSlot, session };
   }
 
   /**
@@ -838,13 +697,75 @@ export class TestDataFactory {
     discountAmount?: Decimal;
     sessionStatus?: SessionStatus;
     isPaid?: boolean;
-    user?: Partial<MockAccount>;
-    coach?: Partial<MockCoach>;
-    bookingType?: Partial<MockBookingType>;
-    timeSlot?: Partial<MockTimeSlot>;
-    session?: Partial<MockSession>;
+    user?: MockAccount;
+    coach?: MockAccount;
+    bookingType?: MockBookingType;
+    timeSlot?: MockTimeSlot;
+    session?: MockSession;
   }): BookingScenario {
-    return createBookingScenario(options);
+    // Create base scenario
+    const scenario = this.createTestScenario({
+      user: options?.user,
+      coach: options?.coach,
+      bookingType: options?.bookingType,
+      timeSlot: options?.timeSlot,
+      session: options?.session,
+    });
+
+    let discount: MockDiscount | null = null;
+
+    // Create discount if requested
+    if (options?.withDiscount) {
+      // Use provided amount or default to 10% of session price (but not more than $50)
+      const discountAmount =
+        options.discountAmount ?? Decimal.min(scenario.session.price.mul(0.1), new Decimal(50));
+
+      discount = this.discount.createWithCoach(scenario.coach.id, {
+        amount: discountAmount,
+        maxUsage: 10, // Allow multiple uses for testing
+        useCount: 0,
+      });
+
+      // Apply discount to session
+      scenario.session.discountId = discount.id;
+      scenario.session.discountCode = discount.code;
+
+      // Calculate discounted price (ensure it doesn't go below 0)
+      scenario.session.price = Decimal.max(
+        new Decimal(0),
+        scenario.session.price.sub(discount.amount)
+      );
+
+      // Update discount usage
+      discount.useCount += 1;
+    }
+
+    // Set session status
+    if (options?.sessionStatus) {
+      scenario.session.status = options.sessionStatus;
+
+      // If completed, set appropriate timestamps
+      if (options.sessionStatus === SessionStatus.COMPLETED) {
+        scenario.session.updatedAt = new Date();
+      }
+    }
+
+    // Handle payment state
+    if (options?.isPaid !== undefined) {
+      scenario.session.isPaid = options.isPaid;
+
+      if (options.isPaid) {
+        scenario.session.paymentId = `pay_${scenario.session.id}`;
+        // If paid, status should be at least confirmed
+        if (scenario.session.status === SessionStatus.SCHEDULED) {
+          scenario.session.status = SessionStatus.CONFIRMED;
+        }
+      } else {
+        scenario.session.paymentId = undefined;
+      }
+    }
+
+    return { ...scenario, discount };
   }
 
   /**
@@ -855,10 +776,25 @@ export class TestDataFactory {
   createConversationScenario(options?: {
     messageCount?: number;
     conversationType?: 'support' | 'booking' | 'feedback' | 'general';
-    user?: Partial<MockAccount>;
-    coach?: Partial<MockCoach>;
+    user?: MockAccount;
+    coach?: MockAccount;
     startTime?: Date;
   }): ConversationScenario {
-    return createConversationScenario(options);
+    const messageCount = options?.messageCount ?? 5;
+    // Create coach first (needed for booking type and time slot)
+    const coach = options?.coach ?? this.account.createCoach({ ...options?.coach });
+
+    const user = options?.user ?? this.account.createUser({ ...options?.user });
+
+    // Create conversation with specific type
+    const messages = this.message.createConversation(
+      user.id,
+      coach.id,
+      messageCount,
+      options?.conversationType,
+      options?.startTime
+    );
+
+    return { user, coach, messages };
   }
 }

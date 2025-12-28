@@ -1,6 +1,6 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/client';
-import { ServiceTest, TestDataFactory } from '@test-utils';
+import { ServiceTest } from '@test-utils';
 
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -9,7 +9,6 @@ import { CreateBookingTypeDto, UpdateBookingTypeDto } from './dto/booking-type.d
 
 describe('BookingTypesService', () => {
   let test: ServiceTest<BookingTypesService, PrismaService>;
-  let testDataFactory: TestDataFactory;
 
   beforeEach(async () => {
     // Create mock PrismaService
@@ -33,7 +32,6 @@ describe('BookingTypesService', () => {
     });
 
     await test.setup();
-    testDataFactory = new TestDataFactory();
   });
 
   afterEach(async () => {
@@ -42,13 +40,12 @@ describe('BookingTypesService', () => {
 
   describe('findAll', () => {
     it('should return all active booking types with coach information', async () => {
-      const mockBookingTypes = Array(
-        testDataFactory.createBookingType({
-          id: 'booking-type-1',
-          name: 'Personal Training',
-          coachId: 'coach-1',
-        })
-      );
+      const mockBookingTypes = test.factory.bookingType.createManyWithNulls(1, {
+        id: 'booking-type-1',
+        name: 'Personal Training',
+        coachId: 'coach-1',
+      });
+
       // Direct access to prisma - no getPrisma() needed!
       test.prisma.bookingType.findMany.mockResolvedValue(mockBookingTypes);
 
@@ -58,15 +55,6 @@ describe('BookingTypesService', () => {
       expect(result).toHaveLength(1);
       expect(test.prisma.bookingType.findMany).toHaveBeenCalledWith({
         where: { isActive: true },
-        include: {
-          coach: {
-            select: {
-              id: true,
-              name: true,
-              credentials: true,
-            },
-          },
-        },
       });
     });
   });

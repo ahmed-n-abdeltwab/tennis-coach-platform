@@ -134,6 +134,7 @@ export class ControllerTest<
     this.auth = new AuthMixin();
     this.assert = new AssertionsMixin();
     this.mock = new MockMixin();
+    this.factory = new TestDataFactory();
   }
 
   /**

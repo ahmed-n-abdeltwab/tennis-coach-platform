@@ -17,15 +17,6 @@ export class BookingTypesService {
   async findAll(): Promise<GetAllBookingTypeResponseDto[]> {
     const data = await this.prisma.bookingType.findMany({
       where: { isActive: true },
-      include: {
-        coach: {
-          select: {
-            id: true,
-            name: true,
-            credentials: true,
-          },
-        },
-      },
     });
     return plainToInstance(GetAllBookingTypeResponseDto, data);
   }

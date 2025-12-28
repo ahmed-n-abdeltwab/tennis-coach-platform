@@ -1,6 +1,6 @@
 import { Role } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
-import { ControllerTest, TestDataFactory } from '@test-utils';
+import { ControllerTest } from '@test-utils';
 
 import { BookingTypesController } from './booking-types.controller';
 import { BookingTypesService } from './booking-types.service';
@@ -8,7 +8,6 @@ import { BookingTypesService } from './booking-types.service';
 describe('BookingTypesController', () => {
   let test: ControllerTest<BookingTypesController, BookingTypesService, 'booking-types'>;
   let mockService: jest.Mocked<BookingTypesService>;
-  let testDataFactory: TestDataFactory;
 
   beforeEach(async () => {
     // Create mock service
@@ -29,7 +28,6 @@ describe('BookingTypesController', () => {
     });
 
     await test.setup();
-    testDataFactory = new TestDataFactory();
   });
 
   afterEach(async () => {
@@ -38,14 +36,13 @@ describe('BookingTypesController', () => {
 
   describe('GET /booking-types', () => {
     it('should call findAll service method', async () => {
-      const mockBookingTypes = Array(
-        testDataFactory.createBookingTypeForCoach('coach-1', {
-          id: 'booking-type-1',
-          name: 'Personal Training',
-        })
-      );
+      const mockBookingTypes = test.factory.bookingType.createManyWithNulls(1, {
+        id: 'booking-type-1',
+        name: 'Personal Training',
+        coachId: 'coach-1',
+      });
 
-      mockService.findAll.mockResolvedValue(mockBookingTypes as any);
+      mockService.findAll.mockResolvedValue(mockBookingTypes);
 
       // Direct access to HTTP methods - no wrapper needed!
       await test.http.get('/api/booking-types');
@@ -57,13 +54,11 @@ describe('BookingTypesController', () => {
   describe('GET /booking-types/coach/:coachId', () => {
     it('should call findByCoach with the provided coach id', async () => {
       const coachId = 'coach-1';
-      const mockBookingTypes = Array(
-        testDataFactory.createBookingTypeForCoach(coachId, {
-          id: 'booking-type-1',
-          name: 'Personal Training',
-        })
-      );
-
+      const mockBookingTypes = test.factory.bookingType.createManyWithNulls(1, {
+        id: 'booking-type-1',
+        name: 'Personal Training',
+        coachId,
+      });
       mockService.findByCoach.mockResolvedValue(mockBookingTypes);
 
       await test.http.get(
@@ -76,9 +71,10 @@ describe('BookingTypesController', () => {
 
   describe('GET /booking-types/:id', () => {
     it('should call findOne with the provided id', async () => {
-      const mockBookingType = testDataFactory.createBookingTypeForCoach('coach-1', {
+      const mockBookingType = test.factory.bookingType.createWithNulls({
         id: 'booking-type-1',
         name: 'Personal Training',
+        coachId: 'coach-1',
       });
       mockService.findOne.mockResolvedValue(mockBookingType);
 
@@ -98,11 +94,11 @@ describe('BookingTypesController', () => {
       };
 
       const coachId = 'coach-1';
-
-      const mockCreatedBookingType = testDataFactory.createBookingTypeForCoach('coach-1', {
+      const mockCreatedBookingType = test.factory.bookingType.createWithNulls({
         id: 'booking-type-1',
         ...createData,
         basePrice: new Decimal(createData.basePrice),
+        coachId,
       });
 
       mockService.create.mockResolvedValue(mockCreatedBookingType);
@@ -128,10 +124,11 @@ describe('BookingTypesController', () => {
 
       const coachId = 'coach-1';
       const bookingTypeId = 'booking-type-1';
-      const mockUpdatedBookingType = testDataFactory.createBookingTypeForCoach('coach-1', {
+      const mockUpdatedBookingType = test.factory.bookingType.createWithNulls({
         id: bookingTypeId,
         ...updateData,
         basePrice: new Decimal(updateData.basePrice),
+        coachId,
       });
 
       mockService.update.mockResolvedValue(mockUpdatedBookingType);
@@ -158,11 +155,11 @@ describe('BookingTypesController', () => {
       const coachId = 'coach-1';
       const bookingTypeId = 'booking-type-1';
 
-      const mockUpdatedBookingType = testDataFactory.createBookingTypeForCoach('coach-1', {
+      const mockUpdatedBookingType = test.factory.bookingType.createWithNulls({
         id: bookingTypeId,
         ...updateData,
+        coachId,
       });
-
       mockService.update.mockResolvedValue(mockUpdatedBookingType);
 
       const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });

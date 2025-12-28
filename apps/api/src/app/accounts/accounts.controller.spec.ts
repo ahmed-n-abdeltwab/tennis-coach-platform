@@ -1,5 +1,5 @@
 import { Role } from '@prisma/client';
-import { ControllerTest, TestDataFactory } from '@test-utils';
+import { ControllerTest } from '@test-utils';
 
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
@@ -7,7 +7,6 @@ import { AccountsService } from './accounts.service';
 describe('AccountsController', () => {
   let test: ControllerTest<AccountsController, AccountsService, 'accounts'>;
   let mockService: jest.Mocked<AccountsService>;
-  let testDataFactory: TestDataFactory;
 
   beforeEach(async () => {
     mockService = {
@@ -30,7 +29,6 @@ describe('AccountsController', () => {
     });
 
     await test.setup();
-    testDataFactory = new TestDataFactory();
   });
 
   afterEach(async () => {
@@ -39,7 +37,7 @@ describe('AccountsController', () => {
 
   describe('GET /accounts', () => {
     it('should call findUsers service method', async () => {
-      const mockUsers = testDataFactory.createUsers(1);
+      const mockUsers = test.factory.account.createManyUser(1);
 
       mockService.findUsers.mockResolvedValue(mockUsers);
 
@@ -53,7 +51,7 @@ describe('AccountsController', () => {
 
   describe('GET /accounts/me', () => {
     it('should call findById with current user id', async () => {
-      const mockUsers = testDataFactory.createUser({ id: 'current-user-id' });
+      const mockUsers = test.factory.account.createUser({ id: 'current-user-id' });
 
       mockService.findById.mockResolvedValue(mockUsers);
 
@@ -68,7 +66,7 @@ describe('AccountsController', () => {
 
   describe('GET /accounts/:id', () => {
     it('should call findById with the provided id for admin', async () => {
-      const mockUsers = testDataFactory.createUser({ id: 'target-user-id' });
+      const mockUsers = test.factory.account.createUser({ id: 'target-user-id' });
 
       mockService.findById.mockResolvedValue(mockUsers);
 
@@ -82,7 +80,7 @@ describe('AccountsController', () => {
     });
 
     it('should call findById with own id for regular user', async () => {
-      const mockUsers = testDataFactory.createUser({ id: 'current-user-id' });
+      const mockUsers = test.factory.account.createUser({ id: 'current-user-id' });
 
       mockService.findById.mockResolvedValue(mockUsers);
 
@@ -103,7 +101,7 @@ describe('AccountsController', () => {
       const updateData = {
         name: 'Updated Name',
       };
-      const mockUsers = testDataFactory.createUser({ id: 'target-user-id', name: 'Name' });
+      const mockUsers = test.factory.account.createUser({ id: 'target-user-id', name: 'Name' });
 
       mockService.update.mockResolvedValue(mockUsers);
 
@@ -123,7 +121,7 @@ describe('AccountsController', () => {
       const updateData = {
         name: 'Updated Name',
       };
-      const mockUsers = testDataFactory.createUser({ id: 'current-user-id', name: 'Name' });
+      const mockUsers = test.factory.account.createUser({ id: 'current-user-id', name: 'Name' });
 
       mockService.update.mockResolvedValue(mockUsers);
 
