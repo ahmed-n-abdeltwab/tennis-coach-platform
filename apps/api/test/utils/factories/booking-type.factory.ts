@@ -2,13 +2,15 @@
  * BookingType mock factory for creating test booking type data
  */
 
+import { Decimal } from '@prisma/client/runtime/client';
+
 import { BaseMockFactory } from './base-factory';
 
 export interface MockBookingType {
   id: string;
   name: string;
   description?: string;
-  basePrice: number;
+  basePrice: Decimal;
   isActive: boolean;
   coachId: string;
   createdAt: Date;
@@ -24,7 +26,7 @@ export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
       id,
       name: this.randomBookingTypeName(),
       description: this.randomDescription(),
-      basePrice: this.randomPrice(),
+      basePrice: new Decimal(this.randomPrice()),
       isActive: true,
       coachId: this.generateId(),
       createdAt: now,

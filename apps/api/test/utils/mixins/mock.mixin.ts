@@ -559,6 +559,7 @@ export class MockMixin {
 // ============================================================================
 
 import { Role, SessionStatus } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/client';
 
 import {
   DEFAULT_TEST_BOOKING_TYPE,
@@ -731,7 +732,7 @@ export class TestDataFactory {
       id,
       name: DEFAULT_TEST_BOOKING_TYPE.NAME,
       description: DEFAULT_TEST_BOOKING_TYPE.DESCRIPTION,
-      basePrice: Number(DEFAULT_TEST_BOOKING_TYPE.BASE_PRICE),
+      basePrice: new Decimal(DEFAULT_TEST_BOOKING_TYPE.BASE_PRICE),
       isActive: true,
       coachId: this.generateId(),
       createdAt: now,

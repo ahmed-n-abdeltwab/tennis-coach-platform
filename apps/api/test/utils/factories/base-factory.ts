@@ -2,6 +2,8 @@
  * Base factory interface and implementation for creating test data
  */
 
+import { Decimal } from '@prisma/client/runtime/client';
+
 export interface MockFactory<T> {
   create(overrides?: Partial<T>): T;
   createMany(count: number, overrides?: Partial<T>): T[];
@@ -56,11 +58,20 @@ export abstract class BaseMockFactory<T> implements MockFactory<T> {
     return value;
   }
 
-  protected validatePositive(value: number, fieldName: string): number {
-    if (value <= 0) {
-      throw new Error(`[Factory] Invalid ${fieldName}: ${value}. Must be positive.`);
+  protected validatePositive(value: number, fieldName: string): number;
+  protected validatePositive(value: Decimal, fieldName: string): Decimal;
+  protected validatePositive(value: number | Decimal, fieldName: string): number | Decimal {
+    if (typeof value === 'number') {
+      if (value <= 0) {
+        throw new Error(`[Factory] Invalid ${fieldName}: ${value}. Must be positive.`);
+      }
+      return value;
+    } else {
+      if (value.isNegative()) {
+        throw new Error(`[Factory] Invalid ${fieldName}: ${value}. Must be positive.`);
+      }
+      return value;
     }
-    return value;
   }
 
   protected validateNonNegative(value: number, fieldName: string): number {

@@ -35,9 +35,11 @@
  */
 
 import { Provider, Type } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import type { Endpoints } from '@routes-helpers';
 
+import { RolesGuard } from '../../../src/app/iam/authorization/guards/roles.guard';
 import { BaseTest } from '../core/base-test';
 import { AssertionsMixin } from '../mixins/assertions.mixin';
 import { AuthMixin } from '../mixins/auth.mixin';
@@ -79,6 +81,11 @@ export interface ControllerTestConfigBase<TController, TModuleName extends strin
   moduleName?: TModuleName;
   /** Mock service and other providers */
   providers: Provider[];
+  /**
+   * Whether to enable role-based authorization guards (default: true)
+   * Set to false for pure unit tests that don't need authorization checks
+   */
+  enableRolesGuard?: boolean;
 }
 
 export interface ControllerTestConfigWithService<
@@ -180,9 +187,16 @@ export class ControllerTest<
    * Setup method - builds module and initializes app
    */
   async setup(): Promise<void> {
+    const enableRolesGuard =
+      (this.config as ControllerTestConfigBase<TController, TModuleName>).enableRolesGuard ?? true;
+
+    const guardProviders: Provider[] = enableRolesGuard
+      ? [{ provide: APP_GUARD, useClass: RolesGuard }]
+      : [];
+
     this._module = await Test.createTestingModule({
       controllers: [this.config.controllerClass],
-      providers: this.config.providers,
+      providers: [...this.config.providers, ...guardProviders],
     }).compile();
 
     this._controller = this._module.get<TController>(this.config.controllerClass);

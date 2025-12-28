@@ -1,6 +1,6 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/client';
-import { ServiceTest } from '@test-utils';
+import { ServiceTest, TestDataFactory } from '@test-utils';
 
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -9,6 +9,7 @@ import { CreateBookingTypeDto, UpdateBookingTypeDto } from './dto/booking-type.d
 
 describe('BookingTypesService', () => {
   let test: ServiceTest<BookingTypesService, PrismaService>;
+  let testDataFactory: TestDataFactory;
 
   beforeEach(async () => {
     // Create mock PrismaService
@@ -32,6 +33,7 @@ describe('BookingTypesService', () => {
     });
 
     await test.setup();
+    testDataFactory = new TestDataFactory();
   });
 
   afterEach(async () => {
@@ -40,24 +42,13 @@ describe('BookingTypesService', () => {
 
   describe('findAll', () => {
     it('should return all active booking types with coach information', async () => {
-      const mockBookingTypes = [
-        {
+      const mockBookingTypes = Array(
+        testDataFactory.createBookingType({
           id: 'booking-type-1',
           name: 'Personal Training',
-          description: 'One-on-one training',
-          basePrice: new Decimal(99.99),
-          isActive: true,
           coachId: 'coach-1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          coach: {
-            id: 'coach-1',
-            name: 'Coach One',
-            credentials: 'Certified Trainer',
-          },
-        },
-      ];
-
+        })
+      );
       // Direct access to prisma - no getPrisma() needed!
       test.prisma.bookingType.findMany.mockResolvedValue(mockBookingTypes);
 

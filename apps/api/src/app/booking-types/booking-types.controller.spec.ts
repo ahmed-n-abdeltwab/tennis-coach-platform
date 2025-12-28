@@ -1,14 +1,14 @@
 import { Role } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
-import { ControllerTest } from '@test-utils';
+import { ControllerTest, TestDataFactory } from '@test-utils';
 
 import { BookingTypesController } from './booking-types.controller';
 import { BookingTypesService } from './booking-types.service';
-import { BookingTypeResponseDto } from './dto/booking-type.dto';
 
 describe('BookingTypesController', () => {
   let test: ControllerTest<BookingTypesController, BookingTypesService, 'booking-types'>;
   let mockService: jest.Mocked<BookingTypesService>;
+  let testDataFactory: TestDataFactory;
 
   beforeEach(async () => {
     // Create mock service
@@ -29,6 +29,7 @@ describe('BookingTypesController', () => {
     });
 
     await test.setup();
+    testDataFactory = new TestDataFactory();
   });
 
   afterEach(async () => {
@@ -37,18 +38,12 @@ describe('BookingTypesController', () => {
 
   describe('GET /booking-types', () => {
     it('should call findAll service method', async () => {
-      const mockBookingTypes: BookingTypeResponseDto[] = [
-        {
+      const mockBookingTypes = Array(
+        testDataFactory.createBookingTypeForCoach('coach-1', {
           id: 'booking-type-1',
           name: 'Personal Training',
-          description: 'One-on-one training',
-          basePrice: new Decimal(99.99),
-          isActive: true,
-          coachId: 'coach-1',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
+        })
+      );
 
       mockService.findAll.mockResolvedValue(mockBookingTypes as any);
 
@@ -62,20 +57,14 @@ describe('BookingTypesController', () => {
   describe('GET /booking-types/coach/:coachId', () => {
     it('should call findByCoach with the provided coach id', async () => {
       const coachId = 'coach-1';
-      const mockBookingTypes: BookingTypeResponseDto[] = [
-        {
+      const mockBookingTypes = Array(
+        testDataFactory.createBookingTypeForCoach(coachId, {
           id: 'booking-type-1',
           name: 'Personal Training',
-          description: 'One-on-one training',
-          basePrice: new Decimal(99.99),
-          isActive: true,
-          coachId,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
+        })
+      );
 
-      mockService.findByCoach.mockResolvedValue(mockBookingTypes as any);
+      mockService.findByCoach.mockResolvedValue(mockBookingTypes);
 
       await test.http.get(
         `/api/booking-types/coach/${coachId}` as '/api/booking-types/coach/{coachId}'
@@ -87,18 +76,11 @@ describe('BookingTypesController', () => {
 
   describe('GET /booking-types/:id', () => {
     it('should call findOne with the provided id', async () => {
-      const mockBookingType: BookingTypeResponseDto = {
+      const mockBookingType = testDataFactory.createBookingTypeForCoach('coach-1', {
         id: 'booking-type-1',
         name: 'Personal Training',
-        description: 'One-on-one training',
-        basePrice: new Decimal(99.99),
-        isActive: true,
-        coachId: 'coach-1',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      mockService.findOne.mockResolvedValue(mockBookingType as any);
+      });
+      mockService.findOne.mockResolvedValue(mockBookingType);
 
       await test.http.get(`/api/booking-types/${mockBookingType.id}` as '/api/booking-types/{id}');
 
@@ -117,16 +99,13 @@ describe('BookingTypesController', () => {
 
       const coachId = 'coach-1';
 
-      const mockCreatedBookingType: BookingTypeResponseDto = {
+      const mockCreatedBookingType = testDataFactory.createBookingTypeForCoach('coach-1', {
         id: 'booking-type-1',
         ...createData,
         basePrice: new Decimal(createData.basePrice),
-        coachId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      });
 
-      mockService.create.mockResolvedValue(mockCreatedBookingType as any);
+      mockService.create.mockResolvedValue(mockCreatedBookingType);
 
       // Built-in token creation - no helper method needed!
       const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });
@@ -149,19 +128,13 @@ describe('BookingTypesController', () => {
 
       const coachId = 'coach-1';
       const bookingTypeId = 'booking-type-1';
-
-      const mockUpdatedBookingType: BookingTypeResponseDto = {
+      const mockUpdatedBookingType = testDataFactory.createBookingTypeForCoach('coach-1', {
         id: bookingTypeId,
-        name: updateData.name,
-        description: 'One-on-one training',
+        ...updateData,
         basePrice: new Decimal(updateData.basePrice),
-        isActive: true,
-        coachId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      });
 
-      mockService.update.mockResolvedValue(mockUpdatedBookingType as any);
+      mockService.update.mockResolvedValue(mockUpdatedBookingType);
 
       const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });
       await test.http.authenticatedPut(
@@ -185,18 +158,12 @@ describe('BookingTypesController', () => {
       const coachId = 'coach-1';
       const bookingTypeId = 'booking-type-1';
 
-      const mockUpdatedBookingType: BookingTypeResponseDto = {
+      const mockUpdatedBookingType = testDataFactory.createBookingTypeForCoach('coach-1', {
         id: bookingTypeId,
-        name: updateData.name,
-        description: 'One-on-one training',
-        basePrice: new Decimal(99.99),
-        isActive: true,
-        coachId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+        ...updateData,
+      });
 
-      mockService.update.mockResolvedValue(mockUpdatedBookingType as any);
+      mockService.update.mockResolvedValue(mockUpdatedBookingType);
 
       const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });
       await test.http.authenticatedPatch(
