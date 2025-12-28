@@ -11,7 +11,7 @@ import { BaseMockFactory } from './base-factory';
 export type MockUser = MockAccount;
 
 export class UserMockFactory extends BaseMockFactory<MockAccount> {
-  create(overrides?: Partial<MockAccount>): MockAccount {
+  protected generateMock(overrides?: Partial<MockAccount>): MockAccount {
     const id = this.generateId();
     const now = new Date();
 

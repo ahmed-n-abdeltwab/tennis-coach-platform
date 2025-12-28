@@ -11,7 +11,7 @@ import { BaseMockFactory } from './base-factory';
 export interface MockCoach extends MockAccount {}
 
 export class CoachMockFactory extends BaseMockFactory<MockCoach> {
-  create(overrides?: Partial<MockCoach>): MockCoach {
+  protected generateMock(overrides?: Partial<MockCoach>): MockCoach {
     const id = this.generateId();
     const now = new Date();
 

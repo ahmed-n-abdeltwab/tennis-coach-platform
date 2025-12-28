@@ -18,7 +18,7 @@ export interface MockBookingType {
 }
 
 export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
-  create(overrides?: Partial<MockBookingType>): MockBookingType {
+  protected generateMock(overrides?: Partial<MockBookingType>): MockBookingType {
     const id = this.generateId();
     const now = new Date();
 

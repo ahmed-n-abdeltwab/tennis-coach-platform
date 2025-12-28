@@ -57,6 +57,8 @@ export type { MockEmailResult, MockNotification } from './notification.factory';
 export { PaymentMockFactory } from './payment.factory';
 export type { MockPayment, MockPayPalCapture, MockPayPalOrder } from './payment.factory';
 
+import { SessionStatus } from '@prisma/client';
+
 // Factory instances for convenience
 import { AccountMockFactory } from './account.factory';
 import { AuthMockFactory } from './auth.factory';
@@ -106,7 +108,7 @@ export function createTestScenario() {
 
 export function createBookingScenario(options?: {
   withDiscount?: boolean;
-  sessionStatus?: string;
+  sessionStatus?: SessionStatus;
   isPaid?: boolean;
 }) {
   const scenario = createTestScenario();

@@ -15,7 +15,7 @@ export interface MockTimeSlot {
 }
 
 export class TimeSlotMockFactory extends BaseMockFactory<MockTimeSlot> {
-  create(overrides?: Partial<MockTimeSlot>): MockTimeSlot {
+  protected generateMock(overrides?: Partial<MockTimeSlot>): MockTimeSlot {
     const id = this.generateId();
     const now = new Date();
 

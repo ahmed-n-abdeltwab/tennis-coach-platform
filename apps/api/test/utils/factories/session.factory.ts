@@ -29,7 +29,7 @@ export interface MockSession {
 }
 
 export class SessionMockFactory extends BaseMockFactory<MockSession> {
-  create(overrides?: Partial<MockSession>): MockSession {
+  protected generateMock(overrides?: Partial<MockSession>): MockSession {
     const id = this.generateId();
     const now = new Date();
 

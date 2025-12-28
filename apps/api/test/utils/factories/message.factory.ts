@@ -18,7 +18,7 @@ export interface MockMessage {
 }
 
 export class MessageMockFactory extends BaseMockFactory<MockMessage> {
-  create(overrides?: Partial<MockMessage>): MockMessage {
+  protected generateMock(overrides?: Partial<MockMessage>): MockMessage {
     const id = this.generateId();
 
     const message = {

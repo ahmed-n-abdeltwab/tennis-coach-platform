@@ -23,7 +23,7 @@ export interface MockEmailResult {
 }
 
 export class NotificationMockFactory extends BaseMockFactory<MockNotification> {
-  create(overrides?: Partial<MockNotification>): MockNotification {
+  protected generateMock(overrides?: Partial<MockNotification>): MockNotification {
     const id = this.generateId();
 
     return {
