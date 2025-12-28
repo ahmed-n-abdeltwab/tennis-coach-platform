@@ -559,10 +559,14 @@ export class MockMixin {
 // ============================================================================
 
 import { SessionStatus } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/client';
 
 import {
   bookingTypeFactory,
   coachFactory,
+  createBookingScenario,
+  createConversationScenario,
+  createTestScenario,
   discountFactory,
   messageFactory,
   sessionFactory,
@@ -576,6 +580,7 @@ import {
   type MockSession,
   type MockTimeSlot,
 } from '../factories';
+import { Nullified } from '../factories/base-factory';
 
 /**
  * Test scenario with related entities
@@ -644,7 +649,7 @@ export class TestDataFactory {
    * @param overrides Optional property overrides
    * @returns MockAccount with undefined values converted to null
    */
-  createUserWithNulls(overrides?: Partial<MockAccount>): MockAccount {
+  createUserWithNulls(overrides?: Partial<MockAccount>): Nullified<MockAccount> {
     return userFactory.createWithNulls(overrides);
   }
 
@@ -672,7 +677,7 @@ export class TestDataFactory {
    * @param overrides Optional property overrides
    * @returns MockCoach with undefined values converted to null
    */
-  createCoachWithNulls(overrides?: Partial<MockCoach>): MockCoach {
+  createCoachWithNulls(overrides?: Partial<MockCoach>): Nullified<MockCoach> {
     return coachFactory.createWithNulls(overrides);
   }
 
@@ -709,7 +714,7 @@ export class TestDataFactory {
    * @param overrides Optional property overrides
    * @returns MockBookingType with undefined values converted to null
    */
-  createBookingTypeWithNulls(overrides?: Partial<MockBookingType>): MockBookingType {
+  createBookingTypeWithNulls(overrides?: Partial<MockBookingType>): Nullified<MockBookingType> {
     return bookingTypeFactory.createWithNulls(overrides);
   }
 
@@ -740,7 +745,7 @@ export class TestDataFactory {
    * @param overrides Optional property overrides
    * @returns MockTimeSlot with undefined values converted to null
    */
-  createTimeSlotWithNulls(overrides?: Partial<MockTimeSlot>): MockTimeSlot {
+  createTimeSlotWithNulls(overrides?: Partial<MockTimeSlot>): Nullified<MockTimeSlot> {
     return timeSlotFactory.createWithNulls(overrides);
   }
 
@@ -768,7 +773,7 @@ export class TestDataFactory {
    * @param overrides Optional property overrides
    * @returns MockSession with undefined values converted to null
    */
-  createSessionWithNulls(overrides?: Partial<MockSession>): MockSession {
+  createSessionWithNulls(overrides?: Partial<MockSession>): Nullified<MockSession> {
     return sessionFactory.createWithNulls(overrides);
   }
 
@@ -786,7 +791,7 @@ export class TestDataFactory {
    * @param overrides Optional property overrides
    * @returns MockDiscount with undefined values converted to null
    */
-  createDiscountWithNulls(overrides?: Partial<MockDiscount>): MockDiscount {
+  createDiscountWithNulls(overrides?: Partial<MockDiscount>): Nullified<MockDiscount> {
     return discountFactory.createWithNulls(overrides);
   }
 
@@ -804,16 +809,23 @@ export class TestDataFactory {
    * @param overrides Optional property overrides
    * @returns MockMessage with undefined values converted to null
    */
-  createMessageWithNulls(overrides?: Partial<MockMessage>): MockMessage {
+  createMessageWithNulls(overrides?: Partial<MockMessage>): Nullified<MockMessage> {
     return messageFactory.createWithNulls(overrides);
   }
 
   /**
    * Creates a complete test scenario with related entities
+   * @param overrides Optional overrides for individual entities
    * @returns TestScenario with user, coach, bookingType, timeSlot, and session
    */
-  createTestScenario(): TestScenario {
-    return baseCreateTestScenario();
+  createTestScenario(overrides?: {
+    user?: Partial<MockAccount>;
+    coach?: Partial<MockCoach>;
+    bookingType?: Partial<MockBookingType>;
+    timeSlot?: Partial<MockTimeSlot>;
+    session?: Partial<MockSession>;
+  }): TestScenario {
+    return createTestScenario(overrides);
   }
 
   /**
@@ -823,18 +835,30 @@ export class TestDataFactory {
    */
   createBookingScenario(options?: {
     withDiscount?: boolean;
+    discountAmount?: Decimal;
     sessionStatus?: SessionStatus;
     isPaid?: boolean;
+    user?: Partial<MockAccount>;
+    coach?: Partial<MockCoach>;
+    bookingType?: Partial<MockBookingType>;
+    timeSlot?: Partial<MockTimeSlot>;
+    session?: Partial<MockSession>;
   }): BookingScenario {
-    return baseCreateBookingScenario(options);
+    return createBookingScenario(options);
   }
 
   /**
-   * Creates a conversation scenario with alternating messages
-   * @param messageCount Number of messages to create (default: 5)
+   * Creates a conversation scenario with realistic message flow
+   * @param options Configuration options for the conversation
    * @returns ConversationScenario with user, coach, and message array
    */
-  createConversationScenario(messageCount = 5): ConversationScenario {
-    return baseCreateConversationScenario(messageCount);
+  createConversationScenario(options?: {
+    messageCount?: number;
+    conversationType?: 'support' | 'booking' | 'feedback' | 'general';
+    user?: Partial<MockAccount>;
+    coach?: Partial<MockCoach>;
+    startTime?: Date;
+  }): ConversationScenario {
+    return createConversationScenario(options);
   }
 }

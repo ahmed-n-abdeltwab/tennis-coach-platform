@@ -33,7 +33,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../../src/app/prisma/prisma.service';
 import { BaseTest } from '../core/base-test';
 import { AssertionsMixin } from '../mixins/assertions.mixin';
-import { MockMixin } from '../mixins/mock.mixin';
+import { MockMixin, TestDataFactory } from '../mixins/mock.mixin';
 
 /**
  * Type helper to convert all methods of a type to Jest mocks
@@ -96,6 +96,7 @@ export class ServiceTest<TService, TRepository = PrismaService> extends BaseTest
   // Compose mixins for clean separation of concerns
   readonly mock: MockMixin;
   readonly assert: AssertionsMixin;
+  readonly factory: TestDataFactory;
 
   constructor(config: ServiceTestConfig<TService>) {
     super();
@@ -104,6 +105,7 @@ export class ServiceTest<TService, TRepository = PrismaService> extends BaseTest
     // Initialize mixins
     this.mock = new MockMixin();
     this.assert = new AssertionsMixin();
+    this.factory = new TestDataFactory();
   }
 
   /**

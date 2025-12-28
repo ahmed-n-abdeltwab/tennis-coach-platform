@@ -44,7 +44,7 @@ import { BaseTest } from '../core/base-test';
 import { AssertionsMixin } from '../mixins/assertions.mixin';
 import { AuthMixin } from '../mixins/auth.mixin';
 import { HttpCapable, HttpMethodsMixin } from '../mixins/http-methods.mixin';
-import { MockMixin } from '../mixins/mock.mixin';
+import { MockMixin, TestDataFactory } from '../mixins/mock.mixin';
 
 /**
  * Configuration for the simplified createControllerTest function
@@ -123,6 +123,7 @@ export class ControllerTest<
   readonly auth: AuthMixin;
   readonly assert: AssertionsMixin;
   readonly mock: MockMixin;
+  readonly factory: TestDataFactory;
 
   constructor(config: ControllerTestConfig<TController, TService, TModuleName>) {
     super();

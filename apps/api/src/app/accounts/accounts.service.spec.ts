@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Role } from '@prisma/client';
-import { ServiceTest, TestDataFactory } from '@test-utils';
+import { ServiceTest } from '@test-utils';
 
 import { HashingService } from '../iam/hashing/hashing.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -11,7 +11,6 @@ import { CreateAccountDto, UpdateAccountDto } from './dto/account.dto';
 describe('AccountsService', () => {
   let test: ServiceTest<AccountsService, PrismaService>;
   let mockHashingService: jest.Mocked<HashingService>;
-  let testDataFactory: TestDataFactory;
 
   beforeEach(async () => {
     const mockPrisma = {
@@ -41,7 +40,6 @@ describe('AccountsService', () => {
     });
 
     await test.setup();
-    testDataFactory = new TestDataFactory();
   });
 
   afterEach(async () => {
@@ -57,7 +55,7 @@ describe('AccountsService', () => {
         role: Role.USER,
       };
 
-      const mockUsers = testDataFactory.createUser({ ...createDto, id: 'test-id' });
+      const mockUsers = test.factory.createUserWithNulls({ ...createDto, id: 'test-id' });
 
       test.prisma.account.findUnique.mockResolvedValue(null);
       test.prisma.account.create.mockResolvedValue(mockUsers);
@@ -86,30 +84,11 @@ describe('AccountsService', () => {
         name: 'Test User',
       };
 
-      const existingAccount = {
+      const existingAccount = test.factory.createUserWithNulls({
+        ...createDto,
         id: 'existing-id',
-        email: createDto.email,
         name: 'Existing User',
-        passwordHash: 'hash',
-        role: Role.USER,
-        gender: null,
-        age: null,
-        height: null,
-        weight: null,
-        disability: false,
-        disabilityCause: null,
-        country: null,
-        address: null,
-        notes: null,
-        bio: null,
-        credentials: null,
-        philosophy: null,
-        profileImage: null,
-        isActive: true,
-        isOnline: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      });
 
       test.prisma.account.findUnique.mockResolvedValue(existingAccount);
 
@@ -137,43 +116,20 @@ describe('AccountsService', () => {
 
   describe('findById', () => {
     it('should return account by id', async () => {
-      const mockAccount = {
-        id: 'test-id',
-        email: 'test@example.com',
-        name: 'Test User',
-        passwordHash: 'hashed-password',
-        role: Role.USER,
-        gender: null,
-        age: null,
-        height: null,
-        weight: null,
-        disability: false,
-        disabilityCause: null,
-        country: null,
-        address: null,
-        notes: null,
-        bio: null,
-        credentials: null,
-        philosophy: null,
-        profileImage: null,
-        isActive: true,
-        isOnline: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      const mockAccount = test.factory.createUserWithNulls();
 
       test.prisma.account.findUnique.mockResolvedValue(mockAccount);
 
-      const result = await test.service.findById('test-id');
+      const result = await test.service.findById(mockAccount.id);
 
       expect(result).toMatchObject({
-        id: 'test-id',
-        email: 'test@example.com',
-        name: 'Test User',
+        id: mockAccount.id,
+        email: mockAccount.email,
+        name: mockAccount.name,
       });
       expect(result).not.toHaveProperty('passwordHash');
       expect(test.prisma.account.findUnique).toHaveBeenCalledWith({
-        where: { id: 'test-id' },
+        where: { id: mockAccount.id },
       });
     });
 
@@ -189,42 +145,19 @@ describe('AccountsService', () => {
 
   describe('findByEmail', () => {
     it('should return account by email', async () => {
-      const mockAccount = {
-        id: 'test-id',
-        email: 'test@example.com',
-        name: 'Test User',
-        passwordHash: 'hashed-password',
-        role: Role.USER,
-        gender: null,
-        age: null,
-        height: null,
-        weight: null,
-        disability: false,
-        disabilityCause: null,
-        country: null,
-        address: null,
-        notes: null,
-        bio: null,
-        credentials: null,
-        philosophy: null,
-        profileImage: null,
-        isActive: true,
-        isOnline: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      const mockAccount = test.factory.createUserWithNulls();
 
       test.prisma.account.findUnique.mockResolvedValue(mockAccount);
 
-      const result = await test.service.findByEmail('test@example.com');
+      const result = await test.service.findByEmail(mockAccount.email);
 
       expect(result).toMatchObject({
-        id: 'test-id',
-        email: 'test@example.com',
+        id: mockAccount.id,
+        email: mockAccount.email,
       });
       expect(result).not.toHaveProperty('passwordHash');
       expect(test.prisma.account.findUnique).toHaveBeenCalledWith({
-        where: { email: 'test@example.com' },
+        where: { email: mockAccount.email },
       });
     });
 
@@ -244,30 +177,7 @@ describe('AccountsService', () => {
         bio: 'Updated bio',
       };
 
-      const existingAccount = {
-        id: 'test-id',
-        email: 'test@example.com',
-        name: 'Test User',
-        passwordHash: 'hashed-password',
-        role: Role.USER,
-        gender: null,
-        age: null,
-        height: null,
-        weight: null,
-        disability: false,
-        disabilityCause: null,
-        country: null,
-        address: null,
-        notes: null,
-        bio: null,
-        credentials: null,
-        philosophy: null,
-        profileImage: null,
-        isActive: true,
-        isOnline: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      const existingAccount = test.factory.createUserWithNulls({ id: 'test-id' });
 
       const updatedAccount = {
         ...existingAccount,
@@ -310,30 +220,7 @@ describe('AccountsService', () => {
 
   describe('delete', () => {
     it('should delete account successfully', async () => {
-      const existingAccount = {
-        id: 'test-id',
-        email: 'test@example.com',
-        name: 'Test User',
-        passwordHash: 'hashed-password',
-        role: Role.USER,
-        gender: null,
-        age: null,
-        height: null,
-        weight: null,
-        disability: false,
-        disabilityCause: null,
-        country: null,
-        address: null,
-        notes: null,
-        bio: null,
-        credentials: null,
-        philosophy: null,
-        profileImage: null,
-        isActive: true,
-        isOnline: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      const existingAccount = test.factory.createUserWithNulls({ id: 'test-id' });
 
       test.prisma.account.findUnique.mockResolvedValue(existingAccount);
       test.prisma.account.delete.mockResolvedValue(existingAccount);

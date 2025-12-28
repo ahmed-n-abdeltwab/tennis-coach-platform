@@ -4,39 +4,49 @@
 
 import { Decimal } from '@prisma/client/runtime/client';
 
+/**
+ * Converts all optional properties from T | undefined to T | null
+ * This represents the result of nullifying undefined values
+ */
+export type Nullified<T> = {
+  [K in keyof T]-?: T[K] extends undefined ? Exclude<T[K], undefined> | null : T[K];
+};
+
 export interface MockFactory<T> {
   create(overrides?: Partial<T>): T;
-  create(mode: 'nullify', overrides?: Partial<T>): T;
-  createWithNulls(overrides?: Partial<T>): T;
+  create(mode: 'nullify', overrides?: Partial<T>): Nullified<T>;
+  createWithNulls(overrides?: Partial<T>): Nullified<T>;
   createMany(count: number, overrides?: Partial<T>): T[];
 }
 
 export abstract class BaseMockFactory<T> implements MockFactory<T> {
   private idCounter = 0;
 
-  create(modeOrOverrides?: 'nullify' | Partial<T>, overrides?: Partial<T>): T {
-    // 2. Logic to determine which overload was called
+  create(overrides?: Partial<T>): T;
+  create(mode: 'nullify', overrides?: Partial<T>): Nullified<T>;
+  create(modeOrOverrides?: 'nullify' | Partial<T>, overrides?: Partial<T>): T | Nullified<T> {
+    // Check if we're in nullify mode
     if (modeOrOverrides === 'nullify') {
-      const nullified = overrides ? this.nullifyUndefined(overrides) : {};
-      return this.generateMock(nullified as Partial<T>);
+      const nullifiedOverrides = overrides ? this.nullifyUndefined(overrides) : {};
+      return this.generateMock(nullifiedOverrides as Partial<T>) as Nullified<T>;
     }
 
-    // If the first arg isn't 'nullify', it's either an override object or undefined
-    return this.generateMock(modeOrOverrides as Partial<T>);
+    // Standard overrides
+    const finalOverrides = modeOrOverrides as Partial<T> | undefined;
+    return this.generateMock(finalOverrides);
   }
 
   protected abstract generateMock(overrides?: Partial<T>): T;
 
+  createWithNulls(overrides?: Partial<T>): Nullified<T> {
+    return this.create('nullify', overrides) as Nullified<T>;
+  }
 
   createMany(count: number, overrides?: Partial<T>): T[] {
     if (count < 0) {
       throw new Error(`[Factory] Invalid count: ${count}. Count must be non-negative.`);
     }
     return Array.from({ length: count }, () => this.create(overrides));
-  }
-
-  createWithNulls(overrides?: Partial<T>): T {
-    return this.create('nullify', overrides);
   }
 
   protected generateId(): string {
@@ -85,18 +95,27 @@ export abstract class BaseMockFactory<T> implements MockFactory<T> {
       }
       return value;
     } else {
-      if (value.isNegative()) {
+      if (value.lessThanOrEqualTo(0)) {
         throw new Error(`[Factory] Invalid ${fieldName}: ${value}. Must be positive.`);
       }
       return value;
     }
   }
 
-  protected validateNonNegative(value: number, fieldName: string): number {
-    if (value < 0) {
-      throw new Error(`[Factory] Invalid ${fieldName}: ${value}. Must be non-negative.`);
+  protected validateNonNegative(value: number, fieldName: string): number;
+  protected validateNonNegative(value: Decimal, fieldName: string): Decimal;
+  protected validateNonNegative(value: number | Decimal, fieldName: string): number | Decimal {
+    if (typeof value === 'number') {
+      if (value < 0) {
+        throw new Error(`[Factory] Invalid ${fieldName}: ${value}. Must be non negative.`);
+      }
+      return value;
+    } else {
+      if (value.isNegative()) {
+        throw new Error(`[Factory] Invalid ${fieldName}: ${value}. Must be non negative.`);
+      }
+      return value;
     }
-    return value;
   }
 
   protected validateEmail(email: string): string {
@@ -107,13 +126,36 @@ export abstract class BaseMockFactory<T> implements MockFactory<T> {
     return email;
   }
 
+  /**
+   * Converts all undefined values in an object to null
+   * This is used for service mocks where undefined should be null
+   * @param obj Object with potentially undefined values
+   * @returns Object with undefined values converted to null
+   */
   protected nullifyUndefined(obj: Partial<T>): Partial<T> {
+    if (obj === null || obj === undefined) {
+      return obj;
+    }
+
     const result = { ...obj };
+
     for (const key in result) {
-      if (result[key] === undefined) {
-        (result as any)[key] = null;
+      if (result.hasOwnProperty(key)) {
+        const value = result[key];
+
+        // Convert undefined to null
+        if (value === undefined) {
+          (result as Record<string, any>)[key] = null;
+        }
+        // Recursively handle nested objects (but not arrays or other complex types)
+        else if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+          // For nested objects, we could recursively nullify, but for now we'll keep it simple
+          // since most factory overrides are flat objects
+        }
+        // Arrays could potentially have undefined values, but this is rare in our use case
       }
     }
+
     return result;
   }
 }
