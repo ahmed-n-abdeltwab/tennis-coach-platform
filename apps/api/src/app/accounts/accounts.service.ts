@@ -9,7 +9,12 @@ import { Account, Role } from '@prisma/client';
 import { HashingService } from '../iam/hashing/hashing.service';
 import { PrismaService } from '../prisma/prisma.service';
 
-import { AccountResponseDto, CreateAccountDto, UpdateAccountDto } from './dto/account.dto';
+import {
+  AccountResponseDto,
+  CoachResponseDto,
+  CreateAccountDto,
+  UpdateAccountDto,
+} from './dto/account.dto';
 
 @Injectable()
 export class AccountsService {
@@ -19,17 +24,19 @@ export class AccountsService {
   ) {}
 
   /**
-   * Transform Prisma Account to AccountResponseDto
+   * Transform Prisma entity to response DTO
    * Excludes sensitive fields like passwordHash
    * Transforms Date objects to ISO strings
    */
-  private toResponseDto(account: Account): AccountResponseDto {
-    const { passwordHash: _passwordHash, ...safeData } = account;
+  private toResponseDto<
+    T extends { passwordHash?: string; createdAt: string | Date; updatedAt: string | Date },
+  >(entity: T): Omit<T, 'passwordHash'> {
+    const { passwordHash: _passwordHash, ...safeData } = entity;
     return {
       ...safeData,
-      createdAt: account.createdAt,
-      updatedAt: account.updatedAt,
-    } as AccountResponseDto;
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
+    } as Omit<T, 'passwordHash'>;
   }
 
   /**
@@ -78,12 +85,19 @@ export class AccountsService {
   /**
    * Find all coaches with optional filters
    */
-  async findCoaches(filters?: { isActive?: boolean; country?: string }): Promise<any[]> {
-    return this.prisma.account.findMany({
-      where: {
-        role: Role.COACH,
-        ...filters,
-      },
+  async findCoaches(filters?: {
+    isActive?: boolean;
+    country?: string;
+  }): Promise<CoachResponseDto[]> {
+    // Explicitly extract only what I want from filters to prevent injection
+    const whereClause = {
+      role: Role.COACH,
+      ...(filters?.isActive !== undefined && { isActive: filters.isActive }),
+      ...(filters?.country && { country: filters.country }),
+    };
+
+    const coaches = await this.prisma.account.findMany({
+      where: whereClause,
       select: {
         id: true,
         email: true,
@@ -93,6 +107,7 @@ export class AccountsService {
         philosophy: true,
         profileImage: true,
         isActive: true,
+        isOnline: true,
         createdAt: true,
         updatedAt: true,
         role: true,
@@ -105,19 +120,10 @@ export class AccountsService {
             basePrice: true,
           },
         },
-        gender: false,
-        age: false,
-        height: false,
-        weight: false,
-        disability: false,
-        disabilityCause: false,
-        country: false,
-        address: false,
-        notes: false,
-        isOnline: false,
-        passwordHash: false,
       },
     });
+
+    return coaches.map(coach => this.toResponseDto(coach));
   }
 
   /**

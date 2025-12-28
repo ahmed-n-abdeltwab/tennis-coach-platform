@@ -245,68 +245,19 @@ describe('AccountsService', () => {
 
   describe('findByRole', () => {
     it('should return accounts by role', async () => {
-      const mockAccounts = [
-        {
-          id: 'coach-1',
-          email: 'coach1@example.com',
-          name: 'Coach One',
-          passwordHash: 'hash',
-          role: Role.COACH,
-          gender: null,
-          age: null,
-          height: null,
-          weight: null,
-          disability: false,
-          disabilityCause: null,
-          country: null,
-          address: null,
-          notes: null,
-          bio: 'Coach bio',
-          credentials: 'Certified',
-          philosophy: 'Philosophy',
-          profileImage: null,
-          isActive: true,
-          isOnline: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: 'coach-2',
-          email: 'coach2@example.com',
-          name: 'Coach Two',
-          passwordHash: 'hash',
-          role: Role.COACH,
-          gender: null,
-          age: null,
-          height: null,
-          weight: null,
-          disability: false,
-          disabilityCause: null,
-          country: null,
-          address: null,
-          notes: null,
-          bio: 'Coach bio 2',
-          credentials: 'Certified',
-          philosophy: 'Philosophy 2',
-          profileImage: null,
-          isActive: true,
-          isOnline: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ];
+      const mockAccounts = test.factory.account.createManyCoachWithNulls(2);
 
       test.prisma.account.findMany.mockResolvedValue(mockAccounts);
 
       const result = await test.service.findByRole(Role.COACH);
 
       expect(result).toHaveLength(2);
-      expect(result[0]).toMatchObject({
-        id: 'coach-1',
-        email: 'coach1@example.com',
-        role: Role.COACH,
-      });
+
+      // NOTE: I have a password hash, but the result doesn't. So, the result is matching with me instead.
+      expect(mockAccounts).toMatchObject(result);
+
       expect(result[0]).not.toHaveProperty('passwordHash');
+
       expect(test.prisma.account.findMany).toHaveBeenCalledWith({
         where: { role: Role.COACH },
       });
@@ -315,44 +266,19 @@ describe('AccountsService', () => {
 
   describe('findCoaches', () => {
     it('should return all coaches without filters', async () => {
-      const mockCoaches = [
-        {
-          id: 'coach-1',
-          email: 'coach1@example.com',
-          name: 'Coach One',
-          passwordHash: 'hash',
-          gender: null,
-          age: null,
-          height: null,
-          weight: null,
-          disability: false,
-          disabilityCause: null,
-          country: null,
-          address: null,
-          notes: null,
-          bio: 'Coach bio',
-          credentials: 'Certified',
-          philosophy: 'Philosophy',
-          profileImage: null,
-          isActive: true,
-          isOnline: false,
-          role: Role.COACH,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          bookingTypes: [],
-        },
-      ];
+      const mockCoaches = test.factory.account.createManyCoachWithNulls(2);
 
       test.prisma.account.findMany.mockResolvedValue(mockCoaches);
 
       const result = await test.service.findCoaches();
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
-        id: 'coach-1',
-        email: 'coach1@example.com',
-        role: Role.COACH,
-      });
+      expect(result).toHaveLength(2);
+
+      // NOTE: I have a password hash, but the result doesn't. So, the result is matching with me instead.
+      expect(mockCoaches).toMatchObject(result);
+
+      expect(result[0]).not.toHaveProperty('passwordHash');
+
       expect(test.prisma.account.findMany).toHaveBeenCalledWith({
         where: { role: Role.COACH },
         select: expect.any(Object),
@@ -360,33 +286,10 @@ describe('AccountsService', () => {
     });
 
     it('should return coaches with filters', async () => {
-      const mockCoaches = [
-        {
-          id: 'coach-1',
-          email: 'coach1@example.com',
-          name: 'Coach One',
-          passwordHash: 'hash',
-          gender: null,
-          age: null,
-          height: null,
-          weight: null,
-          disability: false,
-          disabilityCause: null,
-          country: 'USA',
-          address: null,
-          notes: null,
-          bio: 'Coach bio',
-          credentials: 'Certified',
-          philosophy: 'Philosophy',
-          profileImage: null,
-          isActive: true,
-          isOnline: false,
-          role: Role.COACH,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          bookingTypes: [],
-        },
-      ];
+      const mockCoaches = test.factory.account.createManyCoachWithNulls(1, {
+        isActive: true,
+        country: 'USA',
+      });
 
       test.prisma.account.findMany.mockResolvedValue(mockCoaches);
 
