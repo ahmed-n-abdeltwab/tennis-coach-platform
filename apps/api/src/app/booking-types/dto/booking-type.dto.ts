@@ -36,11 +36,8 @@ export class BookingTypeResponseDto extends BaseResponseDto {
   @IsString()
   coachId: string;
 }
-export class GetAllBookingTypeResponseDto extends BookingTypeResponseDto {
-  // @ValidateNested()
-  // @Type(() => CoachDto)
-  // coach: CoachDto;
-}
+
+export class GetAllBookingTypeResponseDto extends BookingTypeResponseDto {}
 
 export class CreateBookingTypeDto {
   @ApiProperty()

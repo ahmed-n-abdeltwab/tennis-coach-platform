@@ -8,12 +8,10 @@ import { PaymentsService } from '../../src/app/payments/payments.service';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
 import { IntegrationTest } from '../utils';
 
-// Mock fetch globally
-global.fetch = jest.fn();
+
 
 describe('Payments Integration', () => {
   let test: IntegrationTest;
-  let paymentsService: PaymentsService;
 
   beforeAll(async () => {
     test = new IntegrationTest({
@@ -32,7 +30,6 @@ describe('Payments Integration', () => {
     });
 
     await test.setup();
-    paymentsService = test.testModule.get<PaymentsService>(PaymentsService);
   });
 
   afterAll(async () => {
