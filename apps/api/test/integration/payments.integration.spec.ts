@@ -8,8 +8,6 @@ import { PaymentsService } from '../../src/app/payments/payments.service';
 import { PrismaModule } from '../../src/app/prisma/prisma.module';
 import { IntegrationTest } from '../utils';
 
-
-
 describe('Payments Integration', () => {
   let test: IntegrationTest;
 

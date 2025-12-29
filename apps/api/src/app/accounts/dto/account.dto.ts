@@ -2,7 +2,7 @@ import { BaseResponseDto, createTypedApiDecorators } from '@common';
 import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
-import { Transform, Type } from 'class-transformer';
+import { Exclude, Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsEmail,
@@ -45,6 +45,9 @@ export class AccountResponseDto extends BaseResponseDto {
 
   @ApiProperty({ example: 'John Doe' })
   name: string;
+
+  @Exclude()
+  passwordHash: string;
 
   @ApiProperty({ enum: Role, example: Role.USER })
   role: Role;

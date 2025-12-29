@@ -4,17 +4,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Account, Role } from '@prisma/client';
+import { Account, Prisma, Role } from '@prisma/client';
+import { plainToInstance } from 'class-transformer';
 
 import { HashingService } from '../iam/hashing/hashing.service';
 import { PrismaService } from '../prisma/prisma.service';
 
-import {
-  AccountResponseDto,
-  CoachResponseDto,
-  CreateAccountDto,
-  UpdateAccountDto,
-} from './dto/account.dto';
+import { AccountResponseDto, CreateAccountDto, UpdateAccountDto } from './dto/account.dto';
 
 @Injectable()
 export class AccountsService {
@@ -23,133 +19,68 @@ export class AccountsService {
     private readonly hashingService: HashingService
   ) {}
 
-  /**
-   * Transform Prisma entity to response DTO
-   * Excludes sensitive fields like passwordHash
-   * Transforms Date objects to ISO strings
-   */
-  private toResponseDto<
-    T extends { passwordHash?: string; createdAt: string | Date; updatedAt: string | Date },
-  >(entity: T): Omit<T, 'passwordHash'> {
-    const { passwordHash: _passwordHash, ...safeData } = entity;
-    return {
-      ...safeData,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-    } as Omit<T, 'passwordHash'>;
+  private async findInternal<T extends Prisma.AccountWhereInput>(
+    where: T,
+    options: { throwIfNotFound?: boolean; isMany?: boolean } = {}
+  ) {
+    const { throwIfNotFound = true, isMany = false } = options;
+
+    // 1. Run the query based on if we expect one or many
+    const result = isMany
+      ? await this.prisma.account.findMany({ where })
+      : await this.prisma.account.findFirst({ where }); // findFirst returns Object | null
+
+    // 2. Handle the "Not Found" case
+    const isEmpty = isMany ? (result as any[]).length === 0 : result === null;
+
+    if (throwIfNotFound && isEmpty) {
+      throw new NotFoundException('Account not found');
+    }
+
+    return result;
   }
 
-  /**
-   * Find account by email
-   */
   async findByEmail(email: string): Promise<AccountResponseDto> {
-    const account = await this.prisma.account.findUnique({
-      where: { email },
-    });
-    if (!account) {
-      throw new NotFoundException('Account not found');
-    }
-
-    return this.toResponseDto(account);
+    const account = (await this.findInternal({ email })) as Account;
+    return plainToInstance(AccountResponseDto, account);
   }
 
-  /**
-   * Find account by ID
-   */
   async findById(id: string): Promise<AccountResponseDto> {
-    const account = await this.prisma.account.findUnique({
-      where: { id },
-    });
-
-    if (!account) {
-      throw new NotFoundException('Account not found');
-    }
-
-    return this.toResponseDto(account);
+    const account = (await this.findInternal({ id })) as Account;
+    return plainToInstance(AccountResponseDto, account);
   }
 
-  /**
-   * Find accounts by role
-   */
   async findByRole(role: Role): Promise<AccountResponseDto[]> {
-    const accounts = await this.prisma.account.findMany({
-      where: { role },
-    });
-    if (!accounts) {
-      throw new NotFoundException('Account not found');
-    }
-
-    return accounts.map(account => this.toResponseDto(account));
-  }
-
-  /**
-   * Find all coaches with optional filters
-   */
-  async findCoaches(filters?: {
-    isActive?: boolean;
-    country?: string;
-  }): Promise<CoachResponseDto[]> {
-    // Explicitly extract only what I want from filters to prevent injection
-    const whereClause = {
-      role: Role.COACH,
-      ...(filters?.isActive !== undefined && { isActive: filters.isActive }),
-      ...(filters?.country && { country: filters.country }),
-    };
-
-    const coaches = await this.prisma.account.findMany({
-      where: whereClause,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        bio: true,
-        credentials: true,
-        philosophy: true,
-        profileImage: true,
-        isActive: true,
-        isOnline: true,
-        createdAt: true,
-        updatedAt: true,
-        role: true,
-        bookingTypes: {
-          where: { isActive: true },
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            basePrice: true,
-          },
-        },
-      },
-    });
-
-    return coaches.map(coach => this.toResponseDto(coach));
+    const accounts = (await this.findInternal({ role }, { isMany: true })) as Account[];
+    return plainToInstance(AccountResponseDto, accounts);
   }
 
   /**
    * Find all users with optional filters
    */
   async findUsers(isActive = true): Promise<AccountResponseDto[]> {
-    const accounts = await this.prisma.account.findMany({
-      where: {
+    const accounts = (await this.findInternal(
+      {
         role: { in: [Role.USER, Role.PREMIUM_USER] },
         isActive,
       },
-    });
+      { isMany: true }
+    )) as Account[];
 
-    return accounts.map(account => this.toResponseDto(account));
+    return plainToInstance(AccountResponseDto, accounts);
   }
 
   /**
    * Create a new account
    */
   async create(data: CreateAccountDto): Promise<AccountResponseDto> {
-    const existingAccount = await this.prisma.account.findUnique({
-      where: { email: data.email },
-    });
+    const existingAccount = (await this.findInternal(
+      { email: data.email },
+      { throwIfNotFound: false }
+    )) as Account;
 
     if (existingAccount) {
-      throw new ConflictException('Account with this email already exists');
+      throw new ConflictException('Email already in use');
     }
 
     // Validate disability logic for users
@@ -158,116 +89,51 @@ export class AccountsService {
     }
 
     const passwordHash = await this.hashingService.hash(data.password);
+    const { password: _password, ...rest } = data;
 
     const account = await this.prisma.account.create({
       data: {
-        email: data.email,
-        name: data.name,
+        ...rest,
         passwordHash,
-        role: data.role ?? Role.USER,
-        gender: data.gender,
-        age: data.age,
-        height: data.height,
-        weight: data.weight,
-        disability: data.disability ?? false,
-        disabilityCause: data.disabilityCause,
-        country: data.country,
-        address: data.address,
-        notes: data.notes,
-        bio: data.bio,
-        credentials: data.credentials,
-        philosophy: data.philosophy,
-        profileImage: data.profileImage,
       },
     });
 
-    return this.toResponseDto(account);
+    return plainToInstance(AccountResponseDto, account);
   }
 
   /**
    * Update account profile
    */
   async update(id: string, data: UpdateAccountDto): Promise<AccountResponseDto> {
-    const account = await this.prisma.account.findUnique({
-      where: { id },
-    });
-
-    if (!account) {
-      throw new NotFoundException('Account not found');
-    }
-
+    const account = await this.findById(id);
     const updatedAccount = await this.prisma.account.update({
-      where: { id },
+      where: { id: account.id },
       data,
     });
 
-    return this.toResponseDto(updatedAccount);
+    return plainToInstance(AccountResponseDto, updatedAccount);
   }
 
   /**
    * Delete account
    */
   async delete(id: string): Promise<void> {
-    const account = await this.prisma.account.findUnique({
-      where: { id },
-    });
-
-    if (!account) {
-      throw new NotFoundException('Account not found');
-    }
+    const account = await this.findById(id);
 
     await this.prisma.account.delete({
-      where: { id },
+      where: { id: account.id },
     });
   }
 
   /**
    * Update online status
    */
-  async updateOnlineStatus(accountId: string, isOnline: boolean): Promise<Account> {
-    const account = await this.prisma.account.findUnique({
-      where: { id: accountId },
-    });
+  async updateOnlineStatus(id: string, isOnline = true): Promise<void> {
+    const account = (await this.findInternal({ id })) as Account;
 
-    if (!account) {
-      throw new NotFoundException('Account not found');
-    }
-
-    return this.prisma.account.update({
-      where: { id: accountId },
+    await this.prisma.account.update({
+      where: { id: account.id },
       data: { isOnline },
     });
-  }
-
-  /**
-   * Find coach by ID with booking types
-   */
-  async findCoachById(id: string) {
-    const coach = await this.prisma.account.findUnique({
-      where: { id, role: Role.COACH },
-      select: {
-        id: true,
-        name: true,
-        bio: true,
-        credentials: true,
-        philosophy: true,
-        profileImage: true,
-        bookingTypes: {
-          where: { isActive: true },
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            basePrice: true,
-          },
-        },
-      },
-    });
-
-    if (!coach) {
-      throw new NotFoundException('Coach not found');
-    }
-
-    return coach;
   }
 }
