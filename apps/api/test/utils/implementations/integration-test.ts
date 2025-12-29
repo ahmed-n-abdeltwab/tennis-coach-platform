@@ -15,6 +15,7 @@ import { AssertionsMixin } from '../mixins/assertions.mixin';
 import { AuthMixin } from '../mixins/auth.mixin';
 import { DatabaseCapable, DatabaseMixin } from '../mixins/database.mixin';
 import { HttpCapable, HttpMethodsMixin } from '../mixins/http-methods.mixin';
+import { TestDataFactory } from '../mixins/mock.mixin';
 
 export interface IntegrationTestConfig<TModuleName extends string = string> {
   /** Modules to import for testing - can include async DynamicModules */
@@ -46,6 +47,7 @@ export class IntegrationTest<
   readonly auth: AuthMixin;
   readonly db: DatabaseMixin;
   readonly assert: AssertionsMixin;
+  readonly factory: TestDataFactory;
 
   constructor(config: IntegrationTestConfig<TModuleName>) {
     super();
@@ -56,6 +58,7 @@ export class IntegrationTest<
     this.auth = new AuthMixin();
     this.db = new DatabaseMixin(this);
     this.assert = new AssertionsMixin();
+    this.factory = new TestDataFactory();
   }
 
   /**

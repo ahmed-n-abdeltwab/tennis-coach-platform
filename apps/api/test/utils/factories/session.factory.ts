@@ -3,14 +3,16 @@
  */
 
 import { SessionStatus } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/client';
 
 import { BaseMockFactory } from './base-factory';
+import type { MockDiscount } from './discount.factory';
 
 export interface MockSession {
   id: string;
   dateTime: Date;
   durationMin: number;
-  price: number;
+  price: Decimal;
   isPaid: boolean;
   status: SessionStatus;
   notes?: string;
@@ -29,7 +31,7 @@ export interface MockSession {
 }
 
 export class SessionMockFactory extends BaseMockFactory<MockSession> {
-  create(overrides?: Partial<MockSession>): MockSession {
+  protected generateMock(overrides?: Partial<MockSession>): MockSession {
     const id = this.generateId();
     const now = new Date();
 
@@ -95,15 +97,17 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
     });
   }
 
-  createWithDiscount(
-    discountCode: string,
-    discountId: string,
-    overrides?: Partial<MockSession>
-  ): MockSession {
+  createWithDiscount(discount: MockDiscount, overrides?: Partial<MockSession>): MockSession {
+    // Calculate discounted price based on the discount amount
+    const basePrice = this.randomPrice();
+    const discountAmount = new Decimal(discount.amount);
+
+    const discountedPrice = Decimal.max(new Decimal(0), basePrice.sub(discountAmount));
+
     return this.create({
-      discountCode,
-      discountId,
-      price: this.randomPrice() * 0.8, // 20% discount applied
+      discountCode: discount.code,
+      discountId: discount.id,
+      price: discountedPrice,
       ...overrides,
     });
   }
@@ -125,8 +129,8 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
     return durations[Math.floor(Math.random() * durations.length)] ?? 30;
   }
 
-  private randomPrice(): number {
-    return Math.floor(Math.random() * 150) + 50; // $50-$200
+  private randomPrice(): Decimal {
+    return new Decimal(Math.floor(Math.random() * 150) + 50); // $50-$200
   }
 
   private randomNotes(): string {

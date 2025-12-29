@@ -1,7 +1,8 @@
 import { BaseResponseDto, createTypedApiDecorators } from '@common';
 import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
-import { Transform } from 'class-transformer';
+import { Decimal } from '@prisma/client/runtime/client';
+import { Exclude, Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsEmail,
@@ -12,7 +13,31 @@ import {
   Max,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+
+/**
+ * Simplified booking type summary for coach listings
+ * Contains only the fields needed for display, not full CRUD operations
+ */
+export class CoachBookingTypeSummaryDto {
+  @ApiProperty({ example: 'booking-type-id-123' })
+  @IsString()
+  id: string;
+
+  @ApiProperty({ example: 'Personal Training Session' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ example: 'One-on-one coaching session', required: false })
+  @IsOptional()
+  @IsString()
+  description: string | null;
+
+  @ApiProperty({ example: 99.99, description: 'Base price in decimal format' })
+  @Type(() => Number)
+  basePrice: Decimal;
+}
 
 export class AccountResponseDto extends BaseResponseDto {
   @ApiProperty({ example: 'account@example.com' })
@@ -20,6 +45,9 @@ export class AccountResponseDto extends BaseResponseDto {
 
   @ApiProperty({ example: 'John Doe' })
   name: string;
+
+  @Exclude()
+  passwordHash: string;
 
   @ApiProperty({ enum: Role, example: Role.USER })
   role: Role;
@@ -263,5 +291,15 @@ export class UpdateAccountDto {
   profileImage?: string;
 }
 
+export class CoachResponseDto extends AccountResponseDto {
+  @ApiProperty({ type: [CoachBookingTypeSummaryDto], required: false })
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CoachBookingTypeSummaryDto)
+  bookingTypes?: CoachBookingTypeSummaryDto[];
+}
+
 // Create typed API decorators for accounts
 export const AccountApiResponses = createTypedApiDecorators(AccountResponseDto);
+
+export const CoachApiResponses = createTypedApiDecorators(CoachResponseDto);

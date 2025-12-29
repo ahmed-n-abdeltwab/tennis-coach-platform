@@ -2,13 +2,15 @@
  * BookingType mock factory for creating test booking type data
  */
 
+import { Decimal } from '@prisma/client/runtime/client';
+
 import { BaseMockFactory } from './base-factory';
 
 export interface MockBookingType {
   id: string;
   name: string;
   description?: string;
-  basePrice: number;
+  basePrice: Decimal;
   isActive: boolean;
   coachId: string;
   createdAt: Date;
@@ -16,7 +18,7 @@ export interface MockBookingType {
 }
 
 export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
-  create(overrides?: Partial<MockBookingType>): MockBookingType {
+  protected generateMock(overrides?: Partial<MockBookingType>): MockBookingType {
     const id = this.generateId();
     const now = new Date();
 
@@ -24,7 +26,7 @@ export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
       id,
       name: this.randomBookingTypeName(),
       description: this.randomDescription(),
-      basePrice: this.randomPrice(),
+      basePrice: new Decimal(this.randomPrice()),
       isActive: true,
       coachId: this.generateId(),
       createdAt: now,
@@ -38,27 +40,6 @@ export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
     this.validatePositive(bookingType.basePrice, 'basePrice');
 
     return bookingType;
-  }
-
-  createActive(overrides?: Partial<MockBookingType>): MockBookingType {
-    return this.create({
-      isActive: true,
-      ...overrides,
-    });
-  }
-
-  createInactive(overrides?: Partial<MockBookingType>): MockBookingType {
-    return this.create({
-      isActive: false,
-      ...overrides,
-    });
-  }
-
-  createWithCoach(coachId: string, overrides?: Partial<MockBookingType>): MockBookingType {
-    return this.create({
-      coachId,
-      ...overrides,
-    });
   }
 
   private randomBookingTypeName(): string {

@@ -36,7 +36,7 @@ export interface MockPayPalCapture {
 }
 
 export class PaymentMockFactory extends BaseMockFactory<MockPayment> {
-  create(overrides?: Partial<MockPayment>): MockPayment {
+  protected generateMock(overrides?: Partial<MockPayment>): MockPayment {
     const id = this.generateId();
     const now = new Date();
 

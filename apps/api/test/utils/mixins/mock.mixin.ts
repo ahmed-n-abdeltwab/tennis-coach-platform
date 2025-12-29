@@ -558,25 +558,22 @@ export class MockMixin {
 // Test Data Creation (merged from MockDataMixin)
 // ============================================================================
 
-import { Role, SessionStatus } from '@prisma/client';
+import { SessionStatus } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/client';
 
 import {
-  DEFAULT_TEST_BOOKING_TYPE,
-  DEFAULT_TEST_COACH,
-  DEFAULT_TEST_DISCOUNT,
-  DEFAULT_TEST_MESSAGE,
-  DEFAULT_TEST_SESSION,
-  DEFAULT_TEST_TIME_SLOT,
-  DEFAULT_TEST_USER,
-} from '../constants/test-constants';
-import {
-  MockAccount,
-  MockBookingType,
-  MockCoach,
-  MockDiscount,
-  MockMessage,
-  MockSession,
-  MockTimeSlot,
+  AccountMockFactory,
+  BookingTypeMockFactory,
+  DiscountMockFactory,
+  MessageMockFactory,
+  SessionMockFactory,
+  TimeSlotMockFactory,
+  type MockAccount,
+  type MockBookingType,
+  type MockDiscount,
+  type MockMessage,
+  type MockSession,
+  type MockTimeSlot,
 } from '../factories';
 
 /**
@@ -584,7 +581,7 @@ import {
  */
 export interface TestScenario {
   user: MockAccount;
-  coach: MockCoach;
+  coach: MockAccount;
   bookingType: MockBookingType;
   timeSlot: MockTimeSlot;
   session: MockSession;
@@ -602,268 +599,202 @@ export interface BookingScenario extends TestScenario {
  */
 export interface ConversationScenario {
   user: MockAccount;
-  coach: MockCoach;
+  coach: MockAccount;
   messages: MockMessage[];
 }
 
 /**
  * Test Data Factory
  *
- * Creates in-memory mock data objects for unit tests.
+ * Creates in-memory mock data objects for unit tests using the factory system.
+ * Provides direct access to factory instances for clean API usage.
+ *
  * Use this when you don't need real database records.
  * For real database records, use DatabaseMixin instead.
  *
  * @example
  * ```typescript
  * const factory = new TestDataFactory();
- * const user = factory.createUser();
+ *
+ * // Direct access to factory methods
+ * const user = factory.account.createUser({ bio: undefined });
+ * const coach = factory.account.createCoach();
+ * const session = factory.session.create();
+ *
+ * // Create related scenarios
  * const scenario = factory.createTestScenario();
  * ```
  */
 export class TestDataFactory {
-  private idCounter = 0;
+  // Compose factories for clean separation of concerns
+  readonly account: AccountMockFactory;
+  readonly bookingType: BookingTypeMockFactory;
+  readonly timeSlot: TimeSlotMockFactory;
+  readonly session: SessionMockFactory;
+  readonly discount: DiscountMockFactory;
+  readonly message: MessageMockFactory;
 
-  private generateId(): string {
-    this.idCounter++;
-    return `test_${Date.now()}_${this.idCounter}_${Math.random().toString(36).slice(2, 9)}`;
+  constructor() {
+    // Initialize mixins
+    this.account = new AccountMockFactory();
+    this.bookingType = new BookingTypeMockFactory();
+    this.timeSlot = new TimeSlotMockFactory();
+    this.session = new SessionMockFactory();
+    this.discount = new DiscountMockFactory();
+    this.message = new MessageMockFactory();
   }
 
-  private generateEmail(prefix = 'test'): string {
-    return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 5)}@example.com`;
-  }
+  /**
+   * Creates a complete test scenario with related entities
+   * @param overrides Optional overrides for individual entities
+   * @returns TestScenario with user, coach, bookingType, timeSlot, and session
+   */
+  createTestScenario(overrides?: {
+    user?: MockAccount;
+    coach?: MockAccount;
+    bookingType?: MockBookingType;
+    timeSlot?: MockTimeSlot;
+    session?: MockSession;
+  }): TestScenario {
+    // Create coach first (needed for booking type and time slot)
+    const coach = overrides?.coach ?? this.account.createCoach({ ...overrides?.coach });
 
-  createUser(overrides?: Partial<MockAccount>): MockAccount {
-    const id = this.generateId();
-    const now = new Date();
-    const base: MockAccount = {
-      id,
-      email: this.generateEmail('user'),
-      name: DEFAULT_TEST_USER.NAME,
-      passwordHash: DEFAULT_TEST_USER.PASSWORD_HASH,
-      bio: null,
-      credentials: null,
-      philosophy: null,
-      profileImage: null,
-      gender: DEFAULT_TEST_USER.GENDER,
-      age: DEFAULT_TEST_USER.AGE,
-      height: DEFAULT_TEST_USER.HEIGHT,
-      weight: DEFAULT_TEST_USER.WEIGHT,
-      disability: false,
-      disabilityCause: null,
-      country: DEFAULT_TEST_USER.COUNTRY,
-      address: DEFAULT_TEST_USER.ADDRESS,
-      notes: `Test notes for user ${id.slice(-8)}`,
-      createdAt: now,
-      updatedAt: now,
-      role: Role.USER,
-      isActive: true,
-      isOnline: true,
-    };
+    const user = overrides?.user ?? this.account.createUser({ ...overrides?.user });
 
-    if (!overrides) return base;
+    // Create booking type for this coach
+    const bookingType =
+      overrides?.bookingType ?? this.bookingType.createWithCoach(coach?.id, overrides?.bookingType);
 
-    // Filter out undefined values from overrides
-    const filtered = Object.fromEntries(
-      Object.entries(overrides).filter(([, v]) => v !== undefined)
-    );
+    // Create time slot for this coach
+    const timeSlot =
+      overrides?.timeSlot ?? this.timeSlot.createWithCoach(coach?.id, overrides?.timeSlot);
 
-    return { ...base, ...filtered } as MockAccount;
-  }
-
-  createUsers(count: number, overrides?: Partial<MockAccount>): MockAccount[] {
-    return Array.from({ length: count }, () => this.createUser(overrides));
-  }
-
-  createCoach(overrides?: Partial<MockCoach>): MockCoach {
-    const id = this.generateId();
-    const now = new Date();
-    const base: MockCoach = {
-      id,
-      email: this.generateEmail('coach'),
-      name: DEFAULT_TEST_COACH.NAME,
-      passwordHash: DEFAULT_TEST_USER.PASSWORD_HASH,
-      bio: DEFAULT_TEST_COACH.BIO,
-      credentials: DEFAULT_TEST_COACH.CREDENTIALS,
-      philosophy: DEFAULT_TEST_COACH.PHILOSOPHY,
-      profileImage: DEFAULT_TEST_COACH.PROFILE_IMAGE,
-      gender: null,
-      age: null,
-      height: null,
-      weight: null,
-      disability: false,
-      disabilityCause: null,
-      country: null,
-      address: null,
-      notes: null,
-      createdAt: now,
-      updatedAt: now,
-      isOnline: true,
-      isActive: true,
-      role: Role.COACH,
-    };
-
-    if (!overrides) return base;
-
-    // Filter out undefined values from overrides
-    const filtered = Object.fromEntries(
-      Object.entries(overrides).filter(([, v]) => v !== undefined)
-    );
-
-    return { ...base, ...filtered } as MockCoach;
-  }
-
-  createCoaches(count: number, overrides?: Partial<MockCoach>): MockCoach[] {
-    return Array.from({ length: count }, () => this.createCoach(overrides));
-  }
-
-  createAdmin(overrides?: Partial<MockCoach>): MockCoach {
-    return this.createCoach({
-      role: Role.ADMIN,
-      name: `Admin ${this.generateId().slice(-8)}`,
-      ...overrides,
-    });
-  }
-
-  createBookingType(overrides?: Partial<MockBookingType>): MockBookingType {
-    const id = this.generateId();
-    const now = new Date();
-    return {
-      id,
-      name: DEFAULT_TEST_BOOKING_TYPE.NAME,
-      description: DEFAULT_TEST_BOOKING_TYPE.DESCRIPTION,
-      basePrice: Number(DEFAULT_TEST_BOOKING_TYPE.BASE_PRICE),
-      isActive: true,
-      coachId: this.generateId(),
-      createdAt: now,
-      updatedAt: now,
-      ...overrides,
-    };
-  }
-
-  createBookingTypeForCoach(
-    coachId: string,
-    overrides?: Partial<MockBookingType>
-  ): MockBookingType {
-    return this.createBookingType({ coachId, ...overrides });
-  }
-
-  createTimeSlot(overrides?: Partial<MockTimeSlot>): MockTimeSlot {
-    const id = this.generateId();
-    const now = new Date();
-    const futureDate = new Date();
-    futureDate.setHours(futureDate.getHours() + DEFAULT_TEST_TIME_SLOT.FUTURE_OFFSET_HOURS);
-    return {
-      id,
-      dateTime: futureDate,
-      durationMin: DEFAULT_TEST_TIME_SLOT.DURATION_MIN,
-      isAvailable: DEFAULT_TEST_TIME_SLOT.IS_AVAILABLE,
-      coachId: this.generateId(),
-      createdAt: now,
-      updatedAt: now,
-      ...overrides,
-    };
-  }
-
-  createTimeSlotForCoach(coachId: string, overrides?: Partial<MockTimeSlot>): MockTimeSlot {
-    return this.createTimeSlot({ coachId, ...overrides });
-  }
-
-  createSession(overrides?: Partial<MockSession>): MockSession {
-    const id = this.generateId();
-    const now = new Date();
-    const futureDate = new Date();
-    futureDate.setHours(futureDate.getHours() + DEFAULT_TEST_SESSION.FUTURE_OFFSET_HOURS);
-    return {
-      id,
-      dateTime: futureDate,
-      durationMin: DEFAULT_TEST_SESSION.DURATION_MIN,
-      price: DEFAULT_TEST_SESSION.PRICE,
-      isPaid: DEFAULT_TEST_SESSION.IS_PAID,
-      status: DEFAULT_TEST_SESSION.STATUS,
-      notes: DEFAULT_TEST_SESSION.NOTES,
-      userId: this.generateId(),
-      coachId: this.generateId(),
-      bookingTypeId: this.generateId(),
-      timeSlotId: this.generateId(),
-      createdAt: now,
-      updatedAt: now,
-      ...overrides,
-    };
-  }
-
-  createDiscount(overrides?: Partial<MockDiscount>): MockDiscount {
-    const id = this.generateId();
-    const now = new Date();
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + DEFAULT_TEST_DISCOUNT.EXPIRY_OFFSET_DAYS);
-    return {
-      id,
-      code: `DISCOUNT_${id.slice(-8)}`,
-      amount: Number(DEFAULT_TEST_DISCOUNT.AMOUNT),
-      isActive: DEFAULT_TEST_DISCOUNT.IS_ACTIVE,
-      expiry: expiryDate,
-      useCount: DEFAULT_TEST_DISCOUNT.USE_COUNT,
-      maxUsage: DEFAULT_TEST_DISCOUNT.MAX_USAGE,
-      coachId: this.generateId(),
-      createdAt: now,
-      updatedAt: now,
-      ...overrides,
-    };
-  }
-
-  createMessage(overrides?: Partial<MockMessage>): MockMessage {
-    const id = this.generateId();
-    return {
-      id,
-      content: DEFAULT_TEST_MESSAGE.CONTENT,
-      senderId: this.generateId(),
-      receiverId: this.generateId(),
-      sessionId: this.generateId(),
-      sentAt: new Date(),
-      senderType: Role.USER,
-      receiverType: Role.COACH,
-      ...overrides,
-    };
-  }
-
-  createTestScenario(): TestScenario {
-    const user = this.createUser();
-    const coach = this.createCoach();
-    const bookingType = this.createBookingTypeForCoach(coach.id);
-    const timeSlot = this.createTimeSlotForCoach(coach.id);
-    const session = this.createSession({
+    // Create session that connects everything together
+    const sessionOverrides = {
       userId: user.id,
       coachId: coach.id,
       bookingTypeId: bookingType.id,
       timeSlotId: timeSlot.id,
-    });
+      // Ensure session dateTime matches time slot
+      dateTime: timeSlot.dateTime,
+      // Set appropriate price based on booking type
+      price: bookingType.basePrice,
+      ...overrides?.session,
+    };
+
+    const session = overrides?.session ?? this.session.create(sessionOverrides);
+
     return { user, coach, bookingType, timeSlot, session };
   }
 
+  /**
+   * Creates a booking scenario with optional discount and payment state
+   * @param options Configuration options for the scenario
+   * @returns BookingScenario with all entities and optional discount
+   */
   createBookingScenario(options?: {
     withDiscount?: boolean;
+    discountAmount?: Decimal;
     sessionStatus?: SessionStatus;
     isPaid?: boolean;
+    user?: MockAccount;
+    coach?: MockAccount;
+    bookingType?: MockBookingType;
+    timeSlot?: MockTimeSlot;
+    session?: MockSession;
   }): BookingScenario {
-    const scenario = this.createTestScenario();
+    // Create base scenario
+    const scenario = this.createTestScenario({
+      user: options?.user,
+      coach: options?.coach,
+      bookingType: options?.bookingType,
+      timeSlot: options?.timeSlot,
+      session: options?.session,
+    });
+
     let discount: MockDiscount | null = null;
 
+    // Create discount if requested
     if (options?.withDiscount) {
-      discount = this.createDiscount({ coachId: scenario.coach.id });
+      // Use provided amount or default to 10% of session price (but not more than $50)
+      const discountAmount =
+        options.discountAmount ?? Decimal.min(scenario.session.price.mul(0.1), new Decimal(50));
+
+      discount = this.discount.createWithCoach(scenario.coach.id, {
+        amount: discountAmount,
+        maxUsage: 10, // Allow multiple uses for testing
+        useCount: 0,
+      });
+
+      // Apply discount to session
       scenario.session.discountId = discount.id;
       scenario.session.discountCode = discount.code;
-      scenario.session.price = scenario.session.price * 0.8;
+
+      // Calculate discounted price (ensure it doesn't go below 0)
+      scenario.session.price = Decimal.max(
+        new Decimal(0),
+        scenario.session.price.sub(discount.amount)
+      );
+
+      // Update discount usage
+      discount.useCount += 1;
     }
 
-    if (options?.sessionStatus) scenario.session.status = options.sessionStatus;
+    // Set session status
+    if (options?.sessionStatus) {
+      scenario.session.status = options.sessionStatus;
+
+      // If completed, set appropriate timestamps
+      if (options.sessionStatus === SessionStatus.COMPLETED) {
+        scenario.session.updatedAt = new Date();
+      }
+    }
+
+    // Handle payment state
     if (options?.isPaid !== undefined) {
       scenario.session.isPaid = options.isPaid;
-      if (options.isPaid) scenario.session.paymentId = `pay_${scenario.session.id}`;
+
+      if (options.isPaid) {
+        scenario.session.paymentId = `pay_${scenario.session.id}`;
+        // If paid, status should be at least confirmed
+        if (scenario.session.status === SessionStatus.SCHEDULED) {
+          scenario.session.status = SessionStatus.CONFIRMED;
+        }
+      } else {
+        scenario.session.paymentId = undefined;
+      }
     }
 
     return { ...scenario, discount };
   }
-}
 
-// Backward compatibility alias
-export { TestDataFactory as MockDataMixin };
+  /**
+   * Creates a conversation scenario with realistic message flow
+   * @param options Configuration options for the conversation
+   * @returns ConversationScenario with user, coach, and message array
+   */
+  createConversationScenario(options?: {
+    messageCount?: number;
+    conversationType?: 'support' | 'booking' | 'feedback' | 'general';
+    user?: MockAccount;
+    coach?: MockAccount;
+    startTime?: Date;
+  }): ConversationScenario {
+    const messageCount = options?.messageCount ?? 5;
+    // Create coach first (needed for booking type and time slot)
+    const coach = options?.coach ?? this.account.createCoach({ ...options?.coach });
+
+    const user = options?.user ?? this.account.createUser({ ...options?.user });
+
+    // Create conversation with specific type
+    const messages = this.message.createConversation(
+      user.id,
+      coach.id,
+      messageCount,
+      options?.conversationType,
+      options?.startTime
+    );
+
+    return { user, coach, messages };
+  }
+}

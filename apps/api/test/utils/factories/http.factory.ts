@@ -68,7 +68,7 @@ export interface CreateRequestOptions {
  */
 export class HttpMockFactory extends BaseMockFactory<Request> {
   /** Create a mock Request */
-  override create(overrides: Partial<Request> = {}): Request {
+  protected generateMock(overrides: Partial<Request> = {}): Request {
     const req = getMockReq();
 
     req.method = overrides.method ?? 'GET';

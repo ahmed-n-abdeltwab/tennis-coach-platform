@@ -2,12 +2,14 @@
  * Discount mock factory for creating test discount data
  */
 
+import { Decimal } from '@prisma/client/runtime/client';
+
 import { BaseMockFactory } from './base-factory';
 
 export interface MockDiscount {
   id: string;
   code: string;
-  amount: number;
+  amount: Decimal;
   expiry: Date;
   useCount: number;
   maxUsage: number;
@@ -18,7 +20,7 @@ export interface MockDiscount {
 }
 
 export class DiscountMockFactory extends BaseMockFactory<MockDiscount> {
-  create(overrides?: Partial<MockDiscount>): MockDiscount {
+  protected generateMock(overrides?: Partial<MockDiscount>): MockDiscount {
     const id = this.generateId();
     const now = new Date();
 
@@ -108,9 +110,9 @@ export class DiscountMockFactory extends BaseMockFactory<MockDiscount> {
     return `${prefix}${suffix}`;
   }
 
-  private randomAmount(): number {
+  private randomAmount(): Decimal {
     const amounts = [10, 15, 20, 25, 30, 50]; // Dollar amounts
-    return amounts[Math.floor(Math.random() * amounts.length)] ?? 10;
+    return new Decimal(amounts[Math.floor(Math.random() * amounts.length)] ?? 10);
   }
 
   private randomMaxUsage(): number {

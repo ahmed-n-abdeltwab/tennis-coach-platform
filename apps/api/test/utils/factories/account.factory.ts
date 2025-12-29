@@ -6,7 +6,7 @@
 
 import { Role } from '@prisma/client';
 
-import { BaseMockFactory } from './base-factory';
+import { BaseMockFactory, Nullified } from './base-factory';
 
 export interface MockAccount {
   id: string;
@@ -15,19 +15,19 @@ export interface MockAccount {
   passwordHash: string;
 
   // Profile details
-  gender: string | null;
-  age: number | null;
-  height: number | null;
-  weight: number | null;
-  bio: string | null;
-  credentials: string | null;
-  philosophy: string | null;
-  profileImage: string | null;
+  gender?: string;
+  age?: number;
+  height?: number;
+  weight?: number;
+  bio?: string;
+  credentials?: string;
+  philosophy?: string;
+  profileImage?: string;
   disability: boolean;
-  disabilityCause: string | null;
-  country: string | null;
-  address: string | null;
-  notes: string | null;
+  disabilityCause?: string;
+  country?: string;
+  address?: string;
+  notes?: string;
 
   // State
   createdAt: Date;
@@ -38,10 +38,9 @@ export interface MockAccount {
 }
 
 export class AccountMockFactory extends BaseMockFactory<MockAccount> {
-  create(overrides?: Partial<MockAccount>): MockAccount {
+  protected generateMock(overrides?: Partial<MockAccount>): MockAccount {
     const id = this.generateId();
     const now = new Date();
-    const role = overrides?.role ?? Role.USER;
 
     const account = {
       id,
@@ -52,18 +51,17 @@ export class AccountMockFactory extends BaseMockFactory<MockAccount> {
       age: this.randomAge(),
       height: this.randomHeight(),
       weight: this.randomWeight(),
-      bio: role === Role.COACH ? this.randomBio() : null,
-      credentials: role === Role.COACH ? this.randomCredentials() : null,
-      philosophy: role === Role.COACH ? this.randomPhilosophy() : null,
+      bio: this.randomBio(),
+      credentials: this.randomCredentials(),
+      philosophy: this.randomPhilosophy(),
       profileImage: this.randomProfileImage(),
       disability: false,
-      disabilityCause: null,
       country: this.randomCountry(),
       address: this.randomAddress(),
       notes: `Test notes for account ${id.slice(-8)}`,
       createdAt: now,
       updatedAt: now,
-      role,
+      role: Role.USER,
       isActive: true,
       isOnline: true,
       ...overrides,
@@ -98,8 +96,77 @@ export class AccountMockFactory extends BaseMockFactory<MockAccount> {
     });
   }
 
+  createManyUser(count: number, overrides?: Partial<MockAccount>): MockAccount[] {
+    return this.createMany(count, {
+      role: Role.USER,
+      email: this.generateEmail('user'),
+      name: `Test User ${this.generateId().slice(-8)}`,
+      ...overrides,
+    });
+  }
+
+  createUserWithNulls(overrides?: Partial<MockAccount>): Nullified<MockAccount> {
+    return this.createWithNulls({
+      role: Role.USER,
+      email: this.generateEmail('user'),
+      name: `Test User ${this.generateId().slice(-8)}`,
+      ...overrides,
+    });
+  }
+
+  createManyUserWithNulls(
+    count: number,
+    overrides?: Partial<MockAccount>
+  ): Nullified<MockAccount>[] {
+    return this.createManyWithNulls(count, {
+      role: Role.USER,
+      email: this.generateEmail('user'),
+      name: `Test User ${this.generateId().slice(-8)}`,
+      ...overrides,
+    });
+  }
+
   createCoach(overrides?: Partial<MockAccount>): MockAccount {
     return this.create({
+      role: Role.COACH,
+      email: this.generateEmail('coach'),
+      name: `Coach ${this.generateId().slice(-8)}`,
+      bio: this.randomBio(),
+      credentials: this.randomCredentials(),
+      philosophy: this.randomPhilosophy(),
+      ...overrides,
+    });
+  }
+
+  createManyCoach(count: number, overrides?: Partial<MockAccount>): MockAccount[] {
+    return this.createMany(count, {
+      role: Role.COACH,
+      email: this.generateEmail('coach'),
+      name: `Coach ${this.generateId().slice(-8)}`,
+      bio: this.randomBio(),
+      credentials: this.randomCredentials(),
+      philosophy: this.randomPhilosophy(),
+      ...overrides,
+    });
+  }
+
+  createCoachWithNulls(overrides?: Partial<MockAccount>): Nullified<MockAccount> {
+    return this.createWithNulls({
+      role: Role.COACH,
+      email: this.generateEmail('coach'),
+      name: `Coach ${this.generateId().slice(-8)}`,
+      bio: this.randomBio(),
+      credentials: this.randomCredentials(),
+      philosophy: this.randomPhilosophy(),
+      ...overrides,
+    });
+  }
+
+  createManyCoachWithNulls(
+    count: number,
+    overrides?: Partial<MockAccount>
+  ): Nullified<MockAccount>[] {
+    return this.createManyWithNulls(count, {
       role: Role.COACH,
       email: this.generateEmail('coach'),
       name: `Coach ${this.generateId().slice(-8)}`,
@@ -119,8 +186,26 @@ export class AccountMockFactory extends BaseMockFactory<MockAccount> {
     });
   }
 
+  createAdminWithNulls(overrides?: Partial<MockAccount>): MockAccount {
+    return this.createWithNulls({
+      role: Role.ADMIN,
+      email: this.generateEmail('admin'),
+      name: `Admin ${this.generateId().slice(-8)}`,
+      ...overrides,
+    });
+  }
+
   createPremiumUser(overrides?: Partial<MockAccount>): MockAccount {
     return this.create({
+      role: Role.PREMIUM_USER,
+      email: this.generateEmail('premium'),
+      name: `Premium User ${this.generateId().slice(-8)}`,
+      ...overrides,
+    });
+  }
+
+  createPremiumUserWithNulls(overrides?: Partial<MockAccount>): MockAccount {
+    return this.createWithNulls({
       role: Role.PREMIUM_USER,
       email: this.generateEmail('premium'),
       name: `Premium User ${this.generateId().slice(-8)}`,

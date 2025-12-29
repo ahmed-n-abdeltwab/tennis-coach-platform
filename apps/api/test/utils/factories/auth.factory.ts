@@ -37,7 +37,7 @@ export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {
     this.jwtService = jwtService;
   }
 
-  create(overrides?: Partial<MockAuthPayload>): MockAuthPayload {
+  protected generateMock(overrides?: Partial<MockAuthPayload>): MockAuthPayload {
     const id = this.generateId();
     const now = Math.floor(Date.now() / 1000);
 

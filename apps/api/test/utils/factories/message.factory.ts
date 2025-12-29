@@ -18,7 +18,7 @@ export interface MockMessage {
 }
 
 export class MessageMockFactory extends BaseMockFactory<MockMessage> {
-  create(overrides?: Partial<MockMessage>): MockMessage {
+  protected generateMock(overrides?: Partial<MockMessage>): MockMessage {
     const id = this.generateId();
 
     const message = {
@@ -82,21 +82,107 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
     });
   }
 
-  createConversation(userId: string, coachId: string, messageCount: number): MockMessage[] {
+  createConversation(
+    userId: string,
+    coachId: string,
+    messageCount: number,
+    conversationType: 'support' | 'booking' | 'feedback' | 'general' = 'general',
+    startTime?: Date
+  ): MockMessage[] {
     const messages: MockMessage[] = [];
+    const baseTime = startTime || new Date(Date.now() - messageCount * 60000);
 
     for (let i = 0; i < messageCount; i++) {
       const isUserSender = i % 2 === 0;
-      const sentAt = new Date(Date.now() - (messageCount - i) * 60000); // 1 minute apart
+      const sentAt = new Date(baseTime.getTime() + i * 60000); // 1 minute apart
+
+      const content = this.getTypedContent(conversationType, isUserSender, i);
 
       if (isUserSender) {
-        messages.push(this.createUserToCoach(userId, coachId, { sentAt }));
+        messages.push(this.createUserToCoach(userId, coachId, { sentAt, content }));
       } else {
-        messages.push(this.createCoachToUser(coachId, userId, { sentAt }));
+        messages.push(this.createCoachToUser(coachId, userId, { sentAt, content }));
       }
     }
 
     return messages;
+  }
+
+  private getTypedContent(
+    type: 'support' | 'booking' | 'feedback' | 'general',
+    isUserSender: boolean,
+    messageIndex: number
+  ): string {
+    const contentMap = {
+      support: {
+        user: [
+          'Hi, I have a question about my upcoming lesson.',
+          'Is it possible to change the time of our session?',
+          'I need help with the booking system.',
+          'Can you help me understand the payment process?',
+          'I have a technical issue with the app.',
+        ],
+        coach: [
+          "Hello! I'd be happy to help with your question.",
+          'Of course, we can reschedule. What time works better for you?',
+          'I can guide you through the booking process.',
+          'The payment is processed securely through our system.',
+          'Let me help you troubleshoot that issue.',
+        ],
+      },
+      booking: {
+        user: [
+          "Hi, I'd like to book a lesson with you.",
+          'What time slots are available this week?',
+          'Can we schedule a session for next Tuesday?',
+          "I'm interested in group training sessions.",
+          'How do I confirm my booking?',
+        ],
+        coach: [
+          "Hello! I'd be glad to schedule a lesson for you.",
+          'I have availability on Monday, Wednesday, and Friday.',
+          'Tuesday at 2 PM works well. Shall I book that for you?',
+          'Group sessions are available on weekends. Would you like to join?',
+          "Your booking is confirmed! You'll receive a confirmation email.",
+        ],
+      },
+      feedback: {
+        user: [
+          'Thank you for the great lesson yesterday!',
+          'I really enjoyed working on my backhand technique.',
+          'The session was very helpful. I learned a lot.',
+          'Your coaching style is excellent.',
+          'I can already see improvement in my game.',
+        ],
+        coach: [
+          "You're welcome! It was great working with you.",
+          'Your backhand is looking much better already!',
+          "I'm glad you found the session helpful.",
+          'Thank you! I enjoy teaching motivated students like you.',
+          "Keep practicing those drills and you'll see even more improvement.",
+        ],
+      },
+      general: {
+        user: [
+          'Hello, I have a question about my next session.',
+          'Can we reschedule our appointment for tomorrow?',
+          'Thank you for the great lesson today!',
+          "I'm working on the techniques you showed me.",
+          'What should I focus on before our next meeting?',
+        ],
+        coach: [
+          'Hi there! How can I help you today?',
+          'Of course, tomorrow works. What time would you prefer?',
+          "You're welcome! It was a productive session.",
+          "That's great to hear! Keep up the good work.",
+          'Focus on your footwork and racket preparation.',
+        ],
+      },
+    };
+
+    const senderType = isUserSender ? 'user' : 'coach';
+    const contents = contentMap[type][senderType];
+    return contents[messageIndex % contents.length] ?? contents[0] ?? "Shouldn't print this";
   }
 
   private randomContent(): string {
