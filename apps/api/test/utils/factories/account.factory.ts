@@ -41,7 +41,6 @@ export class AccountMockFactory extends BaseMockFactory<MockAccount> {
   protected generateMock(overrides?: Partial<MockAccount>): MockAccount {
     const id = this.generateId();
     const now = new Date();
-    const role = overrides?.role ?? Role.USER;
 
     const account = {
       id,
@@ -62,7 +61,7 @@ export class AccountMockFactory extends BaseMockFactory<MockAccount> {
       notes: `Test notes for account ${id.slice(-8)}`,
       createdAt: now,
       updatedAt: now,
-      role,
+      role: Role.USER,
       isActive: true,
       isOnline: true,
       ...overrides,

@@ -19,7 +19,7 @@ export class AccountsService {
     private readonly hashingService: HashingService
   ) {}
 
-  private async findInternal<T extends Prisma.AccountWhereInput>(
+  private async findAccountInternal<T extends Prisma.AccountWhereInput>(
     where: T,
     options: { throwIfNotFound?: boolean; isMany?: boolean } = {}
   ) {
@@ -41,17 +41,17 @@ export class AccountsService {
   }
 
   async findByEmail(email: string): Promise<AccountResponseDto> {
-    const account = (await this.findInternal({ email })) as Account;
+    const account = (await this.findAccountInternal({ email })) as Account;
     return plainToInstance(AccountResponseDto, account);
   }
 
   async findById(id: string): Promise<AccountResponseDto> {
-    const account = (await this.findInternal({ id })) as Account;
+    const account = (await this.findAccountInternal({ id })) as Account;
     return plainToInstance(AccountResponseDto, account);
   }
 
   async findByRole(role: Role): Promise<AccountResponseDto[]> {
-    const accounts = (await this.findInternal({ role }, { isMany: true })) as Account[];
+    const accounts = (await this.findAccountInternal({ role }, { isMany: true })) as Account[];
     return plainToInstance(AccountResponseDto, accounts);
   }
 
@@ -59,7 +59,7 @@ export class AccountsService {
    * Find all users with optional filters
    */
   async findUsers(isActive = true): Promise<AccountResponseDto[]> {
-    const accounts = (await this.findInternal(
+    const accounts = (await this.findAccountInternal(
       {
         role: { in: [Role.USER, Role.PREMIUM_USER] },
         isActive,
@@ -74,7 +74,7 @@ export class AccountsService {
    * Create a new account
    */
   async create(data: CreateAccountDto): Promise<AccountResponseDto> {
-    const existingAccount = (await this.findInternal(
+    const existingAccount = (await this.findAccountInternal(
       { email: data.email },
       { throwIfNotFound: false }
     )) as Account;
@@ -129,7 +129,7 @@ export class AccountsService {
    * Update online status
    */
   async updateOnlineStatus(id: string, isOnline = true): Promise<void> {
-    const account = (await this.findInternal({ id })) as Account;
+    const account = (await this.findAccountInternal({ id })) as Account;
 
     await this.prisma.account.update({
       where: { id: account.id },

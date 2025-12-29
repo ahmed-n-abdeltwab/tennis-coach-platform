@@ -42,27 +42,6 @@ export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
     return bookingType;
   }
 
-  createActive(overrides?: Partial<MockBookingType>): MockBookingType {
-    return this.create({
-      isActive: true,
-      ...overrides,
-    });
-  }
-
-  createInactive(overrides?: Partial<MockBookingType>): MockBookingType {
-    return this.create({
-      isActive: false,
-      ...overrides,
-    });
-  }
-
-  createWithCoach(coachId: string, overrides?: Partial<MockBookingType>): MockBookingType {
-    return this.create({
-      coachId,
-      ...overrides,
-    });
-  }
-
   private randomBookingTypeName(): string {
     const names = [
       'Individual Lesson',

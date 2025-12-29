@@ -1,4 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BookingType, Prisma } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -14,32 +15,51 @@ import {
 export class BookingTypesService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(): Promise<GetAllBookingTypeResponseDto[]> {
-    const data = await this.prisma.bookingType.findMany({
-      where: { isActive: true },
-    });
-    return plainToInstance(GetAllBookingTypeResponseDto, data);
+  private async findBookingTypeInternal<T extends Prisma.BookingTypeWhereInput>(
+    where: T,
+    options: { throwIfNotFound?: boolean; isMany?: boolean } = {}
+  ) {
+    const { throwIfNotFound = true, isMany = false } = options;
+
+    // 1. Run the query based on if we expect one or many
+    const result = isMany
+      ? await this.prisma.bookingType.findMany({ where })
+      : await this.prisma.bookingType.findFirst({ where }); // findFirst returns Object | null
+
+    // 2. Handle the "Not Found" case
+    const isEmpty = isMany ? (result as any[]).length === 0 : result === null;
+
+    if (throwIfNotFound && isEmpty) {
+      throw new NotFoundException('Booking Type not found');
+    }
+
+    return result;
+  }
+  async findAll(isActive = true): Promise<GetAllBookingTypeResponseDto[]> {
+    const bookingTypes = (await this.findBookingTypeInternal(
+      { isActive },
+      { isMany: true }
+    )) as BookingType[];
+
+    return plainToInstance(GetAllBookingTypeResponseDto, bookingTypes);
   }
 
-  async findByCoach(coachId: string): Promise<BookingTypeResponseDto[]> {
-    const bookingTypes = await this.prisma.bookingType.findMany({
-      where: {
+  async findByCoach(coachId: string, isActive = true): Promise<BookingTypeResponseDto[]> {
+    const bookingTypes = (await this.findBookingTypeInternal(
+      {
         coachId,
-        isActive: true,
+        isActive,
       },
-      orderBy: { createdAt: 'asc' },
-    });
+      { isMany: true }
+    )) as BookingType[];
+
     return plainToInstance(BookingTypeResponseDto, bookingTypes);
   }
 
   async findOne(id: string): Promise<BookingTypeResponseDto> {
-    const bookingType = await this.prisma.bookingType.findUnique({
-      where: { id },
-    });
-
-    if (!bookingType) {
-      throw new NotFoundException('Booking type not found');
-    }
+    const bookingType = (await this.findBookingTypeInternal({
+      id,
+    })) as BookingType;
 
     return plainToInstance(BookingTypeResponseDto, bookingType);
   }
@@ -59,14 +79,7 @@ export class BookingTypesService {
     updateDto: UpdateBookingTypeDto,
     coachId: string
   ): Promise<BookingTypeResponseDto> {
-    // Verify ownership
-    const bookingType = await this.prisma.bookingType.findUnique({
-      where: { id },
-    });
-
-    if (!bookingType?.isActive) {
-      throw new NotFoundException('Booking type not found');
-    }
+    const bookingType = await this.findOne(id);
 
     if (bookingType.coachId !== coachId) {
       throw new ForbiddenException('Not authorized to update this booking type');
@@ -81,14 +94,7 @@ export class BookingTypesService {
   }
 
   async remove(id: string, coachId: string): Promise<void> {
-    // Verify ownership
-    const bookingType = await this.prisma.bookingType.findUnique({
-      where: { id },
-    });
-
-    if (!bookingType) {
-      throw new NotFoundException('Booking type not found');
-    }
+    const bookingType = await this.findOne(id);
 
     if (bookingType.coachId !== coachId) {
       throw new ForbiddenException('Not authorized to delete this booking type');

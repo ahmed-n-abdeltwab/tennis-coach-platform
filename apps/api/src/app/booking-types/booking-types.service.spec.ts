@@ -19,7 +19,7 @@ describe('BookingTypesService', () => {
       bookingType: {
         create: jest.fn(),
         findMany: jest.fn(),
-        findUnique: jest.fn(),
+        findFirst: jest.fn(),
         update: jest.fn(),
         delete: jest.fn(),
       },
@@ -62,18 +62,11 @@ describe('BookingTypesService', () => {
   describe('findByCoach', () => {
     it('should return booking types for specific coach', async () => {
       const coachId = 'coach-1';
-      const mockBookingTypes = [
-        {
-          id: 'booking-type-1',
-          name: 'Personal Training',
-          description: 'One-on-one training',
-          basePrice: new Decimal(99.99),
-          isActive: true,
-          coachId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ];
+      const mockBookingTypes = test.factory.bookingType.createManyWithNulls(1, {
+        id: 'booking-type-1',
+        name: 'Personal Training',
+        coachId: 'coach-1',
+      });
 
       test.prisma.bookingType.findMany.mockResolvedValue(mockBookingTypes);
 
@@ -85,25 +78,18 @@ describe('BookingTypesService', () => {
           coachId,
           isActive: true,
         },
-        orderBy: { createdAt: 'asc' },
       });
     });
   });
 
   describe('findOne', () => {
     it('should return booking type by id', async () => {
-      const mockBookingType = {
+      const mockBookingType = test.factory.bookingType.createWithNulls({
         id: 'booking-type-1',
         name: 'Personal Training',
-        description: 'One-on-one training',
-        basePrice: new Decimal(99.99),
-        isActive: true,
-        coachId: 'coach-1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      });
 
-      test.prisma.bookingType.findUnique.mockResolvedValue(mockBookingType);
+      test.prisma.bookingType.findFirst.mockResolvedValue(mockBookingType);
 
       const result = await test.service.findOne('booking-type-1');
 
@@ -111,13 +97,13 @@ describe('BookingTypesService', () => {
         id: 'booking-type-1',
         name: 'Personal Training',
       });
-      expect(test.prisma.bookingType.findUnique).toHaveBeenCalledWith({
+      expect(test.prisma.bookingType.findFirst).toHaveBeenCalledWith({
         where: { id: 'booking-type-1' },
       });
     });
 
     it('should throw NotFoundException when booking type not found', async () => {
-      test.prisma.bookingType.findUnique.mockResolvedValue(null);
+      test.prisma.bookingType.findFirst.mockResolvedValue(null);
 
       await expect(test.service.findOne('non-existent-id')).rejects.toThrow(NotFoundException);
     });
@@ -129,25 +115,23 @@ describe('BookingTypesService', () => {
         name: 'Personal Training',
         description: 'One-on-one training',
         basePrice: new Decimal(99.99),
-        isActive: true,
       };
 
       const coachId = 'coach-1';
+      const bookingTypeId = 'booking-type-1';
 
-      const mockBookingType = {
-        id: 'booking-type-1',
-        ...createDto,
+      const mockBookingType = test.factory.bookingType.createWithNulls({
+        id: bookingTypeId,
         coachId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        ...createDto,
+      });
 
       test.prisma.bookingType.create.mockResolvedValue(mockBookingType);
 
       const result = await test.service.create(createDto, coachId);
 
       expect(result).toMatchObject({
-        id: 'booking-type-1',
+        id: bookingTypeId,
         name: createDto.name,
         coachId,
       });
@@ -170,23 +154,17 @@ describe('BookingTypesService', () => {
       const coachId = 'coach-1';
       const bookingTypeId = 'booking-type-1';
 
-      const existingBookingType = {
+      const existingBookingType = test.factory.bookingType.createWithNulls({
         id: bookingTypeId,
-        name: 'Personal Training',
-        description: 'One-on-one training',
-        basePrice: new Decimal(99.99),
-        isActive: true,
         coachId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      });
 
       const updatedBookingType = {
         ...existingBookingType,
         ...updateDto,
       };
 
-      test.prisma.bookingType.findUnique.mockResolvedValue(existingBookingType);
+      test.prisma.bookingType.findFirst.mockResolvedValue(existingBookingType);
       test.prisma.bookingType.update.mockResolvedValue(updatedBookingType);
 
       const result = await test.service.update(bookingTypeId, updateDto, coachId);
@@ -195,7 +173,7 @@ describe('BookingTypesService', () => {
         id: bookingTypeId,
         name: 'Updated Training',
       });
-      expect(test.prisma.bookingType.findUnique).toHaveBeenCalledWith({
+      expect(test.prisma.bookingType.findFirst).toHaveBeenCalledWith({
         where: { id: bookingTypeId },
       });
       expect(test.prisma.bookingType.update).toHaveBeenCalledWith({
@@ -209,7 +187,7 @@ describe('BookingTypesService', () => {
         name: 'Updated Training',
       };
 
-      test.prisma.bookingType.findUnique.mockResolvedValue(null);
+      test.prisma.bookingType.findFirst.mockResolvedValue(null);
 
       await expect(test.service.update('non-existent-id', updateDto, 'coach-1')).rejects.toThrow(
         NotFoundException
@@ -221,22 +199,14 @@ describe('BookingTypesService', () => {
       const updateDto: UpdateBookingTypeDto = {
         name: 'Updated Training',
       };
+      const bookingTypeId = 'booking-type-1';
 
-      const existingBookingType = {
-        id: 'booking-type-1',
-        name: 'Personal Training',
-        description: 'One-on-one training',
-        basePrice: new Decimal(99.99),
-        isActive: true,
-        coachId: 'coach-1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      const existingBookingType = test.factory.bookingType.createWithNulls({ id: bookingTypeId });
 
-      test.prisma.bookingType.findUnique.mockResolvedValue(existingBookingType);
+      test.prisma.bookingType.findFirst.mockResolvedValue(existingBookingType);
 
       await expect(
-        test.service.update('booking-type-1', updateDto, 'different-coach')
+        test.service.update(bookingTypeId, updateDto, 'different-coach')
       ).rejects.toThrow(ForbiddenException);
       expect(test.prisma.bookingType.update).not.toHaveBeenCalled();
     });
@@ -247,18 +217,12 @@ describe('BookingTypesService', () => {
       const coachId = 'coach-1';
       const bookingTypeId = 'booking-type-1';
 
-      const existingBookingType = {
+      const existingBookingType = test.factory.bookingType.createWithNulls({
         id: bookingTypeId,
-        name: 'Personal Training',
-        description: 'One-on-one training',
-        basePrice: new Decimal(99.99),
-        isActive: true,
         coachId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      });
 
-      test.prisma.bookingType.findUnique.mockResolvedValue(existingBookingType);
+      test.prisma.bookingType.findFirst.mockResolvedValue(existingBookingType);
       test.prisma.bookingType.update.mockResolvedValue({
         ...existingBookingType,
         isActive: false,
@@ -266,7 +230,7 @@ describe('BookingTypesService', () => {
 
       await test.service.remove(bookingTypeId, coachId);
 
-      expect(test.prisma.bookingType.findUnique).toHaveBeenCalledWith({
+      expect(test.prisma.bookingType.findFirst).toHaveBeenCalledWith({
         where: { id: bookingTypeId },
       });
       expect(test.prisma.bookingType.update).toHaveBeenCalledWith({
@@ -276,7 +240,7 @@ describe('BookingTypesService', () => {
     });
 
     it('should throw NotFoundException when booking type not found', async () => {
-      test.prisma.bookingType.findUnique.mockResolvedValue(null);
+      test.prisma.bookingType.findFirst.mockResolvedValue(null);
 
       await expect(test.service.remove('non-existent-id', 'coach-1')).rejects.toThrow(
         NotFoundException
@@ -285,20 +249,13 @@ describe('BookingTypesService', () => {
     });
 
     it('should throw ForbiddenException when not the owner', async () => {
-      const existingBookingType = {
-        id: 'booking-type-1',
-        name: 'Personal Training',
-        description: 'One-on-one training',
-        basePrice: new Decimal(99.99),
-        isActive: true,
-        coachId: 'coach-1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      const bookingTypeId = 'booking-type-1';
 
-      test.prisma.bookingType.findUnique.mockResolvedValue(existingBookingType);
+      const existingBookingType = test.factory.bookingType.createWithNulls({ id: bookingTypeId });
 
-      await expect(test.service.remove('booking-type-1', 'different-coach')).rejects.toThrow(
+      test.prisma.bookingType.findFirst.mockResolvedValue(existingBookingType);
+
+      await expect(test.service.remove(bookingTypeId, 'different-coach')).rejects.toThrow(
         ForbiddenException
       );
       expect(test.prisma.bookingType.update).not.toHaveBeenCalled();

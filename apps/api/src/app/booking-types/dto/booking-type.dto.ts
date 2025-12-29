@@ -48,18 +48,13 @@ export class CreateBookingTypeDto {
   @Transform(({ value }) => value ?? undefined)
   @IsOptional()
   @IsString()
-  description: string | null;
+  description?: string;
 
   @ApiProperty({ example: 99.99, description: 'Base price in decimal format' })
   @IsNumber()
   @Min(0)
   @Type(() => Number)
   basePrice: Decimal;
-
-  @ApiPropertyOptional({ default: true })
-  @IsOptional()
-  @IsBoolean()
-  isActive: boolean;
 }
 
 export class UpdateBookingTypeDto {
