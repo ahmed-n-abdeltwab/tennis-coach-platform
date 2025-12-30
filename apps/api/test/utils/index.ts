@@ -23,8 +23,15 @@ export * from './implementations/service-test';
 export * from './mixins/assertions.mixin';
 export * from './mixins/auth.mixin';
 export * from './mixins/database.mixin';
+export * from './mixins/factory.mixin';
 export * from './mixins/http-methods.mixin';
-export * from './mixins/mock.mixin';
+export {
+  buildProviders,
+  createDeepMock,
+  isClassProvider,
+  isCustomMockProvider,
+} from './mixins/mock.mixin';
+export type { CustomMockProvider, DeepMocked, MockProvider } from './mixins/mock.mixin';
 
 // ============================================================================
 // Factories

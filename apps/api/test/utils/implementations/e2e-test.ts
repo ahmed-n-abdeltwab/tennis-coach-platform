@@ -1,7 +1,10 @@
 /**
  * E2E Test Implementation
- * Clean composition of mixins for end-to-end testing
- * Replaces the monolithic BaseE2ETest
+ *
+ * For full end-to-end testing with the complete application.
+ * Extends IntegrationTest with full application setup.
+ *
+ * @module test-utils/implementations/e2e-test
  */
 
 import { ValidationPipe } from '@nestjs/common';
@@ -10,41 +13,57 @@ import { AppModule } from '../../../src/app/app.module';
 
 import { IntegrationTest, IntegrationTestConfig } from './integration-test';
 
-export interface E2ETestConfig {
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface E2ETestConfig<TModuleName extends string = string> {
   /** The main application module (defaults to AppModule) */
   appModule?: typeof AppModule;
+
+  /**
+   * Module name for HTTP route filtering (e.g., 'accounts', 'sessions').
+   * Used by module* HTTP methods for type-safe route filtering.
+   */
+  moduleName?: TModuleName;
 }
+
+// ============================================================================
+// E2ETest Class
+// ============================================================================
 
 /**
  * E2E Test Class
- * Extends IntegrationTest with full application setup
+ *
+ * For full end-to-end testing with the complete application.
+ *
+ * @template TModuleName Module name for HTTP route filtering (optional)
  */
-export class E2ETest extends IntegrationTest<string> {
-  constructor(config: E2ETestConfig = {}) {
-    // Convert E2E config to Integration config
-    const integrationConfig: IntegrationTestConfig = {
+export class E2ETest<TModuleName extends string = string> extends IntegrationTest<TModuleName> {
+  constructor(config: E2ETestConfig<TModuleName> = {}) {
+    const integrationConfig: IntegrationTestConfig<TModuleName> = {
       modules: [config.appModule ?? AppModule],
       controllers: [],
       providers: [],
+      moduleName: config.moduleName,
     };
 
     super(integrationConfig);
   }
 
-  /**
-   * Override setup to add validation pipes like in main.ts
-   */
+  /** Setup - builds full app with validation pipes. */
   override async setup(): Promise<void> {
-    // Call parent setup which handles module building and database setup
     await super.setup();
 
-    // Apply global pipes like in main.ts (after app is initialized)
-    this.application.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      })
-    );
+    // Apply global pipes like in main.ts
+    if (this._app) {
+      this._app.useGlobalPipes(
+        new ValidationPipe({
+          whitelist: true,
+          forbidNonWhitelisted: true,
+          transform: true,
+        })
+      );
+    }
   }
 }

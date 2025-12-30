@@ -1,34 +1,37 @@
 /**
  * Controller Test Implementation
- * Clean composition of mixins for controller testing
- * Follows the pattern from tasks.md for consistent, simple testing
  *
- * @example Simple approach (recommended for new tests):
+ * Providers are auto deep-mocked unless a custom useValue is provided.
+ * Define a TMocks interface for full IntelliSense on `test.mocks.ClassName`.
+ *
+ * @module test-utils/implementations/controller-test
+ *
+ * @example
  * ```typescript
+ * interface Mocks {
+ *   SessionsService: DeepMocked<SessionsService>;
+ * }
+ *
  * describe('SessionsController', () => {
- *   let controller: SessionsController;
- *   let service: jest.Mocked<SessionsService>;
+ *   let test: ControllerTest<SessionsController, Mocks, 'sessions'>;
  *
  *   beforeEach(async () => {
- *     const mockService = {
- *       create: jest.fn(),
- *       findByUser: jest.fn(),
- *       findOne: jest.fn(),
- *       update: jest.fn(),
- *       cancel: jest.fn(),
- *     };
- *
- *     const result = await createControllerTest({
- *       controllerClass: SessionsController,
- *       serviceClass: SessionsService,
- *       mockService,
+ *     test = new ControllerTest({
+ *       controller: SessionsController,
+ *       moduleName: 'sessions',
+ *       providers: [SessionsService],
  *     });
- *     controller = result.controller;
- *     service = result.service;
+ *     await test.setup();
  *   });
  *
- *   afterEach(() => {
- *     jest.clearAllMocks();
+ *   afterEach(async () => {
+ *     await test.cleanup();
+ *   });
+ *
+ *   it('should work', async () => {
+ *     test.mocks.SessionsService.create.mockResolvedValue(mockSession);
+ *     const token = await test.auth.createRoleToken(Role.USER);
+ *     await test.http.authenticatedPost('/api/sessions', token, { body: dto });
  *   });
  * });
  * ```
@@ -37,109 +40,85 @@
 import { Provider, Type } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
-import type { Endpoints } from '@routes-helpers';
 
 import { RolesGuard } from '../../../src/app/iam/authorization/guards/roles.guard';
 import { BaseTest } from '../core/base-test';
 import { AssertionsMixin } from '../mixins/assertions.mixin';
 import { AuthMixin } from '../mixins/auth.mixin';
+import { FactoryMixin } from '../mixins/factory.mixin';
 import { HttpCapable, HttpMethodsMixin } from '../mixins/http-methods.mixin';
-import { MockMixin, TestDataFactory } from '../mixins/mock.mixin';
+import { buildProviders, MockProvider } from '../mixins/mock.mixin';
 
-/**
- * Configuration for the simplified createControllerTest function
- */
-export interface CreateControllerTestConfig<TController, TService> {
-  /** The controller class to test */
-  controllerClass: Type<TController>;
-  /** The service class */
-  serviceClass: Type<TService>;
-  /** Mock service object with jest.fn() methods */
-  mockService: Partial<Record<keyof TService, jest.Mock>>;
-  /** Additional providers */
-  providers?: Provider[];
-}
+// ============================================================================
+// Types
+// ============================================================================
 
-/**
- * Result from createControllerTest function
- */
-export interface ControllerTestResult<TController, TService> {
-  /** The controller instance being tested */
-  controller: TController;
-  /** The mocked service */
-  service: jest.Mocked<TService>;
-  /** The testing module (for advanced use cases) */
-  module: TestingModule;
-  /** The ControllerTest instance (for access to mixins) */
-  test: ControllerTest<TController, TService>;
-}
+export interface ControllerTestConfig<TController, TModuleName extends string = string> {
+  /** The controller class to test. */
+  controller: Type<TController>;
 
-export interface ControllerTestConfigBase<TController, TModuleName extends string> {
-  /** The controller class to test */
-  controllerClass: Type<TController>;
-  /** The module name for type-safe routing (e.g., 'booking-types', 'accounts') */
-  moduleName?: TModuleName;
-  /** Mock service and other providers */
-  providers: Provider[];
   /**
-   * Whether to enable role-based authorization guards (default: true)
-   * Set to false for pure unit tests that don't need authorization checks
+   * Module name for HTTP route filtering (e.g., 'accounts', 'sessions').
+   * Used by module* HTTP methods for type-safe route filtering.
    */
+  moduleName?: TModuleName;
+
+  /**
+   * Providers for the controller dependencies.
+   * - Class types are automatically deep-mocked
+   * - Objects with { provide, useValue } use the custom mock
+   */
+  providers?: readonly MockProvider[];
+
+  /** Whether to enable role-based authorization guards (default: true) */
   enableRolesGuard?: boolean;
 }
 
-export interface ControllerTestConfigWithService<
-  TController,
-  TService,
-  TModuleName extends string,
-> extends ControllerTestConfigBase<TController, TModuleName> {
-  /** The service class for accessing mocked service */
-  serviceClass: Type<TService>;
-}
-
-export type ControllerTestConfig<TController, TService, TModuleName extends string> =
-  | ControllerTestConfigBase<TController, TModuleName>
-  | ControllerTestConfigWithService<TController, TService, TModuleName>;
+// ============================================================================
+// ControllerTest Class
+// ============================================================================
 
 /**
  * Controller Test Class
- * Provides controller testing capabilities through composition
+ *
+ * @template TController The controller class being tested
+ * @template TMocks Interface defining the mocks shape for IntelliSense
+ * @template TModuleName Module name for HTTP route filtering
  */
 export class ControllerTest<
   TController,
-  TService = unknown,
+  TMocks = Record<string, unknown>,
   TModuleName extends string = string,
-  E extends Record<string, any> = Endpoints,
 >
   extends BaseTest
   implements HttpCapable
 {
-  private config: ControllerTestConfig<TController, TService, TModuleName>;
+  private config: ControllerTestConfig<TController, TModuleName>;
   private _controller!: TController;
-  private _service?: TService;
+  private _mocks!: TMocks;
 
-  // Compose mixins for clean separation of concerns
-  readonly http: HttpMethodsMixin<TModuleName, E>;
+  /** HTTP methods for making requests. */
+  readonly http: HttpMethodsMixin<TModuleName>;
+
+  /** Auth helpers for creating tokens and headers. */
   readonly auth: AuthMixin;
-  readonly assert: AssertionsMixin;
-  readonly mock: MockMixin;
-  readonly factory: TestDataFactory;
 
-  constructor(config: ControllerTestConfig<TController, TService, TModuleName>) {
+  /** Assertion helpers for validating test results. */
+  readonly assert: AssertionsMixin;
+
+  /** Factory for creating in-memory mock data objects. */
+  readonly factory: FactoryMixin;
+
+  constructor(config: ControllerTestConfig<TController, TModuleName>) {
     super();
     this.config = config;
-
-    // Initialize mixins
-    this.http = new HttpMethodsMixin<TModuleName, E>(this);
+    this.http = new HttpMethodsMixin<TModuleName>(this);
     this.auth = new AuthMixin();
     this.assert = new AssertionsMixin();
-    this.mock = new MockMixin();
-    this.factory = new TestDataFactory();
+    this.factory = new FactoryMixin();
   }
 
-  /**
-   * Public accessor for the controller being tested
-   */
+  /** The controller instance being tested. */
   get controller(): TController {
     if (!this._controller) {
       throw new Error('Controller not initialized. Call setup() first.');
@@ -147,30 +126,15 @@ export class ControllerTest<
     return this._controller;
   }
 
-  /**
-   * Public accessor for the service (if serviceClass was provided)
-   * @throws Error if serviceClass was not provided in config
-   */
-  get service(): TService {
-    if (!this._service) {
-      const configWithService = this.config as ControllerTestConfigWithService<
-        TController,
-        TService,
-        TModuleName
-      >;
-      if (!configWithService.serviceClass) {
-        throw new Error(
-          'Service not available. To access the service, provide serviceClass in the config.'
-        );
-      }
-      throw new Error('Service not initialized. Call setup() first.');
+  /** Type-safe mocks accessible by class name. Define TMocks interface for IntelliSense. */
+  get mocks(): TMocks {
+    if (!this._mocks) {
+      throw new Error('Mocks not initialized. Call setup() first.');
     }
-    return this._service;
+    return this._mocks;
   }
 
-  /**
-   * Public accessor for the testing module
-   */
+  /** The NestJS testing module. */
   get module(): TestingModule {
     if (!this._module) {
       throw new Error('Module not initialized. Call setup() first.');
@@ -178,59 +142,43 @@ export class ControllerTest<
     return this._module;
   }
 
-  /**
-   * Implement HttpCapable interface
-   */
+  /** Implement HttpCapable interface */
   async createAuthHeaders(token?: string) {
     return this.auth.createAuthHeaders(token);
   }
 
-  /**
-   * Setup method - builds module and initializes app
-   */
+  /** Setup - creates testing module and initializes controller. */
   async setup(): Promise<void> {
-    const enableRolesGuard =
-      (this.config as ControllerTestConfigBase<TController, TModuleName>).enableRolesGuard ?? true;
+    const moduleProviders: Provider[] = [];
 
-    const guardProviders: Provider[] = enableRolesGuard
-      ? [{ provide: APP_GUARD, useClass: RolesGuard }]
-      : [];
+    // Add role guard if enabled
+    if (this.config.enableRolesGuard !== false) {
+      moduleProviders.push({ provide: APP_GUARD, useClass: RolesGuard });
+    }
+
+    // Build providers from config
+    if (this.config.providers && this.config.providers.length > 0) {
+      const { providers, mocks } = buildProviders(this.config.providers);
+      moduleProviders.push(...providers);
+      this._mocks = mocks as TMocks;
+    } else {
+      this._mocks = {} as TMocks;
+    }
 
     this._module = await Test.createTestingModule({
-      controllers: [this.config.controllerClass],
-      providers: [...this.config.providers, ...guardProviders],
+      controllers: [this.config.controller],
+      providers: moduleProviders,
     }).compile();
 
-    this._controller = this._module.get<TController>(this.config.controllerClass);
-
-    // Get service if serviceClass was provided
-    const configWithService = this.config as ControllerTestConfigWithService<
-      TController,
-      TService,
-      TModuleName
-    >;
-    if (configWithService.serviceClass) {
-      try {
-        this._service = this._module.get<TService>(configWithService.serviceClass, {
-          strict: false,
-        });
-      } catch {
-        // Service not available, that's okay
-      }
-    }
+    this._controller = this._module.get<TController>(this.config.controller);
 
     this._app = this._module.createNestApplication();
     this._app.setGlobalPrefix('api');
-
-    // Add authentication middleware to extract user from JWT
     this.auth.addAuthMiddleware(this._app);
-
     await this._app.init();
   }
 
-  /**
-   * Cleanup method - closes app, module, and clears all mocks
-   */
+  /** Cleanup - closes app, module, and clears all mocks. */
   async cleanup(): Promise<void> {
     jest.clearAllMocks();
     if (this._app) {
@@ -240,72 +188,4 @@ export class ControllerTest<
       await this._module.close();
     }
   }
-}
-
-/**
- * Creates a controller test setup using ControllerTest internally.
- * This is the recommended approach for new tests.
- *
- * @example
- * ```typescript
- * describe('SessionsController', () => {
- *   let controller: SessionsController;
- *   let service: jest.Mocked<SessionsService>;
- *
- *   beforeEach(async () => {
- *     const mockService = {
- *       create: jest.fn(),
- *       findByUser: jest.fn(),
- *       findOne: jest.fn(),
- *       update: jest.fn(),
- *       cancel: jest.fn(),
- *     };
- *
- *     const result = await createControllerTest({
- *       controllerClass: SessionsController,
- *       serviceClass: SessionsService,
- *       mockService,
- *     });
- *     controller = result.controller;
- *     service = result.service;
- *   });
- *
- *   afterEach(() => {
- *     jest.clearAllMocks();
- *   });
- *
- *   it('should create a session', async () => {
- *     service.create.mockResolvedValue(expectedSession);
- *     const result = await controller.create(createDto);
- *     expect(result).toEqual(expectedSession);
- *     expect(service.create).toHaveBeenCalledWith(createDto);
- *   });
- * });
- * ```
- */
-export async function createControllerTest<TController, TService>(
-  config: CreateControllerTestConfig<TController, TService>
-): Promise<ControllerTestResult<TController, TService>> {
-  // Build the service provider
-  const serviceProvider: Provider = {
-    provide: config.serviceClass,
-    useValue: config.mockService,
-  };
-
-  // Create ControllerTest instance with the configuration
-  const controllerTest = new ControllerTest<TController, TService>({
-    controllerClass: config.controllerClass,
-    serviceClass: config.serviceClass,
-    providers: [serviceProvider, ...(config.providers ?? [])],
-  });
-
-  // Setup the test
-  await controllerTest.setup();
-
-  return {
-    controller: controllerTest.controller,
-    service: controllerTest.service as jest.Mocked<TService>,
-    module: controllerTest.module,
-    test: controllerTest,
-  };
 }

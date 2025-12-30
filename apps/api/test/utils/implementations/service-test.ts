@@ -1,27 +1,38 @@
 /**
  * Service Test Implementation
- * Clean composition of mixins for service testing
- * Follows the pattern from tasks.md for consistent, simple testing
+ *
+ * Providers are auto deep-mocked unless a custom useValue is provided.
+ * Define a TMocks interface for full IntelliSense on `test.mocks.ClassName`.
+ *
+ * @module test-utils/implementations/service-test
  *
  * @example
  * ```typescript
- * describe('SessionsService', () => {
- *   let service: SessionsService;
- *   let prisma: jest.Mocked<PrismaService>;
+ * interface Mocks {
+ *   SessionsService: DeepMocked<SessionsService>;
+ *   PrismaService: { session: { update: jest.Mock } };
+ * }
  *
- *   beforeEach(async () => {
- *     const { service: svc, prisma: p } = await createServiceTest({
- *       serviceClass: SessionsService,
- *       mockPrisma: {
- *         session: { create: jest.fn(), findMany: jest.fn() },
- *       },
- *     });
- *     service = svc;
- *     prisma = p;
+ * describe('CalendarService', () => {
+ *   let test = new ServiceTest<CalendarService, Mocks>({
+ *     service: CalendarService,
+ *     providers: [
+ *       SessionsService,
+ *       { provide: PrismaService, useValue: { session: { update: jest.fn() } } },
+ *     ],
  *   });
  *
- *   afterEach(() => {
- *     jest.clearAllMocks();
+ *   beforeEach(async () => {
+ *     await test.setup();
+ *   });
+ *
+ *   afterEach(async () => {
+ *     await test.cleanup();
+ *   });
+ *
+ *   it('should work', async () => {
+ *     test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
+ *     test.mocks.PrismaService.session.update.mockResolvedValue(updated);
  *   });
  * });
  * ```
@@ -30,87 +41,56 @@
 import { Provider, Type } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { PrismaService } from '../../../src/app/prisma/prisma.service';
 import { BaseTest } from '../core/base-test';
 import { AssertionsMixin } from '../mixins/assertions.mixin';
-import { MockMixin, TestDataFactory } from '../mixins/mock.mixin';
+import { FactoryMixin } from '../mixins/factory.mixin';
+import { buildProviders, MockProvider } from '../mixins/mock.mixin';
 
-/**
- * Type helper to convert all methods of a type to Jest mocks
- */
-type DeepMocked<T> = {
-  [K in keyof T]: T[K] extends (...args: infer A) => infer R
-    ? jest.MockedFunction<(...args: A) => R>
-    : T[K] extends object
-      ? DeepMocked<T[K]>
-      : T[K];
-} & T;
+// ============================================================================
+// Types
+// ============================================================================
 
 export interface ServiceTestConfig<TService> {
-  /** The service class to test */
-  serviceClass: Type<TService>;
-  /** Mock providers for dependencies */
-  mocks?: Provider[];
-  /** Additional providers */
-  providers?: Provider[];
+  /** The service class to test. */
+  service: Type<TService>;
+
+  /**
+   * Providers for the service dependencies.
+   * - Class types are automatically deep-mocked
+   * - Objects with { provide, useValue } use the custom mock
+   */
+  providers?: readonly MockProvider[];
 }
 
-/**
- * Configuration for the simplified createServiceTest function
- */
-export interface CreateServiceTestConfig<TService> {
-  /** The service class to test */
-  serviceClass: Type<TService>;
-  /** Custom mock for PrismaService - only include the models/methods you need */
-  mockPrisma?: Partial<Record<string, Record<string, jest.Mock>>>;
-  /** Additional mock providers for other dependencies */
-  mocks?: Provider[];
-  /** Additional providers */
-  providers?: Provider[];
-}
-
-/**
- * Result from createServiceTest function
- */
-export interface ServiceTestResult<TService> {
-  /** The service instance being tested */
-  service: TService;
-  /** The mocked PrismaService */
-  prisma: jest.Mocked<PrismaService>;
-  /** The testing module (for advanced use cases) */
-  module: TestingModule;
-  /** The ServiceTest instance (for access to mixins) */
-  test: ServiceTest<TService>;
-}
+// ============================================================================
+// ServiceTest Class
+// ============================================================================
 
 /**
  * Service Test Class
- * Provides service testing capabilities through composition.
+ *
+ * @template TService The service class being tested
+ * @template TMocks Interface defining the mocks shape for IntelliSense
  */
-export class ServiceTest<TService, TRepository = PrismaService> extends BaseTest {
+export class ServiceTest<TService, TMocks = Record<string, unknown>> extends BaseTest {
   private config: ServiceTestConfig<TService>;
   private _service!: TService;
-  private _repository!: TRepository;
-  private _prisma!: PrismaService;
+  private _mocks!: TMocks;
 
-  // Compose mixins for clean separation of concerns
-  readonly mock: MockMixin;
+  /** Assertion helpers for validating test results. */
   readonly assert: AssertionsMixin;
-  readonly factory: TestDataFactory;
+
+  /** Factory for creating in-memory mock data objects. */
+  readonly factory: FactoryMixin;
 
   constructor(config: ServiceTestConfig<TService>) {
     super();
     this.config = config;
-
-    // Initialize mixins
-    this.mock = new MockMixin();
     this.assert = new AssertionsMixin();
-    this.factory = new TestDataFactory();
+    this.factory = new FactoryMixin();
   }
 
-  /**
-   * Public accessor for the service being tested
-   */
+  /** The service instance being tested. */
   get service(): TService {
     if (!this._service) {
       throw new Error('Service not initialized. Call setup() first.');
@@ -118,27 +98,15 @@ export class ServiceTest<TService, TRepository = PrismaService> extends BaseTest
     return this._service;
   }
 
-  /**
-   * Public accessor for the repository (usually PrismaService, returns mocked version)
-   */
-  get repository(): DeepMocked<TRepository> {
-    return this._repository as DeepMocked<TRepository>;
+  /** Type-safe mocks accessible by class name. Define TMocks interface for IntelliSense. */
+  get mocks(): TMocks {
+    if (!this._mocks) {
+      throw new Error('Mocks not initialized. Call setup() first.');
+    }
+    return this._mocks;
   }
 
-  /**
-   * Public accessor for PrismaService (returns the mocked version with Jest mocks)
-   * Use this to access mocked Prisma methods like: test.prisma.session.findMany.mockResolvedValue(...)
-   *
-   * Note: When mocking Prisma return values, you may need to cast complex objects as `as any`
-   * to avoid TypeScript errors with Prisma's generated types.
-   */
-  get prisma(): DeepMocked<PrismaService> {
-    return this._prisma as DeepMocked<PrismaService>;
-  }
-
-  /**
-   * Public accessor for the testing module
-   */
+  /** The NestJS testing module. */
   get module(): TestingModule {
     if (!this._module) {
       throw new Error('Module not initialized. Call setup() first.');
@@ -146,115 +114,30 @@ export class ServiceTest<TService, TRepository = PrismaService> extends BaseTest
     return this._module;
   }
 
-  /**
-   * Setup method - creates testing module and initializes service
-   */
+  /** Setup - creates testing module and initializes service. */
   async setup(): Promise<void> {
+    const moduleProviders: Provider[] = [this.config.service];
+
+    if (this.config.providers && this.config.providers.length > 0) {
+      const { providers, mocks } = buildProviders(this.config.providers);
+      moduleProviders.push(...providers);
+      this._mocks = mocks as TMocks;
+    } else {
+      this._mocks = {} as TMocks;
+    }
+
     this._module = await Test.createTestingModule({
-      providers: [
-        this.config.serviceClass,
-        ...(this.config.providers ?? []),
-        ...(this.config.mocks ?? []),
-      ],
+      providers: moduleProviders,
     }).compile();
 
-    this._service = this._module.get<TService>(this.config.serviceClass);
-
-    // Try to get PrismaService if it exists in the module
-    try {
-      this._prisma = this._module.get<PrismaService>(PrismaService, { strict: false });
-      this._repository = this._prisma as unknown as TRepository;
-    } catch {
-      // PrismaService not provided, that's okay
-    }
+    this._service = this._module.get<TService>(this.config.service);
   }
 
-  /**
-   * Cleanup method - closes module and clears all mocks
-   */
+  /** Cleanup - closes module and clears all mocks. */
   async cleanup(): Promise<void> {
     jest.clearAllMocks();
     if (this._module) {
       await this._module.close();
     }
   }
-}
-
-/**
- * Creates a service test setup using ServiceTest internally.
- * This is the recommended approach for new tests.
- *
- * @example
- * ```typescript
- * describe('SessionsService', () => {
- *   let service: SessionsService;
- *   let prisma: jest.Mocked<PrismaService>;
- *
- *   beforeEach(async () => {
- *     const result = await createServiceTest({
- *       serviceClass: SessionsService,
- *       mockPrisma: {
- *         session: {
- *           create: jest.fn(),
- *           findMany: jest.fn(),
- *           findUnique: jest.fn(),
- *           update: jest.fn(),
- *           delete: jest.fn(),
- *         },
- *         bookingType: {
- *           findUnique: jest.fn(),
- *         },
- *       },
- *     });
- *     service = result.service;
- *     prisma = result.prisma;
- *   });
- *
- *   afterEach(() => {
- *     jest.clearAllMocks();
- *   });
- *
- *   it('should create a session', async () => {
- *     prisma.session.create.mockResolvedValue(mockSession);
- *     const result = await service.create(createDto);
- *     expect(result).toEqual(mockSession);
- *     expect(prisma.session.create).toHaveBeenCalledWith({ data: expect.any(Object) });
- *   });
- * });
- * ```
- */
-export async function createServiceTest<TService>(
-  config: CreateServiceTestConfig<TService>
-): Promise<ServiceTestResult<TService>> {
-  // Build the mock PrismaService provider
-  const mockPrisma = {
-    $connect: jest.fn(),
-    $disconnect: jest.fn(),
-    $transaction: jest.fn(),
-    $executeRaw: jest.fn(),
-    $queryRaw: jest.fn(),
-    ...config.mockPrisma,
-  };
-
-  const prismaProvider: Provider = {
-    provide: PrismaService,
-    useValue: mockPrisma,
-  };
-
-  // Create ServiceTest instance with the configuration
-  const serviceTest = new ServiceTest<TService>({
-    serviceClass: config.serviceClass,
-    mocks: [prismaProvider, ...(config.mocks ?? [])],
-    providers: config.providers,
-  });
-
-  // Setup the test
-  await serviceTest.setup();
-
-  return {
-    service: serviceTest.service,
-    prisma: serviceTest.prisma as jest.Mocked<PrismaService>,
-    module: serviceTest.module,
-    test: serviceTest,
-  };
 }
