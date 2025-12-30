@@ -2,7 +2,7 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { Role } from '@prisma/client';
 import { MailtrapTransport } from 'mailtrap';
-import { MailtrapTransporter, MailtrapResponse } from 'mailtrap/dist/types/transport';
+import { MailtrapResponse, MailtrapTransporter } from 'mailtrap/dist/types/transport';
 import { createTransport } from 'nodemailer';
 
 import { SessionsService } from './../sessions/sessions.service';
@@ -57,8 +57,8 @@ export class NotificationsService {
     };
   }
 
-  async sendBookingConfirmation(sessionId: string) {
-    const session = await this.sessionsService.findUnique(sessionId);
+  async sendBookingConfirmation(sessionId: string, userId: string, role: Role) {
+    const session = await this.sessionsService.findOne(sessionId, userId, role);
 
     if (!session) throw new UnauthorizedException('you must create session first');
 

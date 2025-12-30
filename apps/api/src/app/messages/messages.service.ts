@@ -70,7 +70,7 @@ export class MessagesService {
 
     // If sessionId is provided, verify session access
     if (sessionId) {
-      const session = await this.sessionsService.findUnique(sessionId);
+      const session = await this.sessionsService.findOne(sessionId, userId, role);
 
       if (!session) {
         throw new NotFoundException('Session not found');
@@ -240,7 +240,7 @@ export class MessagesService {
     _query: GetMessagesQuery
   ): Promise<MessageResponseDto[]> {
     // Verify user has access to this session
-    const session = await this.sessionsService.findUnique(sessionId);
+    const session = await this.sessionsService.findOne(sessionId, userId, role);
 
     if (!session) {
       throw new NotFoundException('Session not found');

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { Role } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -27,14 +27,14 @@ export class CalendarService {
       throw new BadRequestException('Session not found');
     }
 
-    // Check Authorization
-    const isAuthorized =
-      role === Role.USER || role === Role.PREMIUM_USER
-        ? session.userId === userId
-        : session.coachId === userId;
+    // 1. Correct way to check for multiple roles
+    const isClientRole = ([Role.USER, Role.PREMIUM_USER] as Role[]).includes(role);
+    // 2. Logic to determine if the user owns this session
+    const isAuthorized = isClientRole ? session.userId === userId : session.coachId === userId;
 
+    // 3. Throw exception ONLY if they are NOT authorized
     if (!isAuthorized) {
-      throw new BadRequestException('Not authorized');
+      throw new ForbiddenException('Not authorized to access this session');
     }
 
     // Mock Google Calendar integration

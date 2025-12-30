@@ -103,14 +103,14 @@ export class SessionsService {
   async findOne(id: string, userId: string, role: Role): Promise<SessionResponseDto> {
     const session = (await this.findSessionInternal({ id })) as Session;
 
-    // Authorization Check
-    const isAuthorized =
-      role === Role.USER || role === Role.PREMIUM_USER
-        ? session.userId === userId
-        : session.coachId === userId;
+    // 1. Correct way to check for multiple roles
+    const isClientRole = ([Role.USER, Role.PREMIUM_USER] as Role[]).includes(role);
+    // 2. Logic to determine if the user owns this session
+    const isAuthorized = isClientRole ? session.userId === userId : session.coachId === userId;
 
+    // 3. Throw exception ONLY if they are NOT authorized
     if (!isAuthorized) {
-      throw new ForbiddenException('Not authorized to view this session');
+      throw new ForbiddenException('Not authorized to access this session');
     }
 
     return plainToInstance(SessionResponseDto, session);

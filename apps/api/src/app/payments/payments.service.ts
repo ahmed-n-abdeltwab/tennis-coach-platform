@@ -2,6 +2,8 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { Role } from '@prisma/client';
 
+import { PrismaService } from '../prisma/prisma.service';
+
 import { SessionsService } from './../sessions/sessions.service';
 import { TimeSlotsService } from './../time-slots/time-slots.service';
 import paymentsConfig from './config/payments.config';
@@ -20,7 +22,8 @@ export class PaymentsService {
     @Inject(paymentsConfig.KEY)
     private readonly paymentsConfiguration: ConfigType<typeof paymentsConfig>,
     private sessionsService: SessionsService,
-    private timeSlotsService: TimeSlotsService
+    private timeSlotsService: TimeSlotsService,
+    private prisma: PrismaService
   ) {
     this.paypalBaseUrl =
       this.paymentsConfiguration.environment === 'sandbox'
@@ -28,11 +31,15 @@ export class PaymentsService {
         : 'https://api-m.paypal.com';
   }
 
-  async createOrder(createDto: CreatePaymentDto, userId: string): Promise<CreateOrderResponses> {
+  async createOrder(
+    createDto: CreatePaymentDto,
+    userId: string,
+    role: Role
+  ): Promise<CreateOrderResponses> {
     const { sessionId, amount } = createDto;
 
     // Verify session belongs to user
-    const session = await this.sessionsService.findUnique(sessionId);
+    const session = await this.sessionsService.findOne(sessionId, userId, role);
 
     if (session?.userId !== userId) {
       throw new BadRequestException('Invalid session');
@@ -86,12 +93,13 @@ export class PaymentsService {
 
   async captureOrder(
     captureDto: CapturePaymentDto,
-    userId: string
+    userId: string,
+    role: Role
   ): Promise<CapturePaymentResponses> {
     const { orderId, sessionId } = captureDto;
 
     // Verify session
-    const session = await this.sessionsService.findUnique(sessionId);
+    const session = await this.sessionsService.findOne(sessionId, userId, role);
 
     if (session?.userId !== userId) {
       throw new BadRequestException('Invalid session');
@@ -116,15 +124,15 @@ export class PaymentsService {
     }
 
     // Update session as paid
-    await this.sessionsService.update(
-      sessionId,
-      { isPaid: true, paymentId: orderId },
-      userId,
-      Role.USER
-    );
-
+    await this.prisma.session.update({
+      where: { id: sessionId },
+      data: { isPaid: true, paymentId: orderId },
+    });
     // Mark time slot as unavailable
-    await this.timeSlotsService.update(session.timeSlotId, { isAvailable: false }, session.coachId);
+    await this.prisma.timeSlot.update({
+      where: { id: session.timeSlotId },
+      data: { isAvailable: false },
+    });
 
     return {
       success: true,
