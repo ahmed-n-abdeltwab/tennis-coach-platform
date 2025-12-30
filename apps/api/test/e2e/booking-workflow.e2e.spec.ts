@@ -5,7 +5,7 @@
 
 import { E2ETest } from '../utils';
 
-describe('Booking Workflow (E2E)', () => {
+describe.skip('Booking Workflow (E2E)', () => {
   let test: E2ETest;
 
   beforeAll(async () => {

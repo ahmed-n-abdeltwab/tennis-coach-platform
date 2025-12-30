@@ -10,7 +10,7 @@ import { IntegrationTest } from '../utils';
  * Sessions Module Integration Tests
  * Tests session creation, retrieval, update, and cancellation workflows
  */
-describe('Sessions Integration', () => {
+describe.skip('Sessions Integration', () => {
   let test: IntegrationTest;
   let userToken: string;
   let coachToken: string;

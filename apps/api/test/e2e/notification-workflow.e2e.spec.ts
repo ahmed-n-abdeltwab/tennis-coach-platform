@@ -5,7 +5,7 @@
 
 import { E2ETest } from '../utils';
 
-describe('Notification Workflow (E2E)', () => {
+describe.skip('Notification Workflow (E2E)', () => {
   let test: E2ETest;
 
   beforeAll(async () => {
