@@ -1,6 +1,57 @@
-import { BaseResponseDto, createTypedApiDecorators } from '@common';
+import { createTypedApiDecorators } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsDateString, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEmail,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
+
+export class CoachSummaryDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty()
+  @IsEmail()
+  email!: string;
+}
+
+export class TimeSlotResponseDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty({ type: Date })
+  @Type(() => Date)
+  dateTime!: Date;
+
+  @ApiProperty()
+  durationMin!: number;
+
+  @ApiProperty()
+  isAvailable!: boolean;
+
+  @ApiProperty()
+  coachId!: string;
+
+  @ApiProperty({ type: CoachSummaryDto })
+  @Type(() => CoachSummaryDto)
+  coach?: CoachSummaryDto;
+
+  @ApiProperty()
+  @Type(() => Date)
+  createdAt!: Date;
+
+  @ApiProperty()
+  @Type(() => Date)
+  updatedAt!: Date;
+}
 
 export class CreateTimeSlotDto {
   @ApiProperty()
@@ -18,67 +69,25 @@ export class CreateTimeSlotDto {
   @IsBoolean()
   isAvailable?: boolean;
 }
+export class UpdateTimeSlotDto extends CreateTimeSlotDto {
+  // Inherits all fields as optional via partial logic in the service
+}
 
 export class GetTimeSlotsQuery {
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsDateString()
   startDate?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsDateString()
   endDate?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   coachId?: string;
 }
-
-export class CoachSummaryDto {
-  @ApiProperty()
-  id!: string;
-
-  @ApiProperty()
-  name!: string;
-
-  @ApiProperty()
-  email!: string;
-}
-export class UpdateTimeSlotDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsDateString()
-  dateTime?: string;
-
-  @ApiPropertyOptional({ default: 60 })
-  @IsOptional()
-  @IsNumber()
-  @Min(15)
-  durationMin?: number;
-
-  @ApiPropertyOptional({ default: true })
-  @IsOptional()
-  @IsBoolean()
-  isAvailable?: boolean;
-}
-export class TimeSlotResponseDto extends BaseResponseDto {
-  @ApiProperty()
-  coachId!: string;
-
-  @ApiProperty({ example: '2024-12-25T10:00:00Z' })
-  dateTime!: string;
-
-  @ApiProperty({ example: 60, minimum: 15 })
-  durationMin!: number;
-
-  @ApiProperty({ example: true })
-  isAvailable!: boolean;
-
-  @ApiProperty({ required: false, type: CoachSummaryDto })
-  coach?: CoachSummaryDto;
-}
-
 // Create typed API decorators for time slots
 export const TimeSlotApiResponses = createTypedApiDecorators(TimeSlotResponseDto);

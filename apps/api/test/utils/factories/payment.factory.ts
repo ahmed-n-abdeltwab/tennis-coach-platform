@@ -2,13 +2,15 @@
  * Payment mock factory for creating test payment data
  */
 
+import { Decimal } from '@prisma/client/runtime/client';
+
 import { BaseMockFactory } from './base-factory';
 
 export interface MockPayment {
   id: string;
   sessionId: string;
   orderId: string;
-  amount: number;
+  amount: Decimal;
   status: 'pending' | 'completed' | 'failed' | 'cancelled';
   paypalOrderId?: string;
   captureId?: string;
@@ -44,7 +46,7 @@ export class PaymentMockFactory extends BaseMockFactory<MockPayment> {
       id,
       sessionId: this.generateId(),
       orderId: this.generatePayPalOrderId(),
-      amount: this.randomAmount(),
+      amount: new Decimal(this.randomAmount()),
       status: 'pending',
       createdAt: now,
       updatedAt: now,

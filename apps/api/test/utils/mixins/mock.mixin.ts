@@ -558,12 +558,10 @@ export class MockMixin {
 // Test Data Creation (merged from MockDataMixin)
 // ============================================================================
 
-import { SessionStatus } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/client';
-
 import {
   AccountMockFactory,
   BookingTypeMockFactory,
+  CalendarMockFactory,
   DiscountMockFactory,
   MessageMockFactory,
   SessionMockFactory,
@@ -633,6 +631,7 @@ export class TestDataFactory {
   readonly session: SessionMockFactory;
   readonly discount: DiscountMockFactory;
   readonly message: MessageMockFactory;
+  readonly calendar: CalendarMockFactory;
 
   constructor() {
     // Initialize mixins
@@ -642,159 +641,6 @@ export class TestDataFactory {
     this.session = new SessionMockFactory();
     this.discount = new DiscountMockFactory();
     this.message = new MessageMockFactory();
-  }
-
-  /**
-   * Creates a complete test scenario with related entities
-   * @param overrides Optional overrides for individual entities
-   * @returns TestScenario with user, coach, bookingType, timeSlot, and session
-   */
-  createTestScenario(overrides?: {
-    user?: MockAccount;
-    coach?: MockAccount;
-    bookingType?: MockBookingType;
-    timeSlot?: MockTimeSlot;
-    session?: MockSession;
-  }): TestScenario {
-    // Create coach first (needed for booking type and time slot)
-    const coach = overrides?.coach ?? this.account.createCoach({ ...overrides?.coach });
-
-    const user = overrides?.user ?? this.account.createUser({ ...overrides?.user });
-
-    // Create booking type for this coach
-    const bookingType =
-      overrides?.bookingType ?? this.bookingType.createWithCoach(coach?.id, overrides?.bookingType);
-
-    // Create time slot for this coach
-    const timeSlot =
-      overrides?.timeSlot ?? this.timeSlot.createWithCoach(coach?.id, overrides?.timeSlot);
-
-    // Create session that connects everything together
-    const sessionOverrides = {
-      userId: user.id,
-      coachId: coach.id,
-      bookingTypeId: bookingType.id,
-      timeSlotId: timeSlot.id,
-      // Ensure session dateTime matches time slot
-      dateTime: timeSlot.dateTime,
-      // Set appropriate price based on booking type
-      price: bookingType.basePrice,
-      ...overrides?.session,
-    };
-
-    const session = overrides?.session ?? this.session.create(sessionOverrides);
-
-    return { user, coach, bookingType, timeSlot, session };
-  }
-
-  /**
-   * Creates a booking scenario with optional discount and payment state
-   * @param options Configuration options for the scenario
-   * @returns BookingScenario with all entities and optional discount
-   */
-  createBookingScenario(options?: {
-    withDiscount?: boolean;
-    discountAmount?: Decimal;
-    sessionStatus?: SessionStatus;
-    isPaid?: boolean;
-    user?: MockAccount;
-    coach?: MockAccount;
-    bookingType?: MockBookingType;
-    timeSlot?: MockTimeSlot;
-    session?: MockSession;
-  }): BookingScenario {
-    // Create base scenario
-    const scenario = this.createTestScenario({
-      user: options?.user,
-      coach: options?.coach,
-      bookingType: options?.bookingType,
-      timeSlot: options?.timeSlot,
-      session: options?.session,
-    });
-
-    let discount: MockDiscount | null = null;
-
-    // Create discount if requested
-    if (options?.withDiscount) {
-      // Use provided amount or default to 10% of session price (but not more than $50)
-      const discountAmount =
-        options.discountAmount ?? Decimal.min(scenario.session.price.mul(0.1), new Decimal(50));
-
-      discount = this.discount.createWithCoach(scenario.coach.id, {
-        amount: discountAmount,
-        maxUsage: 10, // Allow multiple uses for testing
-        useCount: 0,
-      });
-
-      // Apply discount to session
-      scenario.session.discountId = discount.id;
-      scenario.session.discountCode = discount.code;
-
-      // Calculate discounted price (ensure it doesn't go below 0)
-      scenario.session.price = Decimal.max(
-        new Decimal(0),
-        scenario.session.price.sub(discount.amount)
-      );
-
-      // Update discount usage
-      discount.useCount += 1;
-    }
-
-    // Set session status
-    if (options?.sessionStatus) {
-      scenario.session.status = options.sessionStatus;
-
-      // If completed, set appropriate timestamps
-      if (options.sessionStatus === SessionStatus.COMPLETED) {
-        scenario.session.updatedAt = new Date();
-      }
-    }
-
-    // Handle payment state
-    if (options?.isPaid !== undefined) {
-      scenario.session.isPaid = options.isPaid;
-
-      if (options.isPaid) {
-        scenario.session.paymentId = `pay_${scenario.session.id}`;
-        // If paid, status should be at least confirmed
-        if (scenario.session.status === SessionStatus.SCHEDULED) {
-          scenario.session.status = SessionStatus.CONFIRMED;
-        }
-      } else {
-        scenario.session.paymentId = undefined;
-      }
-    }
-
-    return { ...scenario, discount };
-  }
-
-  /**
-   * Creates a conversation scenario with realistic message flow
-   * @param options Configuration options for the conversation
-   * @returns ConversationScenario with user, coach, and message array
-   */
-  createConversationScenario(options?: {
-    messageCount?: number;
-    conversationType?: 'support' | 'booking' | 'feedback' | 'general';
-    user?: MockAccount;
-    coach?: MockAccount;
-    startTime?: Date;
-  }): ConversationScenario {
-    const messageCount = options?.messageCount ?? 5;
-    // Create coach first (needed for booking type and time slot)
-    const coach = options?.coach ?? this.account.createCoach({ ...options?.coach });
-
-    const user = options?.user ?? this.account.createUser({ ...options?.user });
-
-    // Create conversation with specific type
-    const messages = this.message.createConversation(
-      user.id,
-      coach.id,
-      messageCount,
-      options?.conversationType,
-      options?.startTime
-    );
-
-    return { user, coach, messages };
+    this.calendar = new CalendarMockFactory();
   }
 }

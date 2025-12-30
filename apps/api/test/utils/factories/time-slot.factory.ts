@@ -2,6 +2,7 @@
  * TimeSlot mock factory for creating test time slot data
  */
 
+import { AccountMockFactory, type MockAccount } from './account.factory';
 import { BaseMockFactory } from './base-factory';
 
 export interface MockTimeSlot {
@@ -10,21 +11,37 @@ export interface MockTimeSlot {
   durationMin: number;
   isAvailable: boolean;
   coachId: string;
+  coach: Pick<MockAccount, 'id' | 'email' | 'name'>;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export class TimeSlotMockFactory extends BaseMockFactory<MockTimeSlot> {
+  private readonly account: AccountMockFactory;
+  constructor() {
+    // Initialize mixins
+    super();
+    this.account = new AccountMockFactory();
+  }
   protected generateMock(overrides?: Partial<MockTimeSlot>): MockTimeSlot {
     const id = this.generateId();
     const now = new Date();
+
+    // Resolve Coach (Ensuring ID and Object match)
+    const rawCoach = overrides?.coach ?? this.account.createCoach();
+    const coach = {
+      id: overrides?.coachId ?? rawCoach.id,
+      email: rawCoach.email,
+      name: rawCoach.name,
+    };
 
     const timeSlot = {
       id,
       dateTime: this.generateFutureDate(14), // Within next 2 weeks
       durationMin: this.randomDuration(),
       isAvailable: true,
-      coachId: this.generateId(),
+      coachId: coach.id,
+      coach,
       createdAt: now,
       updatedAt: now,
       ...overrides,
@@ -36,34 +53,6 @@ export class TimeSlotMockFactory extends BaseMockFactory<MockTimeSlot> {
     this.validatePositive(timeSlot.durationMin, 'durationMin');
 
     return timeSlot;
-  }
-
-  createAvailable(overrides?: Partial<MockTimeSlot>): MockTimeSlot {
-    return this.create({
-      isAvailable: true,
-      ...overrides,
-    });
-  }
-
-  createUnavailable(overrides?: Partial<MockTimeSlot>): MockTimeSlot {
-    return this.create({
-      isAvailable: false,
-      ...overrides,
-    });
-  }
-
-  createWithCoach(coachId: string, overrides?: Partial<MockTimeSlot>): MockTimeSlot {
-    return this.create({
-      coachId,
-      ...overrides,
-    });
-  }
-
-  createForDate(date: Date, overrides?: Partial<MockTimeSlot>): MockTimeSlot {
-    return this.create({
-      dateTime: date,
-      ...overrides,
-    });
   }
 
   createForTimeRange(startDate: Date, endDate: Date, count: number): MockTimeSlot[] {

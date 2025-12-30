@@ -1,12 +1,12 @@
-import { PaginatedResponseDto } from '@common';
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Discount, Role, Session, SessionStatus } from '@prisma/client';
-import type { Decimal } from '@prisma/client/runtime/client';
+import { Discount, Prisma, Role, Session, SessionStatus } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/client';
+import { plainToInstance } from 'class-transformer';
 
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -17,210 +17,93 @@ import {
   UpdateSessionDto,
 } from './dto/session.dto';
 
-type SessionWithRelations = Session & {
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-  } | null;
-  coach?: {
-    id: string;
-    name: string;
-    email: string;
-  } | null;
-  bookingType?: {
-    id: string;
-    name: string;
-    description?: string | null;
-    basePrice: Decimal;
-  } | null;
-  timeSlot?: {
-    id: string;
-    dateTime: Date | string;
-    durationMin: number;
-    isAvailable: boolean;
-  } | null;
-  discount?: {
-    id: string;
-    code: string;
-    amount: Decimal;
-  } | null;
+// Standard include object to reuse across queries
+const SESSION_INCLUDE = {
+  user: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+  coach: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+  bookingType: true,
+  timeSlot: true,
+  discount: true,
 };
+
 @Injectable()
 export class SessionsService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Transform Prisma Session model to SessionResponseDto
-   * Handles Decimal to string conversion and DateTime to ISO string
+   * Internal helper to standardize finding sessions.
+   * Handles "Not Found" exceptions and consistent 'include' logic.
    */
-  private toResponseDto(session: SessionWithRelations): SessionResponseDto {
-    return {
-      id: session.id,
-      dateTime:
-        session.dateTime instanceof Date ? session.dateTime.toISOString() : session.dateTime,
-      durationMin: session.durationMin,
-      price: session.price,
-      isPaid: session.isPaid,
-      status: session.status,
-      notes: session.notes,
-      paymentId: session.paymentId,
-      discountCode: session.discountCode,
-      calendarEventId: session.calendarEventId,
-      userId: session.userId,
-      coachId: session.coachId,
-      bookingTypeId: session.bookingTypeId,
-      timeSlotId: session.timeSlotId,
-      discountId: session.discountId,
-      createdAt:
-        session.createdAt instanceof Date ? session.createdAt.toISOString() : session.createdAt,
-      updatedAt:
-        session.updatedAt instanceof Date ? session.updatedAt.toISOString() : session.updatedAt,
-      // Transform relationships if present
-      user: session.user
-        ? {
-            id: session.user.id,
-            name: session.user.name,
-            email: session.user.email,
-          }
-        : undefined,
-      coach: session.coach
-        ? {
-            id: session.coach.id,
-            name: session.coach.name,
-            email: session.coach.email,
-          }
-        : undefined,
-      bookingType: session.bookingType
-        ? {
-            id: session.bookingType.id,
-            name: session.bookingType.name,
-            description: session.bookingType.description,
-            basePrice: session.bookingType.basePrice.toString(),
-          }
-        : undefined,
-      timeSlot: session.timeSlot
-        ? {
-            id: session.timeSlot.id,
-            dateTime:
-              session.timeSlot.dateTime instanceof Date
-                ? session.timeSlot.dateTime.toISOString()
-                : session.timeSlot.dateTime,
-            durationMin: session.timeSlot.durationMin,
-            isAvailable: session.timeSlot.isAvailable,
-          }
-        : undefined,
-      discount: session.discount
-        ? {
-            id: session.discount.id,
-            code: session.discount.code,
-            amount: session.discount.amount.toString(),
-          }
-        : undefined,
-    };
+  private async findSessionInternal<T extends Prisma.SessionWhereInput>(
+    where: T,
+    options: { throwIfNotFound?: boolean; isMany?: boolean } = {}
+  ) {
+    const { throwIfNotFound = true, isMany = false } = options;
+
+    const result = isMany
+      ? await this.prisma.session.findMany({
+          where,
+          include: SESSION_INCLUDE,
+          orderBy: { dateTime: 'desc' },
+        })
+      : await this.prisma.session.findFirst({
+          where,
+          include: SESSION_INCLUDE,
+        });
+
+    const isEmpty = isMany ? (result as any[]).length === 0 : result === null;
+
+    if (throwIfNotFound && isEmpty) {
+      throw new NotFoundException('Session not found');
+    }
+
+    return result;
   }
 
   async findByUser(
     userId: string,
     role: Role,
     query?: GetSessionsQuery
-  ): Promise<PaginatedResponseDto<SessionResponseDto>> {
-    let status, startDate, endDate;
-    if (query) {
-      status = query.status;
-      startDate = query.startDate;
-      endDate = query.endDate;
-    }
+  ): Promise<SessionResponseDto[]> {
+    const { status, startDate, endDate } = query ?? {};
 
-    const where =
+    // Determine filter based on role
+    const roleFilter =
       role === Role.USER || role === Role.PREMIUM_USER ? { userId } : { coachId: userId };
 
-    const sessions = await this.prisma.session.findMany({
-      where: {
-        ...where,
-        status: status ?? undefined,
-        dateTime: {
-          gte: startDate ? new Date(startDate) : undefined,
-          lte: endDate ? new Date(endDate) : undefined,
-        },
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        coach: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        bookingType: true,
-        timeSlot: true,
-        discount: true,
-      },
-      orderBy: { dateTime: 'desc' },
-    });
-
-    const data = sessions.map(session => this.toResponseDto(session));
-
-    return {
-      data,
-      meta: {
-        page: 1,
-        limit: data.length,
-        total: data.length,
-        totalPages: 1,
-        hasNext: false,
-        hasPrev: false,
+    const where: Prisma.SessionWhereInput = {
+      ...roleFilter,
+      status: status ?? undefined,
+      dateTime: {
+        gte: startDate ? new Date(startDate) : undefined,
+        lte: endDate ? new Date(endDate) : undefined,
       },
     };
-  }
 
-  async findUnique(id: string) {
-    return this.prisma.session.findUnique({
-      where: { id },
-      include: {
-        user: true,
-        coach: true,
-        bookingType: true,
-      },
-    });
+    const sessions = (await this.findSessionInternal(where, {
+      isMany: true,
+      throwIfNotFound: false, // Return empty array if no sessions found
+    })) as Session[];
+
+    return plainToInstance(SessionResponseDto, sessions);
   }
 
   async findOne(id: string, userId: string, role: Role): Promise<SessionResponseDto> {
-    const session = await this.prisma.session.findUnique({
-      where: { id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        coach: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        bookingType: true,
-        timeSlot: true,
-        discount: true,
-      },
-    });
+    const session = (await this.findSessionInternal({ id })) as Session;
 
-    if (!session) {
-      throw new NotFoundException('Session not found');
-    }
-
-    // Check Authorization
+    // Authorization Check
     const isAuthorized =
       role === Role.USER || role === Role.PREMIUM_USER
         ? session.userId === userId
@@ -230,24 +113,22 @@ export class SessionsService {
       throw new ForbiddenException('Not authorized to view this session');
     }
 
-    return this.toResponseDto(session);
+    return plainToInstance(SessionResponseDto, session);
   }
-  async findFirst(id: string) {
-    const session = await this.prisma.session.findFirst({
-      where: { calendarEventId: id },
-    });
 
-    if (!session) {
-      throw new BadRequestException('Session not found');
-    }
+  // Used internally or by other services (e.g., finding by Calendar ID)
+  async findFirstByCalendarId(calendarEventId: string): Promise<SessionResponseDto> {
+    const session = (await this.findSessionInternal({
+      calendarEventId,
+    })) as Session;
 
-    return session;
+    return plainToInstance(SessionResponseDto, session);
   }
 
   async create(createDto: CreateSessionDto, userId: string): Promise<SessionResponseDto> {
     const { bookingTypeId, timeSlotId, discountCode, notes } = createDto;
 
-    // Get booking type
+    // 1. Validate Booking Type
     const bookingType = await this.prisma.bookingType.findUnique({
       where: { id: bookingTypeId },
     });
@@ -256,7 +137,7 @@ export class SessionsService {
       throw new BadRequestException('Invalid booking type');
     }
 
-    // Get time slot
+    // 2. Validate Time Slot
     const timeSlot = await this.prisma.timeSlot.findUnique({
       where: { id: timeSlotId },
     });
@@ -265,8 +146,8 @@ export class SessionsService {
       throw new BadRequestException('Time slot not available');
     }
 
-    // Calculate price
-    let price = Number(bookingType.basePrice);
+    // 3. Calculate Price & Apply Discount
+    let price = bookingType.basePrice;
     let discount: Discount | null = null;
 
     if (discountCode) {
@@ -279,11 +160,11 @@ export class SessionsService {
       });
 
       if (discount) {
-        price = Math.max(0, price - Number(discount.amount));
+        price = Decimal.max(0, price.sub(discount.amount));
       }
     }
 
-    // Create session
+    // 4. Create Session
     const session = await this.prisma.session.create({
       data: {
         userId,
@@ -297,28 +178,10 @@ export class SessionsService {
         discountCode,
         notes,
       },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        coach: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        bookingType: true,
-        timeSlot: true,
-        discount: true,
-      },
+      include: SESSION_INCLUDE,
     });
 
-    // Update discount usage
+    // 5. Update discount usage if applicable
     if (discount) {
       await this.prisma.discount.update({
         where: { code: discount.code },
@@ -326,7 +189,7 @@ export class SessionsService {
       });
     }
 
-    return this.toResponseDto(session);
+    return plainToInstance(SessionResponseDto, session);
   }
 
   async update(
@@ -335,42 +198,33 @@ export class SessionsService {
     userId: string,
     role: Role
   ): Promise<SessionResponseDto> {
-    const session = await this.findOne(id, userId, role);
-
-    if (!session) {
-      throw new BadRequestException('Session not found');
-    }
+    // Ensure session exists and user is authorized
+    await this.findOne(id, userId, role);
 
     const updatedSession = await this.prisma.session.update({
       where: { id },
       data: updateDto,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        coach: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        bookingType: true,
-        timeSlot: true,
-        discount: true,
-      },
+      include: SESSION_INCLUDE,
     });
 
-    return this.toResponseDto(updatedSession);
+    return plainToInstance(SessionResponseDto, updatedSession);
   }
 
   async cancel(id: string, userId: string, role: Role): Promise<SessionResponseDto> {
-    const session = await this.findOne(id, userId, role);
+    // 1. Fetch session and check auth
+    // We fetch the raw Prisma object first to check dates/status
+    const session = (await this.findSessionInternal({ id })) as Session;
 
+    const isAuthorized =
+      role === Role.USER || role === Role.PREMIUM_USER
+        ? session.userId === userId
+        : session.coachId === userId;
+
+    if (!isAuthorized) {
+      throw new ForbiddenException('Not authorized to cancel this session');
+    }
+
+    // 2. Validate cancellation rules
     if (session.status === SessionStatus.CANCELLED) {
       throw new BadRequestException('Session already cancelled');
     }
@@ -379,30 +233,13 @@ export class SessionsService {
       throw new BadRequestException('Cannot cancel past sessions');
     }
 
+    // 3. Perform update
     const cancelledSession = await this.prisma.session.update({
       where: { id },
       data: { status: SessionStatus.CANCELLED },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        coach: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        bookingType: true,
-        timeSlot: true,
-        discount: true,
-      },
+      include: SESSION_INCLUDE,
     });
 
-    return this.toResponseDto(cancelledSession);
+    return plainToInstance(SessionResponseDto, cancelledSession);
   }
 }

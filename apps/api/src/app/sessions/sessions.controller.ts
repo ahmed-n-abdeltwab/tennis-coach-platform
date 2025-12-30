@@ -1,4 +1,3 @@
-import { PaginatedResponseDto } from '@common';
 import { Body, Controller, Get, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
@@ -21,12 +20,12 @@ export class SessionsController {
 
   @Get()
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get user sessions with pagination' })
-  @SessionApiResponses.Paginated('Sessions retrieved successfully with pagination')
+  @ApiOperation({ summary: 'Get users sessions' })
+  @SessionApiResponses.FoundMany('Sessions retrieved successfully')
   async findByUser(
     @Query() query: GetSessionsQuery,
     @CurrentUser() user: JwtPayload
-  ): Promise<PaginatedResponseDto<SessionResponseDto>> {
+  ): Promise<SessionResponseDto[]> {
     return this.sessionsService.findByUser(user.sub, user.role, query);
   }
 

@@ -29,7 +29,7 @@ describe('AccountsService', () => {
     mockHashingService = {
       hash: jest.fn(),
       compare: jest.fn(),
-    } as any;
+    };
 
     test = new ServiceTest({
       serviceClass: AccountsService,

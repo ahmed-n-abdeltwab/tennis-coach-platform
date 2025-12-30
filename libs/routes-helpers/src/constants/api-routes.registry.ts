@@ -504,7 +504,7 @@ export interface Endpoints {
         id: string;
         createdAt: string;
         updatedAt: string;
-        dateTime: string;
+        dateTime: Date;
         durationMin: number;
         price: number;
         isPaid: boolean;
@@ -540,7 +540,7 @@ export interface Endpoints {
       id: string;
       createdAt: string;
       updatedAt: string;
-      dateTime: string;
+      dateTime: Date;
       durationMin: number;
       price: number;
       isPaid: boolean;
@@ -570,7 +570,7 @@ export interface Endpoints {
       id: string;
       createdAt: string;
       updatedAt: string;
-      dateTime: string;
+      dateTime: Date;
       durationMin: number;
       price: number;
       isPaid: boolean;
@@ -603,7 +603,7 @@ export interface Endpoints {
       id: string;
       createdAt: string;
       updatedAt: string;
-      dateTime: string;
+      dateTime: Date;
       durationMin: number;
       price: number;
       isPaid: boolean;
@@ -636,7 +636,7 @@ export interface Endpoints {
       id: string;
       createdAt: string;
       updatedAt: string;
-      dateTime: string;
+      dateTime: Date;
       durationMin: number;
       price: number;
       isPaid: boolean;
@@ -666,7 +666,7 @@ export interface Endpoints {
       id: string;
       createdAt: string;
       updatedAt: string;
-      dateTime: string;
+      dateTime: Date;
       durationMin: number;
       price: number;
       isPaid: boolean;
@@ -697,20 +697,20 @@ export interface Endpoints {
       createdAt: string;
       updatedAt: string;
       coachId: string;
-      dateTime: string;
+      dateTime: Date;
       durationMin: number;
       isAvailable: boolean;
       coach?: { id: string; name: string; email: string };
     }[];
     POST: (
       params: undefined | never,
-      body: { dateTime: string; durationMin: number; isAvailable: boolean }
+      body: { dateTime: Date; durationMin: number; isAvailable: boolean }
     ) => {
       id: string;
       createdAt: string;
       updatedAt: string;
       coachId: string;
-      dateTime: string;
+      dateTime: Date;
       durationMin: number;
       isAvailable: boolean;
       coach?: { id: string; name: string; email: string };
@@ -726,7 +726,7 @@ export interface Endpoints {
       createdAt: string;
       updatedAt: string;
       coachId: string;
-      dateTime: string;
+      dateTime: Date;
       durationMin: number;
       isAvailable: boolean;
       coach?: { id: string; name: string; email: string };
@@ -743,7 +743,7 @@ export interface Endpoints {
       createdAt: string;
       updatedAt: string;
       coachId: string;
-      dateTime: string;
+      dateTime: Date;
       durationMin: number;
       isAvailable: boolean;
       coach?: { id: string; name: string; email: string };
@@ -756,7 +756,7 @@ export interface Endpoints {
       createdAt: string;
       updatedAt: string;
       coachId: string;
-      dateTime: string;
+      dateTime: Date;
       durationMin: number;
       isAvailable: boolean;
       coach?: { id: string; name: string; email: string };

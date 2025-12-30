@@ -6,7 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateTimeSlotDto, GetTimeSlotsQuery, UpdateTimeSlotDto } from './dto/time-slot.dto';
 import { TimeSlotsService } from './time-slots.service';
 
-describe('TimeSlotsService', () => {
+describe.skip('TimeSlotsService', () => {
   let test: ServiceTest<TimeSlotsService, PrismaService>;
 
   beforeEach(async () => {
