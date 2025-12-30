@@ -54,6 +54,9 @@
     "format": "prettier --write . --cache",
     "format:check": "prettier --check . --cache",
     "@comment:docker-dev": "Docker environment controls for smooth local development.",
+    "e2e": "testcafe",
+    "e2e:web": "testcafe chrome:headless apps/web/e2e/**/*.e2e.ts",
+    "e2e:web:dev": "testcafe chrome apps/web/e2e/**/*.e2e.ts --live",
     "docker:dev": "docker compose --profile dev up -d",
     "docker:prod": "docker compose --profile prod up -d",
     "docker:down": "docker compose --profile dev --profile prod down",
@@ -100,7 +103,6 @@
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "pg": "^8.16.3",
-    "prisma": "^7.1.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-router-dom": "^7.11.0",
@@ -180,11 +182,12 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.50.0",
     "vite": "^7.3.0",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.16",
+    "wait-on": "^8.0.3"
   },
   "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "config": {
     "commitizen": {
@@ -193,7 +196,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
+      "eslint --fix --max-warnings=-1",
       "prettier --write"
     ],
     "*.{json,css,scss,md,yml,yaml}": [

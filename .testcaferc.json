@@ -1,0 +1,40 @@
+{
+  "browsers": ["chrome:headless"],
+  "src": ["apps/web/e2e/**/*.e2e.ts"],
+  "screenshots": {
+    "path": "apps/web/e2e/screenshots",
+    "takeOnFails": true,
+    "pathPattern": "${DATE}_${TIME}/${FIXTURE}/${TEST}/${RUN_ID}/${FILE_INDEX}.png"
+  },
+  "reporter": [
+    {
+      "name": "spec"
+    },
+    {
+      "name": "xunit",
+      "output": "test-reports/testcafe-results.xml"
+    }
+  ],
+  "videoPath": "apps/web/e2e/videos",
+  "videoOptions": {
+    "failedOnly": true
+  },
+  "quarantineMode": {
+    "successThreshold": 1,
+    "attemptLimit": 3
+  },
+  "skipJsErrors": false,
+  "skipUncaughtErrors": false,
+  "concurrency": 1,
+  "selectorTimeout": 10000,
+  "assertionTimeout": 5000,
+  "pageLoadTimeout": 30000,
+  "speed": 1,
+  "stopOnFirstFail": false,
+  "disablePageCaching": true,
+  "compilerOptions": {
+    "typescript": {
+      "configPath": "apps/web/tsconfig.e2e.json"
+    }
+  }
+}
