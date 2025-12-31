@@ -1,17 +1,12 @@
 import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { Role } from '@prisma/client';
 
-import { PrismaService } from '../prisma/prisma.service';
-
 import { SessionsService } from './../sessions/sessions.service';
 import { CalendarEventResponse, CreateCalendarEventDto } from './dto/calendar.dto';
 
 @Injectable()
 export class CalendarService {
-  constructor(
-    private sessionsService: SessionsService,
-    private prisma: PrismaService
-  ) {}
+  constructor(private sessionsService: SessionsService) {}
 
   async createEvent(
     createDto: CreateCalendarEventDto,
@@ -41,11 +36,8 @@ export class CalendarService {
     // In production, use Google Calendar API
     const mockEventId = `event_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
-    // Update session with calendar event ID
-    await this.prisma.session.update({
-      where: { id: sessionId },
-      data: { calendarEventId: mockEventId },
-    });
+    // Update session with calendar event ID using SessionsService internal method
+    await this.sessionsService.updateCalendarEventInternal(sessionId, mockEventId);
 
     return {
       eventId: mockEventId,
@@ -75,10 +67,7 @@ export class CalendarService {
     }
 
     // Mock deletion - in production, call Google Calendar API
-    await this.prisma.session.update({
-      where: { id: eventId },
-      data: { calendarEventId: undefined },
-    });
+    await this.sessionsService.updateCalendarEventInternal(eventId, null);
     return {
       eventId,
       summary: `The calender event successfully deleted`,

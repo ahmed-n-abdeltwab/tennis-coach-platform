@@ -99,6 +99,18 @@ export class DiscountsService {
   }
 
   /**
+   * Increment discount usage count - used by SessionsService after applying discount.
+   * @param code - The discount code to increment usage for
+   */
+  async incrementUsageInternal(code: string): Promise<void> {
+    await this.findDiscountInternal({ code }); // Verify exists
+    await this.prisma.discount.update({
+      where: { code },
+      data: { useCount: { increment: 1 } },
+    });
+  }
+
+  /**
    * Validate a discount code for use.
    * Uses findActiveByCode internal method to check if discount exists and is valid.
    * @param code - The discount code to validate

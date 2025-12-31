@@ -13,10 +13,6 @@ import { AppModule } from '../../../src/app/app.module';
 
 import { IntegrationTest, IntegrationTestConfig } from './integration-test';
 
-// ============================================================================
-// Types
-// ============================================================================
-
 export interface E2ETestConfig<TModuleName extends string = string> {
   /** The main application module (defaults to AppModule) */
   appModule?: typeof AppModule;
@@ -27,10 +23,6 @@ export interface E2ETestConfig<TModuleName extends string = string> {
    */
   moduleName?: TModuleName;
 }
-
-// ============================================================================
-// E2ETest Class
-// ============================================================================
 
 /**
  * E2E Test Class

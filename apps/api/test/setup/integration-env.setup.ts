@@ -18,14 +18,6 @@ setupTestEnvironment({
   port: '3334',
   useStrictAssignment: true,
 });
-
-// =============================================================================
-// Mock: RedisService (still needed for integration tests)
-// Prevents actual Redis connections
-// NOTE: This implementation must be inline because jest.mock runs before imports.
-// The canonical MockRedisService is in @test-infrastructure (apps/api/test/infrastructure/redis/index.ts)
-// Keep this implementation in sync with the canonical version.
-// =============================================================================
 jest.mock('../../src/app/redis/redis.service', () => {
   // Inline MockRedisService - must match @test-infrastructure/redis/MockRedisService
   class MockRedisService {
@@ -92,10 +84,6 @@ jest.mock('../../src/app/redis/redis.service', () => {
   };
 });
 
-// =============================================================================
-// Mock: nodemailer (still needed for integration tests)
-// Prevents actual email sending
-// =============================================================================
 jest.mock('nodemailer', () => ({
   createTransport: jest.fn().mockReturnValue({
     sendMail: jest.fn().mockResolvedValue({

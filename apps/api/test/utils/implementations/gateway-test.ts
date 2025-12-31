@@ -44,10 +44,6 @@ import { AssertionsMixin } from '../mixins/assertions.mixin';
 import { FactoryMixin } from '../mixins/factory.mixin';
 import { buildProviders, MockProvider } from '../mixins/mock.mixin';
 
-// ============================================================================
-// Types
-// ============================================================================
-
 export interface GatewayTestConfig<TGateway> {
   /** The gateway class to test. */
   gateway: Type<TGateway>;
@@ -68,10 +64,6 @@ export interface MockSocketClient {
   emit: jest.Mock;
   id: string;
 }
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
 
 /** Creates a mock Socket.io client for testing */
 export function createMockSocket(id = 'test-socket-id'): MockSocketClient {
@@ -107,10 +99,6 @@ export function createMockServer(): jest.Mocked<Server> {
     sockets: { sockets: new Map() },
   } as unknown as jest.Mocked<Server>;
 }
-
-// ============================================================================
-// GatewayTest Class
-// ============================================================================
 
 /**
  * Gateway Test Class

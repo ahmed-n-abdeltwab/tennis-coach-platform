@@ -19,10 +19,6 @@ import { DatabaseCapable, DatabaseMixin } from '../mixins/database.mixin';
 import { FactoryMixin } from '../mixins/factory.mixin';
 import { HttpCapable, HttpMethodsMixin } from '../mixins/http-methods.mixin';
 
-// ============================================================================
-// Types
-// ============================================================================
-
 export interface IntegrationTestConfig<TModuleName extends string = string> {
   /** Modules to import for testing - can include async DynamicModules */
   modules: Array<Type<unknown> | DynamicModule | Promise<DynamicModule>>;
@@ -39,10 +35,6 @@ export interface IntegrationTestConfig<TModuleName extends string = string> {
    */
   moduleName?: TModuleName;
 }
-
-// ============================================================================
-// IntegrationTest Class
-// ============================================================================
 
 /**
  * Integration Test Class

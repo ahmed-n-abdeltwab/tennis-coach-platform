@@ -1,1 +1,3 @@
-export { MailerService, type MailResult, type SendMailOptions } from './mailer.service';
+export { MailerService } from './mailer.service';
+
+export type { MailResult, SendMailOptions } from './mailer.service';

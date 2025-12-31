@@ -46,10 +46,6 @@ import { AssertionsMixin } from '../mixins/assertions.mixin';
 import { FactoryMixin } from '../mixins/factory.mixin';
 import { buildProviders, MockProvider } from '../mixins/mock.mixin';
 
-// ============================================================================
-// Types
-// ============================================================================
-
 export interface ServiceTestConfig<TService> {
   /** The service class to test. */
   service: Type<TService>;
@@ -62,10 +58,6 @@ export interface ServiceTestConfig<TService> {
   providers?: readonly MockProvider[];
 }
 
-// ============================================================================
-// ServiceTest Class
-// ============================================================================
-
 /**
  * Service Test Class
  *
@@ -76,6 +68,7 @@ export class ServiceTest<TService, TMocks = Record<string, unknown>> extends Bas
   private config: ServiceTestConfig<TService>;
   private _service!: TService;
   private _mocks!: TMocks;
+  private _globalMocks: jest.Mock[] = [];
 
   /** Assertion helpers for validating test results. */
   readonly assert: AssertionsMixin;
@@ -88,6 +81,14 @@ export class ServiceTest<TService, TMocks = Record<string, unknown>> extends Bas
     this.config = config;
     this.assert = new AssertionsMixin();
     this.factory = new FactoryMixin();
+  }
+
+  /**
+   * Register a global mock (e.g., global.fetch) to be reset during cleanup.
+   * @param mock The jest.Mock to register for automatic reset
+   */
+  registerGlobalMock(mock: jest.Mock): void {
+    this._globalMocks.push(mock);
   }
 
   /** The service instance being tested. */
@@ -133,11 +134,26 @@ export class ServiceTest<TService, TMocks = Record<string, unknown>> extends Bas
     this._service = this._module.get<TService>(this.config.service);
   }
 
-  /** Cleanup - closes module and clears all mocks. */
+  /** Cleanup - closes module and resets all mocks. */
   async cleanup(): Promise<void> {
-    jest.clearAllMocks();
+    // Reset all mocks (clears call history AND implementations)
+    jest.resetAllMocks();
+
+    // Reset any registered global mocks
+    for (const mock of this._globalMocks) {
+      mock.mockReset();
+    }
+
     if (this._module) {
       await this._module.close();
+    }
+  }
+
+  /** Reset mocks without closing the module - useful for mid-test resets. */
+  resetMocks(): void {
+    jest.resetAllMocks();
+    for (const mock of this._globalMocks) {
+      mock.mockReset();
     }
   }
 }

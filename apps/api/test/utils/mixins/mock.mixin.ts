@@ -9,10 +9,6 @@
 
 import { Abstract, Provider, Type } from '@nestjs/common';
 
-// ============================================================================
-// Provider Types
-// ============================================================================
-
 /**
  * NestJS injection token type.
  * Matches what NestJS accepts for dependency injection tokens.
@@ -35,10 +31,6 @@ export interface CustomMockProvider<TClass = unknown, TValue = unknown> {
  */
 export type MockProvider = Type<unknown> | CustomMockProvider<unknown, unknown>;
 
-// ============================================================================
-// Type Helpers
-// ============================================================================
-
 /**
  * Deep-mocked type where all methods become jest.Mock.
  */
@@ -49,10 +41,6 @@ export type DeepMocked<T> = {
       ? DeepMocked<T[K]>
       : T[K];
 } & T;
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
 
 /**
  * Checks if a provider is a class type.

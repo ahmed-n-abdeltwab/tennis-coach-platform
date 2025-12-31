@@ -15,10 +15,6 @@ import {
 
 import { BaseAuthDto } from './base.dto';
 
-// ===========================================
-// Base Auth DTOs
-// ===========================================
-
 export class SignUpDto extends BaseAuthDto {
   @ApiProperty({ example: 'John Doe' })
   @IsString()
@@ -29,10 +25,6 @@ export class SignUpDto extends BaseAuthDto {
   @IsEnum(Role)
   role?: Role;
 }
-
-// ===========================================
-// Unified Account DTO
-// ===========================================
 
 export class AccountProfileDto {
   @ApiProperty({ example: 'John Doe' })
@@ -117,10 +109,6 @@ export class AccountProfileDto {
   profileImage?: string | null;
 }
 
-// ===========================================
-// Auth Responses
-// ===========================================
-
 export class AccountSummaryDto {
   @ApiProperty({ example: 'cmgwh137q000...' })
   @IsString()
@@ -153,10 +141,6 @@ export class RefreshResponseDto {
 }
 
 export class AuthResponseDto extends RefreshResponseDto {}
-
-// ===========================================
-// Profile Responses
-// ===========================================
 
 export class AccountProfileResponseDto extends BaseResponseDto {
   @ApiProperty({ type: AccountProfileDto })

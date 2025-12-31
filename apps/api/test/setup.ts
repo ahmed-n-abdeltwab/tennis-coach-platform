@@ -16,9 +16,6 @@ setupTestEnvironment({
   useStrictAssignment: true,
 });
 
-// =============================================================================
-// Helper: Create mock repository with standard CRUD operations
-// =============================================================================
 function createMockRepository() {
   return {
     create: jest.fn(),
@@ -35,10 +32,6 @@ function createMockRepository() {
   };
 }
 
-// =============================================================================
-// Mock: @prisma/client
-// Must run before imports to mock the PrismaClient constructor
-// =============================================================================
 jest.mock('@prisma/client', () => ({
   PrismaClient: jest.fn().mockImplementation(() => ({
     $connect: jest.fn().mockResolvedValue(undefined),
@@ -82,13 +75,6 @@ jest.mock('@prisma/client', () => ({
   },
 }));
 
-// =============================================================================
-// Mock: RedisService
-// Prevents actual Redis connections in unit tests
-// NOTE: This implementation must be inline because jest.mock runs before imports.
-// The canonical MockRedisService is in @test-infrastructure (apps/api/test/infrastructure/redis/index.ts)
-// Keep this implementation in sync with the canonical version.
-// =============================================================================
 jest.mock('../src/app/redis/redis.service', () => {
   // Inline MockRedisService - must match @test-infrastructure/redis/MockRedisService
   class MockRedisService {
@@ -155,10 +141,6 @@ jest.mock('../src/app/redis/redis.service', () => {
   };
 });
 
-// =============================================================================
-// Mock: nodemailer
-// Prevents actual email sending in unit tests
-// =============================================================================
 jest.mock('nodemailer', () => ({
   createTransport: jest.fn(() => ({
     sendMail: jest.fn().mockResolvedValue({ messageId: 'test-message-id' }),

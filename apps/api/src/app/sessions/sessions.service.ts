@@ -4,11 +4,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Discount, Prisma, Role, Session, SessionStatus } from '@prisma/client';
+import { Prisma, Role, Session, SessionStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 import { plainToInstance } from 'class-transformer';
 
+import { BookingTypesService } from '../booking-types/booking-types.service';
+import { DiscountsService } from '../discounts/discounts.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { TimeSlotsService } from '../time-slots/time-slots.service';
 
 import {
   CreateSessionDto,
@@ -40,7 +43,16 @@ const SESSION_INCLUDE = {
 
 @Injectable()
 export class SessionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private bookingTypesService: BookingTypesService,
+    private timeSlotsService: TimeSlotsService,
+    private discountsService: DiscountsService
+  ) {}
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // PRIVATE: Internal Find Function
+  // ═══════════════════════════════════════════════════════════════════════
 
   /**
    * Internal helper to standardize finding sessions.
@@ -71,6 +83,47 @@ export class SessionsService {
 
     return result;
   }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // INTERNAL METHODS (for other services - no authorization)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /** Find session by ID - used by other services */
+  async findById(id: string): Promise<SessionResponseDto> {
+    const session = (await this.findSessionInternal({ id })) as Session;
+    return plainToInstance(SessionResponseDto, session);
+  }
+
+  /** Find session by calendar event ID - used by CalendarService */
+  async findFirstByCalendarId(calendarEventId: string): Promise<SessionResponseDto> {
+    const session = (await this.findSessionInternal({
+      calendarEventId,
+    })) as Session;
+
+    return plainToInstance(SessionResponseDto, session);
+  }
+
+  /** Mark session as paid - used by PaymentsService after successful payment */
+  async markAsPaidInternal(id: string, paymentId: string): Promise<void> {
+    await this.findSessionInternal({ id }); // Verify exists
+    await this.prisma.session.update({
+      where: { id },
+      data: { isPaid: true, paymentId },
+    });
+  }
+
+  /** Update calendar event ID - used by CalendarService */
+  async updateCalendarEventInternal(id: string, calendarEventId: string | null): Promise<void> {
+    await this.findSessionInternal({ id }); // Verify exists
+    await this.prisma.session.update({
+      where: { id },
+      data: { calendarEventId: calendarEventId ?? undefined },
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CONTROLLER METHODS (with authorization checks)
+  // ═══════════════════════════════════════════════════════════════════════
 
   async findByUser(
     userId: string,
@@ -116,51 +169,36 @@ export class SessionsService {
     return plainToInstance(SessionResponseDto, session);
   }
 
-  // Used internally or by other services (e.g., finding by Calendar ID)
-  async findFirstByCalendarId(calendarEventId: string): Promise<SessionResponseDto> {
-    const session = (await this.findSessionInternal({
-      calendarEventId,
-    })) as Session;
-
-    return plainToInstance(SessionResponseDto, session);
-  }
-
   async create(createDto: CreateSessionDto, userId: string): Promise<SessionResponseDto> {
     const { bookingTypeId, timeSlotId, discountCode, notes } = createDto;
 
-    // 1. Validate Booking Type
-    const bookingType = await this.prisma.bookingType.findUnique({
-      where: { id: bookingTypeId },
-    });
+    // 1. Validate Booking Type using BookingTypesService internal method
+    const bookingType = await this.bookingTypesService.findActiveById(bookingTypeId);
 
-    if (!bookingType?.isActive) {
+    if (!bookingType) {
       throw new BadRequestException('Invalid booking type');
     }
 
-    // 2. Validate Time Slot
-    const timeSlot = await this.prisma.timeSlot.findUnique({
-      where: { id: timeSlotId },
-    });
+    // 2. Validate Time Slot using TimeSlotsService internal method
+    const timeSlot = await this.timeSlotsService.findAvailableById(timeSlotId);
 
-    if (!timeSlot?.isAvailable) {
+    if (!timeSlot) {
       throw new BadRequestException('Time slot not available');
     }
 
     // 3. Calculate Price & Apply Discount
     let price = bookingType.basePrice;
-    let discount: Discount | null = null;
+    let discountId: string | undefined;
+    let appliedDiscountCode: string | undefined;
 
     if (discountCode) {
-      discount = await this.prisma.discount.findFirst({
-        where: {
-          code: discountCode,
-          isActive: true,
-          expiry: { gte: new Date() },
-        },
-      });
+      // Use DiscountsService internal method to find active discount
+      const discount = await this.discountsService.findActiveByCode(discountCode);
 
       if (discount) {
-        price = Decimal.max(0, price.sub(discount.amount));
+        price = Decimal.max(0, new Decimal(price).sub(discount.amount));
+        discountId = discount.id;
+        appliedDiscountCode = discount.code;
       }
     }
 
@@ -171,7 +209,7 @@ export class SessionsService {
         coachId: bookingType.coachId,
         bookingTypeId,
         timeSlotId,
-        discountId: discount?.id,
+        discountId,
         dateTime: timeSlot.dateTime,
         durationMin: timeSlot.durationMin,
         price,
@@ -181,12 +219,9 @@ export class SessionsService {
       include: SESSION_INCLUDE,
     });
 
-    // 5. Update discount usage if applicable
-    if (discount) {
-      await this.prisma.discount.update({
-        where: { code: discount.code },
-        data: { useCount: { increment: 1 } },
-      });
+    // 5. Update discount usage if applicable using DiscountsService internal method
+    if (appliedDiscountCode) {
+      await this.discountsService.incrementUsageInternal(appliedDiscountCode);
     }
 
     return plainToInstance(SessionResponseDto, session);

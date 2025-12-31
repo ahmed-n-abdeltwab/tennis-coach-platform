@@ -19,6 +19,10 @@ export class AccountsService {
     private readonly hashingService: HashingService
   ) {}
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // PRIVATE: Internal Find Function
+  // ═══════════════════════════════════════════════════════════════════════
+
   private async findAccountInternal<T extends Prisma.AccountWhereInput>(
     where: T,
     options: { throwIfNotFound?: boolean; isMany?: boolean } = {}
@@ -40,20 +44,40 @@ export class AccountsService {
     return result;
   }
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // INTERNAL METHODS (for other services - no authorization)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /** Find account by email - used by AuthenticationService */
   async findByEmail(email: string): Promise<AccountResponseDto> {
     const account = (await this.findAccountInternal({ email })) as Account;
     return plainToInstance(AccountResponseDto, account);
   }
 
+  /** Find account by ID - used by other services (e.g., MessagesService) */
   async findById(id: string): Promise<AccountResponseDto> {
     const account = (await this.findAccountInternal({ id })) as Account;
     return plainToInstance(AccountResponseDto, account);
   }
 
+  /** Check if account exists by ID - used by MessagesService for receiver validation */
+  async existsById(id: string): Promise<{ id: string; role: Role } | null> {
+    const account = (await this.findAccountInternal(
+      { id },
+      { throwIfNotFound: false }
+    )) as Account | null;
+    return account ? { id: account.id, role: account.role } : null;
+  }
+
+  /** Find accounts by role - used by other services */
   async findByRole(role: Role): Promise<AccountResponseDto[]> {
     const accounts = (await this.findAccountInternal({ role }, { isMany: true })) as Account[];
     return plainToInstance(AccountResponseDto, accounts);
   }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CONTROLLER METHODS (with authorization checks)
+  // ═══════════════════════════════════════════════════════════════════════
 
   /**
    * Find all users with optional filters

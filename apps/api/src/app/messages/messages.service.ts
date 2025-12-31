@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { Message, Prisma, Role } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 
+import { AccountsService } from '../accounts/accounts.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { SessionsService } from './../sessions/sessions.service';
@@ -32,7 +33,8 @@ const MESSAGE_INCLUDE = {
 export class MessagesService {
   constructor(
     private prisma: PrismaService,
-    private sessionsService: SessionsService
+    private sessionsService: SessionsService,
+    private accountsService: AccountsService
   ) {}
 
   /**
@@ -105,11 +107,8 @@ export class MessagesService {
   ): Promise<MessageResponseDto> {
     const { content, receiverId, sessionId } = createDto;
 
-    // Verify receiver exists
-    const receiver = await this.prisma.account.findUnique({
-      where: { id: receiverId },
-      select: { id: true, role: true },
-    });
+    // Verify receiver exists using AccountsService internal method
+    const receiver = await this.accountsService.existsById(receiverId);
 
     if (!receiver) {
       throw new NotFoundException('Receiver not found');

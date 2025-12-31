@@ -2,8 +2,6 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { Role } from '@prisma/client';
 
-import { PrismaService } from '../prisma/prisma.service';
-
 import { SessionsService } from './../sessions/sessions.service';
 import { TimeSlotsService } from './../time-slots/time-slots.service';
 import paymentsConfig from './config/payments.config';
@@ -22,8 +20,7 @@ export class PaymentsService {
     @Inject(paymentsConfig.KEY)
     private readonly paymentsConfiguration: ConfigType<typeof paymentsConfig>,
     private sessionsService: SessionsService,
-    private timeSlotsService: TimeSlotsService,
-    private prisma: PrismaService
+    private timeSlotsService: TimeSlotsService
   ) {
     this.paypalBaseUrl =
       this.paymentsConfiguration.environment === 'sandbox'
@@ -123,16 +120,10 @@ export class PaymentsService {
       throw new BadRequestException('Payment capture failed');
     }
 
-    // Update session as paid
-    await this.prisma.session.update({
-      where: { id: sessionId },
-      data: { isPaid: true, paymentId: orderId },
-    });
-    // Mark time slot as unavailable
-    await this.prisma.timeSlot.update({
-      where: { id: session.timeSlotId },
-      data: { isAvailable: false },
-    });
+    // Update session as paid using SessionsService internal method
+    await this.sessionsService.markAsPaidInternal(sessionId, orderId);
+    // Mark time slot as unavailable using TimeSlotsService internal method
+    await this.timeSlotsService.markAsUnavailableInternal(session.timeSlotId);
 
     return {
       success: true,
