@@ -1,30 +1,36 @@
 import { Role } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 import { ControllerTest } from '@test-utils';
+import { DeepMocked } from '@test-utils/mixins/mock.mixin';
 
 import { BookingTypesController } from './booking-types.controller';
 import { BookingTypesService } from './booking-types.service';
 
+interface BookingTypesMocks {
+  BookingTypesService: DeepMocked<BookingTypesController>;
+}
+
 describe('BookingTypesController', () => {
-  let test: ControllerTest<BookingTypesController, BookingTypesService, 'booking-types'>;
-  let mockService: jest.Mocked<BookingTypesService>;
+  let test: ControllerTest<BookingTypesController, BookingTypesMocks, 'booking-types'>;
 
   beforeEach(async () => {
-    // Create mock service
-    mockService = {
-      findAll: jest.fn(),
-      findByCoach: jest.fn(),
-      findOne: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      remove: jest.fn(),
-    } as any;
-
     // Create test instance with configuration - no class extension needed!
     test = new ControllerTest({
-      controllerClass: BookingTypesController,
+      controller: BookingTypesController,
+      providers: [
+        {
+          provide: BookingTypesService,
+          useValue: {
+            findAll: jest.fn(),
+            findByCoach: jest.fn(),
+            findOne: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            remove: jest.fn(),
+          },
+        },
+      ],
       moduleName: 'booking-types',
-      providers: [{ provide: BookingTypesService, useValue: mockService }],
     });
 
     await test.setup();
@@ -42,12 +48,12 @@ describe('BookingTypesController', () => {
         coachId: 'coach-1',
       });
 
-      mockService.findAll.mockResolvedValue(mockBookingTypes);
+      test.mocks.BookingTypesService.findAll.mockResolvedValue(mockBookingTypes);
 
       // Direct access to HTTP methods - no wrapper needed!
       await test.http.get('/api/booking-types');
 
-      expect(mockService.findAll).toHaveBeenCalledTimes(1);
+      expect(test.mocks.BookingTypesService.findAll).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -59,13 +65,13 @@ describe('BookingTypesController', () => {
         name: 'Personal Training',
         coachId,
       });
-      mockService.findByCoach.mockResolvedValue(mockBookingTypes);
+      test.mocks.BookingTypesService.findByCoach.mockResolvedValue(mockBookingTypes);
 
       await test.http.get(
         `/api/booking-types/coach/${coachId}` as '/api/booking-types/coach/{coachId}'
       );
 
-      expect(mockService.findByCoach).toHaveBeenCalledWith(coachId);
+      expect(test.mocks.BookingTypesService.findByCoach).toHaveBeenCalledWith(coachId);
     });
   });
 
@@ -76,11 +82,11 @@ describe('BookingTypesController', () => {
         name: 'Personal Training',
         coachId: 'coach-1',
       });
-      mockService.findOne.mockResolvedValue(mockBookingType);
+      test.mocks.BookingTypesService.findOne.mockResolvedValue(mockBookingType);
 
       await test.http.get(`/api/booking-types/${mockBookingType.id}` as '/api/booking-types/{id}');
 
-      expect(mockService.findOne).toHaveBeenCalledWith(mockBookingType.id);
+      expect(test.mocks.BookingTypesService.findOne).toHaveBeenCalledWith(mockBookingType.id);
     });
   });
 
@@ -101,7 +107,7 @@ describe('BookingTypesController', () => {
         coachId,
       });
 
-      mockService.create.mockResolvedValue(mockCreatedBookingType);
+      test.mocks.BookingTypesService.create.mockResolvedValue(mockCreatedBookingType);
 
       // Built-in token creation - no helper method needed!
       const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });
@@ -111,7 +117,7 @@ describe('BookingTypesController', () => {
         body: createData,
       });
 
-      expect(mockService.create).toHaveBeenCalledWith(createData, coachId);
+      expect(test.mocks.BookingTypesService.create).toHaveBeenCalledWith(createData, coachId);
     });
   });
 
@@ -131,7 +137,7 @@ describe('BookingTypesController', () => {
         coachId,
       });
 
-      mockService.update.mockResolvedValue(mockUpdatedBookingType);
+      test.mocks.BookingTypesService.update.mockResolvedValue(mockUpdatedBookingType);
 
       const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });
       await test.http.authenticatedPut(
@@ -142,7 +148,11 @@ describe('BookingTypesController', () => {
         }
       );
 
-      expect(mockService.update).toHaveBeenCalledWith(bookingTypeId, updateData, coachId);
+      expect(test.mocks.BookingTypesService.update).toHaveBeenCalledWith(
+        bookingTypeId,
+        updateData,
+        coachId
+      );
     });
   });
 
@@ -160,7 +170,7 @@ describe('BookingTypesController', () => {
         ...updateData,
         coachId,
       });
-      mockService.update.mockResolvedValue(mockUpdatedBookingType);
+      test.mocks.BookingTypesService.update.mockResolvedValue(mockUpdatedBookingType);
 
       const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });
       await test.http.authenticatedPatch(
@@ -171,7 +181,11 @@ describe('BookingTypesController', () => {
         }
       );
 
-      expect(mockService.update).toHaveBeenCalledWith(bookingTypeId, updateData, coachId);
+      expect(test.mocks.BookingTypesService.update).toHaveBeenCalledWith(
+        bookingTypeId,
+        updateData,
+        coachId
+      );
     });
   });
 
@@ -180,7 +194,7 @@ describe('BookingTypesController', () => {
       const coachId = 'coach-1';
       const bookingTypeId = 'booking-type-1';
 
-      mockService.remove.mockResolvedValue(undefined);
+      test.mocks.BookingTypesService.remove.mockResolvedValue(undefined);
 
       const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });
       await test.http.authenticatedDelete(
@@ -188,7 +202,7 @@ describe('BookingTypesController', () => {
         coachToken
       );
 
-      expect(mockService.remove).toHaveBeenCalledWith(bookingTypeId, coachId);
+      expect(test.mocks.BookingTypesService.remove).toHaveBeenCalledWith(bookingTypeId, coachId);
     });
   });
 });

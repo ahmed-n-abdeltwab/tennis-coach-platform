@@ -1,24 +1,23 @@
 import { Role } from '@prisma/client';
 import { ControllerTest } from '@test-utils';
+import { DeepMocked } from '@test-utils/mixins/mock.mixin';
 
 import { CalendarController } from './calendar.controller';
 import { CalendarService } from './calendar.service';
 import { CreateCalendarEventDto } from './dto/calendar.dto';
 
+interface CalendarControllerMocks {
+  CalendarService: DeepMocked<CalendarService>;
+}
+
 describe('CalendarController', () => {
-  let test: ControllerTest<CalendarController, CalendarService, 'calendar'>;
-  let mockService: jest.Mocked<CalendarService>;
+  let test: ControllerTest<CalendarController, CalendarControllerMocks, 'calendar'>;
 
   beforeEach(async () => {
-    mockService = {
-      createEvent: jest.fn(),
-      deleteEvent: jest.fn(),
-    } as any;
-
     test = new ControllerTest({
-      controllerClass: CalendarController,
+      controller: CalendarController,
       moduleName: 'calendar',
-      providers: [{ provide: CalendarService, useValue: mockService }],
+      providers: [CalendarService],
     });
 
     await test.setup();
@@ -36,7 +35,7 @@ describe('CalendarController', () => {
 
       const mockResponse = test.factory.calendar.create();
 
-      mockService.createEvent.mockResolvedValue(mockResponse);
+      test.mocks.CalendarService.createEvent.mockResolvedValue(mockResponse);
 
       const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: 'user-123',
@@ -45,7 +44,11 @@ describe('CalendarController', () => {
         body: createDto,
       });
 
-      expect(mockService.createEvent).toHaveBeenCalledWith(createDto, 'user-123', Role.USER);
+      expect(test.mocks.CalendarService.createEvent).toHaveBeenCalledWith(
+        createDto,
+        'user-123',
+        Role.USER
+      );
     });
 
     it('should create a calendar event for a premium user', async () => {
@@ -55,7 +58,7 @@ describe('CalendarController', () => {
 
       const mockResponse = test.factory.calendar.create();
 
-      mockService.createEvent.mockResolvedValue(mockResponse);
+      test.mocks.CalendarService.createEvent.mockResolvedValue(mockResponse);
 
       const premiumToken = await test.auth.createRoleToken(Role.PREMIUM_USER, {
         sub: 'premium-user-123',
@@ -64,7 +67,7 @@ describe('CalendarController', () => {
         body: createDto,
       });
 
-      expect(mockService.createEvent).toHaveBeenCalledWith(
+      expect(test.mocks.CalendarService.createEvent).toHaveBeenCalledWith(
         createDto,
         'premium-user-123',
         Role.PREMIUM_USER
@@ -78,7 +81,7 @@ describe('CalendarController', () => {
 
       const mockResponse = test.factory.calendar.create();
 
-      mockService.createEvent.mockResolvedValue(mockResponse);
+      test.mocks.CalendarService.createEvent.mockResolvedValue(mockResponse);
 
       const coachToken = await test.auth.createRoleToken(Role.COACH, {
         sub: 'coach-123',
@@ -87,7 +90,11 @@ describe('CalendarController', () => {
         body: createDto,
       });
 
-      expect(mockService.createEvent).toHaveBeenCalledWith(createDto, 'coach-123', Role.COACH);
+      expect(test.mocks.CalendarService.createEvent).toHaveBeenCalledWith(
+        createDto,
+        'coach-123',
+        Role.COACH
+      );
     });
   });
 
@@ -101,7 +108,7 @@ describe('CalendarController', () => {
         summary: 'The calender event successfully deleted',
       });
 
-      mockService.deleteEvent.mockResolvedValue(mockResponse);
+      test.mocks.CalendarService.deleteEvent.mockResolvedValue(mockResponse);
 
       const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: userId,
@@ -111,7 +118,11 @@ describe('CalendarController', () => {
         userToken
       );
 
-      expect(mockService.deleteEvent).toHaveBeenCalledWith(eventId, userId, Role.USER);
+      expect(test.mocks.CalendarService.deleteEvent).toHaveBeenCalledWith(
+        eventId,
+        userId,
+        Role.USER
+      );
     });
 
     it('should delete a calendar event for a premium user', async () => {
@@ -123,7 +134,7 @@ describe('CalendarController', () => {
         summary: 'The calender event successfully deleted',
       });
 
-      mockService.deleteEvent.mockResolvedValue(mockResponse);
+      test.mocks.CalendarService.deleteEvent.mockResolvedValue(mockResponse);
 
       const premiumToken = await test.auth.createRoleToken(Role.PREMIUM_USER, {
         sub: userId,
@@ -133,7 +144,11 @@ describe('CalendarController', () => {
         premiumToken
       );
 
-      expect(mockService.deleteEvent).toHaveBeenCalledWith(eventId, userId, Role.PREMIUM_USER);
+      expect(test.mocks.CalendarService.deleteEvent).toHaveBeenCalledWith(
+        eventId,
+        userId,
+        Role.PREMIUM_USER
+      );
     });
 
     it('should delete a calendar event for a coach', async () => {
@@ -144,7 +159,7 @@ describe('CalendarController', () => {
         summary: 'The calender event successfully deleted',
       });
 
-      mockService.deleteEvent.mockResolvedValue(mockResponse);
+      test.mocks.CalendarService.deleteEvent.mockResolvedValue(mockResponse);
 
       const coachToken = await test.auth.createRoleToken(Role.COACH, {
         sub: coachId,
@@ -154,7 +169,11 @@ describe('CalendarController', () => {
         coachToken
       );
 
-      expect(mockService.deleteEvent).toHaveBeenCalledWith(eventId, coachId, Role.COACH);
+      expect(test.mocks.CalendarService.deleteEvent).toHaveBeenCalledWith(
+        eventId,
+        coachId,
+        Role.COACH
+      );
     });
   });
 });
