@@ -16,7 +16,7 @@
  * const response = await test.http.get('/api/sessions');
  *
  * // Authenticated requests
- * const token = await test.auth.createTestJwtToken();
+ * const token = await test.auth.createToken();
  * const authResponse = await test.http.authenticatedGet('/api/accounts/me', token);
  * ```
  *

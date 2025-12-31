@@ -1,56 +1,34 @@
 import { UnauthorizedException } from '@nestjs/common';
-import { ConfigType } from '@nestjs/config';
 import { Role } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/client';
 import { ServiceTest } from '@test-utils';
-import nodemailer from 'nodemailer';
+import { DeepMocked } from '@test-utils/mixins/mock.mixin';
 
-import { PrismaService } from '../prisma/prisma.service';
 import { SessionsService } from '../sessions/sessions.service';
 
-import notificationsConfig from './config/notifications.config';
 import { SendEmailDto } from './dto/notification.dto';
+import { MailerService } from './mailer';
 import { NotificationsService } from './notifications.service';
 
-// Mock nodemailer
-jest.mock('nodemailer', () => ({
-  createTransport: jest.fn().mockReturnValue({
-    sendMail: jest.fn(),
-  }),
-}));
-
-// Mock mailtrap
-jest.mock('mailtrap', () => ({
-  MailtrapTransport: jest.fn().mockReturnValue({}),
-}));
+/**
+ * NotificationMocks interface defines typed mocks for the NotificationsService dependencies.
+ *
+ * This interface provides IntelliSense support for:
+ * - MailerService mock (sendMail method)
+ * - SessionsService mock (findOne method)
+ */
+interface NotificationMocks {
+  MailerService: DeepMocked<MailerService>;
+  SessionsService: DeepMocked<SessionsService>;
+}
 
 describe('NotificationsService', () => {
-  let test: ServiceTest<NotificationsService, PrismaService>;
-  let mockSessionsService: jest.Mocked<SessionsService>;
-  let mockTransporter: { sendMail: jest.Mock };
-
-  const mockConfig: ConfigType<typeof notificationsConfig> = {
-    token: 'test-token',
-    senderEmail: 'test@example.com',
-  };
+  let test: ServiceTest<NotificationsService, NotificationMocks>;
 
   beforeEach(async () => {
-    mockSessionsService = {
-      findUnique: jest.fn(),
-    } as any;
-
-    mockTransporter = {
-      sendMail: jest.fn(),
-    };
-
-    // Reset the nodemailer mock to return our mockTransporter
-    (nodemailer.createTransport as jest.Mock).mockReturnValue(mockTransporter);
-
     test = new ServiceTest({
-      serviceClass: NotificationsService,
-      mocks: [
-        { provide: notificationsConfig.KEY, useValue: mockConfig },
-        { provide: SessionsService, useValue: mockSessionsService },
-      ],
+      service: NotificationsService,
+      providers: [MailerService, SessionsService],
     });
 
     await test.setup();
@@ -58,46 +36,6 @@ describe('NotificationsService', () => {
 
   afterEach(async () => {
     await test.cleanup();
-  });
-
-  describe('constructor', () => {
-    it('should throw error when token is not provided', async () => {
-      const invalidConfig = {
-        token: undefined,
-        senderEmail: 'test@example.com',
-      };
-
-      const invalidTest = new ServiceTest({
-        serviceClass: NotificationsService,
-        mocks: [
-          { provide: notificationsConfig.KEY, useValue: invalidConfig },
-          { provide: SessionsService, useValue: mockSessionsService },
-        ],
-      });
-
-      await expect(invalidTest.setup()).rejects.toThrow(
-        'SMTP_TOKEN and SMTP_SENDER_EMAIL must be provided'
-      );
-    });
-
-    it('should throw error when senderEmail is not provided', async () => {
-      const invalidConfig = {
-        token: 'test-token',
-        senderEmail: undefined,
-      };
-
-      const invalidTest = new ServiceTest({
-        serviceClass: NotificationsService,
-        mocks: [
-          { provide: notificationsConfig.KEY, useValue: invalidConfig },
-          { provide: SessionsService, useValue: mockSessionsService },
-        ],
-      });
-
-      await expect(invalidTest.setup()).rejects.toThrow(
-        'SMTP_TOKEN and SMTP_SENDER_EMAIL must be provided'
-      );
-    });
   });
 
   describe('sendEmail', () => {
@@ -114,7 +52,7 @@ describe('NotificationsService', () => {
         message_ids: ['msg-123'],
       };
 
-      mockTransporter.sendMail.mockResolvedValue(mockResponse);
+      test.mocks.MailerService.sendMail.mockResolvedValue(mockResponse);
 
       const result = await test.service.sendEmail(emailDto, 'user-123', Role.USER);
 
@@ -122,11 +60,7 @@ describe('NotificationsService', () => {
         success: true,
         message_ids: ['msg-123'],
       });
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith({
-        from: {
-          address: 'test@example.com',
-          name: 'Mailtrap Test',
-        },
+      expect(test.mocks.MailerService.sendMail).toHaveBeenCalledWith({
         to: 'recipient@example.com',
         subject: 'Test Subject',
         text: 'Test text',
@@ -146,7 +80,7 @@ describe('NotificationsService', () => {
         errors: ['Invalid recipient'],
       };
 
-      mockTransporter.sendMail.mockResolvedValue(mockResponse);
+      test.mocks.MailerService.sendMail.mockResolvedValue(mockResponse);
 
       const result = await test.service.sendEmail(emailDto, 'user-123', Role.USER);
 
@@ -168,56 +102,46 @@ describe('NotificationsService', () => {
         message_ids: ['msg-456'],
       };
 
-      mockTransporter.sendMail.mockResolvedValue(mockResponse);
+      test.mocks.MailerService.sendMail.mockResolvedValue(mockResponse);
 
       const result = await test.service.sendEmail(emailDto, 'user-123', Role.COACH);
 
       expect(result.success).toBe(true);
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'recipient@example.com',
-          subject: 'Test Subject',
-          html: '<p>Test HTML</p>',
-          text: undefined,
-        })
-      );
+      expect(test.mocks.MailerService.sendMail).toHaveBeenCalledWith({
+        to: 'recipient@example.com',
+        subject: 'Test Subject',
+        html: '<p>Test HTML</p>',
+        text: undefined,
+      });
     });
   });
 
   describe('sendBookingConfirmation', () => {
     it('should send booking confirmation email successfully', async () => {
       const sessionId = 'session-123';
-      const mockSession = {
+      const userId = 'user-123';
+      const role = Role.USER;
+
+      const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
-        user: {
-          id: 'user-123',
-          name: 'John Doe',
-          email: 'john@example.com',
-        },
-        coach: {
-          id: 'coach-123',
-          name: 'Coach Smith',
-          email: 'coach@example.com',
-        },
-        bookingType: {
-          id: 'booking-type-123',
-          name: 'Tennis Lesson',
-        },
+        userId,
+        user: { id: userId, name: 'John Doe', email: 'john@example.com' },
+        coach: { id: 'coach-123', name: 'Coach Smith', email: 'coach@example.com' },
         dateTime: new Date('2024-12-25T10:00:00Z'),
         durationMin: 60,
-        price: 100,
-      };
+        price: new Decimal(100),
+      });
 
-      mockSessionsService.findUnique.mockResolvedValue(mockSession as any);
-      mockTransporter.sendMail.mockResolvedValue({
+      test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
+      test.mocks.MailerService.sendMail.mockResolvedValue({
         success: true,
         message_ids: ['msg-789'],
       });
 
-      await test.service.sendBookingConfirmation(sessionId);
+      await test.service.sendBookingConfirmation(sessionId, userId, role);
 
-      expect(mockSessionsService.findUnique).toHaveBeenCalledWith(sessionId);
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
+      expect(test.mocks.SessionsService.findOne).toHaveBeenCalledWith(sessionId, userId, role);
+      expect(test.mocks.MailerService.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'john@example.com',
           subject: 'Booking Confirmation - Tennis Coaching Session',
@@ -226,51 +150,50 @@ describe('NotificationsService', () => {
     });
 
     it('should throw UnauthorizedException when session not found', async () => {
-      mockSessionsService.findUnique.mockResolvedValue(null);
+      const sessionId = 'non-existent';
+      const userId = 'user-123';
+      const role = Role.USER;
 
-      await expect(test.service.sendBookingConfirmation('non-existent')).rejects.toThrow(
+      test.mocks.SessionsService.findOne.mockResolvedValue(null as any);
+
+      await expect(test.service.sendBookingConfirmation(sessionId, userId, role)).rejects.toThrow(
         UnauthorizedException
       );
-      expect(mockTransporter.sendMail).not.toHaveBeenCalled();
+      expect(test.mocks.MailerService.sendMail).not.toHaveBeenCalled();
     });
 
     it('should include session details in confirmation email', async () => {
       const sessionId = 'session-456';
-      const mockSession = {
+      const userId = 'user-456';
+      const role = Role.USER;
+
+      const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
-        user: {
-          id: 'user-456',
-          name: 'Jane Doe',
-          email: 'jane@example.com',
-        },
-        coach: {
-          id: 'coach-456',
-          name: 'Coach Johnson',
-          email: 'johnson@example.com',
-        },
-        bookingType: {
-          id: 'booking-type-456',
-          name: 'Advanced Training',
-        },
+        userId,
+        user: { id: userId, name: 'Jane Doe', email: 'jane@example.com' },
+        coach: { id: 'coach-456', name: 'Coach Johnson', email: 'johnson@example.com' },
         dateTime: new Date('2024-12-30T14:00:00Z'),
         durationMin: 90,
-        price: 150,
-      };
+        price: new Decimal(150),
+      });
 
-      mockSessionsService.findUnique.mockResolvedValue(mockSession as any);
-      mockTransporter.sendMail.mockResolvedValue({
+      test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
+      test.mocks.MailerService.sendMail.mockResolvedValue({
         success: true,
         message_ids: ['msg-confirmation'],
       });
 
-      await test.service.sendBookingConfirmation(sessionId);
+      await test.service.sendBookingConfirmation(sessionId, userId, role);
 
-      const sendMailCall = mockTransporter.sendMail.mock.calls[0][0];
-      expect(sendMailCall.html).toContain('Jane Doe');
-      expect(sendMailCall.html).toContain('Coach Johnson');
-      expect(sendMailCall.html).toContain('Advanced Training');
-      expect(sendMailCall.html).toContain('90 minutes');
-      expect(sendMailCall.html).toContain('150');
+      const sendMailCalls = test.mocks.MailerService.sendMail.mock.calls;
+      expect(sendMailCalls).toHaveLength(1);
+      const sendMailCall = sendMailCalls[0]?.[0];
+      expect(sendMailCall).toBeDefined();
+      expect(sendMailCall?.html).toContain('Jane Doe');
+      expect(sendMailCall?.html).toContain('Coach Johnson');
+      expect(sendMailCall?.html).toContain(mockSession.bookingType.name);
+      expect(sendMailCall?.html).toContain('90 minutes');
+      expect(sendMailCall?.html).toContain('150');
     });
   });
 });

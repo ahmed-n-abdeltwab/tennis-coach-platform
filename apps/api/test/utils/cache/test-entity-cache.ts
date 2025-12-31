@@ -141,10 +141,6 @@ export class TestEntityCache {
     return data;
   }
 
-  // ============================================================================
-  // Entity-specific methods
-  // ============================================================================
-
   public cacheUser(user: Account): void {
     this.set(`user:${user.id}`, user);
     this.set(`user:email:${user.email}`, user);
@@ -187,10 +183,6 @@ export class TestEntityCache {
     return this.get<TimeSlot>(`timeSlot:${timeSlotId}`);
   }
 
-  // ============================================================================
-  // Invalidation methods
-  // ============================================================================
-
   public invalidateUsers(): void {
     const keys = Array.from(this.cache.keys()).filter(key => key.startsWith('user:'));
     keys.forEach(key => this.cache.delete(key));
@@ -205,10 +197,6 @@ export class TestEntityCache {
     const keys = Array.from(this.cache.keys()).filter(key => key.startsWith('bookingType:'));
     keys.forEach(key => this.cache.delete(key));
   }
-
-  // ============================================================================
-  // Stats & Configuration
-  // ============================================================================
 
   public getStats(): CacheStats {
     const totalRequests = this.hits + this.misses;

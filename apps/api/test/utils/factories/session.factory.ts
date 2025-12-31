@@ -5,8 +5,22 @@
 import { SessionStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 
+import { DeepPartial } from '../http';
+
 import { BaseMockFactory } from './base-factory';
-import type { MockDiscount } from './discount.factory';
+
+import {
+  AccountMockFactory,
+  BookingTypeMockFactory,
+  CalendarMockFactory,
+  DiscountMockFactory,
+  PaymentMockFactory,
+  TimeSlotMockFactory,
+  type MockAccount,
+  type MockBookingType,
+  type MockDiscount,
+  type MockTimeSlot,
+} from '.';
 
 export interface MockSession {
   id: string;
@@ -28,29 +42,94 @@ export interface MockSession {
   bookingTypeId: string;
   timeSlotId: string;
   discountId?: string;
+
+  user: Pick<MockAccount, 'id' | 'email' | 'name'>;
+  coach: Pick<MockAccount, 'id' | 'email' | 'name'>;
+  bookingType: MockBookingType;
+  timeSlot: MockTimeSlot;
+  discount?: MockDiscount;
 }
 
 export class SessionMockFactory extends BaseMockFactory<MockSession> {
-  protected generateMock(overrides?: Partial<MockSession>): MockSession {
+  // Compose factories for clean separation of concerns
+  private readonly account: AccountMockFactory;
+  private readonly bookingType: BookingTypeMockFactory;
+  private readonly timeSlot: TimeSlotMockFactory;
+  private readonly discount: DiscountMockFactory;
+  private readonly payment: PaymentMockFactory;
+  private readonly calendar: CalendarMockFactory;
+
+  constructor() {
+    // Initialize mixins
+    super();
+    this.account = new AccountMockFactory();
+    this.bookingType = new BookingTypeMockFactory();
+    this.timeSlot = new TimeSlotMockFactory();
+    this.discount = new DiscountMockFactory();
+    this.payment = new PaymentMockFactory();
+    this.calendar = new CalendarMockFactory();
+  }
+
+  protected generateMock(overrides?: DeepPartial<MockSession>): MockSession {
     const id = this.generateId();
-    const now = new Date();
+    const now = this.createDate();
+
+    // 1. Resolve Coach (Ensuring ID and Object match)
+    const rawCoach = overrides?.coach ?? this.account.createCoach();
+    const coach = {
+      id: overrides?.coachId ?? rawCoach.id,
+      email: rawCoach.email,
+      name: rawCoach.name,
+    };
+
+    // 2. Resolve User (Ensuring ID and Object match)
+    const rawUser = overrides?.user ?? this.account.createUser();
+    const user = {
+      id: overrides?.userId ?? rawUser.id,
+      email: rawUser.email,
+      name: rawUser.name,
+    };
+
+    // 3. Pass the resolved coachId to subsequent factories
+    const bookingType =
+      overrides?.bookingType ??
+      this.bookingType.create({ ...overrides?.bookingType, coachId: coach.id });
+    const discount =
+      overrides?.discount ?? this.discount.create({ ...overrides?.discount, coachId: coach.id });
+    const timeSlot =
+      overrides?.timeSlot ?? this.timeSlot.create({ ...overrides?.timeSlot, coachId: coach.id });
+
+    const paymentId =
+      overrides?.paymentId ??
+      this.payment.create({ amount: bookingType.basePrice, sessionId: id }).id;
+
+    const calendarEventId = overrides?.calendarEventId ?? this.calendar.create().eventId;
 
     const session = {
       id,
       dateTime: this.generateFutureDate(14),
       durationMin: this.randomDuration(),
-      price: this.randomPrice(),
+      price: bookingType.basePrice,
       isPaid: false,
       status: SessionStatus.SCHEDULED,
       notes: this.randomNotes(),
-      userId: this.generateId(),
-      coachId: this.generateId(),
-      bookingTypeId: this.generateId(),
-      timeSlotId: this.generateId(),
+      paymentId,
+      discountCode: discount.code,
       createdAt: now,
       updatedAt: now,
+      calendarEventId,
+      bookingTypeId: bookingType.id,
+      timeSlotId: timeSlot.id,
+      discountId: discount.id,
+      userId: user.id,
+      coachId: coach.id,
+      user,
+      coach,
+      bookingType,
+      timeSlot,
+      discount,
       ...overrides,
-    };
+    } as MockSession;
 
     // Validate required fields
     this.validateRequired(session.userId, 'userId');
@@ -63,74 +142,9 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
     return session;
   }
 
-  createScheduled(overrides?: Partial<MockSession>): MockSession {
-    return this.create({
-      status: SessionStatus.SCHEDULED,
-      isPaid: false,
-      ...overrides,
-    });
-  }
-
-  createCompleted(overrides?: Partial<MockSession>): MockSession {
-    return this.create({
-      status: SessionStatus.COMPLETED,
-      isPaid: true,
-      dateTime: this.generatePastDate(7),
-      paymentId: `pay_${this.generateId()}`,
-      ...overrides,
-    });
-  }
-
-  createCancelled(overrides?: Partial<MockSession>): MockSession {
-    return this.create({
-      status: SessionStatus.CANCELLED,
-      isPaid: false,
-      ...overrides,
-    });
-  }
-
-  createPaid(overrides?: Partial<MockSession>): MockSession {
-    return this.create({
-      isPaid: true,
-      paymentId: `pay_${this.generateId()}`,
-      ...overrides,
-    });
-  }
-
-  createWithDiscount(discount: MockDiscount, overrides?: Partial<MockSession>): MockSession {
-    // Calculate discounted price based on the discount amount
-    const basePrice = this.randomPrice();
-    const discountAmount = new Decimal(discount.amount);
-
-    const discountedPrice = Decimal.max(new Decimal(0), basePrice.sub(discountAmount));
-
-    return this.create({
-      discountCode: discount.code,
-      discountId: discount.id,
-      price: discountedPrice,
-      ...overrides,
-    });
-  }
-
-  createForUserAndCoach(
-    userId: string,
-    coachId: string,
-    overrides?: Partial<MockSession>
-  ): MockSession {
-    return this.create({
-      userId,
-      coachId,
-      ...overrides,
-    });
-  }
-
   private randomDuration(): number {
     const durations = [30, 45, 60, 90, 120]; // minutes
     return durations[Math.floor(Math.random() * durations.length)] ?? 30;
-  }
-
-  private randomPrice(): Decimal {
-    return new Decimal(Math.floor(Math.random() * 150) + 50); // $50-$200
   }
 
   private randomNotes(): string {

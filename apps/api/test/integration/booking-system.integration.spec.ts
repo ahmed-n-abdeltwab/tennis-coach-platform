@@ -68,13 +68,13 @@ describe('Booking System Integration', () => {
     });
 
     // Create auth tokens with fresh user/coach IDs
-    userToken = await test.auth.createTestJwtToken({
+    userToken = await test.auth.createToken({
       sub: testUser.id,
       email: testUser.email,
       role: testUser.role,
     });
 
-    coachToken = await test.auth.createTestJwtToken({
+    coachToken = await test.auth.createToken({
       sub: testCoach.id,
       email: testCoach.email,
       role: testCoach.role,
@@ -419,7 +419,7 @@ describe('Booking System Integration', () => {
       const otherUser = await test.db.createTestUser({
         email: 'otheruser@example.com',
       });
-      const otherUserToken = await test.auth.createTestJwtToken({
+      const otherUserToken = await test.auth.createToken({
         sub: otherUser.id,
         email: otherUser.email,
         role: otherUser.role,

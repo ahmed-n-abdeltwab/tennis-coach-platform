@@ -28,11 +28,15 @@ export class PaymentsService {
         : 'https://api-m.paypal.com';
   }
 
-  async createOrder(createDto: CreatePaymentDto, userId: string): Promise<CreateOrderResponses> {
+  async createOrder(
+    createDto: CreatePaymentDto,
+    userId: string,
+    role: Role
+  ): Promise<CreateOrderResponses> {
     const { sessionId, amount } = createDto;
 
     // Verify session belongs to user
-    const session = await this.sessionsService.findUnique(sessionId);
+    const session = await this.sessionsService.findOne(sessionId, userId, role);
 
     if (session?.userId !== userId) {
       throw new BadRequestException('Invalid session');
@@ -86,12 +90,13 @@ export class PaymentsService {
 
   async captureOrder(
     captureDto: CapturePaymentDto,
-    userId: string
+    userId: string,
+    role: Role
   ): Promise<CapturePaymentResponses> {
     const { orderId, sessionId } = captureDto;
 
     // Verify session
-    const session = await this.sessionsService.findUnique(sessionId);
+    const session = await this.sessionsService.findOne(sessionId, userId, role);
 
     if (session?.userId !== userId) {
       throw new BadRequestException('Invalid session');
@@ -115,16 +120,10 @@ export class PaymentsService {
       throw new BadRequestException('Payment capture failed');
     }
 
-    // Update session as paid
-    await this.sessionsService.update(
-      sessionId,
-      { isPaid: true, paymentId: orderId },
-      userId,
-      Role.USER
-    );
-
-    // Mark time slot as unavailable
-    await this.timeSlotsService.update(session.timeSlotId, { isAvailable: false }, session.coachId);
+    // Update session as paid using SessionsService internal method
+    await this.sessionsService.markAsPaidInternal(sessionId, orderId);
+    // Mark time slot as unavailable using TimeSlotsService internal method
+    await this.timeSlotsService.markAsUnavailableInternal(session.timeSlotId);
 
     return {
       success: true,

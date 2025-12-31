@@ -1,31 +1,22 @@
 import { Role } from '@prisma/client';
 import { ControllerTest } from '@test-utils';
+import { DeepMocked } from '@test-utils/mixins/mock.mixin';
 
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
 
+interface AccountsControllerMocks {
+  AccountsService: DeepMocked<AccountsService>;
+}
+
 describe('AccountsController', () => {
-  let test: ControllerTest<AccountsController, AccountsService, 'accounts'>;
-  let mockService: jest.Mocked<AccountsService>;
+  let test: ControllerTest<AccountsController, AccountsControllerMocks, 'accounts'>;
 
   beforeEach(async () => {
-    mockService = {
-      create: jest.fn(),
-      findById: jest.fn(),
-      findByEmail: jest.fn(),
-      findByRole: jest.fn(),
-      findCoaches: jest.fn(),
-      findUsers: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      updateOnlineStatus: jest.fn(),
-      findCoachById: jest.fn(),
-    } as any;
-
     test = new ControllerTest({
-      controllerClass: AccountsController,
+      controller: AccountsController,
       moduleName: 'accounts',
-      providers: [{ provide: AccountsService, useValue: mockService }],
+      providers: [AccountsService],
     });
 
     await test.setup();
@@ -39,13 +30,13 @@ describe('AccountsController', () => {
     it('should call findUsers service method', async () => {
       const mockUsers = test.factory.account.createManyUser(1);
 
-      mockService.findUsers.mockResolvedValue(mockUsers);
+      test.mocks.AccountsService.findUsers.mockResolvedValue(mockUsers);
 
-      const adminToken = await test.auth.createRoleToken(Role.ADMIN);
+      const adminToken = await test.auth.createToken({ role: Role.ADMIN });
 
       await test.http.authenticatedGet('/api/accounts', adminToken);
 
-      expect(mockService.findUsers).toHaveBeenCalledTimes(1);
+      expect(test.mocks.AccountsService.findUsers).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -53,14 +44,12 @@ describe('AccountsController', () => {
     it('should call findById with current user id', async () => {
       const mockUsers = test.factory.account.createUser({ id: 'current-user-id' });
 
-      mockService.findById.mockResolvedValue(mockUsers);
+      test.mocks.AccountsService.findById.mockResolvedValue(mockUsers);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'current-user-id',
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'current-user-id' });
       await test.http.authenticatedGet('/api/accounts/me', userToken);
 
-      expect(mockService.findById).toHaveBeenCalledWith(mockUsers.id);
+      expect(test.mocks.AccountsService.findById).toHaveBeenCalledWith(mockUsers.id);
     });
   });
 
@@ -68,31 +57,29 @@ describe('AccountsController', () => {
     it('should call findById with the provided id for admin', async () => {
       const mockUsers = test.factory.account.createUser({ id: 'target-user-id' });
 
-      mockService.findById.mockResolvedValue(mockUsers);
+      test.mocks.AccountsService.findById.mockResolvedValue(mockUsers);
 
-      const adminToken = await test.auth.createRoleToken(Role.ADMIN);
+      const adminToken = await test.auth.createToken({ role: Role.ADMIN });
       await test.http.authenticatedGet(
         `/api/accounts/${mockUsers.id}` as '/api/accounts/{id}',
         adminToken
       );
 
-      expect(mockService.findById).toHaveBeenCalledWith(mockUsers.id);
+      expect(test.mocks.AccountsService.findById).toHaveBeenCalledWith(mockUsers.id);
     });
 
     it('should call findById with own id for regular user', async () => {
       const mockUsers = test.factory.account.createUser({ id: 'current-user-id' });
 
-      mockService.findById.mockResolvedValue(mockUsers);
+      test.mocks.AccountsService.findById.mockResolvedValue(mockUsers);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: mockUsers.id,
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: mockUsers.id });
       await test.http.authenticatedGet(
         `/api/accounts/${mockUsers.id}` as '/api/accounts/{id}',
         userToken
       );
 
-      expect(mockService.findById).toHaveBeenCalledWith(mockUsers.id);
+      expect(test.mocks.AccountsService.findById).toHaveBeenCalledWith(mockUsers.id);
     });
   });
 
@@ -103,9 +90,9 @@ describe('AccountsController', () => {
       };
       const mockUsers = test.factory.account.createUser({ id: 'target-user-id', name: 'Name' });
 
-      mockService.update.mockResolvedValue(mockUsers);
+      test.mocks.AccountsService.update.mockResolvedValue(mockUsers);
 
-      const adminToken = await test.auth.createRoleToken(Role.ADMIN);
+      const adminToken = await test.auth.createToken({ role: Role.ADMIN });
       await test.http.authenticatedPatch(
         `/api/accounts/${mockUsers.id}` as '/api/accounts/{id}',
         adminToken,
@@ -114,7 +101,7 @@ describe('AccountsController', () => {
         }
       );
 
-      expect(mockService.update).toHaveBeenCalledWith(mockUsers.id, updateData);
+      expect(test.mocks.AccountsService.update).toHaveBeenCalledWith(mockUsers.id, updateData);
     });
 
     it('should call update with own id for regular user', async () => {
@@ -123,11 +110,9 @@ describe('AccountsController', () => {
       };
       const mockUsers = test.factory.account.createUser({ id: 'current-user-id', name: 'Name' });
 
-      mockService.update.mockResolvedValue(mockUsers);
+      test.mocks.AccountsService.update.mockResolvedValue(mockUsers);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'current-user-id',
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'current-user-id' });
       await test.http.authenticatedPatch(
         `/api/accounts/${mockUsers.id}` as '/api/accounts/{id}',
         userToken,
@@ -136,21 +121,21 @@ describe('AccountsController', () => {
         }
       );
 
-      expect(mockService.update).toHaveBeenCalledWith(mockUsers.id, updateData);
+      expect(test.mocks.AccountsService.update).toHaveBeenCalledWith(mockUsers.id, updateData);
     });
   });
 
   describe('DELETE /accounts/:id', () => {
     it('should call delete with provided id', async () => {
-      mockService.delete.mockResolvedValue(undefined);
+      test.mocks.AccountsService.delete.mockResolvedValue(undefined);
 
-      const adminToken = await test.auth.createRoleToken(Role.ADMIN);
+      const adminToken = await test.auth.createToken({ role: Role.ADMIN });
       await test.http.authenticatedDelete(
         '/api/accounts/target-user-id' as '/api/accounts/{id}',
         adminToken
       );
 
-      expect(mockService.delete).toHaveBeenCalledWith('target-user-id');
+      expect(test.mocks.AccountsService.delete).toHaveBeenCalledWith('target-user-id');
     });
   });
 });

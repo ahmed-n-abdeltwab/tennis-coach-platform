@@ -35,19 +35,19 @@ describe('Accounts Integration', () => {
     const admin = await test.db.createTestUser({ role: Role.ADMIN });
 
     // Create tokens
-    userToken = await test.auth.createTestJwtToken({
+    userToken = await test.auth.createToken({
       sub: user.id,
       email: user.email,
       role: user.role,
     });
 
-    coachToken = await test.auth.createTestJwtToken({
+    coachToken = await test.auth.createToken({
       sub: coach.id,
       email: coach.email,
       role: coach.role,
     });
 
-    adminToken = await test.auth.createTestJwtToken({
+    adminToken = await test.auth.createToken({
       sub: admin.id,
       email: admin.email,
       role: admin.role,
@@ -94,7 +94,7 @@ describe('Accounts Integration', () => {
     describe('GET /api/accounts/:id', () => {
       it('should retrieve account by ID for own account', async () => {
         const user = await test.db.createTestUser();
-        const token = await test.auth.createTestJwtToken({
+        const token = await test.auth.createToken({
           sub: user.id,
           email: user.email,
           role: user.role,
@@ -197,7 +197,7 @@ describe('Accounts Integration', () => {
     describe('PATCH /api/accounts/:id', () => {
       it('should allow user to update own account', async () => {
         const user = await test.db.createTestUser();
-        const token = await test.auth.createTestJwtToken({
+        const token = await test.auth.createToken({
           sub: user.id,
           email: user.email,
           role: user.role,

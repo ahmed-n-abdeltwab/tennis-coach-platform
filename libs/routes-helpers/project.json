@@ -28,6 +28,12 @@
         "jestConfig": "libs/routes-helpers/jest.config.ts",
         "passWithNoTests": true
       }
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/routes-helpers/tsconfig.lib.json --noEmit"
+      }
     }
   }
 }

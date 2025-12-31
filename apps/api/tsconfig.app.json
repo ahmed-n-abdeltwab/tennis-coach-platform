@@ -3,6 +3,6 @@
   "compilerOptions": {
     "outDir": "../../dist/apps/api"
   },
-  "include": ["src/**/*.ts", "prisma/**/*.ts"],
-  "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__tests__/**", "test/**"]
+  "include": ["src/**/*.ts", "prisma/**/*.ts", "test/**/*.ts"],
+  "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__tests__/**"]
 }

@@ -12,10 +12,6 @@
 
 import { suppressConsoleOutput } from './shared';
 
-// =============================================================================
-// Test Lifecycle Hooks
-// =============================================================================
-
 beforeEach(() => {
   // Clear all mocks before each test for isolation
   jest.clearAllMocks();
@@ -25,10 +21,6 @@ afterEach(() => {
   // Restore any spied methods to original implementations
   jest.restoreAllMocks();
 });
-
-// =============================================================================
-// Console Output
-// =============================================================================
 
 // Suppress console output in unit tests to keep test output clean
 suppressConsoleOutput();

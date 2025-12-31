@@ -3,12 +3,6 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { JwtPayload } from '../../app/iam/interfaces/jwt.types';
 
 /**
- * Key used to store the authenticated user in the request object.
- * This is set by the authentication guard after JWT validation.
- */
-export const REQUEST_USER_KEY = 'user';
-
-/**
  * Parameter decorator that extracts the authenticated user from the request.
  *
  * @param data - Optional property key to extract a specific field from the user payload
@@ -31,7 +25,7 @@ export const REQUEST_USER_KEY = 'user';
 export const CurrentUser = createParamDecorator(
   (data: keyof JwtPayload | undefined, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    const user: JwtPayload | undefined = request[REQUEST_USER_KEY];
+    const user: JwtPayload | undefined = request.user;
 
     return data ? user?.[data] : user;
   }

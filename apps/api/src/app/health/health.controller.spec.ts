@@ -1,23 +1,25 @@
-import { ControllerTest } from '@test-utils';
+import { ControllerTest, DeepMocked } from '@test-utils';
 
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
 
+/**
+ * Typed mocks interface for HealthController tests.
+ * Provides IntelliSense support for all mocked dependencies.
+ */
+interface HealthControllerMocks {
+  HealthService: DeepMocked<HealthService>;
+}
+
 describe('HealthController', () => {
-  let test: ControllerTest<HealthController, HealthService, 'health'>;
-  let mockService: jest.Mocked<HealthService>;
+  let test: ControllerTest<HealthController, HealthControllerMocks, 'health'>;
 
   beforeEach(async () => {
-    mockService = {
-      check: jest.fn(),
-      liveness: jest.fn(),
-      readiness: jest.fn(),
-    } as any;
-
     test = new ControllerTest({
-      controllerClass: HealthController,
+      controller: HealthController,
       moduleName: 'health',
-      providers: [{ provide: HealthService, useValue: mockService }],
+      providers: [HealthService],
+      enableRolesGuard: false,
     });
 
     await test.setup();
@@ -27,111 +29,178 @@ describe('HealthController', () => {
     await test.cleanup();
   });
 
-  describe('GET /health', () => {
-    it('should return health check with connected database', async () => {
-      const mockHealthData = {
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        uptime: 100,
-        memory: process.memoryUsage(),
-        version: '1.0.0',
-        environment: 'test',
-        database: 'connected',
-      };
-
-      mockService.check.mockResolvedValue(mockHealthData);
-
-      const response = await test.http.get('/api/health');
-
-      expect(response.status).toBe(200);
-      expect(response.body).toMatchObject({
-        status: 'ok',
-        database: 'connected',
-        version: '1.0.0',
-        environment: 'test',
-      });
-      expect(mockService.check).toHaveBeenCalledTimes(1);
-    });
-
-    it('should return health check with disconnected database', async () => {
-      const mockHealthData = {
-        status: 'error',
-        timestamp: new Date().toISOString(),
-        uptime: 100,
-        memory: process.memoryUsage(),
-        version: '1.0.0',
-        environment: 'test',
-        database: 'disconnected',
-      };
-
-      mockService.check.mockResolvedValue(mockHealthData);
-
-      const response = await test.http.get('/api/health');
-
-      expect(response.status).toBe(200);
-      expect(response.body).toMatchObject({
-        status: 'error',
-        database: 'disconnected',
-      });
-      expect(mockService.check).toHaveBeenCalledTimes(1);
+  describe('constructor', () => {
+    it('should be defined', () => {
+      expect(test.controller).toBeDefined();
     });
   });
 
-  describe('GET /health/liveness', () => {
-    it('should return liveness status', async () => {
-      const mockLivenessData = {
-        status: 'alive',
-        timestamp: new Date().toISOString(),
+  describe('GET /api/health', () => {
+    it('should return health check with ok status when database is connected', async () => {
+      const mockHealthResponse = {
+        status: 'ok',
+        timestamp: '2025-12-31T12:00:00.000Z',
+        uptime: 12345.67,
+        memory: {
+          rss: 50000000,
+          heapTotal: 30000000,
+          heapUsed: 20000000,
+          external: 1000000,
+          arrayBuffers: 500000,
+        },
+        version: '1.0.0',
+        environment: 'test',
+        database: 'connected',
       };
 
-      mockService.liveness.mockReturnValue(mockLivenessData);
+      test.mocks.HealthService.check.mockResolvedValue(mockHealthResponse);
+
+      const response = await test.http.get('/api/health');
+
+      expect(response.ok).toBe(true);
+      expect(response.status).toBe(200);
+      if (response.ok) {
+        expect(response.body.status).toBe('ok');
+        expect(response.body.database).toBe('connected');
+      }
+      expect(test.mocks.HealthService.check).toHaveBeenCalled();
+    });
+
+    it('should return health check with error status when database is disconnected', async () => {
+      const mockHealthResponse = {
+        status: 'error',
+        timestamp: '2025-12-31T12:00:00.000Z',
+        uptime: 12345.67,
+        memory: {
+          rss: 50000000,
+          heapTotal: 30000000,
+          heapUsed: 20000000,
+          external: 1000000,
+          arrayBuffers: 500000,
+        },
+        version: '1.0.0',
+        environment: 'test',
+        database: 'disconnected',
+      };
+
+      test.mocks.HealthService.check.mockResolvedValue(mockHealthResponse);
+
+      const response = await test.http.get('/api/health');
+
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(response.body.status).toBe('error');
+        expect(response.body.database).toBe('disconnected');
+      }
+      expect(test.mocks.HealthService.check).toHaveBeenCalled();
+    });
+
+    it('should not require authentication', async () => {
+      const mockHealthResponse = {
+        status: 'ok',
+        timestamp: '2025-12-31T12:00:00.000Z',
+        uptime: 100,
+        memory: {
+          rss: 50000000,
+          heapTotal: 30000000,
+          heapUsed: 20000000,
+          external: 1000000,
+          arrayBuffers: 500000,
+        },
+        version: '1.0.0',
+        environment: 'test',
+        database: 'connected',
+      };
+
+      test.mocks.HealthService.check.mockResolvedValue(mockHealthResponse);
+
+      const response = await test.http.get('/api/health');
+
+      expect(response.ok).toBe(true);
+      expect(response.status).toBe(200);
+    });
+  });
+
+  describe('GET /api/health/liveness', () => {
+    it('should return alive status', async () => {
+      const mockLivenessResponse = {
+        status: 'alive',
+        timestamp: '2025-12-31T12:00:00.000Z',
+      };
+
+      test.mocks.HealthService.liveness.mockReturnValue(mockLivenessResponse);
 
       const response = await test.http.get('/api/health/liveness');
 
+      expect(response.ok).toBe(true);
       expect(response.status).toBe(200);
-      expect(response.body).toMatchObject({
+      if (response.ok) {
+        expect(response.body.status).toBe('alive');
+        expect(response.body.timestamp).toBeDefined();
+      }
+      expect(test.mocks.HealthService.liveness).toHaveBeenCalled();
+    });
+
+    it('should not require authentication', async () => {
+      test.mocks.HealthService.liveness.mockReturnValue({
         status: 'alive',
+        timestamp: '2025-12-31T12:00:00.000Z',
       });
-      expect(response.body.timestamp).toBeDefined();
-      expect(mockService.liveness).toHaveBeenCalledTimes(1);
+
+      const response = await test.http.get('/api/health/liveness');
+
+      expect(response.ok).toBe(true);
+      expect(response.status).toBe(200);
     });
   });
 
-  describe('GET /health/readiness', () => {
-    it('should return ready status when database is accessible', async () => {
-      const mockReadinessData = {
+  describe('GET /api/health/readiness', () => {
+    it('should return ready status when database is available', async () => {
+      const mockReadinessResponse = {
         status: 'ready',
-        timestamp: new Date().toISOString(),
+        timestamp: '2025-12-31T12:00:00.000Z',
       };
 
-      mockService.readiness.mockResolvedValue(mockReadinessData);
+      test.mocks.HealthService.readiness.mockResolvedValue(mockReadinessResponse);
 
       const response = await test.http.get('/api/health/readiness');
 
+      expect(response.ok).toBe(true);
       expect(response.status).toBe(200);
-      expect(response.body).toMatchObject({
-        status: 'ready',
-      });
-      expect(response.body.timestamp).toBeDefined();
-      expect(mockService.readiness).toHaveBeenCalledTimes(1);
+      if (response.ok) {
+        expect(response.body.status).toBe('ready');
+        expect(response.body.timestamp).toBeDefined();
+      }
+      expect(test.mocks.HealthService.readiness).toHaveBeenCalled();
     });
 
-    it('should return not ready status when database is not accessible', async () => {
-      const mockReadinessData = {
+    it('should return not ready status when database is unavailable', async () => {
+      const mockReadinessResponse = {
         status: 'not ready',
-        timestamp: new Date().toISOString(),
+        timestamp: '2025-12-31T12:00:00.000Z',
       };
 
-      mockService.readiness.mockResolvedValue(mockReadinessData);
+      test.mocks.HealthService.readiness.mockResolvedValue(mockReadinessResponse);
 
       const response = await test.http.get('/api/health/readiness');
 
-      expect(response.status).toBe(200);
-      expect(response.body).toMatchObject({
-        status: 'not ready',
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(response.body.status).toBe('not ready');
+      }
+      expect(test.mocks.HealthService.readiness).toHaveBeenCalled();
+    });
+
+    it('should not require authentication', async () => {
+      test.mocks.HealthService.readiness.mockResolvedValue({
+        status: 'ready',
+        timestamp: '2025-12-31T12:00:00.000Z',
       });
-      expect(response.body.timestamp).toBeDefined();
-      expect(mockService.readiness).toHaveBeenCalledTimes(1);
+
+      const response = await test.http.get('/api/health/readiness');
+
+      expect(response.ok).toBe(true);
+      expect(response.status).toBe(200);
     });
   });
 });

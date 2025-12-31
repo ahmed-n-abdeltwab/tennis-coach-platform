@@ -79,10 +79,6 @@ export class HttpMethodsMixin<
     return this.httpClient.request(endpoint, method, payload, options);
   }
 
-  // ============================================================================
-  // Unauthenticated HTTP Methods
-  // ============================================================================
-
   async get<P extends PathsWithMethod<E, 'GET'>>(
     endpoint: P,
     payload?: RequestType<P, 'GET', E>,
@@ -122,10 +118,6 @@ export class HttpMethodsMixin<
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
     return this.request(endpoint, 'DELETE', payload, options);
   }
-
-  // ============================================================================
-  // Authenticated HTTP Methods
-  // ============================================================================
 
   /**
    * Makes an authenticated HTTP request
@@ -193,10 +185,6 @@ export class HttpMethodsMixin<
   ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
     return this.authenticatedRequest(endpoint, 'DELETE', token, payload, options);
   }
-
-  // ============================================================================
-  // Module-Scoped HTTP Methods
-  // ============================================================================
 
   async moduleGet<P extends PathsForRoute<TModuleName, 'GET', E>>(
     endpoint: P,

@@ -45,10 +45,10 @@
       }
     },
     "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "executor": "nx:run-commands",
       "options": {
-        "jestConfig": "apps/api/jest.config.ts"
+        "commands": ["nx run api:test:unit", "nx run api:test:integration", "nx run api:test:e2e"],
+        "parallel": false
       }
     },
     "test:unit": {
@@ -72,25 +72,17 @@
         "jestConfig": "apps/api/jest.e2e.config.ts"
       }
     },
-    "test:all": {
-      "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
-      "options": {
-        "jestConfig": "apps/api/jest.all.config.ts"
-      }
-    },
-    "test:all-sequential": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": ["nx test:unit api", "nx test:integration api", "nx test:e2e api"],
-        "parallel": false
-      }
-    },
     "lint": {
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": ["apps/api/**/*.ts"]
+      }
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p apps/api/tsconfig.app.json --noEmit"
       }
     }
   }

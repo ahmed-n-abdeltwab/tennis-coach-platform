@@ -51,6 +51,23 @@
       "options": {
         "lintFilePatterns": ["apps/web/**/*.{ts,tsx,js,jsx}"]
       }
+    },
+    "e2e": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "testcafe chrome:headless apps/web/e2e/**/*.e2e.ts"
+      },
+      "configurations": {
+        "development": {
+          "command": "testcafe chrome apps/web/e2e/**/*.e2e.ts --live"
+        }
+      }
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p apps/web/tsconfig.json --noEmit"
+      }
     }
   }
 }

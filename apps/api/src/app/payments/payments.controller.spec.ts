@@ -1,24 +1,30 @@
+import { BadRequestException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { ControllerTest } from '@test-utils';
+import { DeepMocked } from '@test-utils/mixins/mock.mixin';
 
 import { CapturePaymentDto, CreatePaymentDto } from './dto/payment.dto';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
 
+/**
+ * PaymentsControllerMocks interface defines typed mocks for the PaymentsController dependencies.
+ *
+ * This interface provides IntelliSense support for:
+ * - PaymentsService mock (createOrder, captureOrder methods)
+ */
+interface PaymentsControllerMocks {
+  PaymentsService: DeepMocked<PaymentsService>;
+}
+
 describe('PaymentsController', () => {
-  let test: ControllerTest<PaymentsController, PaymentsService, 'payments'>;
-  let mockService: jest.Mocked<PaymentsService>;
+  let test: ControllerTest<PaymentsController, PaymentsControllerMocks, 'payments'>;
 
   beforeEach(async () => {
-    mockService = {
-      createOrder: jest.fn(),
-      captureOrder: jest.fn(),
-    } as any;
-
     test = new ControllerTest({
-      controllerClass: PaymentsController,
+      controller: PaymentsController,
       moduleName: 'payments',
-      providers: [{ provide: PaymentsService, useValue: mockService }],
+      providers: [PaymentsService],
     });
 
     await test.setup();
@@ -28,7 +34,7 @@ describe('PaymentsController', () => {
     await test.cleanup();
   });
 
-  describe('POST /payments/create-order', () => {
+  describe('POST /api/payments/create-order', () => {
     it('should call createOrder service method with correct parameters', async () => {
       const createDto: CreatePaymentDto = {
         sessionId: 'session-123',
@@ -40,23 +46,83 @@ describe('PaymentsController', () => {
         approvalUrl: 'https://paypal.com/approve/order-123',
       };
 
-      mockService.createOrder.mockResolvedValue(mockResponse);
+      test.mocks.PaymentsService.createOrder.mockResolvedValue(mockResponse);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'user-123',
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
+      await test.http.authenticatedPost('/api/payments/create-order', userToken, {
+        body: createDto,
       });
 
+      expect(test.mocks.PaymentsService.createOrder).toHaveBeenCalledWith(
+        createDto,
+        'user-123',
+        Role.USER
+      );
+    });
+
+    it('should allow coach to create payment order', async () => {
+      const createDto: CreatePaymentDto = {
+        sessionId: 'session-456',
+        amount: 150.0,
+      };
+
+      const mockResponse = {
+        orderId: 'paypal-order-456',
+        approvalUrl: 'https://paypal.com/approve/order-456',
+      };
+
+      test.mocks.PaymentsService.createOrder.mockResolvedValue(mockResponse);
+
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
+      await test.http.authenticatedPost('/api/payments/create-order', coachToken, {
+        body: createDto,
+      });
+
+      expect(test.mocks.PaymentsService.createOrder).toHaveBeenCalledWith(
+        createDto,
+        'coach-123',
+        Role.COACH
+      );
+    });
+
+    it('should handle invalid session error', async () => {
+      const createDto: CreatePaymentDto = {
+        sessionId: 'invalid-session',
+        amount: 99.99,
+      };
+
+      test.mocks.PaymentsService.createOrder.mockRejectedValue(
+        new BadRequestException('Invalid session')
+      );
+
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       const response = await test.http.authenticatedPost('/api/payments/create-order', userToken, {
         body: createDto,
       });
 
-      expect(mockService.createOrder).toHaveBeenCalledWith(createDto, 'user-123');
-      expect(response.status).toBe(201);
-      expect(response.body).toEqual(mockResponse);
+      expect(response.status).toBe(400);
+    });
+
+    it('should handle session already paid error', async () => {
+      const createDto: CreatePaymentDto = {
+        sessionId: 'paid-session',
+        amount: 99.99,
+      };
+
+      test.mocks.PaymentsService.createOrder.mockRejectedValue(
+        new BadRequestException('Session already paid')
+      );
+
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
+      const response = await test.http.authenticatedPost('/api/payments/create-order', userToken, {
+        body: createDto,
+      });
+
+      expect(response.status).toBe(400);
     });
   });
 
-  describe('POST /payments/capture-order', () => {
+  describe('POST /api/payments/capture-order', () => {
     it('should call captureOrder service method with correct parameters', async () => {
       const captureDto: CapturePaymentDto = {
         orderId: 'paypal-order-123',
@@ -69,45 +135,80 @@ describe('PaymentsController', () => {
         captureId: 'capture-123',
       };
 
-      mockService.captureOrder.mockResolvedValue(mockResponse);
+      test.mocks.PaymentsService.captureOrder.mockResolvedValue(mockResponse);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'user-123',
-      });
-
-      const response = await test.http.authenticatedPost('/api/payments/capture-order', userToken, {
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
+      await test.http.authenticatedPost('/api/payments/capture-order', userToken, {
         body: captureDto,
       });
 
-      expect(mockService.captureOrder).toHaveBeenCalledWith(captureDto, 'user-123');
-      expect(response.status).toBe(201);
-      expect(response.body).toEqual(mockResponse);
+      expect(test.mocks.PaymentsService.captureOrder).toHaveBeenCalledWith(
+        captureDto,
+        'user-123',
+        Role.USER
+      );
     });
 
-    it('should work for authenticated users', async () => {
+    it('should allow coach to capture payment order', async () => {
       const captureDto: CapturePaymentDto = {
-        orderId: 'paypal-order-123',
-        sessionId: 'session-123',
+        orderId: 'paypal-order-456',
+        sessionId: 'session-456',
       };
 
       const mockResponse = {
         success: true,
-        paymentId: 'paypal-order-123',
-        captureId: 'capture-123',
+        paymentId: 'paypal-order-456',
+        captureId: 'capture-456',
       };
 
-      mockService.captureOrder.mockResolvedValue(mockResponse);
+      test.mocks.PaymentsService.captureOrder.mockResolvedValue(mockResponse);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'user-456',
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
+      await test.http.authenticatedPost('/api/payments/capture-order', coachToken, {
+        body: captureDto,
       });
 
+      expect(test.mocks.PaymentsService.captureOrder).toHaveBeenCalledWith(
+        captureDto,
+        'coach-123',
+        Role.COACH
+      );
+    });
+
+    it('should handle invalid session error', async () => {
+      const captureDto: CapturePaymentDto = {
+        orderId: 'paypal-order-123',
+        sessionId: 'invalid-session',
+      };
+
+      test.mocks.PaymentsService.captureOrder.mockRejectedValue(
+        new BadRequestException('Invalid session')
+      );
+
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       const response = await test.http.authenticatedPost('/api/payments/capture-order', userToken, {
         body: captureDto,
       });
 
-      expect(mockService.captureOrder).toHaveBeenCalledWith(captureDto, 'user-456');
-      expect(response.status).toBe(201);
+      expect(response.status).toBe(400);
+    });
+
+    it('should handle payment capture failure', async () => {
+      const captureDto: CapturePaymentDto = {
+        orderId: 'failed-order',
+        sessionId: 'session-123',
+      };
+
+      test.mocks.PaymentsService.captureOrder.mockRejectedValue(
+        new BadRequestException('Payment capture failed')
+      );
+
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
+      const response = await test.http.authenticatedPost('/api/payments/capture-order', userToken, {
+        body: captureDto,
+      });
+
+      expect(response.status).toBe(400);
     });
   });
 });

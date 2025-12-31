@@ -33,8 +33,13 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Send email notification' })
   @MailApiResponse.Created('Email notification Created successfully')
   async sendBookingConfirmation(
-    @Body() BookingConfirmDto: SendBookingConfirmationDto
+    @Body() BookingConfirmDto: SendBookingConfirmationDto,
+    @CurrentUser() user: JwtPayload
   ): Promise<void> {
-    this.notificationsService.sendBookingConfirmation(BookingConfirmDto.sessionId);
+    await this.notificationsService.sendBookingConfirmation(
+      BookingConfirmDto.sessionId,
+      user.sub,
+      user.role
+    );
   }
 }

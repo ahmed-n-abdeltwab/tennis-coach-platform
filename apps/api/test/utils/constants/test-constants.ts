@@ -10,9 +10,9 @@ import { Decimal } from '@prisma/client/runtime/client';
 // JWT Constants
 export const JWT_CONSTANTS = {
   DEFAULT_SECRET: 'test-secret',
+  DEFAULT_REFRESH_SECRET: 'test-jwt-refresh-secret-key-minimum-32-chars',
   DEFAULT_EXPIRY: '1h',
-  EXPIRED_TOKEN_EXPIRY: '-1h',
-  SHORT_LIVED_EXPIRY_SECONDS: 5,
+  DEFAULT_REFRESH_EXPIRY: '7d',
 } as const;
 
 // Default Test User Data

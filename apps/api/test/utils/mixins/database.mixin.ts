@@ -67,10 +67,6 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
   private cachedUser?: Account;
   public testData: TestData;
 
-  // ============================================================================
-  // Setup & Cleanup
-  // ============================================================================
-
   async setupDatabase(): Promise<void> {
     await this.cleanupDatabase();
     await this.seedTestData();
@@ -214,10 +210,6 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
     }
   }
 
-  // ============================================================================
-  // Cached Test Users
-  // ============================================================================
-
   async getCachedCoach(): Promise<Account> {
     if (this.cachedCoach) {
       return this.cachedCoach;
@@ -249,10 +241,6 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
     testEntityCache.cacheUser(this.cachedUser);
     return this.cachedUser;
   }
-
-  // ============================================================================
-  // Test Data Factories
-  // ============================================================================
 
   async createTestUser(overrides: Partial<Account> = {}): Promise<Account> {
     const userData = {
@@ -418,10 +406,6 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
     }
     return coaches;
   }
-
-  // ============================================================================
-  // Database Helpers
-  // ============================================================================
 
   async withTransaction<T>(callback: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
     return this.host.database.$transaction(callback);

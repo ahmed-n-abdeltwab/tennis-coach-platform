@@ -29,11 +29,5 @@
       "@test-infrastructure/*": ["./test/infrastructure/*"],
       "@test/*": ["test/*"]
     }
-  },
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.spec.json" },
-    { "path": "../../libs/routes-helpers" },
-    { "path": "../../libs/utils" }
-  ]
+  }
 }

@@ -35,6 +35,22 @@ export class BookingTypesService {
 
     return result;
   }
+
+  /** Find booking type by ID - used by other services (e.g., SessionsService) */
+  async findById(id: string): Promise<BookingTypeResponseDto> {
+    const bookingType = (await this.findBookingTypeInternal({ id })) as BookingType;
+    return plainToInstance(BookingTypeResponseDto, bookingType);
+  }
+
+  /** Find active booking type by ID - used by SessionsService for validation */
+  async findActiveById(id: string): Promise<BookingTypeResponseDto | null> {
+    const bookingType = (await this.findBookingTypeInternal(
+      { id, isActive: true },
+      { throwIfNotFound: false }
+    )) as BookingType | null;
+    return bookingType ? plainToInstance(BookingTypeResponseDto, bookingType) : null;
+  }
+
   async findAll(isActive = true): Promise<GetAllBookingTypeResponseDto[]> {
     const bookingTypes = (await this.findBookingTypeInternal(
       { isActive },

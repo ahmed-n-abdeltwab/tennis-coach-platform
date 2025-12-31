@@ -8,34 +8,48 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AccountsService } from './accounts.service';
 import { CreateAccountDto, UpdateAccountDto } from './dto/account.dto';
 
+interface AccountsMocks {
+  HashingService: {
+    hash: jest.Mock;
+    compare: jest.Mock;
+  };
+  PrismaService: {
+    account: {
+      create: jest.Mock;
+      findMany: jest.Mock;
+      findFirst: jest.Mock;
+      update: jest.Mock;
+      delete: jest.Mock;
+    };
+  };
+}
+
 describe('AccountsService', () => {
-  let test: ServiceTest<AccountsService, PrismaService>;
-  let mockHashingService: jest.Mocked<HashingService>;
+  let test: ServiceTest<AccountsService, AccountsMocks>;
 
   beforeEach(async () => {
-    const mockPrisma = {
-      $connect: jest.fn(),
-      $disconnect: jest.fn(),
-      $transaction: jest.fn(),
-      account: {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        findFirst: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-      },
-    };
-
-    mockHashingService = {
-      hash: jest.fn(),
-      compare: jest.fn(),
-    } as any;
-
     test = new ServiceTest({
-      serviceClass: AccountsService,
-      mocks: [
-        { provide: PrismaService, useValue: mockPrisma },
-        { provide: HashingService, useValue: mockHashingService },
+      service: AccountsService,
+      providers: [
+        {
+          provide: HashingService,
+          useValue: {
+            hash: jest.fn(),
+            compare: jest.fn(),
+          },
+        },
+        {
+          provide: PrismaService,
+          useValue: {
+            account: {
+              create: jest.fn(),
+              findMany: jest.fn(),
+              findFirst: jest.fn(),
+              update: jest.fn(),
+              delete: jest.fn(),
+            },
+          },
+        },
       ],
     });
 
@@ -57,9 +71,9 @@ describe('AccountsService', () => {
 
       const mockUsers = test.factory.account.createUserWithNulls({ ...createDto, id: 'test-id' });
 
-      test.prisma.account.findFirst.mockResolvedValue(null);
-      test.prisma.account.create.mockResolvedValue(mockUsers);
-      mockHashingService.hash.mockResolvedValue('hashed-password');
+      test.mocks.PrismaService.account.findFirst.mockResolvedValue(null);
+      test.mocks.PrismaService.account.create.mockResolvedValue(mockUsers);
+      test.mocks.HashingService.hash.mockResolvedValue('hashed-password');
 
       const result = await test.service.create(createDto);
 
@@ -70,11 +84,11 @@ describe('AccountsService', () => {
         role: createDto.role,
       });
       expect(result.passwordHash).toBeUndefined();
-      expect(test.prisma.account.findFirst).toHaveBeenCalledWith({
+      expect(test.mocks.PrismaService.account.findFirst).toHaveBeenCalledWith({
         where: { email: createDto.email },
       });
-      expect(mockHashingService.hash).toHaveBeenCalledWith(createDto.password);
-      expect(test.prisma.account.create).toHaveBeenCalledTimes(1);
+      expect(test.mocks.HashingService.hash).toHaveBeenCalledWith(createDto.password);
+      expect(test.mocks.PrismaService.account.create).toHaveBeenCalledTimes(1);
     });
 
     it('should throw ConflictException when email already exists', async () => {
@@ -90,13 +104,13 @@ describe('AccountsService', () => {
         name: 'Existing User',
       });
 
-      test.prisma.account.findFirst.mockResolvedValue(existingAccount);
+      test.mocks.PrismaService.account.findFirst.mockResolvedValue(existingAccount);
 
       await expect(test.service.create(createDto)).rejects.toThrow(ConflictException);
-      expect(test.prisma.account.findFirst).toHaveBeenCalledWith({
+      expect(test.mocks.PrismaService.account.findFirst).toHaveBeenCalledWith({
         where: { email: createDto.email },
       });
-      expect(test.prisma.account.create).not.toHaveBeenCalled();
+      expect(test.mocks.PrismaService.account.create).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when disability is true but disabilityCause is missing', async () => {
@@ -107,10 +121,10 @@ describe('AccountsService', () => {
         disability: true,
       };
 
-      test.prisma.account.findFirst.mockResolvedValue(null);
+      test.mocks.PrismaService.account.findFirst.mockResolvedValue(null);
 
       await expect(test.service.create(createDto)).rejects.toThrow(BadRequestException);
-      expect(test.prisma.account.create).not.toHaveBeenCalled();
+      expect(test.mocks.PrismaService.account.create).not.toHaveBeenCalled();
     });
   });
 
@@ -118,7 +132,7 @@ describe('AccountsService', () => {
     it('should return account by id', async () => {
       const mockAccount = test.factory.account.createUserWithNulls();
 
-      test.prisma.account.findFirst.mockResolvedValue(mockAccount);
+      test.mocks.PrismaService.account.findFirst.mockResolvedValue(mockAccount);
 
       const result = await test.service.findById(mockAccount.id);
 
@@ -128,16 +142,16 @@ describe('AccountsService', () => {
         name: mockAccount.name,
       });
       expect(result.passwordHash).toBeUndefined();
-      expect(test.prisma.account.findFirst).toHaveBeenCalledWith({
+      expect(test.mocks.PrismaService.account.findFirst).toHaveBeenCalledWith({
         where: { id: mockAccount.id },
       });
     });
 
     it('should throw NotFoundException when account not found', async () => {
-      test.prisma.account.findFirst.mockResolvedValue(null);
+      test.mocks.PrismaService.account.findFirst.mockResolvedValue(null);
 
       await expect(test.service.findById('non-existent-id')).rejects.toThrow(NotFoundException);
-      expect(test.prisma.account.findFirst).toHaveBeenCalledWith({
+      expect(test.mocks.PrismaService.account.findFirst).toHaveBeenCalledWith({
         where: { id: 'non-existent-id' },
       });
     });
@@ -147,7 +161,7 @@ describe('AccountsService', () => {
     it('should return account by email', async () => {
       const mockAccount = test.factory.account.createUserWithNulls();
 
-      test.prisma.account.findFirst.mockResolvedValue(mockAccount);
+      test.mocks.PrismaService.account.findFirst.mockResolvedValue(mockAccount);
 
       const result = await test.service.findByEmail(mockAccount.email);
 
@@ -156,13 +170,13 @@ describe('AccountsService', () => {
         email: mockAccount.email,
       });
       expect(result.passwordHash).toBeUndefined();
-      expect(test.prisma.account.findFirst).toHaveBeenCalledWith({
+      expect(test.mocks.PrismaService.account.findFirst).toHaveBeenCalledWith({
         where: { email: mockAccount.email },
       });
     });
 
     it('should throw NotFoundException when account not found', async () => {
-      test.prisma.account.findFirst.mockResolvedValue(null);
+      test.mocks.PrismaService.account.findFirst.mockResolvedValue(null);
 
       await expect(test.service.findByEmail('nonexistent@example.com')).rejects.toThrow(
         NotFoundException
@@ -184,8 +198,8 @@ describe('AccountsService', () => {
         ...updateDto,
       };
 
-      test.prisma.account.findFirst.mockResolvedValue(existingAccount);
-      test.prisma.account.update.mockResolvedValue(updatedAccount);
+      test.mocks.PrismaService.account.findFirst.mockResolvedValue(existingAccount);
+      test.mocks.PrismaService.account.update.mockResolvedValue(updatedAccount);
 
       const result = await test.service.update('test-id', updateDto);
 
@@ -195,10 +209,10 @@ describe('AccountsService', () => {
         bio: 'Updated bio',
       });
       expect(result.passwordHash).toBeUndefined();
-      expect(test.prisma.account.findFirst).toHaveBeenCalledWith({
+      expect(test.mocks.PrismaService.account.findFirst).toHaveBeenCalledWith({
         where: { id: 'test-id' },
       });
-      expect(test.prisma.account.update).toHaveBeenCalledWith({
+      expect(test.mocks.PrismaService.account.update).toHaveBeenCalledWith({
         where: { id: 'test-id' },
         data: updateDto,
       });
@@ -209,12 +223,12 @@ describe('AccountsService', () => {
         name: 'Updated Name',
       };
 
-      test.prisma.account.findFirst.mockResolvedValue(null);
+      test.mocks.PrismaService.account.findFirst.mockResolvedValue(null);
 
       await expect(test.service.update('non-existent-id', updateDto)).rejects.toThrow(
         NotFoundException
       );
-      expect(test.prisma.account.update).not.toHaveBeenCalled();
+      expect(test.mocks.PrismaService.account.update).not.toHaveBeenCalled();
     });
   });
 
@@ -222,24 +236,24 @@ describe('AccountsService', () => {
     it('should delete account successfully', async () => {
       const existingAccount = test.factory.account.createUserWithNulls({ id: 'test-id' });
 
-      test.prisma.account.findFirst.mockResolvedValue(existingAccount);
-      test.prisma.account.delete.mockResolvedValue(existingAccount);
+      test.mocks.PrismaService.account.findFirst.mockResolvedValue(existingAccount);
+      test.mocks.PrismaService.account.delete.mockResolvedValue(existingAccount);
 
       await test.service.delete('test-id');
 
-      expect(test.prisma.account.findFirst).toHaveBeenCalledWith({
+      expect(test.mocks.PrismaService.account.findFirst).toHaveBeenCalledWith({
         where: { id: 'test-id' },
       });
-      expect(test.prisma.account.delete).toHaveBeenCalledWith({
+      expect(test.mocks.PrismaService.account.delete).toHaveBeenCalledWith({
         where: { id: 'test-id' },
       });
     });
 
     it('should throw NotFoundException when account not found', async () => {
-      test.prisma.account.findFirst.mockResolvedValue(null);
+      test.mocks.PrismaService.account.findFirst.mockResolvedValue(null);
 
       await expect(test.service.delete('non-existent-id')).rejects.toThrow(NotFoundException);
-      expect(test.prisma.account.delete).not.toHaveBeenCalled();
+      expect(test.mocks.PrismaService.account.delete).not.toHaveBeenCalled();
     });
   });
 
@@ -247,7 +261,7 @@ describe('AccountsService', () => {
     it('should return accounts by role', async () => {
       const mockAccounts = test.factory.account.createManyCoachWithNulls(2);
 
-      test.prisma.account.findMany.mockResolvedValue(mockAccounts);
+      test.mocks.PrismaService.account.findMany.mockResolvedValue(mockAccounts);
 
       const result = await test.service.findByRole(Role.COACH);
 
@@ -260,7 +274,7 @@ describe('AccountsService', () => {
       expect(result[0]?.passwordHash).toBeUndefined();
       expect(result[1]?.passwordHash).toBeUndefined();
 
-      expect(test.prisma.account.findMany).toHaveBeenCalledWith({
+      expect(test.mocks.PrismaService.account.findMany).toHaveBeenCalledWith({
         where: { role: Role.COACH },
       });
     });
@@ -270,7 +284,7 @@ describe('AccountsService', () => {
     it('should return active users', async () => {
       const mockUsers = test.factory.account.createManyUserWithNulls(1);
 
-      test.prisma.account.findMany.mockResolvedValue(mockUsers);
+      test.mocks.PrismaService.account.findMany.mockResolvedValue(mockUsers);
 
       const result = await test.service.findUsers(true);
 
@@ -279,7 +293,7 @@ describe('AccountsService', () => {
         mockUsers.map(({ passwordHash: _passwordHash, ...rest }) => rest)
       );
       expect(result[0]?.passwordHash).toBeUndefined();
-      expect(test.prisma.account.findMany).toHaveBeenCalledWith({
+      expect(test.mocks.PrismaService.account.findMany).toHaveBeenCalledWith({
         where: {
           role: { in: [Role.USER, Role.PREMIUM_USER] },
           isActive: true,
@@ -297,29 +311,29 @@ describe('AccountsService', () => {
         isOnline: true,
       };
 
-      test.prisma.account.findFirst.mockResolvedValue(existingAccount);
-      test.prisma.account.update.mockResolvedValue(updatedAccount);
+      test.mocks.PrismaService.account.findFirst.mockResolvedValue(existingAccount);
+      test.mocks.PrismaService.account.update.mockResolvedValue(updatedAccount);
 
       const accountId = 'test-id';
       const status = true;
       await test.service.updateOnlineStatus(accountId, status);
 
-      expect(test.prisma.account.findFirst).toHaveBeenCalledWith({
+      expect(test.mocks.PrismaService.account.findFirst).toHaveBeenCalledWith({
         where: { id: accountId },
       });
-      expect(test.prisma.account.update).toHaveBeenCalledWith({
+      expect(test.mocks.PrismaService.account.update).toHaveBeenCalledWith({
         where: { id: accountId },
         data: { isOnline: status },
       });
     });
 
     it('should throw NotFoundException when account not found', async () => {
-      test.prisma.account.findFirst.mockResolvedValue(null);
+      test.mocks.PrismaService.account.findFirst.mockResolvedValue(null);
 
       await expect(test.service.updateOnlineStatus('non-existent-id', true)).rejects.toThrow(
         NotFoundException
       );
-      expect(test.prisma.account.update).not.toHaveBeenCalled();
+      expect(test.mocks.PrismaService.account.update).not.toHaveBeenCalled();
     });
   });
 });

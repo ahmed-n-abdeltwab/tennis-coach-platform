@@ -21,12 +21,12 @@ export class CalendarEventResponse {
   @ApiProperty({ type: String, format: 'date-time' })
   @IsDate()
   @Type(() => Date)
-  start?: Date | string;
+  start?: Date;
 
   @ApiProperty({ type: String, format: 'date-time' })
   @IsDate()
   @Type(() => Date)
-  end?: Date | string;
+  end?: Date;
 
   @ApiProperty()
   @IsArray()

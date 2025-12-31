@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { Role } from '@prisma/client';
 
 import { SessionsService } from './../sessions/sessions.service';
@@ -16,28 +16,28 @@ export class CalendarService {
     const { sessionId } = createDto;
 
     // Get session details
-    const session = await this.sessionsService.findUnique(sessionId);
+    const session = await this.sessionsService.findOne(sessionId, userId, role);
 
     if (!session) {
       throw new BadRequestException('Session not found');
     }
 
-    // Check Authorization
-    const isAuthorized =
-      role === Role.USER || role === Role.PREMIUM_USER
-        ? session.userId === userId
-        : session.coachId === userId;
+    // 1. Correct way to check for multiple roles
+    const isClientRole = ([Role.USER, Role.PREMIUM_USER] as Role[]).includes(role);
+    // 2. Logic to determine if the user owns this session
+    const isAuthorized = isClientRole ? session.userId === userId : session.coachId === userId;
 
+    // 3. Throw exception ONLY if they are NOT authorized
     if (!isAuthorized) {
-      throw new BadRequestException('Not authorized');
+      throw new ForbiddenException('Not authorized to access this session');
     }
 
     // Mock Google Calendar integration
     // In production, use Google Calendar API
     const mockEventId = `event_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
-    // Update session with calendar event ID
-    await this.sessionsService.update(sessionId, { calendarEventId: mockEventId }, userId, role);
+    // Update session with calendar event ID using SessionsService internal method
+    await this.sessionsService.updateCalendarEventInternal(sessionId, mockEventId);
 
     return {
       eventId: mockEventId,
@@ -50,7 +50,7 @@ export class CalendarService {
 
   async deleteEvent(eventId: string, userId: string, role: Role): Promise<CalendarEventResponse> {
     // Find session by calendar event ID
-    const session = await this.sessionsService.findFirst(eventId);
+    const session = await this.sessionsService.findOne(eventId, userId, role);
 
     if (!session) {
       throw new BadRequestException('Event not found');
@@ -67,8 +67,7 @@ export class CalendarService {
     }
 
     // Mock deletion - in production, call Google Calendar API
-    await this.sessionsService.update(session.id, { calendarEventId: undefined }, userId, role);
-
+    await this.sessionsService.updateCalendarEventInternal(eventId, null);
     return {
       eventId,
       summary: `The calender event successfully deleted`,

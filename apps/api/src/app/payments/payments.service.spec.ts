@@ -1,9 +1,8 @@
-import { BadRequestException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { Role } from '@prisma/client';
 import { ServiceTest } from '@test-utils';
+import { DeepMocked } from '@test-utils/mixins/mock.mixin';
 
-import { PrismaService } from '../prisma/prisma.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { TimeSlotsService } from '../time-slots/time-slots.service';
 
@@ -14,16 +13,23 @@ import { PaymentsService } from './payments.service';
 // Mock fetch globally
 global.fetch = jest.fn();
 
+/**
+ * PaymentMocks interface defines typed mocks for the PaymentsService dependencies.
+ *
+ * This interface provides IntelliSense support for:
+ * - SessionsService mock (findOne, markAsPaidInternal methods)
+ * - TimeSlotsService mock (markAsUnavailableInternal method)
+ */
+interface PaymentMocks {
+  SessionsService: DeepMocked<SessionsService>;
+  TimeSlotsService: DeepMocked<TimeSlotsService>;
+}
+
 describe('PaymentsService', () => {
-  let test: ServiceTest<PaymentsService, PrismaService>;
-  let sessionsService: jest.Mocked<SessionsService>;
-  let timeSlotsService: jest.Mocked<TimeSlotsService>;
+  let test: ServiceTest<PaymentsService, PaymentMocks>;
   let mockConfig: ConfigType<typeof paymentsConfig>;
 
   beforeEach(async () => {
-    // Reset fetch mock
-    (global.fetch as jest.Mock).mockReset();
-
     mockConfig = {
       clientId: 'test-client-id',
       clientSecret: 'test-client-secret',
@@ -31,28 +37,19 @@ describe('PaymentsService', () => {
       frontendUrl: 'http://localhost:3000',
     };
 
-    const mockSessionsService = {
-      findUnique: jest.fn(),
-      update: jest.fn(),
-    };
-
-    const mockTimeSlotsService = {
-      update: jest.fn(),
-    };
-
     test = new ServiceTest({
-      serviceClass: PaymentsService,
-      mocks: [
+      service: PaymentsService,
+      providers: [
         { provide: paymentsConfig.KEY, useValue: mockConfig },
-        { provide: SessionsService, useValue: mockSessionsService },
-        { provide: TimeSlotsService, useValue: mockTimeSlotsService },
+        SessionsService,
+        TimeSlotsService,
       ],
     });
 
     await test.setup();
 
-    sessionsService = mockSessionsService as unknown as jest.Mocked<SessionsService>;
-    timeSlotsService = mockTimeSlotsService as unknown as jest.Mocked<TimeSlotsService>;
+    // Register global fetch mock for automatic cleanup
+    test.registerGlobalMock(global.fetch as jest.Mock);
   });
 
   afterEach(async () => {
@@ -67,18 +64,12 @@ describe('PaymentsService', () => {
         amount: 99.99,
       };
 
-      const mockSession = {
+      const mockSession = test.factory.session.createWithNulls({
         id: 'session-123',
         userId: 'user-123',
         coachId: 'coach-1',
         isPaid: false,
-        bookingType: {
-          name: 'Coaching Session',
-        },
-        user: {
-          name: 'John Doe',
-        },
-      };
+      });
 
       const mockAccessToken = 'mock-access-token';
       const mockPayPalOrder = {
@@ -89,7 +80,7 @@ describe('PaymentsService', () => {
         ],
       };
 
-      sessionsService.findUnique.mockResolvedValue(mockSession as any);
+      test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
 
       // Mock getAccessToken
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -103,13 +94,17 @@ describe('PaymentsService', () => {
         json: async () => mockPayPalOrder,
       });
 
-      const result = await test.service.createOrder(createDto, userId);
+      const result = await test.service.createOrder(createDto, userId, Role.USER);
 
       expect(result).toEqual({
         orderId: 'paypal-order-123',
         approvalUrl: 'https://paypal.com/approve/order-123',
       });
-      expect(sessionsService.findUnique).toHaveBeenCalledWith('session-123');
+      expect(test.mocks.SessionsService.findOne).toHaveBeenCalledWith(
+        'session-123',
+        userId,
+        Role.USER
+      );
       expect(global.fetch).toHaveBeenCalledTimes(2);
     });
 
@@ -120,18 +115,17 @@ describe('PaymentsService', () => {
         amount: 99.99,
       };
 
-      const mockSession = {
+      const mockSession = test.factory.session.createWithNulls({
         id: 'session-123',
         userId: 'different-user',
         isPaid: false,
-      };
+      });
 
-      sessionsService.findUnique.mockResolvedValue(mockSession as any);
+      test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
 
-      await expect(test.service.createOrder(createDto, userId)).rejects.toThrow(
-        BadRequestException
+      await expect(test.service.createOrder(createDto, userId, Role.USER)).rejects.toThrow(
+        'Invalid session'
       );
-      await expect(test.service.createOrder(createDto, userId)).rejects.toThrow('Invalid session');
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
@@ -142,18 +136,15 @@ describe('PaymentsService', () => {
         amount: 99.99,
       };
 
-      const mockSession = {
+      const mockSession = test.factory.session.createWithNulls({
         id: 'session-123',
         userId: 'user-123',
         isPaid: true,
-      };
+      });
 
-      sessionsService.findUnique.mockResolvedValue(mockSession as any);
+      test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
 
-      await expect(test.service.createOrder(createDto, userId)).rejects.toThrow(
-        BadRequestException
-      );
-      await expect(test.service.createOrder(createDto, userId)).rejects.toThrow(
+      await expect(test.service.createOrder(createDto, userId, Role.USER)).rejects.toThrow(
         'Session already paid'
       );
       expect(global.fetch).not.toHaveBeenCalled();
@@ -166,17 +157,15 @@ describe('PaymentsService', () => {
         amount: 99.99,
       };
 
-      const mockSession = {
+      const mockSession = test.factory.session.createWithNulls({
         id: 'session-123',
         userId: 'user-123',
         isPaid: false,
-        bookingType: { name: 'Session' },
-        user: { name: 'User' },
-      };
+      });
 
-      sessionsService.findUnique.mockResolvedValue(mockSession as any);
+      test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
 
-      // Mock getAccessToken and failed createOrder for first assertion
+      // Mock getAccessToken and failed createOrder
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           ok: true,
@@ -187,22 +176,7 @@ describe('PaymentsService', () => {
           json: async () => ({ error: 'PayPal error' }),
         });
 
-      await expect(test.service.createOrder(createDto, userId)).rejects.toThrow(
-        BadRequestException
-      );
-
-      // Reset and setup mocks for second assertion
-      (global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ accessToken: 'token' }),
-        })
-        .mockResolvedValueOnce({
-          ok: false,
-          json: async () => ({ error: 'PayPal error' }),
-        });
-
-      await expect(test.service.createOrder(createDto, userId)).rejects.toThrow(
+      await expect(test.service.createOrder(createDto, userId, Role.USER)).rejects.toThrow(
         'Failed to create PayPal order'
       );
     });
@@ -216,13 +190,13 @@ describe('PaymentsService', () => {
         sessionId: 'session-123',
       };
 
-      const mockSession = {
+      const mockSession = test.factory.session.createWithNulls({
         id: 'session-123',
         userId: 'user-123',
         coachId: 'coach-1',
         timeSlotId: 'slot-1',
         isPaid: false,
-      };
+      });
 
       const mockAccessToken = 'mock-access-token';
       const mockCaptureResult = {
@@ -230,13 +204,7 @@ describe('PaymentsService', () => {
         status: 'COMPLETED',
       };
 
-      const mockUpdatedSession = {
-        ...mockSession,
-        isPaid: true,
-        paymentId: 'paypal-order-123',
-      };
-
-      sessionsService.findUnique.mockResolvedValue(mockSession as any);
+      test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
 
       // Mock getAccessToken
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -250,28 +218,26 @@ describe('PaymentsService', () => {
         json: async () => mockCaptureResult,
       });
 
-      sessionsService.update.mockResolvedValue(mockUpdatedSession as any);
-      timeSlotsService.update.mockResolvedValue({} as any);
+      test.mocks.SessionsService.markAsPaidInternal.mockResolvedValue(undefined);
+      test.mocks.TimeSlotsService.markAsUnavailableInternal.mockResolvedValue(undefined);
 
-      const result = await test.service.captureOrder(captureDto, userId);
+      const result = await test.service.captureOrder(captureDto, userId, Role.USER);
 
       expect(result).toEqual({
         success: true,
         paymentId: 'paypal-order-123',
         captureId: 'capture-123',
       });
-      expect(sessionsService.findUnique).toHaveBeenCalledWith('session-123');
-      expect(sessionsService.update).toHaveBeenCalledWith(
+      expect(test.mocks.SessionsService.findOne).toHaveBeenCalledWith(
         'session-123',
-        { isPaid: true, paymentId: 'paypal-order-123' },
-        'user-123',
+        userId,
         Role.USER
       );
-      expect(timeSlotsService.update).toHaveBeenCalledWith(
-        'slot-1',
-        { isAvailable: false },
-        'coach-1'
+      expect(test.mocks.SessionsService.markAsPaidInternal).toHaveBeenCalledWith(
+        'session-123',
+        'paypal-order-123'
       );
+      expect(test.mocks.TimeSlotsService.markAsUnavailableInternal).toHaveBeenCalledWith('slot-1');
       expect(global.fetch).toHaveBeenCalledTimes(2);
     });
 
@@ -282,17 +248,14 @@ describe('PaymentsService', () => {
         sessionId: 'session-123',
       };
 
-      const mockSession = {
+      const mockSession = test.factory.session.createWithNulls({
         id: 'session-123',
         userId: 'different-user',
-      };
+      });
 
-      sessionsService.findUnique.mockResolvedValue(mockSession as any);
+      test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
 
-      await expect(test.service.captureOrder(captureDto, userId)).rejects.toThrow(
-        BadRequestException
-      );
-      await expect(test.service.captureOrder(captureDto, userId)).rejects.toThrow(
+      await expect(test.service.captureOrder(captureDto, userId, Role.USER)).rejects.toThrow(
         'Invalid session'
       );
       expect(global.fetch).not.toHaveBeenCalled();
@@ -305,16 +268,16 @@ describe('PaymentsService', () => {
         sessionId: 'session-123',
       };
 
-      const mockSession = {
+      const mockSession = test.factory.session.createWithNulls({
         id: 'session-123',
         userId: 'user-123',
         coachId: 'coach-1',
         timeSlotId: 'slot-1',
-      };
+      });
 
-      sessionsService.findUnique.mockResolvedValue(mockSession as any);
+      test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
 
-      // Mock getAccessToken and failed capture for first assertion
+      // Mock getAccessToken and failed capture
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           ok: true,
@@ -325,26 +288,11 @@ describe('PaymentsService', () => {
           json: async () => ({ error: 'Capture failed' }),
         });
 
-      await expect(test.service.captureOrder(captureDto, userId)).rejects.toThrow(
-        BadRequestException
-      );
-
-      // Reset and setup mocks for second assertion
-      (global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ accessToken: 'token' }),
-        })
-        .mockResolvedValueOnce({
-          ok: false,
-          json: async () => ({ error: 'Capture failed' }),
-        });
-
-      await expect(test.service.captureOrder(captureDto, userId)).rejects.toThrow(
+      await expect(test.service.captureOrder(captureDto, userId, Role.USER)).rejects.toThrow(
         'Payment capture failed'
       );
-      expect(sessionsService.update).not.toHaveBeenCalled();
-      expect(timeSlotsService.update).not.toHaveBeenCalled();
+      expect(test.mocks.SessionsService.markAsPaidInternal).not.toHaveBeenCalled();
+      expect(test.mocks.TimeSlotsService.markAsUnavailableInternal).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when capture status is not COMPLETED', async () => {
@@ -354,16 +302,16 @@ describe('PaymentsService', () => {
         sessionId: 'session-123',
       };
 
-      const mockSession = {
+      const mockSession = test.factory.session.createWithNulls({
         id: 'session-123',
         userId: 'user-123',
         coachId: 'coach-1',
         timeSlotId: 'slot-1',
-      };
+      });
 
-      sessionsService.findUnique.mockResolvedValue(mockSession as any);
+      test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
 
-      // Mock getAccessToken and capture with non-COMPLETED status for first assertion
+      // Mock getAccessToken and capture with non-COMPLETED status
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           ok: true,
@@ -374,26 +322,11 @@ describe('PaymentsService', () => {
           json: async () => ({ id: 'capture-123', status: 'PENDING' }),
         });
 
-      await expect(test.service.captureOrder(captureDto, userId)).rejects.toThrow(
-        BadRequestException
-      );
-
-      // Reset and setup mocks for second assertion
-      (global.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ accessToken: 'token' }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ id: 'capture-123', status: 'PENDING' }),
-        });
-
-      await expect(test.service.captureOrder(captureDto, userId)).rejects.toThrow(
+      await expect(test.service.captureOrder(captureDto, userId, Role.USER)).rejects.toThrow(
         'Payment capture failed'
       );
-      expect(sessionsService.update).not.toHaveBeenCalled();
-      expect(timeSlotsService.update).not.toHaveBeenCalled();
+      expect(test.mocks.SessionsService.markAsPaidInternal).not.toHaveBeenCalled();
+      expect(test.mocks.TimeSlotsService.markAsUnavailableInternal).not.toHaveBeenCalled();
     });
   });
 });

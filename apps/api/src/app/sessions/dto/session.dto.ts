@@ -1,77 +1,57 @@
-import { BaseResponseDto, createTypedApiDecorators } from '@common';
+import { createTypedApiDecorators } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SessionStatus } from '@prisma/client';
-import type { Decimal } from '@prisma/client/runtime/client';
+import { Decimal } from '@prisma/client/runtime/client';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsDateString, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsDate,
+  IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
-export class CreateSessionDto {
-  @ApiProperty()
-  @IsString()
-  bookingTypeId: string;
+import { BookingTypeResponseDto } from '../../booking-types/dto';
+import { DiscountResponseDto } from '../../discounts/dto';
+import { TimeSlotResponseDto } from '../../time-slots/dto';
 
-  @ApiProperty()
-  @IsString()
-  timeSlotId: string;
+// --- Shared/Sub DTOs ---
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  discountCode?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  notes?: string;
+export class SessionParticipantDto {
+  id: string;
+  name: string;
+  email: string;
 }
 
-export class UpdateSessionDto {
-  @ApiPropertyOptional()
-  @IsOptional()
+// Assumed external DTOs (You likely have these defined elsewhere)
+// If not, you can define simple versions here.
+// import { TimeSlotResponseDto } from './time-slot.dto'; // Placeholder
+// import { DiscountResponseDto } from './discount.dto'; // Placeholder
+
+// -------------------------------------------------------
+// 1. RESPONSE DTO
+// -------------------------------------------------------
+
+export class SessionResponseDto {
+  @ApiProperty({ example: 'session-id', description: 'Session Id' })
   @IsString()
-  notes?: string;
+  id: string;
 
-  @ApiPropertyOptional({ enum: SessionStatus, example: SessionStatus.COMPLETED })
-  @IsOptional()
-  status?: SessionStatus;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  paymentId?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  calendarEventId?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  isPaid?: boolean;
-}
-
-export class GetSessionsQuery {
-  @ApiPropertyOptional({ enum: SessionStatus, example: SessionStatus.COMPLETED })
-  @IsOptional()
-  status?: SessionStatus;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsDateString()
-  startDate?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsDateString()
-  endDate?: string;
-}
-
-export class SessionResponseDto extends BaseResponseDto {
-  @ApiProperty({ example: '2024-11-10T10:00:00Z', description: 'Session date and time' })
-  dateTime: string;
+  @ApiProperty({
+    type: Date,
+    example: '2024-11-10T10:00:00Z',
+    description: 'Session date and time',
+  })
+  @Type(() => Date)
+  @IsDate()
+  dateTime: Date;
 
   @ApiProperty({ example: 60, description: 'Session duration in minutes' })
+  @IsNumber()
   durationMin: number;
 
   @ApiProperty({ example: '99.99', description: 'Session price as string' })
@@ -79,78 +59,140 @@ export class SessionResponseDto extends BaseResponseDto {
   price: Decimal;
 
   @ApiProperty({ example: false, description: 'Whether the session has been paid for' })
+  @IsBoolean()
   isPaid: boolean;
 
   @ApiPropertyOptional({ enum: SessionStatus, example: SessionStatus.COMPLETED })
+  @IsEnum(SessionStatus)
   status: SessionStatus;
 
   @ApiProperty({ required: false, example: 'Please bring comfortable workout clothes' })
   @IsOptional()
-  notes?: string | null;
+  @IsString()
+  notes?: string;
 
   @ApiProperty({ required: false, example: 'payment-id-123' })
   @IsOptional()
-  paymentId?: string | null;
+  @IsString()
+  paymentId?: string;
 
   @ApiProperty({ required: false, example: 'SUMMER2024' })
   @IsOptional()
-  discountCode?: string | null;
+  @IsString()
+  discountCode?: string;
 
   @ApiProperty({ required: false, example: 'calendar-event-id-123' })
-  calendarEventId?: string | null;
+  @IsOptional()
+  @IsString()
+  calendarEventId?: string;
 
+  @ApiProperty({ type: Date, format: 'date-time' })
+  @IsDate()
+  @Type(() => Date)
+  createdAt: Date;
+
+  @ApiProperty({ type: Date, format: 'date-time' })
+  @IsDate()
+  @Type(() => Date)
+  updatedAt: Date;
+
+  // Relation IDs
   @ApiProperty({ example: 'user-id-123' })
+  @IsString()
   userId: string;
 
   @ApiProperty({ example: 'coach-id-456' })
+  @IsString()
   coachId: string;
 
   @ApiProperty({ example: 'booking-type-id-789' })
+  @IsString()
   bookingTypeId: string;
-
-  @ApiProperty({ example: 'time-slot-id-012' })
   timeSlotId: string;
 
-  @ApiProperty({ required: false, example: 'discount-id-345' })
+  @ApiProperty({ example: 'time-slot-id-012' })
   @IsOptional()
-  discountId?: string | null;
+  @IsString()
+  discountId?: string;
 
-  @ApiProperty({ required: false, description: 'User summary information' })
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  // Nested Objects
+  @ApiProperty({ type: SessionParticipantDto, description: 'User summary information' })
+  @Type(() => SessionParticipantDto)
+  user: SessionParticipantDto;
 
-  @ApiProperty({ required: false, description: 'Coach summary information' })
-  coach?: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  @ApiProperty({ type: SessionParticipantDto, description: 'Coach summary information' })
+  @Type(() => SessionParticipantDto)
+  coach: SessionParticipantDto;
 
-  @ApiProperty({ required: false, description: 'Booking type summary information' })
-  bookingType?: {
-    id: string;
-    name: string;
-    description?: string | null;
-    basePrice: string;
-  };
+  @ApiProperty({ type: BookingTypeResponseDto, description: 'Booking type summary information' })
+  @Type(() => BookingTypeResponseDto)
+  bookingType: BookingTypeResponseDto;
 
-  @ApiProperty({ required: false, description: 'Time slot summary information' })
-  timeSlot?: {
-    id: string;
-    dateTime: string;
-    durationMin: number;
-    isAvailable: boolean;
-  };
+  @ApiProperty({ type: TimeSlotResponseDto, description: 'Time slot summary information' })
+  @Type(() => TimeSlotResponseDto)
+  timeSlot: TimeSlotResponseDto;
 
-  @ApiProperty({ required: false, description: 'Discount summary information' })
-  discount?: {
-    id: string;
-    code: string;
-    amount: string;
-  };
+  @ApiProperty({ type: DiscountResponseDto, description: 'Discount summary information' })
+  @Type(() => DiscountResponseDto)
+  @IsOptional()
+  discount?: DiscountResponseDto;
+}
+
+// -------------------------------------------------------
+// 2. REQUEST DTOs (Create / Update)
+// -------------------------------------------------------
+
+export class CreateSessionDto {
+  @ApiProperty()
+  @IsUUID()
+  @IsNotEmpty()
+  bookingTypeId: string;
+
+  @ApiProperty()
+  @IsUUID()
+  @IsNotEmpty()
+  timeSlotId: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  discountCode?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  notes?: string;
+}
+
+export class UpdateSessionDto {
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  notes?: string;
+
+  // we don't allow updating price/dates directly
+  // without specific business logic (rescheduling),
+}
+
+// -------------------------------------------------------
+// 3. QUERY DTO (Search/Filter)
+// -------------------------------------------------------
+
+export class GetSessionsQuery {
+  @ApiPropertyOptional({ enum: SessionStatus, example: SessionStatus.COMPLETED })
+  @IsEnum(SessionStatus)
+  @IsOptional()
+  status?: SessionStatus;
+
+  @ApiPropertyOptional()
+  @IsDateString()
+  @IsOptional()
+  startDate?: string;
+
+  @ApiPropertyOptional()
+  @IsDateString()
+  @IsOptional()
+  endDate?: string;
 }
 
 // Create typed API decorators for sessions

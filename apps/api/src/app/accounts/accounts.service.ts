@@ -40,16 +40,68 @@ export class AccountsService {
     return result;
   }
 
+  /** Find account by email - used by AuthenticationService */
   async findByEmail(email: string): Promise<AccountResponseDto> {
     const account = (await this.findAccountInternal({ email })) as Account;
     return plainToInstance(AccountResponseDto, account);
   }
 
+  /**
+   * Find account by email with password hash - used by AuthenticationService for login
+   * Returns null if not found (does not throw)
+   */
+  async findByEmailWithPassword(email: string): Promise<Account | null> {
+    return (await this.findAccountInternal(
+      { email },
+      { throwIfNotFound: false }
+    )) as Account | null;
+  }
+
+  /**
+   * Check if email exists - used by AuthenticationService for signup validation
+   */
+  async emailExists(email: string): Promise<boolean> {
+    const account = await this.findAccountInternal({ email }, { throwIfNotFound: false });
+    return account !== null;
+  }
+
+  /**
+   * Create account for signup - used by AuthenticationService
+   * Returns full Account including passwordHash for token generation
+   */
+  async createForSignup(data: {
+    email: string;
+    name: string;
+    passwordHash: string;
+    role?: Role;
+  }): Promise<Account> {
+    return this.prisma.account.create({
+      data: {
+        email: data.email,
+        name: data.name,
+        passwordHash: data.passwordHash,
+        isOnline: true,
+        role: data.role ?? Role.USER,
+      },
+    });
+  }
+
+  /** Find account by ID - used by other services (e.g., MessagesService) */
   async findById(id: string): Promise<AccountResponseDto> {
     const account = (await this.findAccountInternal({ id })) as Account;
     return plainToInstance(AccountResponseDto, account);
   }
 
+  /** Check if account exists by ID - used by MessagesService for receiver validation */
+  async existsById(id: string): Promise<{ id: string; role: Role } | null> {
+    const account = (await this.findAccountInternal(
+      { id },
+      { throwIfNotFound: false }
+    )) as Account | null;
+    return account ? { id: account.id, role: account.role } : null;
+  }
+
+  /** Find accounts by role - used by other services */
   async findByRole(role: Role): Promise<AccountResponseDto[]> {
     const accounts = (await this.findAccountInternal({ role }, { isMany: true })) as Account[];
     return plainToInstance(AccountResponseDto, accounts);

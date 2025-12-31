@@ -1,10 +1,46 @@
-import { BaseResponseDto, createTypedApiDecorators } from '@common';
+import { createTypedApiDecorators } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
-import { Transform } from 'class-transformer';
-import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsDate, IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 
-export class MessageResponseDto extends BaseResponseDto {
+/**
+ * Summary DTO for message participants (sender/receiver).
+ * Contains basic account information for display purposes.
+ */
+export class ParticipantSummaryDto {
+  @ApiProperty({ example: 'user-id-123' })
+  @IsString()
+  id!: string;
+
+  @ApiProperty({ example: 'John Doe' })
+  @IsString()
+  name!: string;
+
+  @ApiProperty({ example: 'john@example.com' })
+  @IsEmail()
+  email!: string;
+}
+
+/**
+ * Response DTO for Message entity.
+ * Contains all message fields with proper decorators for Swagger and validation.
+ */
+export class MessageResponseDto {
+  @ApiProperty({ example: 'message-id-123' })
+  @IsString()
+  id!: string;
+
+  @ApiProperty({ type: Date, format: 'date-time' })
+  @IsDate()
+  @Type(() => Date)
+  createdAt!: Date;
+
+  @ApiProperty({ type: Date, format: 'date-time' })
+  @IsDate()
+  @Type(() => Date)
+  updatedAt!: Date;
+
   @ApiProperty({
     example: 'Hello, how can I help you today?',
     description: 'The message content',
@@ -13,12 +49,14 @@ export class MessageResponseDto extends BaseResponseDto {
   content!: string;
 
   @ApiProperty({
-    example: '2024-11-10T10:00:00Z',
-    description: 'When the message was sent',
     type: String,
     format: 'date-time',
+    example: '2024-11-10T10:00:00Z',
+    description: 'When the message was sent',
   })
-  sentAt!: Date | string;
+  @IsDate()
+  @Type(() => Date)
+  sentAt!: Date;
 
   @ApiProperty({
     example: 'sender-id-123',
@@ -40,8 +78,7 @@ export class MessageResponseDto extends BaseResponseDto {
   })
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value ?? undefined)
-  sessionId?: string | null;
+  sessionId?: string;
 
   @ApiProperty({
     enum: Role,
@@ -61,33 +98,24 @@ export class MessageResponseDto extends BaseResponseDto {
 
   @ApiPropertyOptional({
     description: 'Sender account summary information',
-    example: {
-      id: 'sender-id-123',
-      name: 'John Doe',
-      email: 'john@example.com',
-    },
+    type: ParticipantSummaryDto,
   })
-  sender?: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  @IsOptional()
+  @Type(() => ParticipantSummaryDto)
+  sender?: ParticipantSummaryDto;
 
   @ApiPropertyOptional({
     description: 'Receiver account summary information',
-    example: {
-      id: 'receiver-id-456',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-    },
+    type: ParticipantSummaryDto,
   })
-  receiver?: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  @IsOptional()
+  @Type(() => ParticipantSummaryDto)
+  receiver?: ParticipantSummaryDto;
 }
 
+/**
+ * DTO for creating a new message.
+ */
 export class CreateMessageDto {
   @ApiProperty({
     example: 'Hello, I have a question about my upcoming session.',
@@ -113,6 +141,9 @@ export class CreateMessageDto {
   sessionId?: string;
 }
 
+/**
+ * Query parameters for filtering messages.
+ */
 export class GetMessagesQuery {
   @ApiPropertyOptional({
     example: 'session-id-789',

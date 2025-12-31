@@ -56,6 +56,8 @@ export default [
       'libs/external',
       '**/*.config.ts',
       '**/jest.config.ts',
+      'jest.preset.js',
+      '**/test/reporters/*.js',
     ],
   },
   ...typescriptEslint.configs.recommended,
@@ -147,13 +149,13 @@ export default [
     },
   },
   {
-    files: ['*.js', '*.jsx'],
+    files: ['**/*.js', '**/*.jsx'],
     rules: {
       '@typescript-eslint/no-var-requires': 'off',
     },
   },
   {
-    files: ['*.spec.ts', '*.test.ts', '*.spec.tsx', '*.test.tsx'],
+    files: ['**/*.spec.ts', '**/*.test.ts', '**/*.spec.tsx', '**/*.test.tsx', '**/test/**/*.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'security/detect-object-injection': 'off',

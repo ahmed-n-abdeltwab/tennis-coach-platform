@@ -1,5 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
 
 import { CurrentUser } from '../iam/authentication/decorators/current-user.decorator';
 
@@ -24,9 +25,10 @@ export class PaymentsController {
   @CreateOrderApiResponses.Created('Created PayPal payment order successfully')
   async createOrder(
     @Body() createDto: CreatePaymentDto,
-    @CurrentUser('sub') id: string
+    @CurrentUser('sub') id: string,
+    @CurrentUser('role') role: Role
   ): Promise<CreateOrderResponses> {
-    return this.paymentsService.createOrder(createDto, id);
+    return this.paymentsService.createOrder(createDto, id, role);
   }
 
   @Post('capture-order')
@@ -35,8 +37,9 @@ export class PaymentsController {
   @CapturePaymentApiResponses.Found('Captured PayPal payment order successfully')
   async captureOrder(
     @Body() captureDto: CapturePaymentDto,
-    @CurrentUser('sub') id: string
+    @CurrentUser('sub') id: string,
+    @CurrentUser('role') role: Role
   ): Promise<CapturePaymentResponses> {
-    return this.paymentsService.captureOrder(captureDto, id);
+    return this.paymentsService.captureOrder(captureDto, id, role);
   }
 }

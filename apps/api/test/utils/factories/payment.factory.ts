@@ -2,13 +2,17 @@
  * Payment mock factory for creating test payment data
  */
 
+import { Decimal } from '@prisma/client/runtime/client';
+
+import { DeepPartial } from '../http';
+
 import { BaseMockFactory } from './base-factory';
 
 export interface MockPayment {
   id: string;
   sessionId: string;
   orderId: string;
-  amount: number;
+  amount: Decimal;
   status: 'pending' | 'completed' | 'failed' | 'cancelled';
   paypalOrderId?: string;
   captureId?: string;
@@ -36,20 +40,20 @@ export interface MockPayPalCapture {
 }
 
 export class PaymentMockFactory extends BaseMockFactory<MockPayment> {
-  protected generateMock(overrides?: Partial<MockPayment>): MockPayment {
+  protected generateMock(overrides?: DeepPartial<MockPayment>): MockPayment {
     const id = this.generateId();
-    const now = new Date();
+    const now = this.createDate();
 
     return {
       id,
       sessionId: this.generateId(),
       orderId: this.generatePayPalOrderId(),
-      amount: this.randomAmount(),
+      amount: new Decimal(this.randomAmount()),
       status: 'pending',
       createdAt: now,
       updatedAt: now,
       ...overrides,
-    };
+    } as MockPayment;
   }
 
   createCompleted(overrides?: Partial<MockPayment>): MockPayment {

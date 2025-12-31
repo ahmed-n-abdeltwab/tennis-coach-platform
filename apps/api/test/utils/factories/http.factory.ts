@@ -50,8 +50,6 @@ export interface MockRequestOverrides {
   path?: string;
 }
 
-export type MockResponse = ReturnType<typeof getMockRes>['res'];
-
 export interface CreateRequestOptions {
   method?: string;
   url?: string;

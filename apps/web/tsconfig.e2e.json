@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "noEmit": false,
+    "outDir": "../../dist/e2e",
+    "sourceMap": false,
+    "inlineSourceMap": false
+  },
+  "include": ["e2e/**/*.ts"]
+}

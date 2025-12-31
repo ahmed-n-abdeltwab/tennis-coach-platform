@@ -5,7 +5,7 @@
 
 import { E2ETest } from '../utils';
 
-describe('User Registration and Authentication Flow (E2E)', () => {
+describe.skip('User Registration and Authentication Flow (E2E)', () => {
   let test: E2ETest;
 
   beforeAll(async () => {

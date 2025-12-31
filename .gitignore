@@ -157,6 +157,8 @@ apps/api/test/utils/**/*.js
 # E2E test artifacts
 /tests/e2e/screenshots/
 /tests/e2e/videos/
+apps/web/e2e/screenshots/
+apps/web/e2e/videos/
 /reports/
 
 # Docker
@@ -181,11 +183,6 @@ storybook-static
 *.bak
 
 # Editor directories and files
-.vscode/
-!.vscode/extensions.json
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
 .idea
 *.suo
 *.ntvs*
@@ -241,3 +238,10 @@ public/uploads/
 
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
+
+# VS Code - ignore folder but keep shared configs
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json

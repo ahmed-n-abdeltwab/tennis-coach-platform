@@ -498,10 +498,6 @@ export class TypeSafeHttpClient<
     });
   }
 
-  // ============================================================================
-  // Module-Scoped HTTP Methods
-  // ============================================================================
-
   /**
    * Type-safe GET request scoped to the module specified in constructor
    *
