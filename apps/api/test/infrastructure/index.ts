@@ -14,4 +14,3 @@ export * from './database';
 export * from './errors';
 export * from './helpers';
 export * from './performance';
-export * from './redis';
