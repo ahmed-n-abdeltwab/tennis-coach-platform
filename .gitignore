@@ -157,6 +157,8 @@ apps/api/test/utils/**/*.js
 # E2E test artifacts
 /tests/e2e/screenshots/
 /tests/e2e/videos/
+apps/web/e2e/screenshots/
+apps/web/e2e/videos/
 /reports/
 
 # Docker

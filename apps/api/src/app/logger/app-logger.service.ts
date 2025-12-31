@@ -1,11 +1,11 @@
-import { Injectable, Logger, LogLevel } from '@nestjs/common';
+import { ConsoleLogger, Injectable, LogLevel } from '@nestjs/common';
 
 /**
- * Custom logger service that extends NestJS Logger
+ * Custom logger service that extends NestJS ConsoleLogger
  * Provides application-wide logging with environment-based configuration
  */
 @Injectable()
-export class AppLoggerService extends Logger {
+export class AppLoggerService extends ConsoleLogger {
   constructor(context?: string) {
     super(context ?? 'AppLogger');
   }

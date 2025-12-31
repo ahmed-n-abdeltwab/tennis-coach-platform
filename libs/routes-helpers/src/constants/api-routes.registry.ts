@@ -24,15 +24,15 @@ export interface Endpoints {
       age?: number;
       height?: number;
       weight?: number;
-      bio?: string | null;
-      credentials?: string | null;
-      philosophy?: string | null;
-      profileImage?: string | null;
-      disability?: string | null;
-      disabilityCause?: string | null;
-      country?: string | null;
-      address?: string | null;
-      notes?: string | null;
+      bio?: string;
+      credentials?: string;
+      philosophy?: string;
+      profileImage?: string;
+      disability?: boolean;
+      disabilityCause?: string;
+      country?: string;
+      address?: string;
+      notes?: string;
       isActive: boolean;
       isOnline: boolean;
     }[];
@@ -53,15 +53,15 @@ export interface Endpoints {
       age?: number;
       height?: number;
       weight?: number;
-      bio?: string | null;
-      credentials?: string | null;
-      philosophy?: string | null;
-      profileImage?: string | null;
-      disability?: string | null;
-      disabilityCause?: string | null;
-      country?: string | null;
-      address?: string | null;
-      notes?: string | null;
+      bio?: string;
+      credentials?: string;
+      philosophy?: string;
+      profileImage?: string;
+      disability?: boolean;
+      disabilityCause?: string;
+      country?: string;
+      address?: string;
+      notes?: string;
       isActive: boolean;
       isOnline: boolean;
     };
@@ -83,15 +83,15 @@ export interface Endpoints {
       age?: number;
       height?: number;
       weight?: number;
-      bio?: string | null;
-      credentials?: string | null;
-      philosophy?: string | null;
-      profileImage?: string | null;
-      disability?: string | null;
-      disabilityCause?: string | null;
-      country?: string | null;
-      address?: string | null;
-      notes?: string | null;
+      bio?: string;
+      credentials?: string;
+      philosophy?: string;
+      profileImage?: string;
+      disability?: boolean;
+      disabilityCause?: string;
+      country?: string;
+      address?: string;
+      notes?: string;
       isActive: boolean;
       isOnline: boolean;
     };
@@ -104,10 +104,10 @@ export interface Endpoints {
         height?: number;
         weight?: number;
         disability?: boolean;
-        disabilityCause?: string | null;
-        country?: string | null;
-        address?: string | null;
-        notes?: string | null;
+        disabilityCause?: string;
+        country?: string;
+        address?: string;
+        notes?: string;
         bio?: string;
         credentials?: string;
         philosophy?: string;
@@ -124,15 +124,15 @@ export interface Endpoints {
       age?: number;
       height?: number;
       weight?: number;
-      bio?: string | null;
-      credentials?: string | null;
-      philosophy?: string | null;
-      profileImage?: string | null;
-      disability?: string | null;
-      disabilityCause?: string | null;
-      country?: string | null;
-      address?: string | null;
-      notes?: string | null;
+      bio?: string;
+      credentials?: string;
+      philosophy?: string;
+      profileImage?: string;
+      disability?: boolean;
+      disabilityCause?: string;
+      country?: string;
+      address?: string;
+      notes?: string;
       isActive: boolean;
       isOnline: boolean;
     };
@@ -189,20 +189,20 @@ export interface Endpoints {
       createdAt: string;
       updatedAt: string;
       name: string;
-      description?: string | null;
+      description?: string;
       basePrice: number;
       isActive: boolean;
       coachId: string;
     }[];
     POST: (
       params: undefined | never,
-      body: { name: string; description?: string; basePrice: number; isActive?: boolean }
+      body: { name: string; description?: string; basePrice: number }
     ) => {
       id: string;
       createdAt: string;
       updatedAt: string;
       name: string;
-      description?: string | null;
+      description?: string;
       basePrice: number;
       isActive: boolean;
       coachId: string;
@@ -218,7 +218,7 @@ export interface Endpoints {
       createdAt: string;
       updatedAt: string;
       name: string;
-      description?: string | null;
+      description?: string;
       basePrice: number;
       isActive: boolean;
       coachId: string;
@@ -235,7 +235,7 @@ export interface Endpoints {
       createdAt: string;
       updatedAt: string;
       name: string;
-      description?: string | null;
+      description?: string;
       basePrice: number;
       isActive: boolean;
       coachId: string;
@@ -248,7 +248,7 @@ export interface Endpoints {
       createdAt: string;
       updatedAt: string;
       name: string;
-      description?: string | null;
+      description?: string;
       basePrice: number;
       isActive: boolean;
       coachId: string;
@@ -261,7 +261,7 @@ export interface Endpoints {
       createdAt: string;
       updatedAt: string;
       name: string;
-      description?: string | null;
+      description?: string;
       basePrice: number;
       isActive: boolean;
       coachId: string;
@@ -382,11 +382,11 @@ export interface Endpoints {
       sentAt: string;
       senderId: string;
       receiverId: string;
-      sessionId?: string | null;
+      sessionId?: string;
       senderType: 'USER' | 'PREMIUM_USER' | 'ADMIN' | 'COACH';
       receiverType: 'USER' | 'PREMIUM_USER' | 'ADMIN' | 'COACH';
-      sender?: string | null;
-      receiver?: string | null;
+      sender?: { id: string; name: string; email: string };
+      receiver?: { id: string; name: string; email: string };
     }[];
     POST: (
       params: undefined | never,
@@ -399,11 +399,11 @@ export interface Endpoints {
       sentAt: string;
       senderId: string;
       receiverId: string;
-      sessionId?: string | null;
+      sessionId?: string;
       senderType: 'USER' | 'PREMIUM_USER' | 'ADMIN' | 'COACH';
       receiverType: 'USER' | 'PREMIUM_USER' | 'ADMIN' | 'COACH';
-      sender?: string | null;
-      receiver?: string | null;
+      sender?: { id: string; name: string; email: string };
+      receiver?: { id: string; name: string; email: string };
     };
   };
 
@@ -419,11 +419,11 @@ export interface Endpoints {
       sentAt: string;
       senderId: string;
       receiverId: string;
-      sessionId?: string | null;
+      sessionId?: string;
       senderType: 'USER' | 'PREMIUM_USER' | 'ADMIN' | 'COACH';
       receiverType: 'USER' | 'PREMIUM_USER' | 'ADMIN' | 'COACH';
-      sender?: string | null;
-      receiver?: string | null;
+      sender?: { id: string; name: string; email: string };
+      receiver?: { id: string; name: string; email: string };
     }[];
   };
 
@@ -439,11 +439,11 @@ export interface Endpoints {
       sentAt: string;
       senderId: string;
       receiverId: string;
-      sessionId?: string | null;
+      sessionId?: string;
       senderType: 'USER' | 'PREMIUM_USER' | 'ADMIN' | 'COACH';
       receiverType: 'USER' | 'PREMIUM_USER' | 'ADMIN' | 'COACH';
-      sender?: string | null;
-      receiver?: string | null;
+      sender?: { id: string; name: string; email: string };
+      receiver?: { id: string; name: string; email: string };
     }[];
   };
 
@@ -459,11 +459,11 @@ export interface Endpoints {
       sentAt: string;
       senderId: string;
       receiverId: string;
-      sessionId?: string | null;
+      sessionId?: string;
       senderType: 'USER' | 'PREMIUM_USER' | 'ADMIN' | 'COACH';
       receiverType: 'USER' | 'PREMIUM_USER' | 'ADMIN' | 'COACH';
-      sender?: string | null;
-      receiver?: string | null;
+      sender?: { id: string; name: string; email: string };
+      receiver?: { id: string; name: string; email: string };
     };
   };
 
@@ -497,68 +497,120 @@ export interface Endpoints {
 
   '/api/sessions': {
     GET: (
-      params: { status?: string; startDate?: string; endDate?: string },
+      params: {
+        status?: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+        startDate?: string;
+        endDate?: string;
+      },
       body: undefined | never
     ) => {
-      data?: {
+      id: string;
+      dateTime: string;
+      durationMin: number;
+      price: number;
+      isPaid: boolean;
+      status?: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+      notes?: string;
+      paymentId?: string;
+      discountCode?: string;
+      calendarEventId?: string;
+      createdAt: string;
+      updatedAt: string;
+      userId: string;
+      coachId: string;
+      bookingTypeId: string;
+      discountId: string;
+      user: string | null;
+      coach: string | null;
+      bookingType: {
         id: string;
         createdAt: string;
         updatedAt: string;
-        dateTime: Date;
-        durationMin: number;
-        price: number;
-        isPaid: boolean;
-        status: string;
-        notes?: string | null;
-        paymentId?: string | null;
-        discountCode?: string | null;
-        calendarEventId?: string | null;
-        userId: string;
+        name: string;
+        description?: string;
+        basePrice: number;
+        isActive: boolean;
         coachId: string;
-        bookingTypeId: string;
-        timeSlotId: string;
-        discountId?: string | null;
-        user?: string | null;
-        coach?: string | null;
-        bookingType?: string | null;
-        timeSlot?: string | null;
-        discount?: string | null;
-      }[];
-      meta?: {
-        page?: number;
-        limit?: number;
-        total?: number;
-        totalPages?: number;
-        hasNext?: boolean;
-        hasPrev?: boolean;
       };
-    };
+      timeSlot: {
+        id: string;
+        dateTime: string;
+        durationMin: number;
+        isAvailable: boolean;
+        coachId: string;
+        coach: { id: string; name: string; email: string };
+        createdAt: string;
+        updatedAt: string;
+      };
+      discount: {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        code: string;
+        amount: number;
+        expiry: string;
+        useCount: number;
+        maxUsage: number;
+        isActive: boolean;
+        coachId: string;
+        coach?: { id: string; name: string; email: string };
+      };
+    }[];
     POST: (
       params: undefined | never,
       body: { bookingTypeId: string; timeSlotId: string; discountCode?: string; notes?: string }
     ) => {
       id: string;
-      createdAt: string;
-      updatedAt: string;
-      dateTime: Date;
+      dateTime: string;
       durationMin: number;
       price: number;
       isPaid: boolean;
-      status: string;
-      notes?: string | null;
-      paymentId?: string | null;
-      discountCode?: string | null;
-      calendarEventId?: string | null;
+      status?: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+      notes?: string;
+      paymentId?: string;
+      discountCode?: string;
+      calendarEventId?: string;
+      createdAt: string;
+      updatedAt: string;
       userId: string;
       coachId: string;
       bookingTypeId: string;
-      timeSlotId: string;
-      discountId?: string | null;
-      user?: string | null;
-      coach?: string | null;
-      bookingType?: string | null;
-      timeSlot?: string | null;
-      discount?: string | null;
+      discountId: string;
+      user: string | null;
+      coach: string | null;
+      bookingType: {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        name: string;
+        description?: string;
+        basePrice: number;
+        isActive: boolean;
+        coachId: string;
+      };
+      timeSlot: {
+        id: string;
+        dateTime: string;
+        durationMin: number;
+        isAvailable: boolean;
+        coachId: string;
+        coach: { id: string; name: string; email: string };
+        createdAt: string;
+        updatedAt: string;
+      };
+      discount: {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        code: string;
+        amount: number;
+        expiry: string;
+        useCount: number;
+        maxUsage: number;
+        isActive: boolean;
+        coachId: string;
+        coach?: { id: string; name: string; email: string };
+      };
     };
   };
 
@@ -568,93 +620,168 @@ export interface Endpoints {
       body: undefined | never
     ) => {
       id: string;
-      createdAt: string;
-      updatedAt: string;
-      dateTime: Date;
+      dateTime: string;
       durationMin: number;
       price: number;
       isPaid: boolean;
-      status: string;
-      notes?: string | null;
-      paymentId?: string | null;
-      discountCode?: string | null;
-      calendarEventId?: string | null;
+      status?: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+      notes?: string;
+      paymentId?: string;
+      discountCode?: string;
+      calendarEventId?: string;
+      createdAt: string;
+      updatedAt: string;
       userId: string;
       coachId: string;
       bookingTypeId: string;
-      timeSlotId: string;
-      discountId?: string | null;
-      user?: string | null;
-      coach?: string | null;
-      bookingType?: string | null;
-      timeSlot?: string | null;
-      discount?: string | null;
+      discountId: string;
+      user: string | null;
+      coach: string | null;
+      bookingType: {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        name: string;
+        description?: string;
+        basePrice: number;
+        isActive: boolean;
+        coachId: string;
+      };
+      timeSlot: {
+        id: string;
+        dateTime: string;
+        durationMin: number;
+        isAvailable: boolean;
+        coachId: string;
+        coach: { id: string; name: string; email: string };
+        createdAt: string;
+        updatedAt: string;
+      };
+      discount: {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        code: string;
+        amount: number;
+        expiry: string;
+        useCount: number;
+        maxUsage: number;
+        isActive: boolean;
+        coachId: string;
+        coach?: { id: string; name: string; email: string };
+      };
     };
     PATCH: (
       params: { id: string },
-      body: {
-        notes?: string;
-        status?: string;
-        paymentId?: string;
-        calendarEventId?: string;
-        isPaid?: boolean;
-      }
+      body: { notes?: string }
     ) => {
       id: string;
-      createdAt: string;
-      updatedAt: string;
-      dateTime: Date;
+      dateTime: string;
       durationMin: number;
       price: number;
       isPaid: boolean;
-      status: string;
-      notes?: string | null;
-      paymentId?: string | null;
-      discountCode?: string | null;
-      calendarEventId?: string | null;
+      status?: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+      notes?: string;
+      paymentId?: string;
+      discountCode?: string;
+      calendarEventId?: string;
+      createdAt: string;
+      updatedAt: string;
       userId: string;
       coachId: string;
       bookingTypeId: string;
-      timeSlotId: string;
-      discountId?: string | null;
-      user?: string | null;
-      coach?: string | null;
-      bookingType?: string | null;
-      timeSlot?: string | null;
-      discount?: string | null;
+      discountId: string;
+      user: string | null;
+      coach: string | null;
+      bookingType: {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        name: string;
+        description?: string;
+        basePrice: number;
+        isActive: boolean;
+        coachId: string;
+      };
+      timeSlot: {
+        id: string;
+        dateTime: string;
+        durationMin: number;
+        isAvailable: boolean;
+        coachId: string;
+        coach: { id: string; name: string; email: string };
+        createdAt: string;
+        updatedAt: string;
+      };
+      discount: {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        code: string;
+        amount: number;
+        expiry: string;
+        useCount: number;
+        maxUsage: number;
+        isActive: boolean;
+        coachId: string;
+        coach?: { id: string; name: string; email: string };
+      };
     };
     PUT: (
       params: { id: string },
-      body: {
-        notes?: string;
-        status?: string;
-        paymentId?: string;
-        calendarEventId?: string;
-        isPaid?: boolean;
-      }
+      body: { notes?: string }
     ) => {
       id: string;
-      createdAt: string;
-      updatedAt: string;
-      dateTime: Date;
+      dateTime: string;
       durationMin: number;
       price: number;
       isPaid: boolean;
-      status: string;
-      notes?: string | null;
-      paymentId?: string | null;
-      discountCode?: string | null;
-      calendarEventId?: string | null;
+      status?: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+      notes?: string;
+      paymentId?: string;
+      discountCode?: string;
+      calendarEventId?: string;
+      createdAt: string;
+      updatedAt: string;
       userId: string;
       coachId: string;
       bookingTypeId: string;
-      timeSlotId: string;
-      discountId?: string | null;
-      user?: string | null;
-      coach?: string | null;
-      bookingType?: string | null;
-      timeSlot?: string | null;
-      discount?: string | null;
+      discountId: string;
+      user: string | null;
+      coach: string | null;
+      bookingType: {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        name: string;
+        description?: string;
+        basePrice: number;
+        isActive: boolean;
+        coachId: string;
+      };
+      timeSlot: {
+        id: string;
+        dateTime: string;
+        durationMin: number;
+        isAvailable: boolean;
+        coachId: string;
+        coach: { id: string; name: string; email: string };
+        createdAt: string;
+        updatedAt: string;
+      };
+      discount: {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        code: string;
+        amount: number;
+        expiry: string;
+        useCount: number;
+        maxUsage: number;
+        isActive: boolean;
+        coachId: string;
+        coach?: { id: string; name: string; email: string };
+      };
     };
   };
 
@@ -664,27 +791,56 @@ export interface Endpoints {
       body: undefined | never
     ) => {
       id: string;
-      createdAt: string;
-      updatedAt: string;
-      dateTime: Date;
+      dateTime: string;
       durationMin: number;
       price: number;
       isPaid: boolean;
-      status: string;
-      notes?: string | null;
-      paymentId?: string | null;
-      discountCode?: string | null;
-      calendarEventId?: string | null;
+      status?: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+      notes?: string;
+      paymentId?: string;
+      discountCode?: string;
+      calendarEventId?: string;
+      createdAt: string;
+      updatedAt: string;
       userId: string;
       coachId: string;
       bookingTypeId: string;
-      timeSlotId: string;
-      discountId?: string | null;
-      user?: string | null;
-      coach?: string | null;
-      bookingType?: string | null;
-      timeSlot?: string | null;
-      discount?: string | null;
+      discountId: string;
+      user: string | null;
+      coach: string | null;
+      bookingType: {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        name: string;
+        description?: string;
+        basePrice: number;
+        isActive: boolean;
+        coachId: string;
+      };
+      timeSlot: {
+        id: string;
+        dateTime: string;
+        durationMin: number;
+        isAvailable: boolean;
+        coachId: string;
+        coach: { id: string; name: string; email: string };
+        createdAt: string;
+        updatedAt: string;
+      };
+      discount: {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        code: string;
+        amount: number;
+        expiry: string;
+        useCount: number;
+        maxUsage: number;
+        isActive: boolean;
+        coachId: string;
+        coach?: { id: string; name: string; email: string };
+      };
     };
   };
 
@@ -694,26 +850,26 @@ export interface Endpoints {
       body: undefined | never
     ) => {
       id: string;
-      createdAt: string;
-      updatedAt: string;
-      coachId: string;
-      dateTime: Date;
+      dateTime: string;
       durationMin: number;
       isAvailable: boolean;
-      coach?: { id: string; name: string; email: string };
+      coachId: string;
+      coach: { id: string; name: string; email: string };
+      createdAt: string;
+      updatedAt: string;
     }[];
     POST: (
       params: undefined | never,
-      body: { dateTime: Date; durationMin: number; isAvailable: boolean }
+      body: { dateTime: string; durationMin: number; isAvailable: boolean }
     ) => {
       id: string;
-      createdAt: string;
-      updatedAt: string;
-      coachId: string;
-      dateTime: Date;
+      dateTime: string;
       durationMin: number;
       isAvailable: boolean;
-      coach?: { id: string; name: string; email: string };
+      coachId: string;
+      coach: { id: string; name: string; email: string };
+      createdAt: string;
+      updatedAt: string;
     };
   };
 
@@ -723,13 +879,13 @@ export interface Endpoints {
       body: undefined | never
     ) => {
       id: string;
-      createdAt: string;
-      updatedAt: string;
-      coachId: string;
-      dateTime: Date;
+      dateTime: string;
       durationMin: number;
       isAvailable: boolean;
-      coach?: { id: string; name: string; email: string };
+      coachId: string;
+      coach: { id: string; name: string; email: string };
+      createdAt: string;
+      updatedAt: string;
     }[];
   };
 
@@ -740,26 +896,26 @@ export interface Endpoints {
       body: undefined | never
     ) => {
       id: string;
-      createdAt: string;
-      updatedAt: string;
-      coachId: string;
-      dateTime: Date;
+      dateTime: string;
       durationMin: number;
       isAvailable: boolean;
-      coach?: { id: string; name: string; email: string };
+      coachId: string;
+      coach: { id: string; name: string; email: string };
+      createdAt: string;
+      updatedAt: string;
     };
     PATCH: (
       params: { id: string },
-      body: { dateTime?: string | null; durationMin?: number; isAvailable?: boolean }
+      body: { dateTime: string; durationMin: number; isAvailable: boolean }
     ) => {
       id: string;
-      createdAt: string;
-      updatedAt: string;
-      coachId: string;
-      dateTime: Date;
+      dateTime: string;
       durationMin: number;
       isAvailable: boolean;
-      coach?: { id: string; name: string; email: string };
+      coachId: string;
+      coach: { id: string; name: string; email: string };
+      createdAt: string;
+      updatedAt: string;
     };
   };
 }
