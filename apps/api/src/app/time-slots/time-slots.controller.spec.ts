@@ -144,7 +144,7 @@ describe('TimeSlotsController', () => {
       });
       test.mocks.TimeSlotsService.create.mockResolvedValue(mockTimeSlot);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedPost('/api/time-slots', coachToken, {
         body: createDto,
       });
@@ -162,7 +162,7 @@ describe('TimeSlotsController', () => {
       });
       test.mocks.TimeSlotsService.create.mockResolvedValue(mockTimeSlot);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedPost('/api/time-slots', coachToken, {
         body: createDto,
       });
@@ -186,7 +186,7 @@ describe('TimeSlotsController', () => {
       });
       test.mocks.TimeSlotsService.update.mockResolvedValue(mockTimeSlot);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedPatch(
         '/api/time-slots/slot-123' as '/api/time-slots/{id}',
         coachToken,
@@ -205,7 +205,7 @@ describe('TimeSlotsController', () => {
         new NotFoundException('Time slot not found')
       );
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       const response = await test.http.authenticatedPatch(
         '/api/time-slots/nonexistent-id' as '/api/time-slots/{id}',
         coachToken,
@@ -220,7 +220,7 @@ describe('TimeSlotsController', () => {
         new ForbiddenException('Not authorized to update this time slot')
       );
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'other-coach' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'other-coach' });
       const response = await test.http.authenticatedPatch(
         '/api/time-slots/slot-123' as '/api/time-slots/{id}',
         coachToken,
@@ -235,7 +235,7 @@ describe('TimeSlotsController', () => {
     it('should call remove service method with correct parameters', async () => {
       test.mocks.TimeSlotsService.remove.mockResolvedValue(undefined);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedDelete(
         '/api/time-slots/slot-123' as '/api/time-slots/{id}',
         coachToken
@@ -249,7 +249,7 @@ describe('TimeSlotsController', () => {
         new NotFoundException('Time slot not found')
       );
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       const response = await test.http.authenticatedDelete(
         '/api/time-slots/nonexistent-id' as '/api/time-slots/{id}',
         coachToken
@@ -263,7 +263,7 @@ describe('TimeSlotsController', () => {
         new ForbiddenException('Not authorized to delete this time slot')
       );
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'other-coach' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'other-coach' });
       const response = await test.http.authenticatedDelete(
         '/api/time-slots/slot-123' as '/api/time-slots/{id}',
         coachToken
@@ -281,7 +281,7 @@ describe('TimeSlotsController', () => {
           durationMin: 60,
         };
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedPost('/api/time-slots', userToken, {
           body: createDto,
         });
@@ -296,7 +296,7 @@ describe('TimeSlotsController', () => {
           isAvailable: false,
         };
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedPatch(
           '/api/time-slots/slot-123' as '/api/time-slots/{id}',
           userToken,
@@ -308,7 +308,7 @@ describe('TimeSlotsController', () => {
       });
 
       it('should return 403 when USER tries to delete time slot', async () => {
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedDelete(
           '/api/time-slots/slot-123' as '/api/time-slots/{id}',
           userToken

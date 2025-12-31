@@ -4,14 +4,11 @@
  */
 
 import { ValidationPipe } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
 
 import { AccountsModule } from '../../src/app/accounts/accounts.module';
 import { BookingTypesModule } from '../../src/app/booking-types/booking-types.module';
 import { IamModule } from '../../src/app/iam/iam.module';
 import { MessagesModule } from '../../src/app/messages/messages.module';
-import { PrismaModule } from '../../src/app/prisma/prisma.module';
 import { SessionsModule } from '../../src/app/sessions/sessions.module';
 import { IntegrationTest } from '../utils';
 
@@ -20,22 +17,7 @@ describe('Middleware Pipeline Integration Tests', () => {
 
   beforeAll(async () => {
     test = new IntegrationTest({
-      modules: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          envFilePath: ['.env.test', '.env'],
-        }),
-        JwtModule.register({
-          secret: 'test-secret',
-          signOptions: { expiresIn: '1h' },
-        }),
-        PrismaModule,
-        IamModule,
-        AccountsModule,
-        BookingTypesModule,
-        SessionsModule,
-        MessagesModule,
-      ],
+      modules: [IamModule, AccountsModule, BookingTypesModule, SessionsModule, MessagesModule],
     });
 
     await test.setup();

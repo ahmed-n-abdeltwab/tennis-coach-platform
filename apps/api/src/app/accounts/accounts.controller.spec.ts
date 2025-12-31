@@ -32,7 +32,7 @@ describe('AccountsController', () => {
 
       test.mocks.AccountsService.findUsers.mockResolvedValue(mockUsers);
 
-      const adminToken = await test.auth.createRoleToken(Role.ADMIN);
+      const adminToken = await test.auth.createToken({ role: Role.ADMIN });
 
       await test.http.authenticatedGet('/api/accounts', adminToken);
 
@@ -46,9 +46,7 @@ describe('AccountsController', () => {
 
       test.mocks.AccountsService.findById.mockResolvedValue(mockUsers);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'current-user-id',
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'current-user-id' });
       await test.http.authenticatedGet('/api/accounts/me', userToken);
 
       expect(test.mocks.AccountsService.findById).toHaveBeenCalledWith(mockUsers.id);
@@ -61,7 +59,7 @@ describe('AccountsController', () => {
 
       test.mocks.AccountsService.findById.mockResolvedValue(mockUsers);
 
-      const adminToken = await test.auth.createRoleToken(Role.ADMIN);
+      const adminToken = await test.auth.createToken({ role: Role.ADMIN });
       await test.http.authenticatedGet(
         `/api/accounts/${mockUsers.id}` as '/api/accounts/{id}',
         adminToken
@@ -75,9 +73,7 @@ describe('AccountsController', () => {
 
       test.mocks.AccountsService.findById.mockResolvedValue(mockUsers);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: mockUsers.id,
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: mockUsers.id });
       await test.http.authenticatedGet(
         `/api/accounts/${mockUsers.id}` as '/api/accounts/{id}',
         userToken
@@ -96,7 +92,7 @@ describe('AccountsController', () => {
 
       test.mocks.AccountsService.update.mockResolvedValue(mockUsers);
 
-      const adminToken = await test.auth.createRoleToken(Role.ADMIN);
+      const adminToken = await test.auth.createToken({ role: Role.ADMIN });
       await test.http.authenticatedPatch(
         `/api/accounts/${mockUsers.id}` as '/api/accounts/{id}',
         adminToken,
@@ -116,9 +112,7 @@ describe('AccountsController', () => {
 
       test.mocks.AccountsService.update.mockResolvedValue(mockUsers);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'current-user-id',
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'current-user-id' });
       await test.http.authenticatedPatch(
         `/api/accounts/${mockUsers.id}` as '/api/accounts/{id}',
         userToken,
@@ -135,7 +129,7 @@ describe('AccountsController', () => {
     it('should call delete with provided id', async () => {
       test.mocks.AccountsService.delete.mockResolvedValue(undefined);
 
-      const adminToken = await test.auth.createRoleToken(Role.ADMIN);
+      const adminToken = await test.auth.createToken({ role: Role.ADMIN });
       await test.http.authenticatedDelete(
         '/api/accounts/target-user-id' as '/api/accounts/{id}',
         adminToken

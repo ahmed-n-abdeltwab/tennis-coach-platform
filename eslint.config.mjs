@@ -57,6 +57,7 @@ export default [
       '**/*.config.ts',
       '**/jest.config.ts',
       'jest.preset.js',
+      '**/test/reporters/*.js',
     ],
   },
   ...typescriptEslint.configs.recommended,

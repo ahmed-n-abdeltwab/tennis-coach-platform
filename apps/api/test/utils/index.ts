@@ -9,6 +9,7 @@
 export * from './implementations/controller-test';
 export * from './implementations/e2e-test';
 export * from './implementations/gateway-test';
+export * from './implementations/guard-test';
 export * from './implementations/integration-test';
 export * from './implementations/service-test';
 
@@ -39,4 +40,5 @@ export * from '../infrastructure/database';
 export * from '../infrastructure/errors';
 export * from '../infrastructure/helpers';
 export * from '../infrastructure/performance';
-export * from '../infrastructure/redis';
+
+export * from './mocks';

@@ -82,18 +82,24 @@ class JestCustomReporter {
     if (configPath.includes('all')) return 'all';
     return 'unit';
   }
+  getTerminalWidth() {
+    // Priority: stdout.columns (TTY) > COLUMNS env var > default 120
+    const envColumns = parseInt(process.env.COLUMNS ?? '', 10);
+    return process.stdout.columns ?? (isNaN(envColumns) ? 120 : envColumns);
+  }
   displayQuickSummary(results) {
     const passRate =
       results.numTotalTests > 0
         ? ((results.numPassedTests / results.numTotalTests) * 100).toFixed(1)
         : '0';
-    console.log(`\n${'─'.repeat(50)}`);
+    const width = this.getTerminalWidth();
+    console.log(`\n${'─'.repeat(width)}`);
     console.log(`🎯 Quick Summary (${results.testType.toUpperCase()})`);
-    console.log('─'.repeat(50));
+    console.log('─'.repeat(width));
     console.log(`Tests: ${results.numPassedTests}/${results.numTotalTests} passed (${passRate}%)`);
     console.log(`Time: ${(results.duration / 1000).toFixed(2)}s`);
     console.log(`Status: ${results.success ? '✅ PASSED' : '❌ FAILED'}`);
-    console.log('─'.repeat(50));
+    console.log('─'.repeat(width));
   }
   getLastError() {
     return undefined;

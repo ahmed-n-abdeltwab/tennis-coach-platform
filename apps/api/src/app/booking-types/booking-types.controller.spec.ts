@@ -110,7 +110,7 @@ describe('BookingTypesController', () => {
       test.mocks.BookingTypesService.create.mockResolvedValue(mockCreatedBookingType);
 
       // Built-in token creation - no helper method needed!
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: coachId });
 
       // Direct access to authenticated HTTP methods!
       await test.http.authenticatedPost('/api/booking-types', coachToken, {
@@ -139,7 +139,7 @@ describe('BookingTypesController', () => {
 
       test.mocks.BookingTypesService.update.mockResolvedValue(mockUpdatedBookingType);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: coachId });
       await test.http.authenticatedPut(
         `/api/booking-types/${bookingTypeId}` as '/api/booking-types/{id}',
         coachToken,
@@ -172,7 +172,7 @@ describe('BookingTypesController', () => {
       });
       test.mocks.BookingTypesService.update.mockResolvedValue(mockUpdatedBookingType);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: coachId });
       await test.http.authenticatedPatch(
         `/api/booking-types/${bookingTypeId}` as '/api/booking-types/{id}',
         coachToken,
@@ -196,7 +196,7 @@ describe('BookingTypesController', () => {
 
       test.mocks.BookingTypesService.remove.mockResolvedValue(undefined);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: coachId });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: coachId });
       await test.http.authenticatedDelete(
         `/api/booking-types/${bookingTypeId}` as '/api/booking-types/{id}',
         coachToken

@@ -10,7 +10,6 @@ import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
 import jwtConfig from '../../../config/jwt.config';
-import { REQUEST_USER_KEY } from '../../../iam.constants';
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
@@ -29,7 +28,7 @@ export class AccessTokenGuard implements CanActivate {
     }
     try {
       const payload = await this.jwtService.verifyAsync(token, this.jwtConfiguration);
-      request[REQUEST_USER_KEY] = payload;
+      request.user = payload;
     } catch {
       throw new UnauthorizedException('Invalid token');
     }

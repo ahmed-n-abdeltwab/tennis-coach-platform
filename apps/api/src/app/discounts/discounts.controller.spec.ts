@@ -38,7 +38,7 @@ describe('DiscountsController', () => {
       };
       test.mocks.DiscountsService.validateCode.mockResolvedValue(expectedResponse);
 
-      const userToken = await test.auth.createRoleToken(Role.USER);
+      const userToken = await test.auth.createToken({ role: Role.USER });
       await test.http.authenticatedPost('/api/discounts/validate', userToken, {
         body: validateDto,
       });
@@ -55,7 +55,7 @@ describe('DiscountsController', () => {
       ];
       test.mocks.DiscountsService.findByCoach.mockResolvedValue(mockDiscounts);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.moduleAuthenticatedGet('/api/discounts/coach', coachToken);
 
       expect(test.mocks.DiscountsService.findByCoach).toHaveBeenCalledWith('coach-123');
@@ -64,7 +64,7 @@ describe('DiscountsController', () => {
     it('should return empty array when coach has no discounts', async () => {
       test.mocks.DiscountsService.findByCoach.mockResolvedValue([]);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-456' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-456' });
       await test.http.moduleAuthenticatedGet('/api/discounts/coach', coachToken);
 
       expect(test.mocks.DiscountsService.findByCoach).toHaveBeenCalledWith('coach-456');
@@ -88,7 +88,7 @@ describe('DiscountsController', () => {
       });
       test.mocks.DiscountsService.create.mockResolvedValue(mockDiscount);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedPost('/api/discounts', coachToken, {
         body: createDto,
       });
@@ -111,7 +111,7 @@ describe('DiscountsController', () => {
       });
       test.mocks.DiscountsService.update.mockResolvedValue(updatedDiscount);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedPut(
         '/api/discounts/SUMMER2024' as '/api/discounts/{code}',
         coachToken,
@@ -136,7 +136,7 @@ describe('DiscountsController', () => {
       });
       test.mocks.DiscountsService.update.mockResolvedValue(updatedDiscount);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedPut(
         '/api/discounts/SUMMER2024' as '/api/discounts/{code}',
         coachToken,
@@ -155,7 +155,7 @@ describe('DiscountsController', () => {
     it('should remove a discount', async () => {
       test.mocks.DiscountsService.remove.mockResolvedValue(undefined);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedDelete(
         '/api/discounts/SUMMER2024' as '/api/discounts/{code}',
         coachToken
@@ -169,7 +169,7 @@ describe('DiscountsController', () => {
         new NotFoundException('Discount not found')
       );
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       const response = await test.http.authenticatedDelete(
         '/api/discounts/INVALID' as '/api/discounts/{code}',
         coachToken
@@ -183,7 +183,7 @@ describe('DiscountsController', () => {
         new ForbiddenException('Not authorized to delete this discount')
       );
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'other-coach' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'other-coach' });
       const response = await test.http.authenticatedDelete(
         '/api/discounts/SUMMER2024' as '/api/discounts/{code}',
         coachToken
@@ -202,7 +202,7 @@ describe('DiscountsController', () => {
           expiry: '2025-12-31T23:59:59Z',
         };
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedPost('/api/discounts', userToken, {
           body: createDto,
         });
@@ -212,7 +212,7 @@ describe('DiscountsController', () => {
       });
 
       it('should return 403 when USER tries to get coach discounts', async () => {
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.moduleAuthenticatedGet('/api/discounts/coach', userToken);
 
         expect(response.status).toBe(403);
@@ -222,7 +222,7 @@ describe('DiscountsController', () => {
       it('should return 403 when USER tries to update discount', async () => {
         const updateDto = { amount: 20 };
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedPut(
           '/api/discounts/SUMMER2024' as '/api/discounts/{code}',
           userToken,
@@ -234,7 +234,7 @@ describe('DiscountsController', () => {
       });
 
       it('should return 403 when USER tries to delete discount', async () => {
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedDelete(
           '/api/discounts/SUMMER2024' as '/api/discounts/{code}',
           userToken
@@ -251,7 +251,7 @@ describe('DiscountsController', () => {
           new NotFoundException('Discount not found')
         );
 
-        const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+        const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
         const response = await test.http.authenticatedPut(
           '/api/discounts/INVALID' as '/api/discounts/{code}',
           coachToken,
@@ -268,7 +268,7 @@ describe('DiscountsController', () => {
           new BadRequestException('Invalid or expired discount code')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER);
+        const userToken = await test.auth.createToken({ role: Role.USER });
         const response = await test.http.authenticatedPost('/api/discounts/validate', userToken, {
           body: { code: 'INVALID' },
         });
@@ -281,7 +281,7 @@ describe('DiscountsController', () => {
           new BadRequestException('Discount code already exists')
         );
 
-        const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+        const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
         const response = await test.http.authenticatedPost('/api/discounts', coachToken, {
           body: {
             code: 'EXISTING',
@@ -298,7 +298,7 @@ describe('DiscountsController', () => {
           new BadRequestException('Discount code usage limit reached')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER);
+        const userToken = await test.auth.createToken({ role: Role.USER });
         const response = await test.http.authenticatedPost('/api/discounts/validate', userToken, {
           body: { code: 'MAXED_OUT' },
         });

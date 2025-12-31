@@ -37,9 +37,7 @@ describe('CalendarController', () => {
 
       test.mocks.CalendarService.createEvent.mockResolvedValue(mockResponse);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'user-123',
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedPost('/api/calendar/event', userToken, {
         body: createDto,
       });
@@ -60,7 +58,8 @@ describe('CalendarController', () => {
 
       test.mocks.CalendarService.createEvent.mockResolvedValue(mockResponse);
 
-      const premiumToken = await test.auth.createRoleToken(Role.PREMIUM_USER, {
+      const premiumToken = await test.auth.createToken({
+        role: Role.PREMIUM_USER,
         sub: 'premium-user-123',
       });
       await test.http.authenticatedPost('/api/calendar/event', premiumToken, {
@@ -83,9 +82,7 @@ describe('CalendarController', () => {
 
       test.mocks.CalendarService.createEvent.mockResolvedValue(mockResponse);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, {
-        sub: 'coach-123',
-      });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedPost('/api/calendar/event', coachToken, {
         body: createDto,
       });
@@ -110,9 +107,7 @@ describe('CalendarController', () => {
 
       test.mocks.CalendarService.deleteEvent.mockResolvedValue(mockResponse);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: userId,
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: userId });
       await test.http.authenticatedDelete(
         `/api/calendar/event/${eventId}` as '/api/calendar/event/{eventId}',
         userToken
@@ -136,9 +131,7 @@ describe('CalendarController', () => {
 
       test.mocks.CalendarService.deleteEvent.mockResolvedValue(mockResponse);
 
-      const premiumToken = await test.auth.createRoleToken(Role.PREMIUM_USER, {
-        sub: userId,
-      });
+      const premiumToken = await test.auth.createToken({ role: Role.PREMIUM_USER, sub: userId });
       await test.http.authenticatedDelete(
         `/api/calendar/event/${eventId}` as '/api/calendar/event/{eventId}',
         premiumToken
@@ -161,9 +154,7 @@ describe('CalendarController', () => {
 
       test.mocks.CalendarService.deleteEvent.mockResolvedValue(mockResponse);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, {
-        sub: coachId,
-      });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: coachId });
       await test.http.authenticatedDelete(
         `/api/calendar/event/${eventId}` as '/api/calendar/event/{eventId}',
         coachToken

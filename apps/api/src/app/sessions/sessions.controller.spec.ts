@@ -39,7 +39,7 @@ describe('SessionsController', () => {
       ];
       test.mocks.SessionsService.findByUser.mockResolvedValue(mockSessions);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedGet('/api/sessions', userToken);
 
       expect(test.mocks.SessionsService.findByUser).toHaveBeenCalledWith(
@@ -53,7 +53,8 @@ describe('SessionsController', () => {
       const mockSessions = [test.factory.session.createWithNulls({ userId: 'premium-user-123' })];
       test.mocks.SessionsService.findByUser.mockResolvedValue(mockSessions);
 
-      const premiumUserToken = await test.auth.createRoleToken(Role.PREMIUM_USER, {
+      const premiumUserToken = await test.auth.createToken({
+        role: Role.PREMIUM_USER,
         sub: 'premium-user-123',
       });
       await test.http.authenticatedGet('/api/sessions', premiumUserToken);
@@ -69,7 +70,7 @@ describe('SessionsController', () => {
       const mockSessions = [test.factory.session.createWithNulls({ coachId: 'coach-123' })];
       test.mocks.SessionsService.findByUser.mockResolvedValue(mockSessions);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedGet('/api/sessions', coachToken);
 
       expect(test.mocks.SessionsService.findByUser).toHaveBeenCalledWith(
@@ -82,7 +83,7 @@ describe('SessionsController', () => {
     it('should pass query parameters to service', async () => {
       test.mocks.SessionsService.findByUser.mockResolvedValue([]);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedGet(
         '/api/sessions?status=COMPLETED&startDate=2024-11-01&endDate=2024-11-30' as '/api/sessions',
         userToken
@@ -98,7 +99,7 @@ describe('SessionsController', () => {
     it('should return empty array when no sessions found', async () => {
       test.mocks.SessionsService.findByUser.mockResolvedValue([]);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-456' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-456' });
       await test.http.authenticatedGet('/api/sessions', userToken);
 
       expect(test.mocks.SessionsService.findByUser).toHaveBeenCalledWith(
@@ -117,7 +118,7 @@ describe('SessionsController', () => {
       });
       test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedGet(
         '/api/sessions/session-123' as '/api/sessions/{id}',
         userToken
@@ -137,7 +138,7 @@ describe('SessionsController', () => {
       });
       test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedGet(
         '/api/sessions/session-123' as '/api/sessions/{id}',
         coachToken
@@ -166,7 +167,7 @@ describe('SessionsController', () => {
       });
       test.mocks.SessionsService.create.mockResolvedValue(mockSession);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedPost('/api/sessions', userToken, { body: createDto });
 
       expect(test.mocks.SessionsService.create).toHaveBeenCalledWith(createDto, 'user-123');
@@ -184,7 +185,7 @@ describe('SessionsController', () => {
       });
       test.mocks.SessionsService.create.mockResolvedValue(mockSession);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedPost('/api/sessions', userToken, { body: createDto });
 
       expect(test.mocks.SessionsService.create).toHaveBeenCalledWith(createDto, 'user-123');
@@ -201,7 +202,7 @@ describe('SessionsController', () => {
       });
       test.mocks.SessionsService.update.mockResolvedValue(mockSession);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedPut(
         '/api/sessions/session-123' as '/api/sessions/{id}',
         userToken,
@@ -225,7 +226,7 @@ describe('SessionsController', () => {
       });
       test.mocks.SessionsService.update.mockResolvedValue(mockSession);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedPut(
         '/api/sessions/session-123' as '/api/sessions/{id}',
         coachToken,
@@ -251,7 +252,7 @@ describe('SessionsController', () => {
       });
       test.mocks.SessionsService.update.mockResolvedValue(mockSession);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedPatch(
         '/api/sessions/session-123' as '/api/sessions/{id}',
         userToken,
@@ -276,7 +277,7 @@ describe('SessionsController', () => {
       });
       test.mocks.SessionsService.cancel.mockResolvedValue(mockSession);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedPut(
         '/api/sessions/session-123/cancel' as '/api/sessions/{id}/cancel',
         userToken
@@ -297,7 +298,7 @@ describe('SessionsController', () => {
       });
       test.mocks.SessionsService.cancel.mockResolvedValue(mockSession);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedPut(
         '/api/sessions/session-123/cancel' as '/api/sessions/{id}/cancel',
         coachToken
@@ -318,7 +319,7 @@ describe('SessionsController', () => {
           new NotFoundException('Session not found')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedGet(
           '/api/sessions/non-existent' as '/api/sessions/{id}',
           userToken
@@ -332,7 +333,7 @@ describe('SessionsController', () => {
           new NotFoundException('Session not found')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedPut(
           '/api/sessions/non-existent' as '/api/sessions/{id}',
           userToken,
@@ -347,7 +348,7 @@ describe('SessionsController', () => {
           new NotFoundException('Session not found')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedPut(
           '/api/sessions/non-existent/cancel' as '/api/sessions/{id}/cancel',
           userToken
@@ -363,7 +364,7 @@ describe('SessionsController', () => {
           new ForbiddenException('Not authorized to access this session')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'other-user' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'other-user' });
         const response = await test.http.authenticatedGet(
           '/api/sessions/session-123' as '/api/sessions/{id}',
           userToken
@@ -377,7 +378,7 @@ describe('SessionsController', () => {
           new ForbiddenException('Not authorized to access this session')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'other-user' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'other-user' });
         const response = await test.http.authenticatedPut(
           '/api/sessions/session-123' as '/api/sessions/{id}',
           userToken,
@@ -392,7 +393,7 @@ describe('SessionsController', () => {
           new ForbiddenException('Not authorized to cancel this session')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'other-user' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'other-user' });
         const response = await test.http.authenticatedPut(
           '/api/sessions/session-123/cancel' as '/api/sessions/{id}/cancel',
           userToken
@@ -408,7 +409,7 @@ describe('SessionsController', () => {
           new BadRequestException('Invalid booking type')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedPost('/api/sessions', userToken, {
           body: {
             bookingTypeId: 'invalid-booking-type',
@@ -424,7 +425,7 @@ describe('SessionsController', () => {
           new BadRequestException('Time slot not available')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedPost('/api/sessions', userToken, {
           body: {
             bookingTypeId: 'booking-type-123',
@@ -440,7 +441,7 @@ describe('SessionsController', () => {
           new BadRequestException('Session already cancelled')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedPut(
           '/api/sessions/session-123/cancel' as '/api/sessions/{id}/cancel',
           userToken
@@ -454,7 +455,7 @@ describe('SessionsController', () => {
           new BadRequestException('Cannot cancel past sessions')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedPut(
           '/api/sessions/session-123/cancel' as '/api/sessions/{id}/cancel',
           userToken

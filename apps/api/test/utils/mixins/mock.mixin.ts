@@ -28,6 +28,10 @@ export interface CustomMockProvider<TClass = unknown, TValue = unknown> {
 
 /**
  * Provider: class (auto deep-mocked) or { provide, useValue } (custom mock).
+ *
+ * NOTE: Abstract classes cannot be passed directly - they must use the
+ * { provide: AbstractClass, useValue: {...} } format because they cannot
+ * be instantiated for auto-mocking.
  */
 export type MockProvider = Type<unknown> | CustomMockProvider<unknown, unknown>;
 

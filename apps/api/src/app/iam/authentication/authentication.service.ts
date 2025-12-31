@@ -3,25 +3,26 @@ import { randomUUID } from 'crypto';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Account, Role } from '@prisma/client';
+import { Role } from '@prisma/client';
 import { parseJwtTime } from '@utils';
 
-import { PrismaService } from '../../prisma/prisma.service';
+import { AccountsService } from '../../accounts/accounts.service';
+import { RedisService } from '../../redis/redis.service';
 import jwtConfig from '../config/jwt.config';
 import { HashingService } from '../hashing/hashing.service';
 import { JwtPayload } from '../interfaces/jwt.types';
 
-import { RedisService } from './../../redis/redis.service';
 import { AuthResponseDto, LoginDto, RefreshResponseDto, SignUpDto } from './dto';
 
 @Injectable()
 export class AuthenticationService {
   refreshTokenTtl: number;
   refreshSecret: string;
+
   constructor(
-    private prisma: PrismaService,
-    private redis: RedisService,
-    private jwtService: JwtService,
+    private readonly accountsService: AccountsService,
+    private readonly redis: RedisService,
+    private readonly jwtService: JwtService,
     private readonly hashingService: HashingService,
     @Inject(jwtConfig.KEY) private readonly jwtConfiguration: ConfigType<typeof jwtConfig>
   ) {
@@ -30,22 +31,19 @@ export class AuthenticationService {
   }
 
   async signup(signupDto: SignUpDto): Promise<AuthResponseDto> {
-    const account = await this.prisma.account.findUnique({
-      where: { email: signupDto.email },
-    });
+    const emailExists = await this.accountsService.emailExists(signupDto.email);
 
-    if (account) {
+    if (emailExists) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const newAccount: Account = await this.prisma.account.create({
-      data: {
-        email: signupDto.email,
-        name: signupDto.name,
-        passwordHash: await this.hashingService.hash(signupDto.password),
-        isOnline: true,
-        role: signupDto.role ?? Role.USER,
-      },
+    const passwordHash = await this.hashingService.hash(signupDto.password);
+
+    const newAccount = await this.accountsService.createForSignup({
+      email: signupDto.email,
+      name: signupDto.name,
+      passwordHash,
+      role: signupDto.role ?? Role.USER,
     });
 
     return this.generateTokens({
@@ -56,9 +54,7 @@ export class AuthenticationService {
   }
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
-    const account = await this.prisma.account.findUnique({
-      where: { email: loginDto.email },
-    });
+    const account = await this.accountsService.findByEmailWithPassword(loginDto.email);
 
     if (!account) {
       throw new UnauthorizedException('Invalid credentials');
@@ -77,20 +73,18 @@ export class AuthenticationService {
       throw new UnauthorizedException('Account is inactive');
     }
 
-    await this.prisma.account.update({
-      where: { id: account.id },
-      data: { isOnline: true },
-    });
+    await this.accountsService.updateOnlineStatus(account.id, true);
 
-    return this.generateTokens({ sub: account.id, email: account.email, role: account.role });
+    return this.generateTokens({
+      sub: account.id,
+      email: account.email,
+      role: account.role,
+    });
   }
 
   async logout(account: JwtPayload): Promise<void> {
     await Promise.all([
-      this.prisma.account.update({
-        where: { id: account.sub },
-        data: { isOnline: false },
-      }),
+      this.accountsService.updateOnlineStatus(account.sub, false),
       this.redis.invalidate(account.sub),
     ]);
   }

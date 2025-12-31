@@ -1,153 +1,122 @@
-import { BaseResponseDto, createTypedApiDecorators } from '@common';
+import { createTypedApiDecorators } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { Type } from 'class-transformer';
-import {
-  IsBoolean,
-  IsEmail,
-  IsEnum,
-  IsInt,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 import { BaseAuthDto } from './base.dto';
 
+/**
+ * Sign up request DTO.
+ * Extends BaseAuthDto with additional name and optional role fields.
+ */
 export class SignUpDto extends BaseAuthDto {
-  @ApiProperty({ example: 'John Doe' })
+  @ApiProperty({
+    example: 'John Doe',
+    description: 'User full name',
+  })
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @ApiPropertyOptional({ enum: Role, example: Role.USER })
+  @ApiPropertyOptional({
+    enum: Role,
+    example: Role.USER,
+    description: 'User role (defaults to USER)',
+  })
   @IsEnum(Role)
+  @IsOptional()
   role?: Role;
 }
 
-export class AccountProfileDto {
-  @ApiProperty({ example: 'John Doe' })
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
-  @ApiPropertyOptional({ enum: Role, example: Role.USER })
-  @IsOptional()
-  role?: Role;
-
-  // Shared fields (User + Coach)
-  @ApiPropertyOptional()
-  @IsEmail()
-  @IsOptional()
-  email?: string;
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  gender?: string | null;
-
-  @ApiPropertyOptional()
-  @IsInt()
-  @IsOptional()
-  age?: number | null;
-
-  @ApiPropertyOptional()
-  @IsNumber()
-  @IsOptional()
-  height?: number | null;
-
-  @ApiPropertyOptional()
-  @IsNumber()
-  @IsOptional()
-  weight?: number | null;
-
-  @ApiPropertyOptional()
-  @IsBoolean()
-  @IsOptional()
-  disability?: boolean | null;
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  disabilityCause?: string | null;
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  country?: string | null;
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  address?: string | null;
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  notes?: string | null;
-
-  // Coach-specific fields
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  bio?: string | null;
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  credentials?: string | null;
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  philosophy?: string | null;
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  profileImage?: string | null;
-}
-
+/**
+ * Account summary DTO for authentication responses.
+ * Contains minimal account information returned after auth operations.
+ */
 export class AccountSummaryDto {
-  @ApiProperty({ example: 'cmgwh137q000...' })
+  @ApiProperty({
+    example: 'cmgwh137q000...',
+    description: 'Unique account identifier',
+  })
   @IsString()
   @IsNotEmpty()
   id: string;
 
-  @ApiProperty({ example: 'user@example.com' })
+  @ApiProperty({
+    example: 'user@example.com',
+    description: 'Account email address',
+  })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty({ enum: Role, example: Role.USER })
+  @ApiProperty({
+    enum: Role,
+    example: Role.USER,
+    description: 'Account role',
+  })
+  @IsEnum(Role)
   role: Role;
 }
 
+/**
+ * Refresh token response DTO.
+ * Returns new access and refresh tokens along with account summary.
+ */
 export class RefreshResponseDto {
-  @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
+  @ApiProperty({
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    description: 'JWT access token',
+  })
   @IsString()
   @IsNotEmpty()
   accessToken: string;
 
-  @ApiProperty({ example: 'dGhpc2lzYXJlZnJlc2h0b2tlbg==' })
+  @ApiProperty({
+    example: 'dGhpc2lzYXJlZnJlc2h0b2tlbg==',
+    description: 'JWT refresh token',
+  })
   @IsString()
   @IsNotEmpty()
   refreshToken: string;
 
-  @ApiProperty({ type: AccountSummaryDto })
+  @ApiProperty({
+    type: AccountSummaryDto,
+    description: 'Account summary information',
+  })
   @Type(() => AccountSummaryDto)
   account: AccountSummaryDto;
 }
 
-export class AuthResponseDto extends RefreshResponseDto {}
+/**
+ * Authentication response DTO.
+ * Used for signup and login responses.
+ */
+export class AuthResponseDto {
+  @ApiProperty({
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    description: 'JWT access token',
+  })
+  @IsString()
+  @IsNotEmpty()
+  accessToken: string;
 
-export class AccountProfileResponseDto extends BaseResponseDto {
-  @ApiProperty({ type: AccountProfileDto })
-  @Type(() => AccountProfileDto)
-  account: AccountProfileDto;
+  @ApiProperty({
+    example: 'dGhpc2lzYXJlZnJlc2h0b2tlbg==',
+    description: 'JWT refresh token',
+  })
+  @IsString()
+  @IsNotEmpty()
+  refreshToken: string;
+
+  @ApiProperty({
+    type: AccountSummaryDto,
+    description: 'Account summary information',
+  })
+  @Type(() => AccountSummaryDto)
+  account: AccountSummaryDto;
 }
 
+// Export typed API decorators for authentication
 export const AuthApiResponses = createTypedApiDecorators(AuthResponseDto);
-
 export const RefreshApiResponses = createTypedApiDecorators(RefreshResponseDto);

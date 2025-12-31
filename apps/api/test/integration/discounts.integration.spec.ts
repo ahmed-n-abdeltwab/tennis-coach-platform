@@ -1,10 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ConfigModule } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
-
 import { DiscountsModule } from '../../src/app/discounts/discounts.module';
 import { DiscountsService } from '../../src/app/discounts/discounts.service';
-import { PrismaModule } from '../../src/app/prisma/prisma.module';
+import { IamModule } from '../../src/app/iam/iam.module';
 import { IntegrationTest } from '../utils';
 
 describe('Discounts Integration', () => {
@@ -13,17 +10,7 @@ describe('Discounts Integration', () => {
 
   beforeAll(async () => {
     test = new IntegrationTest({
-      modules: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-        }),
-        PrismaModule,
-        DiscountsModule,
-        JwtModule.register({
-          secret: 'test-secret',
-          signOptions: { expiresIn: '1h' },
-        }),
-      ],
+      modules: [IamModule, DiscountsModule],
     });
 
     await test.setup();

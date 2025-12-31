@@ -45,7 +45,6 @@ export type {
   MockHttpResponse,
   MockRequest,
   MockRequestOverrides,
-  MockResponse,
 } from './http.factory';
 
 export { NotificationMockFactory } from './notification.factory';

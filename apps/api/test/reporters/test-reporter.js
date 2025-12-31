@@ -171,12 +171,18 @@ class TestReporter {
       </div>
     `;
   }
+  getTerminalWidth() {
+    // Priority: stdout.columns (TTY) > COLUMNS env var > default 120
+    const envColumns = parseInt(process.env.COLUMNS ?? '', 10);
+    return process.stdout.columns ?? (isNaN(envColumns) ? 120 : envColumns);
+  }
   generateConsoleSummary(reportData) {
     const statusIcon = reportData.summary.success ? '✅' : '❌';
     const duration = (reportData.summary.duration / 1000).toFixed(2);
-    console.log(`\n${'='.repeat(60)}`);
+    const width = this.getTerminalWidth();
+    console.log(`\n${'='.repeat(width)}`);
     console.log(`${statusIcon} TEST SUMMARY - ${reportData.testType.toUpperCase()}`);
-    console.log('='.repeat(60));
+    console.log('='.repeat(width));
     console.log(`📊 Total Tests: ${reportData.summary.total}`);
     console.log(`✅ Passed: ${reportData.summary.passed}`);
     console.log(`❌ Failed: ${reportData.summary.failed}`);
@@ -184,13 +190,13 @@ class TestReporter {
     console.log(`⏱️  Duration: ${duration}s`);
     if (reportData.coverage) {
       console.log('\n📈 COVERAGE SUMMARY');
-      console.log('-'.repeat(30));
+      console.log('-'.repeat(Math.min(30, width)));
       console.log(`Lines: ${reportData.coverage.lines.pct.toFixed(1)}%`);
       console.log(`Functions: ${reportData.coverage.functions.pct.toFixed(1)}%`);
       console.log(`Statements: ${reportData.coverage.statements.pct.toFixed(1)}%`);
       console.log(`Branches: ${reportData.coverage.branches.pct.toFixed(1)}%`);
     }
-    console.log(`${'='.repeat(60)}\n`);
+    console.log(`${'='.repeat(width)}\n`);
   }
   extractCoverageData(coverageMap) {
     if (!coverageMap) return null;

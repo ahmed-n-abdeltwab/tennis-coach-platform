@@ -126,7 +126,7 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
     startTime?: Date
   ): MockMessage[] {
     const messages: MockMessage[] = [];
-    const baseTime = startTime || new Date(Date.now() - messageCount * 60000);
+    const baseTime = startTime ?? new Date(Date.now() - messageCount * 60000);
 
     for (let i = 0; i < messageCount; i++) {
       const isUserSender = i % 2 === 0;

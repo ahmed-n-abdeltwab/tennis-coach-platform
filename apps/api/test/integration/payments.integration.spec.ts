@@ -1,10 +1,8 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { ConfigModule } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
 
+import { IamModule } from '../../src/app/iam/iam.module';
 import paymentsConfig from '../../src/app/payments/config/payments.config';
 import { PaymentsModule } from '../../src/app/payments/payments.module';
-import { PrismaModule } from '../../src/app/prisma/prisma.module';
 import { IntegrationTest } from '../utils';
 
 describe.skip('Payments Integration', () => {
@@ -12,18 +10,7 @@ describe.skip('Payments Integration', () => {
 
   beforeAll(async () => {
     test = new IntegrationTest({
-      modules: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          load: [paymentsConfig],
-        }),
-        PrismaModule,
-        PaymentsModule,
-        JwtModule.register({
-          secret: 'test-secret',
-          signOptions: { expiresIn: '1h' },
-        }),
-      ],
+      modules: [ConfigModule.forFeature(paymentsConfig), IamModule, PaymentsModule],
     });
 
     await test.setup();

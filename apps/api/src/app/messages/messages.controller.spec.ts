@@ -42,7 +42,7 @@ describe('MessagesController', () => {
       });
       test.mocks.MessagesService.create.mockResolvedValue(mockMessage);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedPost('/api/messages', userToken, {
         body: createDto,
       });
@@ -66,7 +66,7 @@ describe('MessagesController', () => {
       });
       test.mocks.MessagesService.create.mockResolvedValue(mockMessage);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedPost('/api/messages', userToken, {
         body: createDto,
       });
@@ -88,7 +88,7 @@ describe('MessagesController', () => {
       });
       test.mocks.MessagesService.create.mockResolvedValue(mockMessage);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedPost('/api/messages', coachToken, {
         body: createDto,
       });
@@ -109,7 +109,7 @@ describe('MessagesController', () => {
       ];
       test.mocks.MessagesService.findAll.mockResolvedValue(mockMessages);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedGet('/api/messages', userToken);
 
       expect(test.mocks.MessagesService.findAll).toHaveBeenCalledWith(
@@ -121,7 +121,7 @@ describe('MessagesController', () => {
     it('should pass sessionId query parameter to service', async () => {
       test.mocks.MessagesService.findAll.mockResolvedValue([]);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedGet(
         '/api/messages?sessionId=session-123' as '/api/messages',
         userToken
@@ -135,7 +135,7 @@ describe('MessagesController', () => {
     it('should pass conversationWith query parameter to service', async () => {
       test.mocks.MessagesService.findAll.mockResolvedValue([]);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedGet(
         '/api/messages?conversationWith=other-user' as '/api/messages',
         userToken
@@ -149,7 +149,7 @@ describe('MessagesController', () => {
     it('should return empty array when no messages found', async () => {
       test.mocks.MessagesService.findAll.mockResolvedValue([]);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedGet('/api/messages', userToken);
 
       expect(test.mocks.MessagesService.findAll).toHaveBeenCalledWith(
@@ -164,7 +164,7 @@ describe('MessagesController', () => {
       const mockMessages = test.factory.message.createConversation('user-123', 'other-user', 4);
       test.mocks.MessagesService.findConversation.mockResolvedValue(mockMessages);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedGet(
         '/api/messages/conversation/other-user' as '/api/messages/conversation/{userId}',
         userToken
@@ -179,7 +179,7 @@ describe('MessagesController', () => {
     it('should return empty array when no conversation exists', async () => {
       test.mocks.MessagesService.findConversation.mockResolvedValue([]);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedGet(
         '/api/messages/conversation/other-user' as '/api/messages/conversation/{userId}',
         userToken
@@ -197,7 +197,7 @@ describe('MessagesController', () => {
       const mockMessages = [test.factory.message.createSessionMessage('session-123')];
       test.mocks.MessagesService.findBySession.mockResolvedValue(mockMessages);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedGet(
         '/api/messages/session/session-123' as '/api/messages/session/{sessionId}',
         userToken
@@ -214,7 +214,7 @@ describe('MessagesController', () => {
     it('should allow COACH to view session messages', async () => {
       test.mocks.MessagesService.findBySession.mockResolvedValue([]);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, { sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedGet(
         '/api/messages/session/session-123' as '/api/messages/session/{sessionId}',
         coachToken
@@ -237,7 +237,7 @@ describe('MessagesController', () => {
       });
       test.mocks.MessagesService.findOne.mockResolvedValue(mockMessage);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedGet(
         '/api/messages/message-123' as '/api/messages/{id}',
         userToken
@@ -254,7 +254,7 @@ describe('MessagesController', () => {
           new NotFoundException('Message not found')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedGet(
           '/api/messages/non-existent' as '/api/messages/{id}',
           userToken
@@ -268,7 +268,7 @@ describe('MessagesController', () => {
           new NotFoundException('Receiver not found')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedPost('/api/messages', userToken, {
           body: {
             content: 'Hello',
@@ -284,7 +284,7 @@ describe('MessagesController', () => {
           new NotFoundException('Session not found')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedGet(
           '/api/messages/session/non-existent' as '/api/messages/session/{sessionId}',
           userToken
@@ -300,7 +300,7 @@ describe('MessagesController', () => {
           new ForbiddenException('Not authorized to view this message')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedGet(
           '/api/messages/other-message' as '/api/messages/{id}',
           userToken
@@ -314,7 +314,7 @@ describe('MessagesController', () => {
           new ForbiddenException('Not authorized to view messages for this session')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedGet(
           '/api/messages/session/other-session' as '/api/messages/session/{sessionId}',
           userToken
@@ -328,7 +328,7 @@ describe('MessagesController', () => {
           new ForbiddenException('Not authorized to send messages for this session')
         );
 
-        const userToken = await test.auth.createRoleToken(Role.USER, { sub: 'user-123' });
+        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
         const response = await test.http.authenticatedPost('/api/messages', userToken, {
           body: {
             content: 'Hello',

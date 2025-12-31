@@ -3,9 +3,6 @@
  * Tests service-to-service interactions, module communication, and dependency injection
  */
 
-import { ConfigModule } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
-
 import { AccountsModule } from '../../src/app/accounts/accounts.module';
 import { BookingTypesModule } from '../../src/app/booking-types/booking-types.module';
 import { CalendarModule } from '../../src/app/calendar/calendar.module';
@@ -14,7 +11,6 @@ import { IamModule } from '../../src/app/iam/iam.module';
 import { MessagesModule } from '../../src/app/messages/messages.module';
 import { NotificationsModule } from '../../src/app/notifications/notifications.module';
 import { PaymentsModule } from '../../src/app/payments/payments.module';
-import { PrismaModule } from '../../src/app/prisma/prisma.module';
 import { SessionsModule } from '../../src/app/sessions/sessions.module';
 import { TimeSlotsModule } from '../../src/app/time-slots/time-slots.module';
 import { IntegrationTest } from '../utils';
@@ -25,15 +21,6 @@ describe('Cross-Module Integration Tests', () => {
   beforeAll(async () => {
     test = new IntegrationTest({
       modules: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          envFilePath: ['.env.test', '.env'],
-        }),
-        JwtModule.register({
-          secret: 'test-secret',
-          signOptions: { expiresIn: '1h' },
-        }),
-        PrismaModule,
         IamModule,
         AccountsModule,
         BookingTypesModule,

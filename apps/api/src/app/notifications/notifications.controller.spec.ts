@@ -50,9 +50,7 @@ describe('NotificationsController', () => {
 
       test.mocks.NotificationsService.sendEmail.mockResolvedValue(mockResponse);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'user-123',
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedPost('/api/notifications/email', userToken, {
         body: emailDto,
       });
@@ -78,9 +76,7 @@ describe('NotificationsController', () => {
 
       test.mocks.NotificationsService.sendEmail.mockResolvedValue(mockResponse);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, {
-        sub: 'coach-123',
-      });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedPost('/api/notifications/email', coachToken, {
         body: emailDto,
       });
@@ -106,9 +102,7 @@ describe('NotificationsController', () => {
 
       test.mocks.NotificationsService.sendEmail.mockResolvedValue(mockResponse);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'user-123',
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedPost('/api/notifications/email', userToken, {
         body: emailDto,
       });
@@ -125,9 +119,7 @@ describe('NotificationsController', () => {
 
       test.mocks.NotificationsService.sendBookingConfirmation.mockResolvedValue(undefined);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'user-123',
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedPost('/api/notifications/confirm', userToken, {
         body: confirmDto,
       });
@@ -146,9 +138,7 @@ describe('NotificationsController', () => {
 
       test.mocks.NotificationsService.sendBookingConfirmation.mockResolvedValue(undefined);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, {
-        sub: 'coach-123',
-      });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedPost('/api/notifications/confirm', coachToken, {
         body: confirmDto,
       });
@@ -169,9 +159,7 @@ describe('NotificationsController', () => {
         new UnauthorizedException('you must create session first')
       );
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'user-123',
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
 
       const response = await test.http.authenticatedPost('/api/notifications/confirm', userToken, {
         body: confirmDto,

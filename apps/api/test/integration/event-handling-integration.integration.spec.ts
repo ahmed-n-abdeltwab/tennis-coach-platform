@@ -3,12 +3,9 @@
  * Tests event handling, message passing, and real-time communication across modules
  */
 
-import { ConfigModule } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
-
+import { IamModule } from '../../src/app/iam/iam.module';
 import { MessagesModule } from '../../src/app/messages/messages.module';
 import { NotificationsModule } from '../../src/app/notifications/notifications.module';
-import { PrismaModule } from '../../src/app/prisma/prisma.module';
 import { SessionsModule } from '../../src/app/sessions/sessions.module';
 import { IntegrationTest } from '../utils';
 
@@ -17,20 +14,7 @@ describe.skip('Event Handling Integration Tests', () => {
 
   beforeAll(async () => {
     test = new IntegrationTest({
-      modules: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          envFilePath: ['.env.test', '.env'],
-        }),
-        JwtModule.register({
-          secret: 'test-secret',
-          signOptions: { expiresIn: '1h' },
-        }),
-        PrismaModule,
-        SessionsModule,
-        MessagesModule,
-        NotificationsModule,
-      ],
+      modules: [IamModule, SessionsModule, MessagesModule, NotificationsModule],
     });
 
     await test.setup();

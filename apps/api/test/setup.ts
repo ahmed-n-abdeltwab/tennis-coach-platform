@@ -1,13 +1,10 @@
 /**
  * Jest Setup File (setupFiles)
  * Runs BEFORE module imports - required for module-level mocking
- *
- * IMPORTANT: Cannot import from project files here as they haven't loaded yet.
- * All mocks must be defined inline. For mock factories used in tests,
- * see MockMixin in test/utils/base/mixins/mock.mixin.ts
  */
 
 import { setupTestEnvironment } from './setup/shared';
+import { RedisService } from './utils/mocks/redis.mock';
 
 // Set up common test environment variables
 setupTestEnvironment({
@@ -15,6 +12,8 @@ setupTestEnvironment({
   port: '3333',
   useStrictAssignment: true,
 });
+
+jest.mock('../src/app/redis/redis.service', () => ({ RedisService }));
 
 function createMockRepository() {
   return {
@@ -74,72 +73,6 @@ jest.mock('@prisma/client', () => ({
     FIXED: 'FIXED',
   },
 }));
-
-jest.mock('../src/app/redis/redis.service', () => {
-  // Inline MockRedisService - must match @test-infrastructure/redis/MockRedisService
-  class MockRedisService {
-    private store: Map<string, { value: string; expiry?: number }> = new Map();
-
-    async get(key: string): Promise<string | null> {
-      const item = this.store.get(key);
-      if (!item) return null;
-      if (item.expiry && Date.now() > item.expiry) {
-        this.store.delete(key);
-        return null;
-      }
-      return item.value;
-    }
-
-    async set(key: string, value: string, flag?: string, ttl?: number): Promise<'OK'> {
-      let expiry: number | undefined;
-      if (flag === 'EX' && typeof ttl === 'number') {
-        expiry = Date.now() + ttl * 1000;
-      }
-      this.store.set(key, { value, expiry });
-      return 'OK';
-    }
-
-    async validate(key: string, value: string): Promise<boolean> {
-      const storedValue = await this.get(key);
-      return value === storedValue;
-    }
-
-    async invalidate(key: string): Promise<void> {
-      this.store.delete(key);
-    }
-
-    async del(key: string): Promise<number> {
-      const existed = this.store.has(key);
-      this.store.delete(key);
-      return existed ? 1 : 0;
-    }
-
-    async ping(): Promise<string> {
-      return 'PONG';
-    }
-
-    async quit(): Promise<'OK'> {
-      this.store.clear();
-      return 'OK';
-    }
-
-    getClient() {
-      return this;
-    }
-
-    clear(): void {
-      this.store.clear();
-    }
-
-    keys(): string[] {
-      return Array.from(this.store.keys());
-    }
-  }
-
-  return {
-    RedisService: MockRedisService,
-  };
-});
 
 jest.mock('nodemailer', () => ({
   createTransport: jest.fn(() => ({

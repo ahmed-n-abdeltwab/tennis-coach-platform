@@ -3,10 +3,8 @@
  * Tests calendar synchronization, management, and database interactions
  */
 
-import { JwtModule } from '@nestjs/jwt';
-
 import { CalendarModule } from '../../src/app/calendar/calendar.module';
-import { PrismaModule } from '../../src/app/prisma/prisma.module';
+import { IamModule } from '../../src/app/iam/iam.module';
 import { IntegrationTest } from '../utils';
 
 describe('Calendar Integration Tests', () => {
@@ -14,14 +12,7 @@ describe('Calendar Integration Tests', () => {
 
   beforeAll(async () => {
     test = new IntegrationTest({
-      modules: [
-        CalendarModule,
-        PrismaModule,
-        JwtModule.register({
-          secret: process.env.JWT_SECRET ?? 'test-secret',
-          signOptions: { expiresIn: '1h' },
-        }),
-      ],
+      modules: [IamModule, CalendarModule],
     });
 
     await test.setup();

@@ -30,14 +30,14 @@
  *
  *   it('should work', async () => {
  *     test.mocks.SessionsService.create.mockResolvedValue(mockSession);
- *     const token = await test.auth.createRoleToken(Role.USER);
+ *     const token = await test.auth.createToken({ role: Role.USER });
  *     await test.http.authenticatedPost('/api/sessions', token, { body: dto });
  *   });
  * });
  * ```
  */
 
-import { Provider, Type } from '@nestjs/common';
+import { CanActivate, Provider, Type } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 
@@ -48,6 +48,11 @@ import { AuthMixin } from '../mixins/auth.mixin';
 import { FactoryMixin } from '../mixins/factory.mixin';
 import { HttpCapable, HttpMethodsMixin } from '../mixins/http-methods.mixin';
 import { buildProviders, MockProvider } from '../mixins/mock.mixin';
+
+export interface GuardOverride {
+  guard: Type<CanActivate>;
+  useClass: Type<CanActivate>;
+}
 
 export interface ControllerTestConfig<TController, TModuleName extends string = string> {
   /** The controller class to test. */
@@ -68,6 +73,9 @@ export interface ControllerTestConfig<TController, TModuleName extends string = 
 
   /** Whether to enable role-based authorization guards (default: true) */
   enableRolesGuard?: boolean;
+
+  /** Guards to override with mock implementations */
+  guardOverrides?: readonly GuardOverride[];
 }
 
 /**
@@ -166,10 +174,19 @@ export class ControllerTest<
       this._mocks = {} as TMocks;
     }
 
-    this._module = await Test.createTestingModule({
+    let moduleBuilder = Test.createTestingModule({
       controllers: [this.config.controller],
       providers: moduleProviders,
-    }).compile();
+    });
+
+    // Apply guard overrides
+    if (this.config.guardOverrides) {
+      for (const override of this.config.guardOverrides) {
+        moduleBuilder = moduleBuilder.overrideGuard(override.guard).useClass(override.useClass);
+      }
+    }
+
+    this._module = await moduleBuilder.compile();
 
     this._controller = this._module.get<TController>(this.config.controller);
 

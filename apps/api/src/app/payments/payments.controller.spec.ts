@@ -48,9 +48,7 @@ describe('PaymentsController', () => {
 
       test.mocks.PaymentsService.createOrder.mockResolvedValue(mockResponse);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'user-123',
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedPost('/api/payments/create-order', userToken, {
         body: createDto,
       });
@@ -75,9 +73,7 @@ describe('PaymentsController', () => {
 
       test.mocks.PaymentsService.createOrder.mockResolvedValue(mockResponse);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, {
-        sub: 'coach-123',
-      });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedPost('/api/payments/create-order', coachToken, {
         body: createDto,
       });
@@ -99,9 +95,7 @@ describe('PaymentsController', () => {
         new BadRequestException('Invalid session')
       );
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'user-123',
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       const response = await test.http.authenticatedPost('/api/payments/create-order', userToken, {
         body: createDto,
       });
@@ -119,9 +113,7 @@ describe('PaymentsController', () => {
         new BadRequestException('Session already paid')
       );
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'user-123',
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       const response = await test.http.authenticatedPost('/api/payments/create-order', userToken, {
         body: createDto,
       });
@@ -145,9 +137,7 @@ describe('PaymentsController', () => {
 
       test.mocks.PaymentsService.captureOrder.mockResolvedValue(mockResponse);
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'user-123',
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       await test.http.authenticatedPost('/api/payments/capture-order', userToken, {
         body: captureDto,
       });
@@ -173,9 +163,7 @@ describe('PaymentsController', () => {
 
       test.mocks.PaymentsService.captureOrder.mockResolvedValue(mockResponse);
 
-      const coachToken = await test.auth.createRoleToken(Role.COACH, {
-        sub: 'coach-123',
-      });
+      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
       await test.http.authenticatedPost('/api/payments/capture-order', coachToken, {
         body: captureDto,
       });
@@ -197,9 +185,7 @@ describe('PaymentsController', () => {
         new BadRequestException('Invalid session')
       );
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'user-123',
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       const response = await test.http.authenticatedPost('/api/payments/capture-order', userToken, {
         body: captureDto,
       });
@@ -217,9 +203,7 @@ describe('PaymentsController', () => {
         new BadRequestException('Payment capture failed')
       );
 
-      const userToken = await test.auth.createRoleToken(Role.USER, {
-        sub: 'user-123',
-      });
+      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
       const response = await test.http.authenticatedPost('/api/payments/capture-order', userToken, {
         body: captureDto,
       });

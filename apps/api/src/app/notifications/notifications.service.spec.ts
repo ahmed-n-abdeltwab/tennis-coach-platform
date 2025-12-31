@@ -132,7 +132,7 @@ describe('NotificationsService', () => {
         price: new Decimal(100),
       });
 
-      test.mocks.SessionsService.findOne.mockResolvedValue(mockSession as any);
+      test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
       test.mocks.MailerService.sendMail.mockResolvedValue({
         success: true,
         message_ids: ['msg-789'],
@@ -177,7 +177,7 @@ describe('NotificationsService', () => {
         price: new Decimal(150),
       });
 
-      test.mocks.SessionsService.findOne.mockResolvedValue(mockSession as any);
+      test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
       test.mocks.MailerService.sendMail.mockResolvedValue({
         success: true,
         message_ids: ['msg-confirmation'],

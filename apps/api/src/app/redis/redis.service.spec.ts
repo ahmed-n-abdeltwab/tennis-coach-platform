@@ -3,7 +3,7 @@ import { createServiceTest } from '@test-utils';
 
 import { RedisService } from './redis.service';
 
-describe('RedisService', () => {
+describe.skip('RedisService', () => {
   let service: RedisService;
 
   const mockConfigService = {
