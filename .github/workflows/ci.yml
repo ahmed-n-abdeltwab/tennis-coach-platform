@@ -345,8 +345,8 @@ jobs:
           # Wait for server to be ready
           npx wait-on http://localhost:4200 --timeout 60000
 
-          # Run TestCafe tests
-          pnpm exec testcafe chrome:headless apps/web/e2e/**/*.e2e.ts --reporter spec,xunit:test-reports/testcafe-results.xml
+          # Run TestCafe tests (disable video recording in CI - no FFmpeg)
+          pnpm exec testcafe chrome:headless apps/web/e2e/**/*.e2e.ts --reporter spec,xunit:test-reports/testcafe-results.xml --disable-video
           TEST_EXIT_CODE=$?
 
           # Cleanup
@@ -360,14 +360,6 @@ jobs:
         with:
           name: testcafe-screenshots
           path: apps/web/e2e/screenshots/
-          retention-days: 7
-
-      - name: Upload TestCafe videos
-        uses: actions/upload-artifact@v6
-        if: failure()
-        with:
-          name: testcafe-videos
-          path: apps/web/e2e/videos/
           retention-days: 7
 
       - name: Upload TestCafe reports
