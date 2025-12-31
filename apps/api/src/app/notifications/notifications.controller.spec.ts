@@ -1,24 +1,30 @@
+import { UnauthorizedException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { ControllerTest } from '@test-utils';
+import { DeepMocked } from '@test-utils/mixins/mock.mixin';
 
 import { MailResponse, SendBookingConfirmationDto, SendEmailDto } from './dto/notification.dto';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 
-describe.skip('NotificationsController', () => {
-  let test: ControllerTest<NotificationsController, NotificationsService, 'notifications'>;
-  let mockService: jest.Mocked<NotificationsService>;
+/**
+ * NotificationsControllerMocks interface defines typed mocks for the NotificationsController dependencies.
+ *
+ * This interface provides IntelliSense support for:
+ * - NotificationsService mock (sendEmail, sendBookingConfirmation methods)
+ */
+interface NotificationsControllerMocks {
+  NotificationsService: DeepMocked<NotificationsService>;
+}
+
+describe('NotificationsController', () => {
+  let test: ControllerTest<NotificationsController, NotificationsControllerMocks, 'notifications'>;
 
   beforeEach(async () => {
-    mockService = {
-      sendEmail: jest.fn(),
-      sendBookingConfirmation: jest.fn(),
-    } as any;
-
     test = new ControllerTest({
-      controllerClass: NotificationsController,
+      controller: NotificationsController,
       moduleName: 'notifications',
-      providers: [{ provide: NotificationsService, useValue: mockService }],
+      providers: [NotificationsService],
     });
 
     await test.setup();
@@ -28,7 +34,7 @@ describe.skip('NotificationsController', () => {
     await test.cleanup();
   });
 
-  describe('POST /notifications/email', () => {
+  describe('POST /api/notifications/email', () => {
     it('should call sendEmail service method with correct parameters', async () => {
       const emailDto: SendEmailDto = {
         to: 'recipient@example.com',
@@ -42,7 +48,7 @@ describe.skip('NotificationsController', () => {
         message_ids: ['msg-123'],
       };
 
-      mockService.sendEmail.mockResolvedValue(mockResponse);
+      test.mocks.NotificationsService.sendEmail.mockResolvedValue(mockResponse);
 
       const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: 'user-123',
@@ -51,7 +57,11 @@ describe.skip('NotificationsController', () => {
         body: emailDto,
       });
 
-      expect(mockService.sendEmail).toHaveBeenCalledWith(emailDto, 'user-123', Role.USER);
+      expect(test.mocks.NotificationsService.sendEmail).toHaveBeenCalledWith(
+        emailDto,
+        'user-123',
+        Role.USER
+      );
     });
 
     it('should allow coach to send email notifications', async () => {
@@ -66,7 +76,7 @@ describe.skip('NotificationsController', () => {
         message_ids: ['msg-456'],
       };
 
-      mockService.sendEmail.mockResolvedValue(mockResponse);
+      test.mocks.NotificationsService.sendEmail.mockResolvedValue(mockResponse);
 
       const coachToken = await test.auth.createRoleToken(Role.COACH, {
         sub: 'coach-123',
@@ -75,7 +85,11 @@ describe.skip('NotificationsController', () => {
         body: emailDto,
       });
 
-      expect(mockService.sendEmail).toHaveBeenCalledWith(emailDto, 'coach-123', Role.COACH);
+      expect(test.mocks.NotificationsService.sendEmail).toHaveBeenCalledWith(
+        emailDto,
+        'coach-123',
+        Role.COACH
+      );
     });
 
     it('should handle email send failure response', async () => {
@@ -90,7 +104,7 @@ describe.skip('NotificationsController', () => {
         errors: ['Invalid recipient address'],
       };
 
-      mockService.sendEmail.mockResolvedValue(mockResponse);
+      test.mocks.NotificationsService.sendEmail.mockResolvedValue(mockResponse);
 
       const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: 'user-123',
@@ -99,17 +113,17 @@ describe.skip('NotificationsController', () => {
         body: emailDto,
       });
 
-      expect(mockService.sendEmail).toHaveBeenCalled();
+      expect(test.mocks.NotificationsService.sendEmail).toHaveBeenCalled();
     });
   });
 
-  describe('POST /notifications/confirm', () => {
-    it('should call sendBookingConfirmation service method with sessionId', async () => {
+  describe('POST /api/notifications/confirm', () => {
+    it('should call sendBookingConfirmation service method with correct parameters', async () => {
       const confirmDto: SendBookingConfirmationDto = {
         sessionId: 'session-123',
       };
 
-      mockService.sendBookingConfirmation.mockResolvedValue(undefined);
+      test.mocks.NotificationsService.sendBookingConfirmation.mockResolvedValue(undefined);
 
       const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: 'user-123',
@@ -118,7 +132,11 @@ describe.skip('NotificationsController', () => {
         body: confirmDto,
       });
 
-      expect(mockService.sendBookingConfirmation).toHaveBeenCalledWith('session-123');
+      expect(test.mocks.NotificationsService.sendBookingConfirmation).toHaveBeenCalledWith(
+        'session-123',
+        'user-123',
+        Role.USER
+      );
     });
 
     it('should allow coach to send booking confirmation', async () => {
@@ -126,7 +144,7 @@ describe.skip('NotificationsController', () => {
         sessionId: 'session-456',
       };
 
-      mockService.sendBookingConfirmation.mockResolvedValue(undefined);
+      test.mocks.NotificationsService.sendBookingConfirmation.mockResolvedValue(undefined);
 
       const coachToken = await test.auth.createRoleToken(Role.COACH, {
         sub: 'coach-123',
@@ -135,7 +153,30 @@ describe.skip('NotificationsController', () => {
         body: confirmDto,
       });
 
-      expect(mockService.sendBookingConfirmation).toHaveBeenCalledWith('session-456');
+      expect(test.mocks.NotificationsService.sendBookingConfirmation).toHaveBeenCalledWith(
+        'session-456',
+        'coach-123',
+        Role.COACH
+      );
+    });
+
+    it('should handle session not found error', async () => {
+      const confirmDto: SendBookingConfirmationDto = {
+        sessionId: 'non-existent-session',
+      };
+
+      test.mocks.NotificationsService.sendBookingConfirmation.mockRejectedValue(
+        new UnauthorizedException('you must create session first')
+      );
+
+      const userToken = await test.auth.createRoleToken(Role.USER, {
+        sub: 'user-123',
+      });
+      const response = await test.http.authenticatedPost('/api/notifications/confirm', userToken, {
+        body: confirmDto,
+      });
+
+      expect(response.status).toBe(401);
     });
   });
 });

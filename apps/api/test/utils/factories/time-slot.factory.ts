@@ -2,6 +2,8 @@
  * TimeSlot mock factory for creating test time slot data
  */
 
+import { DeepPartial } from '../http';
+
 import { AccountMockFactory, type MockAccount } from './account.factory';
 import { BaseMockFactory } from './base-factory';
 
@@ -23,7 +25,7 @@ export class TimeSlotMockFactory extends BaseMockFactory<MockTimeSlot> {
     super();
     this.account = new AccountMockFactory();
   }
-  protected generateMock(overrides?: Partial<MockTimeSlot>): MockTimeSlot {
+  protected generateMock(overrides?: DeepPartial<MockTimeSlot>): MockTimeSlot {
     const id = this.generateId();
     const now = new Date();
 
@@ -45,7 +47,7 @@ export class TimeSlotMockFactory extends BaseMockFactory<MockTimeSlot> {
       createdAt: now,
       updatedAt: now,
       ...overrides,
-    };
+    } as MockTimeSlot;
 
     // Validate required fields
     this.validateRequired(timeSlot.coachId, 'coachId');

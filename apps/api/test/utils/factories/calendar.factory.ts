@@ -2,6 +2,8 @@
  * BookingType mock factory for creating test booking type data
  */
 
+import { DeepPartial } from '../http';
+
 import { BaseMockFactory } from './base-factory';
 
 export interface MockCalendar {
@@ -13,7 +15,7 @@ export interface MockCalendar {
 }
 
 export class CalendarMockFactory extends BaseMockFactory<MockCalendar> {
-  protected generateMock(overrides?: Partial<MockCalendar>): MockCalendar {
+  protected generateMock(overrides?: DeepPartial<MockCalendar>): MockCalendar {
     const eventId = this.generateId();
     const now = new Date();
     const calendar = {
@@ -23,7 +25,7 @@ export class CalendarMockFactory extends BaseMockFactory<MockCalendar> {
       end: this.generateFutureDate(7),
       attendees: [this.generateEmail('coach'), this.generateEmail('user')],
       ...overrides,
-    };
+    } as MockCalendar;
 
     // Validate required fields
     this.validateRequired(calendar.eventId, 'eventId');

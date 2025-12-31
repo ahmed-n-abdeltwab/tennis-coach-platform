@@ -4,6 +4,8 @@
 
 import { Role } from '@prisma/client';
 
+import { DeepPartial } from '../http';
+
 import { AccountMockFactory, MockAccount } from './account.factory';
 import { BaseMockFactory } from './base-factory';
 
@@ -31,7 +33,7 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
     this.account = new AccountMockFactory();
   }
 
-  protected generateMock(overrides?: Partial<MockMessage>): MockMessage {
+  protected generateMock(overrides?: DeepPartial<MockMessage>): MockMessage {
     const id = this.generateId();
     const now = new Date();
     // 1. Resolve Coach (Ensuring ID and Object match)
@@ -51,7 +53,7 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
       email: rawReceiver.email,
       name: rawReceiver.name,
     };
-    const message: MockMessage = {
+    const message = {
       id,
       content: this.randomContent(),
       createdAt: now,
@@ -64,7 +66,7 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
       sender,
       receiver,
       ...overrides,
-    };
+    } as MockMessage;
 
     // Validate required fields
     this.validateRequired(message.content, 'content');

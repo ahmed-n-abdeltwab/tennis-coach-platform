@@ -4,6 +4,8 @@
 
 import { Decimal } from '@prisma/client/runtime/client';
 
+import { DeepPartial } from '../http';
+
 import { BaseMockFactory } from './base-factory';
 
 export interface MockBookingType {
@@ -18,7 +20,7 @@ export interface MockBookingType {
 }
 
 export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
-  protected generateMock(overrides?: Partial<MockBookingType>): MockBookingType {
+  protected generateMock(overrides?: DeepPartial<MockBookingType>): MockBookingType {
     const id = this.generateId();
     const now = new Date();
 
@@ -32,7 +34,7 @@ export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
       createdAt: now,
       updatedAt: now,
       ...overrides,
-    };
+    } as MockBookingType;
 
     // Validate required fields
     this.validateRequired(bookingType.name, 'name');

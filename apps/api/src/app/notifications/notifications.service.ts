@@ -1,60 +1,28 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { ConfigType } from '@nestjs/config';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { Role } from '@prisma/client';
-import { MailtrapTransport } from 'mailtrap';
-import { MailtrapResponse, MailtrapTransporter } from 'mailtrap/dist/types/transport';
-import { createTransport } from 'nodemailer';
 
 import { SessionsService } from './../sessions/sessions.service';
-import notificationsConfig from './config/notifications.config';
 import { MailResponse, SendEmailDto } from './dto/notification.dto';
+import { MailerService } from './mailer';
 
 @Injectable()
 export class NotificationsService {
-  private transporter: MailtrapTransporter;
-  private readonly senderEmail: string;
-
   constructor(
-    @Inject(notificationsConfig.KEY)
-    private readonly notificationsConfiguration: ConfigType<typeof notificationsConfig>,
-    private sessionsService: SessionsService
-  ) {
-    const { token, senderEmail } = this.notificationsConfiguration;
-    if (!token || !senderEmail) {
-      throw new Error('SMTP_TOKEN and SMTP_SENDER_EMAIL must be provided');
-    }
-    this.transporter = createTransport(
-      MailtrapTransport({
-        token,
-        bulk: true,
-      })
-    );
-    this.senderEmail = senderEmail;
-  }
+    private readonly mailerService: MailerService,
+    private readonly sessionsService: SessionsService
+  ) {}
 
   async sendEmail(emailDto: SendEmailDto, _userId: string, _role: Role): Promise<MailResponse> {
     const { to, subject, html, text } = emailDto;
 
-    const info: MailtrapResponse = await this.transporter.sendMail({
-      from: {
-        address: this.senderEmail,
-        name: 'Mailtrap Test',
-      },
+    const result = await this.mailerService.sendMail({
       to,
       subject,
-      text,
       html,
+      text,
     });
-    if (!info.success) {
-      return {
-        success: false,
-        errors: info.errors,
-      };
-    }
-    return {
-      success: true,
-      message_ids: info.message_ids,
-    };
+
+    return result;
   }
 
   async sendBookingConfirmation(sessionId: string, userId: string, role: Role) {
@@ -72,20 +40,16 @@ export class NotificationsService {
         <li><strong>Type:</strong> ${session.bookingType.name}</li>
         <li><strong>Date & Time:</strong> ${new Date(session.dateTime).toLocaleString()}</li>
         <li><strong>Duration:</strong> ${session.durationMin} minutes</li>
-        <li><strong>Price:</strong> $${session.price}</li>
+        <li><strong>Price:</strong> ${session.price}</li>
       </ul>
       <p>See you on the court!</p>
     `;
 
-    await this.sendEmail(
-      {
-        to: session.user.email,
-        subject,
-        html,
-        text: html.replace(/<[^>]*>/g, ''),
-      },
-      'system',
-      Role.COACH
-    );
+    await this.mailerService.sendMail({
+      to: session.user.email,
+      subject,
+      html,
+      text: html.replace(/<[^>]*>/g, ''),
+    });
   }
 }

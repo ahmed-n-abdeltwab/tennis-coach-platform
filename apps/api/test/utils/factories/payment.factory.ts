@@ -4,6 +4,8 @@
 
 import { Decimal } from '@prisma/client/runtime/client';
 
+import { DeepPartial } from '../http';
+
 import { BaseMockFactory } from './base-factory';
 
 export interface MockPayment {
@@ -38,7 +40,7 @@ export interface MockPayPalCapture {
 }
 
 export class PaymentMockFactory extends BaseMockFactory<MockPayment> {
-  protected generateMock(overrides?: Partial<MockPayment>): MockPayment {
+  protected generateMock(overrides?: DeepPartial<MockPayment>): MockPayment {
     const id = this.generateId();
     const now = new Date();
 
@@ -51,7 +53,7 @@ export class PaymentMockFactory extends BaseMockFactory<MockPayment> {
       createdAt: now,
       updatedAt: now,
       ...overrides,
-    };
+    } as MockPayment;
   }
 
   createCompleted(overrides?: Partial<MockPayment>): MockPayment {

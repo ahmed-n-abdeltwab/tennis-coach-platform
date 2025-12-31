@@ -5,6 +5,8 @@
 import { SessionStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 
+import { DeepPartial } from '../http';
+
 import { BaseMockFactory } from './base-factory';
 
 import {
@@ -68,7 +70,7 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
     this.calendar = new CalendarMockFactory();
   }
 
-  protected generateMock(overrides?: Partial<MockSession>): MockSession {
+  protected generateMock(overrides?: DeepPartial<MockSession>): MockSession {
     const id = this.generateId();
     const now = new Date();
 
@@ -89,9 +91,13 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
     };
 
     // 3. Pass the resolved coachId to subsequent factories
-    const bookingType = overrides?.bookingType ?? this.bookingType.create({ coachId: coach.id });
-    const discount = overrides?.discount ?? this.discount.create({ coachId: coach.id });
-    const timeSlot = overrides?.timeSlot ?? this.timeSlot.create({ coachId: coach.id });
+    const bookingType =
+      overrides?.bookingType ??
+      this.bookingType.create({ ...overrides?.bookingType, coachId: coach.id });
+    const discount =
+      overrides?.discount ?? this.discount.create({ ...overrides?.discount, coachId: coach.id });
+    const timeSlot =
+      overrides?.timeSlot ?? this.timeSlot.create({ ...overrides?.timeSlot, coachId: coach.id });
 
     const paymentId =
       overrides?.paymentId ??
@@ -99,7 +105,7 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
 
     const calendarEventId = overrides?.calendarEventId ?? this.calendar.create().eventId;
 
-    const session: MockSession = {
+    const session = {
       id,
       dateTime: this.generateFutureDate(14),
       durationMin: this.randomDuration(),
@@ -123,7 +129,7 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
       timeSlot,
       discount,
       ...overrides,
-    };
+    } as MockSession;
 
     // Validate required fields
     this.validateRequired(session.userId, 'userId');

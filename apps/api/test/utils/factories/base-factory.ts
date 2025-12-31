@@ -9,6 +9,8 @@
 
 import { Decimal } from '@prisma/client/runtime/client';
 
+import { DeepPartial } from '../http';
+
 /**
  * Converts all optional properties from T | undefined to T | null.
  * This represents the result of nullifying undefined values.
@@ -53,7 +55,7 @@ export interface MockFactory<T> {
    * @param overrides Optional partial object to override default values
    * @returns A mock entity of type T
    */
-  create(overrides?: Partial<T>): T;
+  create(overrides?: DeepPartial<T>): T;
 
   /**
    * Creates a single mock entity with undefined values converted to null.
@@ -62,7 +64,7 @@ export interface MockFactory<T> {
    * @param overrides Optional partial object to override default values
    * @returns A mock entity with null instead of undefined
    */
-  createWithNulls(overrides?: Partial<T>): Nullified<T>;
+  createWithNulls(overrides?: DeepPartial<T>): Nullified<T>;
 
   /**
    * Creates multiple mock entities with optional property overrides.
@@ -71,7 +73,7 @@ export interface MockFactory<T> {
    * @param overrides Optional partial object to override default values for all entities
    * @returns Array of mock entities
    */
-  createMany(count: number, overrides?: Partial<T>): T[];
+  createMany(count: number, overrides?: DeepPartial<T>): T[];
 
   /**
    * Creates multiple mock entities with undefined values converted to null.
@@ -80,7 +82,7 @@ export interface MockFactory<T> {
    * @param overrides Optional partial object to override default values for all entities
    * @returns Array of mock entities with null instead of undefined
    */
-  createManyWithNulls(count: number, overrides?: Partial<T>): Nullified<T>[];
+  createManyWithNulls(count: number, overrides?: DeepPartial<T>): Nullified<T>[];
 }
 
 /**
@@ -139,7 +141,7 @@ export abstract class BaseMockFactory<T> implements MockFactory<T> {
    * const user = factory.create({ name: 'Custom Name' });
    * ```
    */
-  public create(overrides?: Partial<T>): T {
+  public create(overrides?: DeepPartial<T>): T {
     return this.generateMock(overrides);
   }
 
@@ -157,8 +159,8 @@ export abstract class BaseMockFactory<T> implements MockFactory<T> {
    * // user.bio is null, not undefined
    * ```
    */
-  public createWithNulls(overrides?: Partial<T>): Nullified<T> {
-    return this.deepNullify(this.create(overrides)) as Nullified<T>;
+  public createWithNulls(overrides?: DeepPartial<T>): Nullified<T> {
+    return this.deepNullify(this.create(overrides));
   }
 
   /**
@@ -174,7 +176,7 @@ export abstract class BaseMockFactory<T> implements MockFactory<T> {
    * const users = factory.createMany(5, { role: 'USER' });
    * ```
    */
-  public createMany(count: number, overrides?: Partial<T>): T[] {
+  public createMany(count: number, overrides?: DeepPartial<T>): T[] {
     return Array.from({ length: count }, () => this.create(overrides));
   }
 
@@ -190,7 +192,7 @@ export abstract class BaseMockFactory<T> implements MockFactory<T> {
    * const users = factory.createManyWithNulls(3);
    * ```
    */
-  public createManyWithNulls(count: number, overrides?: Partial<T>): Nullified<T>[] {
+  public createManyWithNulls(count: number, overrides?: DeepPartial<T>): Nullified<T>[] {
     return Array.from({ length: count }, () => this.createWithNulls(overrides));
   }
 
@@ -234,7 +236,7 @@ export abstract class BaseMockFactory<T> implements MockFactory<T> {
    * @param overrides Optional partial object to override default values
    * @returns A mock entity of type T
    */
-  protected abstract generateMock(overrides?: Partial<T>): T;
+  protected abstract generateMock(overrides?: DeepPartial<T>): T;
 
   /**
    * Generates a unique ID for mock entities.

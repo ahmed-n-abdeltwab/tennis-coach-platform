@@ -2,6 +2,8 @@
  * Notification mock factory for creating test notification data
  */
 
+import { DeepPartial } from '../http';
+
 import { BaseMockFactory } from './base-factory';
 
 export interface MockNotification {
@@ -23,7 +25,7 @@ export interface MockEmailResult {
 }
 
 export class NotificationMockFactory extends BaseMockFactory<MockNotification> {
-  protected generateMock(overrides?: Partial<MockNotification>): MockNotification {
+  protected generateMock(overrides?: DeepPartial<MockNotification>): MockNotification {
     const id = this.generateId();
 
     return {
@@ -36,7 +38,7 @@ export class NotificationMockFactory extends BaseMockFactory<MockNotification> {
       success: true,
       messageId: this.generateId(),
       ...overrides,
-    };
+    } as MockNotification;
   }
 
   createEmailResult(success = true, overrides?: Partial<MockEmailResult>): MockEmailResult {
