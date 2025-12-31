@@ -1,4 +1,4 @@
-import { BaseResponseDto, createTypedApiDecorators } from '@common';
+import { createTypedApiDecorators } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Decimal } from '@prisma/client/runtime/client';
 import { Type } from 'class-transformer';
@@ -18,8 +18,23 @@ export class ValidateDiscountResponseDto {
   amount: Decimal;
   isValid: boolean;
 }
-export class DiscountResponseDto extends BaseResponseDto {
+export class DiscountResponseDto {
+  @ApiProperty({ example: 'discount-id-123' })
+  @IsString()
+  id: string;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  @IsDate()
+  @Type(() => Date)
+  createdAt: Date | string;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  @IsDate()
+  @Type(() => Date)
+  updatedAt: Date | string;
+
   @ApiProperty({ example: 'SUMMER2024' })
+  @IsString()
   code: string;
 
   @ApiProperty({ example: 10.0, description: 'Discount amount in decimal format' })
@@ -37,21 +52,27 @@ export class DiscountResponseDto extends BaseResponseDto {
   expiry: Date | string;
 
   @ApiProperty({ example: 0, description: 'Number of times this discount has been used' })
+  @IsNumber()
   useCount: number;
 
   @ApiProperty({ example: 1, description: 'Maximum number of times this discount can be used' })
+  @IsNumber()
   maxUsage: number;
 
   @ApiProperty({ example: true })
+  @IsBoolean()
   isActive: boolean;
 
   @ApiProperty({ example: 'coach-id-123' })
+  @IsString()
   coachId: string;
 
   @ApiPropertyOptional({
     description: 'Coach summary information',
     type: CoachSummaryDto,
   })
+  @IsOptional()
+  @Type(() => CoachSummaryDto)
   coach?: CoachSummaryDto;
 }
 
