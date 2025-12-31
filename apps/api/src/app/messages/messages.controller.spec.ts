@@ -27,10 +27,6 @@ describe('MessagesController', () => {
     await test.cleanup();
   });
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // POST /api/messages - create message
-  // ═══════════════════════════════════════════════════════════════════════
-
   describe('POST /api/messages', () => {
     it('should create a message as USER', async () => {
       const createDto = {
@@ -105,10 +101,6 @@ describe('MessagesController', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // GET /api/messages - get all messages for user
-  // ═══════════════════════════════════════════════════════════════════════
-
   describe('GET /api/messages', () => {
     it('should return all messages for the authenticated user', async () => {
       const mockMessages = [
@@ -167,10 +159,6 @@ describe('MessagesController', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // GET /api/messages/conversation/{userId} - get conversation with user
-  // ═══════════════════════════════════════════════════════════════════════
-
   describe('GET /api/messages/conversation/{userId}', () => {
     it('should return conversation between two users', async () => {
       const mockMessages = test.factory.message.createConversation('user-123', 'other-user', 4);
@@ -203,10 +191,6 @@ describe('MessagesController', () => {
       );
     });
   });
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // GET /api/messages/session/{sessionId} - get session messages
-  // ═══════════════════════════════════════════════════════════════════════
 
   describe('GET /api/messages/session/{sessionId}', () => {
     it('should return messages for session as USER', async () => {
@@ -245,10 +229,6 @@ describe('MessagesController', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // GET /api/messages/{id} - get single message
-  // ═══════════════════════════════════════════════════════════════════════
-
   describe('GET /api/messages/{id}', () => {
     it('should return a single message by ID', async () => {
       const mockMessage = test.factory.message.createWithNulls({
@@ -266,10 +246,6 @@ describe('MessagesController', () => {
       expect(test.mocks.MessagesService.findOne).toHaveBeenCalledWith('message-123', 'user-123');
     });
   });
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // Error Scenarios
-  // ═══════════════════════════════════════════════════════════════════════
 
   describe('Error Scenarios', () => {
     describe('Not found errors', () => {

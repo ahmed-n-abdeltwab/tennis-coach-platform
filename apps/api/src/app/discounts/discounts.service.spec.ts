@@ -122,10 +122,6 @@ describe('DiscountsService', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // Tests for internal methods (findByCode, findActiveByCode)
-  // ═══════════════════════════════════════════════════════════════════════
-
   describe('findByCode (internal method)', () => {
     it('should return discount when found', async () => {
       const mockDiscount = test.factory.discount.createWithNulls({ code: 'TESTCODE' });

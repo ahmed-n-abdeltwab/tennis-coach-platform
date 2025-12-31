@@ -59,10 +59,6 @@ describe('MessagesService', () => {
     await test.cleanup();
   });
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // Tests for findMessageInternal behavior
-  // ═══════════════════════════════════════════════════════════════════════
-
   describe('findMessageInternal behavior', () => {
     describe('throwIfNotFound option', () => {
       it('should throw NotFoundException when throwIfNotFound=true and no results (via findById)', async () => {
@@ -137,10 +133,6 @@ describe('MessagesService', () => {
       });
     });
   });
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // Tests for internal methods (findById, findBySessionId)
-  // ═══════════════════════════════════════════════════════════════════════
 
   describe('findById (internal method)', () => {
     it('should return message when found', async () => {
@@ -219,10 +211,6 @@ describe('MessagesService', () => {
       expect(result).toEqual([]);
     });
   });
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // Tests for controller methods with authorization checks
-  // ═══════════════════════════════════════════════════════════════════════
 
   describe('create', () => {
     const createDto = {

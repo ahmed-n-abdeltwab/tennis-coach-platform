@@ -35,10 +35,6 @@ export class MessagesService {
     private sessionsService: SessionsService
   ) {}
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // PRIVATE: Internal Find Function
-  // ═══════════════════════════════════════════════════════════════════════
-
   /**
    * Internal find function that centralizes database queries for messages.
    * @param where - Prisma where clause for filtering messages
@@ -73,10 +69,6 @@ export class MessagesService {
     return result;
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // INTERNAL METHODS (for other services - no authorization)
-  // ═══════════════════════════════════════════════════════════════════════
-
   /**
    * Find a message by ID - used by other services.
    * Throws NotFoundException if not found.
@@ -102,10 +94,6 @@ export class MessagesService {
 
     return plainToInstance(MessageResponseDto, messages);
   }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // CONTROLLER METHODS (with authorization checks)
-  // ═══════════════════════════════════════════════════════════════════════
 
   /**
    * Create a new message
