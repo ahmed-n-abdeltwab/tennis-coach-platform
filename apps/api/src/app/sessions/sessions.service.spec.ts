@@ -526,10 +526,6 @@ describe('SessionsService', () => {
     });
   });
 
-  // ════════════════════════════════════════════════════════════
-  // Tests for update
-  // ═══════════════════════════════════════════════════════════════════════
-
   describe('update', () => {
     const updateDto = { notes: 'Updated notes' };
 

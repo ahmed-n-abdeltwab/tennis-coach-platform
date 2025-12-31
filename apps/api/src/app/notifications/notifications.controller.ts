@@ -36,7 +36,7 @@ export class NotificationsController {
     @Body() BookingConfirmDto: SendBookingConfirmationDto,
     @CurrentUser() user: JwtPayload
   ): Promise<void> {
-    this.notificationsService.sendBookingConfirmation(
+    await this.notificationsService.sendBookingConfirmation(
       BookingConfirmDto.sessionId,
       user.sub,
       user.role

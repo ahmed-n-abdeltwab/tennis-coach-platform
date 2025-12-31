@@ -240,16 +240,13 @@ describe('MessagesService', () => {
         receiverType: Role.COACH,
       });
 
-      test.mocks.PrismaService.account.findUnique.mockResolvedValue(mockReceiver);
+      test.mocks.AccountsService.existsById.mockResolvedValue(mockReceiver);
       test.mocks.PrismaService.message.create.mockResolvedValue(mockMessage);
 
       const result = await test.service.create(createDto, 'user-123', Role.USER);
 
       expect(result.content).toBe(createDto.content);
-      expect(test.mocks.PrismaService.account.findUnique).toHaveBeenCalledWith({
-        where: { id: createDto.receiverId },
-        select: { id: true, role: true },
-      });
+      expect(test.mocks.AccountsService.existsById).toHaveBeenCalledWith(createDto.receiverId);
       expect(test.mocks.PrismaService.message.create).toHaveBeenCalledWith({
         data: {
           content: createDto.content,
@@ -294,7 +291,7 @@ describe('MessagesService', () => {
         sessionId: 'session-123',
       });
 
-      test.mocks.PrismaService.account.findUnique.mockResolvedValue(mockReceiver);
+      test.mocks.AccountsService.existsById.mockResolvedValue(mockReceiver);
       test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
       test.mocks.PrismaService.message.create.mockResolvedValue(mockMessage);
 
@@ -309,7 +306,7 @@ describe('MessagesService', () => {
     });
 
     it('should throw NotFoundException when receiver not found', async () => {
-      test.mocks.PrismaService.account.findUnique.mockResolvedValue(null);
+      test.mocks.AccountsService.existsById.mockResolvedValue(null);
 
       await expect(test.service.create(createDto, 'user-123', Role.USER)).rejects.toThrow(
         NotFoundException
@@ -332,7 +329,7 @@ describe('MessagesService', () => {
         coachId: 'other-coach',
       };
 
-      test.mocks.PrismaService.account.findUnique.mockResolvedValue(mockReceiver);
+      test.mocks.AccountsService.existsById.mockResolvedValue(mockReceiver);
       test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
 
       await expect(
