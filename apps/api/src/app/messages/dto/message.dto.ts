@@ -33,12 +33,12 @@ export class MessageResponseDto {
 
   @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => String)
+  @Type(() => Date)
   createdAt!: Date;
 
   @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => String)
+  @Type(() => Date)
   updatedAt!: Date;
 
   @ApiProperty({
@@ -55,7 +55,7 @@ export class MessageResponseDto {
     description: 'When the message was sent',
   })
   @IsDate()
-  @Type(() => String)
+  @Type(() => Date)
   sentAt!: Date;
 
   @ApiProperty({

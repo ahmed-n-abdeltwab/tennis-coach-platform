@@ -1,9 +1,12 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Role, SessionStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
-import { ServiceTest } from '@test-utils';
+import { DeepMocked, ServiceTest } from '@test-utils';
 
+import { BookingTypesService } from '../booking-types/booking-types.service';
+import { DiscountsService } from '../discounts/discounts.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { TimeSlotsService } from '../time-slots/time-slots.service';
 
 import { SessionsService } from './sessions.service';
 
@@ -19,17 +22,10 @@ interface SessionMocks {
       create: jest.Mock;
       update: jest.Mock;
     };
-    bookingType: {
-      findUnique: jest.Mock;
-    };
-    timeSlot: {
-      findUnique: jest.Mock;
-    };
-    discount: {
-      findFirst: jest.Mock;
-      update: jest.Mock;
-    };
   };
+  BookingTypesService: DeepMocked<BookingTypesService>;
+  TimeSlotsService: DeepMocked<TimeSlotsService>;
+  DiscountsService: DeepMocked<DiscountsService>;
 }
 
 // Constants
@@ -51,16 +47,27 @@ describe('SessionsService', () => {
               create: jest.fn(),
               update: jest.fn(),
             },
-            bookingType: {
-              findUnique: jest.fn(),
-            },
-            timeSlot: {
-              findUnique: jest.fn(),
-            },
-            discount: {
-              findFirst: jest.fn(),
-              update: jest.fn(),
-            },
+          },
+        },
+        {
+          provide: BookingTypesService,
+          useValue: {
+            findActiveById: jest.fn(),
+            findById: jest.fn(),
+          },
+        },
+        {
+          provide: TimeSlotsService,
+          useValue: {
+            findAvailableById: jest.fn(),
+            findById: jest.fn(),
+          },
+        },
+        {
+          provide: DiscountsService,
+          useValue: {
+            findActiveByCode: jest.fn(),
+            incrementUsageInternal: jest.fn(),
           },
         },
       ],
@@ -415,20 +422,20 @@ describe('SessionsService', () => {
         notes: createDto.notes,
       });
 
-      test.mocks.PrismaService.bookingType.findUnique.mockResolvedValue(mockBookingType);
-      test.mocks.PrismaService.timeSlot.findUnique.mockResolvedValue(mockTimeSlot);
+      test.mocks.BookingTypesService.findActiveById.mockResolvedValue(mockBookingType);
+      test.mocks.TimeSlotsService.findAvailableById.mockResolvedValue(mockTimeSlot);
       test.mocks.PrismaService.session.create.mockResolvedValue(mockCreatedSession);
 
       const result = await test.service.create(createDto, userId);
 
       expect(result.userId).toBe(userId);
       expect(result.notes).toBe(createDto.notes);
-      expect(test.mocks.PrismaService.bookingType.findUnique).toHaveBeenCalledWith({
-        where: { id: createDto.bookingTypeId },
-      });
-      expect(test.mocks.PrismaService.timeSlot.findUnique).toHaveBeenCalledWith({
-        where: { id: createDto.timeSlotId },
-      });
+      expect(test.mocks.BookingTypesService.findActiveById).toHaveBeenCalledWith(
+        createDto.bookingTypeId
+      );
+      expect(test.mocks.TimeSlotsService.findAvailableById).toHaveBeenCalledWith(
+        createDto.timeSlotId
+      );
       expect(test.mocks.PrismaService.session.create).toHaveBeenCalledTimes(1);
     });
 
@@ -461,27 +468,20 @@ describe('SessionsService', () => {
         discountId: mockDiscount.id,
       });
 
-      test.mocks.PrismaService.bookingType.findUnique.mockResolvedValue(mockBookingType);
-      test.mocks.PrismaService.timeSlot.findUnique.mockResolvedValue(mockTimeSlot);
-      test.mocks.PrismaService.discount.findFirst.mockResolvedValue(mockDiscount);
+      test.mocks.BookingTypesService.findActiveById.mockResolvedValue(mockBookingType);
+      test.mocks.TimeSlotsService.findAvailableById.mockResolvedValue(mockTimeSlot);
+      test.mocks.DiscountsService.findActiveByCode.mockResolvedValue(mockDiscount);
       test.mocks.PrismaService.session.create.mockResolvedValue(mockCreatedSession);
-      test.mocks.PrismaService.discount.update.mockResolvedValue(mockDiscount);
+      test.mocks.DiscountsService.incrementUsageInternal.mockResolvedValue(undefined);
 
       const result = await test.service.create(createDtoWithDiscount, userId);
 
       expect(Number(result.price)).toBe(80);
-      expect(test.mocks.PrismaService.discount.update).toHaveBeenCalledWith({
-        where: { code: discountCode },
-        data: { useCount: { increment: 1 } },
-      });
+      expect(test.mocks.DiscountsService.incrementUsageInternal).toHaveBeenCalledWith(discountCode);
     });
 
     it('should throw BadRequestException when booking type is inactive', async () => {
-      const mockBookingType = test.factory.bookingType.createWithNulls({
-        id: createDto.bookingTypeId,
-        isActive: false,
-      });
-      test.mocks.PrismaService.bookingType.findUnique.mockResolvedValue(mockBookingType);
+      test.mocks.BookingTypesService.findActiveById.mockResolvedValue(null);
 
       await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(BadRequestException);
       await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(
@@ -491,7 +491,7 @@ describe('SessionsService', () => {
     });
 
     it('should throw BadRequestException when booking type not found', async () => {
-      test.mocks.PrismaService.bookingType.findUnique.mockResolvedValue(null);
+      test.mocks.BookingTypesService.findActiveById.mockResolvedValue(null);
 
       await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(BadRequestException);
       expect(test.mocks.PrismaService.session.create).not.toHaveBeenCalled();
@@ -502,13 +502,9 @@ describe('SessionsService', () => {
         id: createDto.bookingTypeId,
         isActive: true,
       });
-      const mockTimeSlot = test.factory.timeSlot.createWithNulls({
-        id: createDto.timeSlotId,
-        isAvailable: false,
-      });
 
-      test.mocks.PrismaService.bookingType.findUnique.mockResolvedValue(mockBookingType);
-      test.mocks.PrismaService.timeSlot.findUnique.mockResolvedValue(mockTimeSlot);
+      test.mocks.BookingTypesService.findActiveById.mockResolvedValue(mockBookingType);
+      test.mocks.TimeSlotsService.findAvailableById.mockResolvedValue(null);
 
       await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(BadRequestException);
       await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(
@@ -522,15 +518,15 @@ describe('SessionsService', () => {
         id: createDto.bookingTypeId,
         isActive: true,
       });
-      test.mocks.PrismaService.bookingType.findUnique.mockResolvedValue(mockBookingType);
-      test.mocks.PrismaService.timeSlot.findUnique.mockResolvedValue(null);
+      test.mocks.BookingTypesService.findActiveById.mockResolvedValue(mockBookingType);
+      test.mocks.TimeSlotsService.findAvailableById.mockResolvedValue(null);
 
       await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(BadRequestException);
       expect(test.mocks.PrismaService.session.create).not.toHaveBeenCalled();
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════════════════
   // Tests for update
   // ═══════════════════════════════════════════════════════════════════════
 
@@ -701,6 +697,86 @@ describe('SessionsService', () => {
         'Cannot cancel past sessions'
       );
       expect(test.mocks.PrismaService.session.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('markAsPaidInternal', () => {
+    it('should mark session as paid', async () => {
+      const sessionId = 'session-123';
+      const paymentId = 'payment-123';
+      const mockSession = test.factory.session.createWithNulls({ id: sessionId });
+
+      test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
+      test.mocks.PrismaService.session.update.mockResolvedValue({
+        ...mockSession,
+        isPaid: true,
+        paymentId,
+      });
+
+      await test.service.markAsPaidInternal(sessionId, paymentId);
+
+      expect(test.mocks.PrismaService.session.update).toHaveBeenCalledWith({
+        where: { id: sessionId },
+        data: { isPaid: true, paymentId },
+      });
+    });
+
+    it('should throw NotFoundException when session not found', async () => {
+      test.mocks.PrismaService.session.findFirst.mockResolvedValue(null);
+
+      await expect(test.service.markAsPaidInternal('non-existent', 'payment-123')).rejects.toThrow(
+        NotFoundException
+      );
+    });
+  });
+
+  describe('updateCalendarEventInternal', () => {
+    it('should update calendar event ID', async () => {
+      const sessionId = 'session-123';
+      const calendarEventId = 'calendar-event-123';
+      const mockSession = test.factory.session.createWithNulls({ id: sessionId });
+
+      test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
+      test.mocks.PrismaService.session.update.mockResolvedValue({
+        ...mockSession,
+        calendarEventId,
+      });
+
+      await test.service.updateCalendarEventInternal(sessionId, calendarEventId);
+
+      expect(test.mocks.PrismaService.session.update).toHaveBeenCalledWith({
+        where: { id: sessionId },
+        data: { calendarEventId },
+      });
+    });
+
+    it('should clear calendar event ID when null is passed', async () => {
+      const sessionId = 'session-123';
+      const mockSession = test.factory.session.createWithNulls({
+        id: sessionId,
+        calendarEventId: 'old-event-id',
+      });
+
+      test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
+      test.mocks.PrismaService.session.update.mockResolvedValue({
+        ...mockSession,
+        calendarEventId: undefined,
+      });
+
+      await test.service.updateCalendarEventInternal(sessionId, null);
+
+      expect(test.mocks.PrismaService.session.update).toHaveBeenCalledWith({
+        where: { id: sessionId },
+        data: { calendarEventId: undefined },
+      });
+    });
+
+    it('should throw NotFoundException when session not found', async () => {
+      test.mocks.PrismaService.session.findFirst.mockResolvedValue(null);
+
+      await expect(
+        test.service.updateCalendarEventInternal('non-existent', 'calendar-event-123')
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

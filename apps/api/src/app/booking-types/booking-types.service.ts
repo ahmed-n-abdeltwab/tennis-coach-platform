@@ -15,10 +15,6 @@ import {
 export class BookingTypesService {
   constructor(private prisma: PrismaService) {}
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // PRIVATE: Internal Find Function
-  // ═══════════════════════════════════════════════════════════════════════
-
   private async findBookingTypeInternal<T extends Prisma.BookingTypeWhereInput>(
     where: T,
     options: { throwIfNotFound?: boolean; isMany?: boolean } = {}
@@ -40,10 +36,6 @@ export class BookingTypesService {
     return result;
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // INTERNAL METHODS (for other services - no authorization)
-  // ═══════════════════════════════════════════════════════════════════════
-
   /** Find booking type by ID - used by other services (e.g., SessionsService) */
   async findById(id: string): Promise<BookingTypeResponseDto> {
     const bookingType = (await this.findBookingTypeInternal({ id })) as BookingType;
@@ -59,9 +51,6 @@ export class BookingTypesService {
     return bookingType ? plainToInstance(BookingTypeResponseDto, bookingType) : null;
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // CONTROLLER METHODS (with authorization checks)
-  // ═══════════════════════════════════════════════════════════════════════
   async findAll(isActive = true): Promise<GetAllBookingTypeResponseDto[]> {
     const bookingTypes = (await this.findBookingTypeInternal(
       { isActive },

@@ -50,10 +50,6 @@ export class SessionsService {
     private discountsService: DiscountsService
   ) {}
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // PRIVATE: Internal Find Function
-  // ═══════════════════════════════════════════════════════════════════════
-
   /**
    * Internal helper to standardize finding sessions.
    * Handles "Not Found" exceptions and consistent 'include' logic.
@@ -83,10 +79,6 @@ export class SessionsService {
 
     return result;
   }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // INTERNAL METHODS (for other services - no authorization)
-  // ═══════════════════════════════════════════════════════════════════════
 
   /** Find session by ID - used by other services */
   async findById(id: string): Promise<SessionResponseDto> {
@@ -120,10 +112,6 @@ export class SessionsService {
       data: { calendarEventId: calendarEventId ?? undefined },
     });
   }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // CONTROLLER METHODS (with authorization checks)
-  // ═══════════════════════════════════════════════════════════════════════
 
   async findByUser(
     userId: string,

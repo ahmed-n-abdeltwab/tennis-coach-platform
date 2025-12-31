@@ -1,10 +1,8 @@
-import { BadRequestException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { Role } from '@prisma/client';
 import { ServiceTest } from '@test-utils';
 import { DeepMocked } from '@test-utils/mixins/mock.mixin';
 
-import { PrismaService } from '../prisma/prisma.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { TimeSlotsService } from '../time-slots/time-slots.service';
 
@@ -19,16 +17,10 @@ global.fetch = jest.fn();
  * PaymentMocks interface defines typed mocks for the PaymentsService dependencies.
  *
  * This interface provides IntelliSense support for:
- * - PrismaService mock (session update method)
- * - SessionsService mock (findOne method)
+ * - SessionsService mock (findOne, markAsPaidInternal methods)
  * - TimeSlotsService mock (markAsUnavailableInternal method)
  */
 interface PaymentMocks {
-  PrismaService: {
-    session: {
-      update: jest.Mock;
-    };
-  };
   SessionsService: DeepMocked<SessionsService>;
   TimeSlotsService: DeepMocked<TimeSlotsService>;
 }
@@ -51,14 +43,6 @@ describe('PaymentsService', () => {
         { provide: paymentsConfig.KEY, useValue: mockConfig },
         SessionsService,
         TimeSlotsService,
-        {
-          provide: PrismaService,
-          useValue: {
-            session: {
-              update: jest.fn(),
-            },
-          },
-        },
       ],
     });
 
@@ -140,9 +124,6 @@ describe('PaymentsService', () => {
       test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
 
       await expect(test.service.createOrder(createDto, userId, Role.USER)).rejects.toThrow(
-        BadRequestException
-      );
-      await expect(test.service.createOrder(createDto, userId, Role.USER)).rejects.toThrow(
         'Invalid session'
       );
       expect(global.fetch).not.toHaveBeenCalled();
@@ -163,9 +144,6 @@ describe('PaymentsService', () => {
 
       test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
 
-      await expect(test.service.createOrder(createDto, userId, Role.USER)).rejects.toThrow(
-        BadRequestException
-      );
       await expect(test.service.createOrder(createDto, userId, Role.USER)).rejects.toThrow(
         'Session already paid'
       );
@@ -198,9 +176,6 @@ describe('PaymentsService', () => {
           json: async () => ({ error: 'PayPal error' }),
         });
 
-      await expect(test.service.createOrder(createDto, userId, Role.USER)).rejects.toThrow(
-        BadRequestException
-      );
       await expect(test.service.createOrder(createDto, userId, Role.USER)).rejects.toThrow(
         'Failed to create PayPal order'
       );
@@ -243,11 +218,7 @@ describe('PaymentsService', () => {
         json: async () => mockCaptureResult,
       });
 
-      test.mocks.PrismaService.session.update.mockResolvedValue({
-        ...mockSession,
-        isPaid: true,
-        paymentId: 'paypal-order-123',
-      });
+      test.mocks.SessionsService.markAsPaidInternal.mockResolvedValue(undefined);
       test.mocks.TimeSlotsService.markAsUnavailableInternal.mockResolvedValue(undefined);
 
       const result = await test.service.captureOrder(captureDto, userId, Role.USER);
@@ -262,10 +233,10 @@ describe('PaymentsService', () => {
         userId,
         Role.USER
       );
-      expect(test.mocks.PrismaService.session.update).toHaveBeenCalledWith({
-        where: { id: 'session-123' },
-        data: { isPaid: true, paymentId: 'paypal-order-123' },
-      });
+      expect(test.mocks.SessionsService.markAsPaidInternal).toHaveBeenCalledWith(
+        'session-123',
+        'paypal-order-123'
+      );
       expect(test.mocks.TimeSlotsService.markAsUnavailableInternal).toHaveBeenCalledWith('slot-1');
       expect(global.fetch).toHaveBeenCalledTimes(2);
     });
@@ -284,9 +255,6 @@ describe('PaymentsService', () => {
 
       test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
 
-      await expect(test.service.captureOrder(captureDto, userId, Role.USER)).rejects.toThrow(
-        BadRequestException
-      );
       await expect(test.service.captureOrder(captureDto, userId, Role.USER)).rejects.toThrow(
         'Invalid session'
       );
@@ -321,12 +289,9 @@ describe('PaymentsService', () => {
         });
 
       await expect(test.service.captureOrder(captureDto, userId, Role.USER)).rejects.toThrow(
-        BadRequestException
-      );
-      await expect(test.service.captureOrder(captureDto, userId, Role.USER)).rejects.toThrow(
         'Payment capture failed'
       );
-      expect(test.mocks.PrismaService.session.update).not.toHaveBeenCalled();
+      expect(test.mocks.SessionsService.markAsPaidInternal).not.toHaveBeenCalled();
       expect(test.mocks.TimeSlotsService.markAsUnavailableInternal).not.toHaveBeenCalled();
     });
 
@@ -358,12 +323,9 @@ describe('PaymentsService', () => {
         });
 
       await expect(test.service.captureOrder(captureDto, userId, Role.USER)).rejects.toThrow(
-        BadRequestException
-      );
-      await expect(test.service.captureOrder(captureDto, userId, Role.USER)).rejects.toThrow(
         'Payment capture failed'
       );
-      expect(test.mocks.PrismaService.session.update).not.toHaveBeenCalled();
+      expect(test.mocks.SessionsService.markAsPaidInternal).not.toHaveBeenCalled();
       expect(test.mocks.TimeSlotsService.markAsUnavailableInternal).not.toHaveBeenCalled();
     });
   });

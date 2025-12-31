@@ -17,7 +17,7 @@ export interface MockCalendar {
 export class CalendarMockFactory extends BaseMockFactory<MockCalendar> {
   protected generateMock(overrides?: DeepPartial<MockCalendar>): MockCalendar {
     const eventId = this.generateId();
-    const now = new Date();
+    const now = this.createDate();
     const calendar = {
       eventId,
       summary: this.randomSummary(),

@@ -24,7 +24,7 @@ export interface MockDiscount {
 export class DiscountMockFactory extends BaseMockFactory<MockDiscount> {
   protected generateMock(overrides?: DeepPartial<MockDiscount>): MockDiscount {
     const id = this.generateId();
-    const now = new Date();
+    const now = this.createDate();
 
     const discount = {
       id,

@@ -35,7 +35,7 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
 
   protected generateMock(overrides?: DeepPartial<MockMessage>): MockMessage {
     const id = this.generateId();
-    const now = new Date();
+    const now = this.createDate();
     // 1. Resolve Coach (Ensuring ID and Object match)
     const rawSender =
       overrides?.sender ?? this.account.create({ role: overrides?.senderType ?? Role.USER });
@@ -130,7 +130,7 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
 
     for (let i = 0; i < messageCount; i++) {
       const isUserSender = i % 2 === 0;
-      const sentAt = new Date(baseTime.getTime() + i * 60000); // 1 minute apart
+      const sentAt = this.createDate(new Date(baseTime.getTime() + i * 60000)); // 1 minute apart
 
       const content = this.getTypedContent(conversationType, isUserSender, i);
 

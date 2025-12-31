@@ -172,6 +172,7 @@ describe('NotificationsController', () => {
       const userToken = await test.auth.createRoleToken(Role.USER, {
         sub: 'user-123',
       });
+
       const response = await test.http.authenticatedPost('/api/notifications/confirm', userToken, {
         body: confirmDto,
       });

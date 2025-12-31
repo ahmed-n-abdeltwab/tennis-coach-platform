@@ -8,12 +8,12 @@ export class BaseResponseDto {
 
   @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => String)
+  @Type(() => Date)
   createdAt!: Date;
 
   @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => String)
+  @Type(() => Date)
   updatedAt!: Date;
 }
 
@@ -91,7 +91,7 @@ export class OperationStatusDto {
     description: 'Estimated completion time',
   })
   @IsDate()
-  @Type(() => String)
+  @Type(() => Date)
   estimatedCompletion?: Date;
 }
 

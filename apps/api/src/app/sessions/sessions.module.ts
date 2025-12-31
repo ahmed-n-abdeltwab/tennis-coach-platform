@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 
 import { BookingTypesModule } from '../booking-types/booking-types.module';
 import { DiscountsModule } from '../discounts/discounts.module';
@@ -9,12 +9,7 @@ import { SessionsController } from './sessions.controller';
 import { SessionsService } from './sessions.service';
 
 @Module({
-  imports: [
-    PrismaModule,
-    forwardRef(() => BookingTypesModule),
-    forwardRef(() => TimeSlotsModule),
-    forwardRef(() => DiscountsModule),
-  ],
+  imports: [PrismaModule, BookingTypesModule, TimeSlotsModule, DiscountsModule],
   controllers: [SessionsController],
   providers: [SessionsService],
   exports: [SessionsService],

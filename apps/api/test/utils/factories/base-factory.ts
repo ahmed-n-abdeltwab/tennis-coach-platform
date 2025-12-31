@@ -272,6 +272,25 @@ export abstract class BaseMockFactory<T> implements MockFactory<T> {
   }
 
   /**
+   * Creates a normalized Date object from a Date or timestamp.
+   * This ensures consistent Date handling across all factories.
+   *
+   * @param date Optional Date object or timestamp to normalize
+   * @returns A normalized Date object
+   *
+   * @example
+   * ```typescript
+   * const now = this.createDate();
+   * const specific = this.createDate(new Date('2025-01-01'));
+   * ```
+   */
+  protected createDate(date?: Date | number): Date {
+    const d = date ? new Date(date) : new Date();
+    // Create a new Date from ISO string to ensure consistent serialization
+    return new Date(d.toISOString());
+  }
+
+  /**
    * Generates a random future date.
    *
    * @param daysFromNow Maximum days in the future (default: 7)
@@ -290,7 +309,7 @@ export abstract class BaseMockFactory<T> implements MockFactory<T> {
     }
     const date = new Date();
     date.setDate(date.getDate() + Math.floor(Math.random() * daysFromNow) + 1);
-    return date;
+    return this.createDate(date);
   }
 
   /**
@@ -312,7 +331,7 @@ export abstract class BaseMockFactory<T> implements MockFactory<T> {
     }
     const date = new Date();
     date.setDate(date.getDate() - Math.floor(Math.random() * daysAgo) - 1);
-    return date;
+    return this.createDate(date);
   }
 
   /**

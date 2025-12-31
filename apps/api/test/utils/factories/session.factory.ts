@@ -72,7 +72,7 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
 
   protected generateMock(overrides?: DeepPartial<MockSession>): MockSession {
     const id = this.generateId();
-    const now = new Date();
+    const now = this.createDate();
 
     // 1. Resolve Coach (Ensuring ID and Object match)
     const rawCoach = overrides?.coach ?? this.account.createCoach();

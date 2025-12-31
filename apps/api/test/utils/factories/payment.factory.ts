@@ -42,7 +42,7 @@ export interface MockPayPalCapture {
 export class PaymentMockFactory extends BaseMockFactory<MockPayment> {
   protected generateMock(overrides?: DeepPartial<MockPayment>): MockPayment {
     const id = this.generateId();
-    const now = new Date();
+    const now = this.createDate();
 
     return {
       id,

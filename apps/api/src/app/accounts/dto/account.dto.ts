@@ -47,12 +47,12 @@ export class AccountResponseDto {
 
   @ApiProperty({ type: String, format: 'date-time' })
   @IsDate()
-  @Type(() => String)
+  @Type(() => Date)
   createdAt: Date;
 
   @ApiProperty({ type: String, format: 'date-time' })
   @IsDate()
-  @Type(() => String)
+  @Type(() => Date)
   updatedAt: Date;
 
   @ApiProperty({ example: 'account@example.com' })

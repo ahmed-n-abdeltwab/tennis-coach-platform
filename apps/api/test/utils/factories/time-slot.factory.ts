@@ -27,7 +27,7 @@ export class TimeSlotMockFactory extends BaseMockFactory<MockTimeSlot> {
   }
   protected generateMock(overrides?: DeepPartial<MockTimeSlot>): MockTimeSlot {
     const id = this.generateId();
-    const now = new Date();
+    const now = this.createDate();
 
     // Resolve Coach (Ensuring ID and Object match)
     const rawCoach = overrides?.coach ?? this.account.createCoach();
@@ -62,7 +62,7 @@ export class TimeSlotMockFactory extends BaseMockFactory<MockTimeSlot> {
     const timeDiff = endDate.getTime() - startDate.getTime();
 
     for (let i = 0; i < count; i++) {
-      const randomTime = new Date(startDate.getTime() + Math.random() * timeDiff);
+      const randomTime = this.createDate(new Date(startDate.getTime() + Math.random() * timeDiff));
       slots.push(
         this.create({
           dateTime: randomTime,

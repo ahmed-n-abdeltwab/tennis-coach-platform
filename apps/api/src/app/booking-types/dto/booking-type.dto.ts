@@ -21,12 +21,12 @@ export class BookingTypeResponseDto {
 
   @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => String)
+  @Type(() => Date)
   createdAt!: Date;
 
   @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => String)
+  @Type(() => Date)
   updatedAt!: Date;
 
   @ApiProperty({ example: 'Personal Training Session' })

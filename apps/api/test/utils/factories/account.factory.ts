@@ -42,7 +42,7 @@ export interface MockAccount {
 export class AccountMockFactory extends BaseMockFactory<MockAccount> {
   protected generateMock(overrides?: DeepPartial<MockAccount>): MockAccount {
     const id = this.generateId();
-    const now = new Date();
+    const now = this.createDate();
 
     const account = {
       id,

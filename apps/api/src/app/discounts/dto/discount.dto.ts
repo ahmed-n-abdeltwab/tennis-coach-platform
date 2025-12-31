@@ -25,12 +25,12 @@ export class DiscountResponseDto {
 
   @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => String)
+  @Type(() => Date)
   createdAt: Date;
 
   @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => String)
+  @Type(() => Date)
   updatedAt: Date;
 
   @ApiProperty({ example: 'SUMMER2024' })
@@ -48,7 +48,7 @@ export class DiscountResponseDto {
     description: 'Expiry date and time',
   })
   @IsDate()
-  @Type(() => String)
+  @Type(() => Date)
   expiry: Date;
 
   @ApiProperty({ example: 0, description: 'Number of times this discount has been used' })

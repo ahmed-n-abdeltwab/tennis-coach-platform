@@ -25,10 +25,6 @@ const TIME_SLOT_INCLUDE = {
 export class TimeSlotsService {
   constructor(private prisma: PrismaService) {}
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // PRIVATE: Internal Find Function
-  // ═══════════════════════════════════════════════════════════════════════
-
   private async findTimeSlotInternal<T extends Prisma.TimeSlotWhereInput>(
     where: T,
     options: { throwIfNotFound?: boolean; isMany?: boolean } = {}
@@ -55,10 +51,6 @@ export class TimeSlotsService {
     return result;
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // INTERNAL METHODS (for other services - no authorization)
-  // ═══════════════════════════════════════════════════════════════════════
-
   /** Find time slot by ID - used by other services */
   async findById(id: string): Promise<TimeSlotResponseDto> {
     const timeSlot = (await this.findTimeSlotInternal({ id })) as TimeSlot;
@@ -82,10 +74,6 @@ export class TimeSlotsService {
     )) as TimeSlot | null;
     return timeSlot ? plainToInstance(TimeSlotResponseDto, timeSlot) : null;
   }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // CONTROLLER METHODS (with authorization checks)
-  // ═══════════════════════════════════════════════════════════════════════
 
   async findAvailable(query: GetTimeSlotsQuery): Promise<TimeSlotResponseDto[]> {
     const { startDate, endDate, coachId } = query;

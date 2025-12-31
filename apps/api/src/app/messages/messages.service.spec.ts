@@ -2,6 +2,7 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { ServiceTest } from '@test-utils';
 
+import { AccountsService } from '../accounts/accounts.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionsService } from '../sessions/sessions.service';
 
@@ -20,6 +21,10 @@ interface MessageMocks {
   };
   SessionsService: {
     findOne: jest.Mock;
+  };
+  AccountsService: {
+    findOne: jest.Mock;
+    existsById: jest.Mock;
   };
 }
 
@@ -47,6 +52,13 @@ describe('MessagesService', () => {
           provide: SessionsService,
           useValue: {
             findOne: jest.fn(),
+          },
+        },
+        {
+          provide: AccountsService,
+          useValue: {
+            findOne: jest.fn(),
+            existsById: jest.fn(),
           },
         },
       ],

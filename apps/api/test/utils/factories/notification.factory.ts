@@ -34,7 +34,7 @@ export class NotificationMockFactory extends BaseMockFactory<MockNotification> {
       subject: this.randomSubject(),
       text: this.randomText(),
       html: this.randomHtml(),
-      sentAt: new Date(),
+      sentAt: this.createDate(),
       success: true,
       messageId: this.generateId(),
       ...overrides,

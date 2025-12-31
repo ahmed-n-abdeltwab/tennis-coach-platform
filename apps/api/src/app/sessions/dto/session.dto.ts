@@ -46,7 +46,7 @@ export class SessionResponseDto {
     example: '2024-11-10T10:00:00Z',
     description: 'Session date and time',
   })
-  @Type(() => String)
+  @Type(() => Date)
   @IsDate()
   dateTime: Date;
 
@@ -88,12 +88,12 @@ export class SessionResponseDto {
 
   @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => String)
+  @Type(() => Date)
   createdAt: Date;
 
   @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => String)
+  @Type(() => Date)
   updatedAt: Date;
 
   // Relation IDs
