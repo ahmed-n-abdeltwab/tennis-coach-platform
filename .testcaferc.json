@@ -15,10 +15,7 @@
       "output": "test-reports/testcafe-results.xml"
     }
   ],
-  "videoPath": "apps/web/e2e/videos",
-  "videoOptions": {
-    "failedOnly": true
-  },
+
   "quarantineMode": {
     "successThreshold": 1,
     "attemptLimit": 3
