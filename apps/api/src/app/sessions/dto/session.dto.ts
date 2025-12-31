@@ -46,7 +46,7 @@ export class SessionResponseDto {
     example: '2024-11-10T10:00:00Z',
     description: 'Session date and time',
   })
-  @Type(() => Date)
+  @Type(() => String)
   @IsDate()
   dateTime: Date;
 
@@ -86,14 +86,14 @@ export class SessionResponseDto {
   @IsString()
   calendarEventId?: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => Date)
+  @Type(() => String)
   createdAt: Date;
 
   @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => Date)
+  @Type(() => String)
   updatedAt: Date;
 
   // Relation IDs

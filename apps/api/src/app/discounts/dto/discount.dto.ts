@@ -23,15 +23,15 @@ export class DiscountResponseDto {
   @IsString()
   id: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => Date)
-  createdAt: Date | string;
+  @Type(() => String)
+  createdAt: Date;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => Date)
-  updatedAt: Date | string;
+  @Type(() => String)
+  updatedAt: Date;
 
   @ApiProperty({ example: 'SUMMER2024' })
   @IsString()
@@ -48,8 +48,8 @@ export class DiscountResponseDto {
     description: 'Expiry date and time',
   })
   @IsDate()
-  @Type(() => Date)
-  expiry: Date | string;
+  @Type(() => String)
+  expiry: Date;
 
   @ApiProperty({ example: 0, description: 'Number of times this discount has been used' })
   @IsNumber()
@@ -103,24 +103,24 @@ export class CreateDiscountDto {
 }
 
 export class UpdateDiscountDto {
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsNumber()
   @Min(0)
   amount?: number;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsDateString()
   expiry?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsNumber()
   @Min(1)
   maxUsage?: number;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;

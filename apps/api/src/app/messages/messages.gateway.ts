@@ -50,11 +50,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   @SubscribeMessage('send-message')
   @Roles(Role.USER, Role.COACH)
-  async handleSendMessage(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: CreateMessageDto,
-    @CurrentUser() user: JwtPayload
-  ) {
+  async handleSendMessage(@MessageBody() data: CreateMessageDto, @CurrentUser() user: JwtPayload) {
     const message = await this.messagesService.create(data, user.sub, user.role);
 
     // Emit to all clients in the session room

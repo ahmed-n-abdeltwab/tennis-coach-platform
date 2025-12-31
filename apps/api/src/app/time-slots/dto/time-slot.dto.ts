@@ -28,7 +28,7 @@ export class TimeSlotResponseDto {
   id!: string;
 
   @ApiProperty({ type: Date })
-  @Type(() => Date)
+  @Type(() => String)
   dateTime!: Date;
 
   @ApiProperty()
@@ -45,11 +45,11 @@ export class TimeSlotResponseDto {
   coach?: CoachSummaryDto;
 
   @ApiProperty()
-  @Type(() => Date)
+  @Type(() => String)
   createdAt!: Date;
 
   @ApiProperty()
-  @Type(() => Date)
+  @Type(() => String)
   updatedAt!: Date;
 }
 

@@ -6,15 +6,15 @@ export class BaseResponseDto {
   @IsString()
   id!: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => Date)
-  createdAt!: Date | string;
+  @Type(() => String)
+  createdAt!: Date;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: Date, format: 'date-time' })
   @IsDate()
-  @Type(() => Date)
-  updatedAt!: Date | string;
+  @Type(() => String)
+  updatedAt!: Date;
 }
 
 export class PaginationMetaDto {
@@ -52,7 +52,7 @@ export class ErrorResponseDto {
   @ApiProperty()
   message!: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   error?: string;
 
   @ApiProperty()
@@ -91,7 +91,7 @@ export class OperationStatusDto {
     description: 'Estimated completion time',
   })
   @IsDate()
-  @Type(() => Date)
+  @Type(() => String)
   estimatedCompletion?: Date;
 }
 

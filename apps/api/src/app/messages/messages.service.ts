@@ -1,23 +1,32 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Message, Role } from '@prisma/client';
+import { Message, Prisma, Role } from '@prisma/client';
+import { plainToInstance } from 'class-transformer';
 
 import { PrismaService } from '../prisma/prisma.service';
 
 import { SessionsService } from './../sessions/sessions.service';
 import { CreateMessageDto, GetMessagesQuery, MessageResponseDto } from './dto/message.dto';
 
-type MessageWithRelations = Message & {
-  sender?: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  receiver?: {
-    id: string;
-    name: string;
-    email: string;
-  };
-};
+/**
+ * Standard include object for message queries.
+ * Includes sender and receiver relations with selected fields for consistent responses.
+ */
+const MESSAGE_INCLUDE = {
+  sender: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+  receiver: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+} as const;
 
 @Injectable()
 export class MessagesService {
@@ -26,27 +35,77 @@ export class MessagesService {
     private sessionsService: SessionsService
   ) {}
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // PRIVATE: Internal Find Function
+  // ═══════════════════════════════════════════════════════════════════════
+
   /**
-   * Transform Prisma Message to MessageResponseDto
-   * Transforms DateTime to ISO string for sentAt
-   * Includes sender and receiver relationships if present
+   * Internal find function that centralizes database queries for messages.
+   * @param where - Prisma where clause for filtering messages
+   * @param options - Configuration options
+   * @param options.throwIfNotFound - Whether to throw NotFoundException when no results (default: true)
+   * @param options.isMany - Whether to return multiple results (default: false)
+   * @returns Single message, array of messages, or null based on options
    */
-  private toResponseDto(message: MessageWithRelations): MessageResponseDto {
-    return {
-      id: message.id,
-      content: message.content,
-      sentAt: message.sentAt.toISOString(),
-      senderId: message.senderId,
-      receiverId: message.receiverId,
-      sessionId: message.sessionId ?? undefined,
-      senderType: message.senderType,
-      receiverType: message.receiverType,
-      sender: message.sender,
-      receiver: message.receiver,
-      createdAt: message.sentAt.toISOString(), // Messages use sentAt as creation time
-      updatedAt: message.sentAt.toISOString(), // Messages don't have updatedAt, use sentAt
-    } as MessageResponseDto;
+  private async findMessageInternal<T extends Prisma.MessageWhereInput>(
+    where: T,
+    options: { throwIfNotFound?: boolean; isMany?: boolean } = {}
+  ): Promise<Message | Message[] | null> {
+    const { throwIfNotFound = true, isMany = false } = options;
+
+    const result = isMany
+      ? await this.prisma.message.findMany({
+          where,
+          include: MESSAGE_INCLUDE,
+          orderBy: { sentAt: 'desc' },
+        })
+      : await this.prisma.message.findFirst({
+          where,
+          include: MESSAGE_INCLUDE,
+        });
+
+    const isEmpty = isMany ? (result as unknown[]).length === 0 : result === null;
+
+    if (throwIfNotFound && isEmpty) {
+      throw new NotFoundException('Message not found');
+    }
+
+    return result;
   }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // INTERNAL METHODS (for other services - no authorization)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Find a message by ID - used by other services.
+   * Throws NotFoundException if not found.
+   * @param id - The message ID to search for
+   * @returns The message response DTO
+   */
+  async findById(id: string): Promise<MessageResponseDto> {
+    const message = (await this.findMessageInternal({ id })) as Message;
+    return plainToInstance(MessageResponseDto, message);
+  }
+
+  /**
+   * Find messages by session ID - used by other services.
+   * Returns empty array if no messages found (does not throw).
+   * @param sessionId - The session ID to search for
+   * @returns Array of message response DTOs
+   */
+  async findBySessionId(sessionId: string): Promise<MessageResponseDto[]> {
+    const messages = (await this.findMessageInternal(
+      { sessionId },
+      { isMany: true, throwIfNotFound: false }
+    )) as Message[];
+
+    return plainToInstance(MessageResponseDto, messages);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CONTROLLER METHODS (with authorization checks)
+  // ═══════════════════════════════════════════════════════════════════════
 
   /**
    * Create a new message
@@ -95,32 +154,18 @@ export class MessagesService {
         senderType: role,
         receiverType: receiver.role,
       },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        receiver: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
+      include: MESSAGE_INCLUDE,
     });
 
-    return this.toResponseDto(message);
+    return plainToInstance(MessageResponseDto, message);
   }
 
   /**
-   * Find all messages for a user with optional filters
+   * Find all messages for a user with optional filters.
+   * Uses findMessageInternal with isMany option.
    */
   async findAll(userId: string, query: GetMessagesQuery): Promise<MessageResponseDto[]> {
-    const where: any = {
+    const where: Prisma.MessageWhereInput = {
       OR: [{ senderId: userId }, { receiverId: userId }],
     };
 
@@ -137,101 +182,50 @@ export class MessagesService {
       ];
     }
 
-    const messages = await this.prisma.message.findMany({
-      where,
-      orderBy: { sentAt: 'desc' },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        receiver: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
+    const messages = (await this.findMessageInternal(where, {
+      isMany: true,
+      throwIfNotFound: false,
+    })) as Message[];
 
-    return messages.map(message => this.toResponseDto(message));
+    return plainToInstance(MessageResponseDto, messages);
   }
 
   /**
-   * Find a single message by ID
+   * Find a single message by ID with authorization check.
+   * Uses findById internal method and verifies user access.
    */
   async findOne(id: string, userId: string): Promise<MessageResponseDto> {
-    const message = await this.prisma.message.findUnique({
-      where: { id },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        receiver: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
-
-    if (!message) {
-      throw new NotFoundException('Message not found');
-    }
+    const message = await this.findById(id);
 
     // Verify user has access to this message
     if (message.senderId !== userId && message.receiverId !== userId) {
       throw new ForbiddenException('Not authorized to view this message');
     }
 
-    return this.toResponseDto(message);
+    return message;
   }
 
   /**
-   * Find conversation between two users
+   * Find conversation between two users.
+   * Uses findMessageInternal with custom where clause.
    */
   async findConversation(userId: string, otherUserId: string): Promise<MessageResponseDto[]> {
-    const messages = await this.prisma.message.findMany({
-      where: {
+    const messages = (await this.findMessageInternal(
+      {
         OR: [
           { senderId: userId, receiverId: otherUserId },
           { senderId: otherUserId, receiverId: userId },
         ],
       },
-      orderBy: { sentAt: 'asc' },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        receiver: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
+      { isMany: true, throwIfNotFound: false }
+    )) as Message[];
 
-    return messages.map(message => this.toResponseDto(message));
+    return plainToInstance(MessageResponseDto, messages);
   }
 
   /**
-   * Find messages by session ID
+   * Find messages by session ID with authorization check.
+   * Uses findBySessionId internal method after verifying session access.
    */
   async findBySession(
     sessionId: string,
@@ -255,27 +249,6 @@ export class MessagesService {
       throw new ForbiddenException('Not authorized to view messages for this session');
     }
 
-    const messages = await this.prisma.message.findMany({
-      where: { sessionId },
-      orderBy: { sentAt: 'desc' },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        receiver: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
-
-    return messages.map(message => this.toResponseDto(message));
+    return this.findBySessionId(sessionId);
   }
 }

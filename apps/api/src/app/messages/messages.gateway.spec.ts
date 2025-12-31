@@ -1,37 +1,28 @@
 import { Role } from '@prisma/client';
 import { AuthMockFactory, GatewayTest, MessageMockFactory, MockSocketClient } from '@test-utils';
+import { DeepMocked } from '@test-utils/mixins/mock.mixin';
 
 import { CreateMessageDto, MessageResponseDto } from './dto/message.dto';
 import { MessagesGateway } from './messages.gateway';
 import { MessagesService } from './messages.service';
 
+interface MessagesGatewayMocks {
+  MessagesService: DeepMocked<MessagesService>;
+}
+
 describe('MessagesGateway', () => {
-  let test: GatewayTest<MessagesGateway, MessagesService>;
+  let test: GatewayTest<MessagesGateway, MessagesGatewayMocks>;
   let mockSocket: MockSocketClient;
   let authFactory: AuthMockFactory;
   let messageFactory: MessageMockFactory;
-
-  const mockService = {
-    create: jest.fn(),
-    findAll: jest.fn(),
-    findOne: jest.fn(),
-    findConversation: jest.fn(),
-    findBySession: jest.fn(),
-  };
 
   beforeEach(async () => {
     authFactory = new AuthMockFactory();
     messageFactory = new MessageMockFactory();
 
-    test = new GatewayTest({
-      gatewayClass: MessagesGateway,
-      serviceClass: MessagesService,
-      mocks: [
-        {
-          provide: MessagesService,
-          useValue: mockService,
-        },
-      ],
+    test = new GatewayTest<MessagesGateway, MessagesGatewayMocks>({
+      gateway: MessagesGateway,
+      providers: [MessagesService],
     });
 
     await test.setup();
@@ -47,14 +38,14 @@ describe('MessagesGateway', () => {
     return {
       id: mockMessage.id,
       content: mockMessage.content,
-      sentAt: mockMessage.sentAt.toISOString(),
+      sentAt: mockMessage.sentAt,
       senderId: mockMessage.senderId ?? 'sender-id',
       receiverId: mockMessage.receiverId ?? 'receiver-id',
       sessionId: mockMessage.sessionId,
       senderType: mockMessage.senderType,
       receiverType: mockMessage.receiverType,
-      createdAt: mockMessage.sentAt.toISOString(),
-      updatedAt: mockMessage.sentAt.toISOString(),
+      createdAt: mockMessage.sentAt,
+      updatedAt: mockMessage.sentAt,
       ...overrides,
     };
   }
@@ -142,12 +133,16 @@ describe('MessagesGateway', () => {
         receiverType: Role.COACH,
       });
 
-      test.service.create.mockResolvedValue(expectedMessage);
+      test.mocks.MessagesService.create.mockResolvedValue(expectedMessage);
 
-      const result = await test.gateway.handleSendMessage(mockSocket.socket, createDto, mockUser);
+      const result = await test.gateway.handleSendMessage(createDto, mockUser);
 
       expect(result).toEqual(expectedMessage);
-      expect(test.service.create).toHaveBeenCalledWith(createDto, 'user-1', Role.USER);
+      expect(test.mocks.MessagesService.create).toHaveBeenCalledWith(
+        createDto,
+        'user-1',
+        Role.USER
+      );
       expect(test.server.to).toHaveBeenCalledWith('session-session-123');
     });
 
@@ -169,12 +164,16 @@ describe('MessagesGateway', () => {
         receiverType: Role.USER,
       });
 
-      test.service.create.mockResolvedValue(expectedMessage);
+      test.mocks.MessagesService.create.mockResolvedValue(expectedMessage);
 
-      const result = await test.gateway.handleSendMessage(mockSocket.socket, createDto, mockCoach);
+      const result = await test.gateway.handleSendMessage(createDto, mockCoach);
 
       expect(result).toEqual(expectedMessage);
-      expect(test.service.create).toHaveBeenCalledWith(createDto, 'coach-1', Role.COACH);
+      expect(test.mocks.MessagesService.create).toHaveBeenCalledWith(
+        createDto,
+        'coach-1',
+        Role.COACH
+      );
     });
 
     it('should not emit to room when sessionId is not provided', async () => {
@@ -194,12 +193,16 @@ describe('MessagesGateway', () => {
         receiverType: Role.COACH,
       });
 
-      test.service.create.mockResolvedValue(expectedMessage);
+      test.mocks.MessagesService.create.mockResolvedValue(expectedMessage);
 
-      const result = await test.gateway.handleSendMessage(mockSocket.socket, createDto, mockUser);
+      const result = await test.gateway.handleSendMessage(createDto, mockUser);
 
       expect(result).toEqual(expectedMessage);
-      expect(test.service.create).toHaveBeenCalledWith(createDto, 'user-1', Role.USER);
+      expect(test.mocks.MessagesService.create).toHaveBeenCalledWith(
+        createDto,
+        'user-1',
+        Role.USER
+      );
       expect(test.server.to).not.toHaveBeenCalled();
     });
 
@@ -211,11 +214,11 @@ describe('MessagesGateway', () => {
         sessionId: 'session-123',
       };
 
-      test.service.create.mockRejectedValue(new Error('Service error'));
+      test.mocks.MessagesService.create.mockRejectedValue(new Error('Service error'));
 
-      await expect(
-        test.gateway.handleSendMessage(mockSocket.socket, createDto, mockUser)
-      ).rejects.toThrow('Service error');
+      await expect(test.gateway.handleSendMessage(createDto, mockUser)).rejects.toThrow(
+        'Service error'
+      );
     });
   });
 

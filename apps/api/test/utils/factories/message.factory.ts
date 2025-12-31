@@ -4,31 +4,65 @@
 
 import { Role } from '@prisma/client';
 
+import { AccountMockFactory, MockAccount } from './account.factory';
 import { BaseMockFactory } from './base-factory';
 
 export interface MockMessage {
   id: string;
   content: string;
+  createdAt: Date;
   sentAt: Date;
-  senderId?: string;
-  receiverId?: string;
+  updatedAt: Date;
+  senderId: string;
+  receiverId: string;
   sessionId?: string;
   senderType: Role;
   receiverType: Role;
+  sender?: Pick<MockAccount, 'id' | 'name' | 'email'>;
+  receiver?: Pick<MockAccount, 'id' | 'name' | 'email'>;
 }
 
 export class MessageMockFactory extends BaseMockFactory<MockMessage> {
+  private readonly account: AccountMockFactory;
+
+  constructor() {
+    // Initialize mixins
+    super();
+    this.account = new AccountMockFactory();
+  }
+
   protected generateMock(overrides?: Partial<MockMessage>): MockMessage {
     const id = this.generateId();
+    const now = new Date();
+    // 1. Resolve Coach (Ensuring ID and Object match)
+    const rawSender =
+      overrides?.sender ?? this.account.create({ role: overrides?.senderType ?? Role.USER });
+    const sender = {
+      id: overrides?.senderId ?? rawSender.id,
+      email: rawSender.email,
+      name: rawSender.name,
+    };
 
-    const message = {
+    // 2. Resolve User (Ensuring ID and Object match)
+    const rawReceiver =
+      overrides?.receiver ?? this.account.create({ role: overrides?.receiverType ?? Role.COACH });
+    const receiver = {
+      id: overrides?.receiverId ?? rawReceiver.id,
+      email: rawReceiver.email,
+      name: rawReceiver.name,
+    };
+    const message: MockMessage = {
       id,
       content: this.randomContent(),
-      sentAt: new Date(),
-      senderType: Role.USER,
-      senderId: this.generateId(),
-      receiverType: Role.COACH,
-      receiverId: this.generateId(),
+      createdAt: now,
+      sentAt: now,
+      updatedAt: now,
+      senderType: overrides?.senderType ?? Role.USER,
+      senderId: sender.id,
+      receiverType: overrides?.receiverType ?? Role.COACH,
+      receiverId: receiver.id,
+      sender,
+      receiver,
       ...overrides,
     };
 

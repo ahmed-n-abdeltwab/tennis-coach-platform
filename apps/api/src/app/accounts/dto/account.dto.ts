@@ -1,10 +1,11 @@
-import { BaseResponseDto, createTypedApiDecorators } from '@common';
-import { ApiProperty } from '@nestjs/swagger';
+import { createTypedApiDecorators } from '@common';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
-import { Exclude, Transform, Type } from 'class-transformer';
+import { Exclude, Type } from 'class-transformer';
 import {
   IsBoolean,
+  IsDate,
   IsEmail,
   IsEnum,
   IsNumber,
@@ -32,14 +33,28 @@ export class CoachBookingTypeSummaryDto {
   @ApiProperty({ example: 'One-on-one coaching session', required: false })
   @IsOptional()
   @IsString()
-  description: string | null;
+  description: string;
 
   @ApiProperty({ example: 99.99, description: 'Base price in decimal format' })
   @Type(() => Number)
   basePrice: Decimal;
 }
 
-export class AccountResponseDto extends BaseResponseDto {
+export class AccountResponseDto {
+  @ApiProperty({ example: 'discount-id-123' })
+  @IsString()
+  id: string;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  @IsDate()
+  @Type(() => String)
+  createdAt: Date;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  @IsDate()
+  @Type(() => String)
+  updatedAt: Date;
+
   @ApiProperty({ example: 'account@example.com' })
   email: string;
 
@@ -52,57 +67,44 @@ export class AccountResponseDto extends BaseResponseDto {
   @ApiProperty({ enum: Role, example: Role.USER })
   role: Role;
 
-  @ApiProperty({ required: false, enum: ['male', 'female', 'other'], example: 'male' })
-  @Transform(({ value }) => value ?? undefined)
-  gender?: string | null;
+  @ApiPropertyOptional({ enum: ['male', 'female', 'other'], example: 'male' })
+  gender?: string;
 
-  @ApiProperty({ required: false, minimum: 5, maximum: 120 })
-  @Transform(({ value }) => value ?? undefined)
-  age?: number | null;
+  @ApiPropertyOptional({ minimum: 5, maximum: 120 })
+  age?: number;
 
-  @ApiProperty({ required: false, minimum: 50, maximum: 300 })
-  @Transform(({ value }) => value ?? undefined)
-  height?: number | null;
+  @ApiPropertyOptional({ minimum: 50, maximum: 300 })
+  height?: number;
 
-  @ApiProperty({ required: false, minimum: 20, maximum: 500 })
-  @Transform(({ value }) => value ?? undefined)
-  weight?: number | null;
+  @ApiPropertyOptional({ minimum: 20, maximum: 500 })
+  weight?: number;
 
-  @ApiProperty({ required: false })
-  @Transform(({ value }) => value ?? undefined)
-  bio?: string | null;
+  @ApiPropertyOptional()
+  bio?: string;
 
-  @ApiProperty({ required: false })
-  @Transform(({ value }) => value ?? undefined)
-  credentials?: string | null;
+  @ApiPropertyOptional()
+  credentials?: string;
 
-  @ApiProperty({ required: false })
-  @Transform(({ value }) => value ?? undefined)
-  philosophy?: string | null;
+  @ApiPropertyOptional()
+  philosophy?: string;
 
-  @ApiProperty({ required: false })
-  @Transform(({ value }) => value ?? undefined)
-  profileImage?: string | null;
+  @ApiPropertyOptional()
+  profileImage?: string;
 
-  @ApiProperty({ required: false })
-  @Transform(({ value }) => value ?? undefined)
-  disability?: boolean | null;
+  @ApiPropertyOptional()
+  disability?: boolean;
 
-  @ApiProperty({ required: false })
-  @Transform(({ value }) => value ?? undefined)
-  disabilityCause?: string | null;
+  @ApiPropertyOptional()
+  disabilityCause?: string;
 
-  @ApiProperty({ required: false })
-  @Transform(({ value }) => value ?? undefined)
-  country?: string | null;
+  @ApiPropertyOptional()
+  country?: string;
 
-  @ApiProperty({ required: false })
-  @Transform(({ value }) => value ?? undefined)
-  address?: string | null;
+  @ApiPropertyOptional()
+  address?: string;
 
-  @ApiProperty({ required: false })
-  @Transform(({ value }) => value ?? undefined)
-  notes?: string | null;
+  @ApiPropertyOptional()
+  notes?: string;
 
   @ApiProperty()
   isActive!: boolean;
@@ -131,168 +133,159 @@ export class CreateAccountDto {
   role?: Role;
 
   // User-specific fields
-  @ApiProperty({ required: false, enum: ['male', 'female', 'other'] })
+  @ApiPropertyOptional({ enum: ['male', 'female', 'other'] })
   @IsOptional()
   @IsString()
   gender?: string;
 
-  @ApiProperty({ required: false, minimum: 5, maximum: 120 })
+  @ApiPropertyOptional({ minimum: 5, maximum: 120 })
   @IsOptional()
   @IsNumber()
   @Min(5)
   @Max(120)
   age?: number;
 
-  @ApiProperty({ required: false, minimum: 50, maximum: 300 })
+  @ApiPropertyOptional({ minimum: 50, maximum: 300 })
   @IsOptional()
   @IsNumber()
   @Min(50)
   @Max(300)
   height?: number;
 
-  @ApiProperty({ required: false, minimum: 20, maximum: 500 })
+  @ApiPropertyOptional({ minimum: 20, maximum: 500 })
   @IsOptional()
   @IsNumber()
   @Min(20)
   @Max(500)
   weight?: number;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
   disability?: boolean;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   disabilityCause?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   country?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   address?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   notes?: string;
 
   // Coach-specific fields
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   bio?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   credentials?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   philosophy?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   profileImage?: string;
 }
 
 export class UpdateAccountDto {
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   name?: string;
 
-  @ApiProperty({ required: false, enum: ['male', 'female', 'other'] })
-  @Transform(({ value }) => value ?? undefined)
+  @ApiPropertyOptional({ enum: ['male', 'female', 'other'] })
   @IsOptional()
   @IsString()
-  gender?: string | null;
+  gender?: string;
 
-  @ApiProperty({ required: false, minimum: 5, maximum: 120 })
-  @Transform(({ value }) => value ?? undefined)
+  @ApiPropertyOptional({ minimum: 5, maximum: 120 })
   @IsOptional()
   @IsNumber()
   @Min(5)
   @Max(120)
-  age?: number | null;
+  age?: number;
 
-  @ApiProperty({ required: false, minimum: 50, maximum: 300 })
-  @Transform(({ value }) => value ?? undefined)
+  @ApiPropertyOptional({ minimum: 50, maximum: 300 })
   @IsOptional()
   @IsNumber()
   @Min(50)
   @Max(300)
-  height?: number | null;
+  height?: number;
 
-  @ApiProperty({ required: false, minimum: 20, maximum: 500 })
-  @Transform(({ value }) => value ?? undefined)
+  @ApiPropertyOptional({ minimum: 20, maximum: 500 })
   @IsOptional()
   @IsNumber()
   @Min(20)
   @Max(500)
-  weight?: number | null;
+  weight?: number;
 
-  @ApiProperty({ required: false })
-  @Transform(({ value }) => value ?? undefined)
+  @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
   disability?: boolean;
 
-  @ApiProperty({ required: false })
-  @Transform(({ value }) => value ?? undefined)
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  disabilityCause?: string | null;
+  disabilityCause?: string;
 
-  @ApiProperty({ required: false })
-  @Transform(({ value }) => value ?? undefined)
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  country?: string | null;
+  country?: string;
 
-  @ApiProperty({ required: false })
-  @Transform(({ value }) => value ?? undefined)
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  address?: string | null;
+  address?: string;
 
-  @ApiProperty({ required: false })
-  @Transform(({ value }) => value ?? undefined)
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  notes?: string | null;
+  notes?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   bio?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   credentials?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   philosophy?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   profileImage?: string;
 }
 
 export class CoachResponseDto extends AccountResponseDto {
-  @ApiProperty({ type: [CoachBookingTypeSummaryDto], required: false })
+  @ApiPropertyOptional({ type: [CoachBookingTypeSummaryDto] })
   @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => CoachBookingTypeSummaryDto)

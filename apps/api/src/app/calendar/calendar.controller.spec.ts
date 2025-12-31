@@ -33,7 +33,7 @@ describe('CalendarController', () => {
         sessionId: 'session-123',
       };
 
-      const mockResponse = test.factory.calendar.create();
+      const mockResponse = test.factory.calendar.createWithNulls();
 
       test.mocks.CalendarService.createEvent.mockResolvedValue(mockResponse);
 

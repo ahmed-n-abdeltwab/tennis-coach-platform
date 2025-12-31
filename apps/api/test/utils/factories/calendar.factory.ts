@@ -7,8 +7,8 @@ import { BaseMockFactory } from './base-factory';
 export interface MockCalendar {
   eventId: string;
   summary: string;
-  start?: Date | string;
-  end?: Date | string;
+  start?: Date;
+  end?: Date;
   attendees?: string[];
 }
 

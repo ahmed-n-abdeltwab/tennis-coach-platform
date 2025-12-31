@@ -1,8 +1,8 @@
-import { BaseResponseDto, createTypedApiDecorators } from '@common';
+import { createTypedApiDecorators } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Decimal } from '@prisma/client/runtime/client';
-import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsBoolean, IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 export class CoachDto {
   @IsString()
   id: string;
@@ -12,9 +12,23 @@ export class CoachDto {
 
   @IsOptional()
   @IsString()
-  credentials?: string | null;
+  credentials?: string;
 }
-export class BookingTypeResponseDto extends BaseResponseDto {
+export class BookingTypeResponseDto {
+  @ApiProperty()
+  @IsString()
+  id!: string;
+
+  @ApiProperty({ type: Date, format: 'date-time' })
+  @IsDate()
+  @Type(() => String)
+  createdAt!: Date;
+
+  @ApiProperty({ type: Date, format: 'date-time' })
+  @IsDate()
+  @Type(() => String)
+  updatedAt!: Date;
+
   @ApiProperty({ example: 'Personal Training Session' })
   @IsString()
   name: string;
@@ -45,7 +59,6 @@ export class CreateBookingTypeDto {
   name: string;
 
   @ApiPropertyOptional()
-  @Transform(({ value }) => value ?? undefined)
   @IsOptional()
   @IsString()
   description?: string;
