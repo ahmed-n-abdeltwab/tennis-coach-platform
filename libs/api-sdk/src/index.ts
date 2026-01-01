@@ -38,6 +38,8 @@ export type { Endpoints } from '@contracts';
  */
 export type {
   AcceptPath,
+  AddApiPrefix,
+  DefaultApiPrefix,
   ExtractMethods,
   ExtractPathParams,
   ExtractPaths,
@@ -45,14 +47,20 @@ export type {
   ExtractRequestParams,
   ExtractRequestType,
   ExtractResponseType,
+  FlexibleApiPath,
   FlexiblePath,
   MatchPathTemplate,
+  NormalizePath,
   PathPattern,
   PathWithValues,
   PathsForRoute,
   PathsWithMethod,
   RequiresParams,
+  ShortPaths,
+  ShortPathsWithMethod,
+  StripApiPrefix,
   UnwrappedPath,
+  ValidatePath,
 } from './utils/type-utils';
 
 // Export runtime helper function

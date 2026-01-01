@@ -340,13 +340,16 @@ importers:
 
   apps/api: {}
 
-  libs/routes-helpers:
+  libs/api-sdk:
     dependencies:
+      axios:
+        specifier: ^1.0.0
+        version: 1.13.2
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
 
-  libs/utils:
+  libs/contracts:
     dependencies:
       tslib:
         specifier: ^2.3.0
