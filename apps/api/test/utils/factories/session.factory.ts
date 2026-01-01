@@ -2,25 +2,17 @@
  * Session mock factory for creating test session data
  */
 
+import { DeepPartial } from '@api-sdk/testing';
 import { SessionStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 
-import { DeepPartial } from '../http';
-
+import { AccountMockFactory, type MockAccount } from './account.factory';
 import { BaseMockFactory } from './base-factory';
-
-import {
-  AccountMockFactory,
-  BookingTypeMockFactory,
-  CalendarMockFactory,
-  DiscountMockFactory,
-  PaymentMockFactory,
-  TimeSlotMockFactory,
-  type MockAccount,
-  type MockBookingType,
-  type MockDiscount,
-  type MockTimeSlot,
-} from '.';
+import { BookingTypeMockFactory, type MockBookingType } from './booking-type.factory';
+import { CalendarMockFactory } from './calendar.factory';
+import { DiscountMockFactory, type MockDiscount } from './discount.factory';
+import { PaymentMockFactory } from './payment.factory';
+import { TimeSlotMockFactory, type MockTimeSlot } from './time-slot.factory';
 
 export interface MockSession {
   id: string;
@@ -51,23 +43,35 @@ export interface MockSession {
 }
 
 export class SessionMockFactory extends BaseMockFactory<MockSession> {
-  // Compose factories for clean separation of concerns
-  private readonly account: AccountMockFactory;
-  private readonly bookingType: BookingTypeMockFactory;
-  private readonly timeSlot: TimeSlotMockFactory;
-  private readonly discount: DiscountMockFactory;
-  private readonly payment: PaymentMockFactory;
-  private readonly calendar: CalendarMockFactory;
+  private _account?: AccountMockFactory;
+  private _bookingType?: BookingTypeMockFactory;
+  private _timeSlot?: TimeSlotMockFactory;
+  private _discount?: DiscountMockFactory;
+  private _payment?: PaymentMockFactory;
+  private _calendar?: CalendarMockFactory;
 
-  constructor() {
-    // Initialize mixins
-    super();
-    this.account = new AccountMockFactory();
-    this.bookingType = new BookingTypeMockFactory();
-    this.timeSlot = new TimeSlotMockFactory();
-    this.discount = new DiscountMockFactory();
-    this.payment = new PaymentMockFactory();
-    this.calendar = new CalendarMockFactory();
+  private get account(): AccountMockFactory {
+    return (this._account ??= new AccountMockFactory());
+  }
+
+  private get bookingType(): BookingTypeMockFactory {
+    return (this._bookingType ??= new BookingTypeMockFactory());
+  }
+
+  private get timeSlot(): TimeSlotMockFactory {
+    return (this._timeSlot ??= new TimeSlotMockFactory());
+  }
+
+  private get discount(): DiscountMockFactory {
+    return (this._discount ??= new DiscountMockFactory());
+  }
+
+  private get payment(): PaymentMockFactory {
+    return (this._payment ??= new PaymentMockFactory());
+  }
+
+  private get calendar(): CalendarMockFactory {
+    return (this._calendar ??= new CalendarMockFactory());
   }
 
   protected generateMock(overrides?: DeepPartial<MockSession>): MockSession {

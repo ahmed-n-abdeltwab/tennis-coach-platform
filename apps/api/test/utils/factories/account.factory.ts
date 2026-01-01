@@ -4,9 +4,8 @@
  * For convenience, use UserMockFactory or CoachMockFactory for specific roles.
  */
 
+import { DeepPartial } from '@api-sdk/testing';
 import { Role } from '@prisma/client';
-
-import { DeepPartial } from '../http';
 
 import { BaseMockFactory, Nullified } from './base-factory';
 
@@ -89,7 +88,7 @@ export class AccountMockFactory extends BaseMockFactory<MockAccount> {
     return account;
   }
 
-  createUser(overrides?: Partial<MockAccount>): MockAccount {
+  createUser(overrides?: DeepPartial<MockAccount>): MockAccount {
     return this.create({
       role: Role.USER,
       email: this.generateEmail('user'),
@@ -98,16 +97,7 @@ export class AccountMockFactory extends BaseMockFactory<MockAccount> {
     });
   }
 
-  createManyUser(count: number, overrides?: Partial<MockAccount>): MockAccount[] {
-    return this.createMany(count, {
-      role: Role.USER,
-      email: this.generateEmail('user'),
-      name: `Test User ${this.generateId().slice(-8)}`,
-      ...overrides,
-    });
-  }
-
-  createUserWithNulls(overrides?: Partial<MockAccount>): Nullified<MockAccount> {
+  createUserWithNulls(overrides?: DeepPartial<MockAccount>): Nullified<MockAccount> {
     return this.createWithNulls({
       role: Role.USER,
       email: this.generateEmail('user'),
@@ -116,70 +106,59 @@ export class AccountMockFactory extends BaseMockFactory<MockAccount> {
     });
   }
 
-  createManyUserWithNulls(
-    count: number,
-    overrides?: Partial<MockAccount>
-  ): Nullified<MockAccount>[] {
-    return this.createManyWithNulls(count, {
+  createManyUsers(count: number, overrides?: DeepPartial<MockAccount>): MockAccount[] {
+    return this.createMany(count, {
       role: Role.USER,
-      email: this.generateEmail('user'),
-      name: `Test User ${this.generateId().slice(-8)}`,
       ...overrides,
     });
   }
 
-  createCoach(overrides?: Partial<MockAccount>): MockAccount {
+  createManyUsersWithNulls(
+    count: number,
+    overrides?: DeepPartial<MockAccount>
+  ): Nullified<MockAccount>[] {
+    return this.createManyWithNulls(count, {
+      role: Role.USER,
+      ...overrides,
+    });
+  }
+
+  createCoach(overrides?: DeepPartial<MockAccount>): MockAccount {
     return this.create({
       role: Role.COACH,
       email: this.generateEmail('coach'),
       name: `Coach ${this.generateId().slice(-8)}`,
-      bio: this.randomBio(),
-      credentials: this.randomCredentials(),
-      philosophy: this.randomPhilosophy(),
       ...overrides,
     });
   }
 
-  createManyCoach(count: number, overrides?: Partial<MockAccount>): MockAccount[] {
-    return this.createMany(count, {
-      role: Role.COACH,
-      email: this.generateEmail('coach'),
-      name: `Coach ${this.generateId().slice(-8)}`,
-      bio: this.randomBio(),
-      credentials: this.randomCredentials(),
-      philosophy: this.randomPhilosophy(),
-      ...overrides,
-    });
-  }
-
-  createCoachWithNulls(overrides?: Partial<MockAccount>): Nullified<MockAccount> {
+  createCoachWithNulls(overrides?: DeepPartial<MockAccount>): Nullified<MockAccount> {
     return this.createWithNulls({
       role: Role.COACH,
       email: this.generateEmail('coach'),
       name: `Coach ${this.generateId().slice(-8)}`,
-      bio: this.randomBio(),
-      credentials: this.randomCredentials(),
-      philosophy: this.randomPhilosophy(),
       ...overrides,
     });
   }
 
-  createManyCoachWithNulls(
+  createManyCoaches(count: number, overrides?: DeepPartial<MockAccount>): MockAccount[] {
+    return this.createMany(count, {
+      role: Role.COACH,
+      ...overrides,
+    });
+  }
+
+  createManyCoachesWithNulls(
     count: number,
-    overrides?: Partial<MockAccount>
+    overrides?: DeepPartial<MockAccount>
   ): Nullified<MockAccount>[] {
     return this.createManyWithNulls(count, {
       role: Role.COACH,
-      email: this.generateEmail('coach'),
-      name: `Coach ${this.generateId().slice(-8)}`,
-      bio: this.randomBio(),
-      credentials: this.randomCredentials(),
-      philosophy: this.randomPhilosophy(),
       ...overrides,
     });
   }
 
-  createAdmin(overrides?: Partial<MockAccount>): MockAccount {
+  createAdmin(overrides?: DeepPartial<MockAccount>): MockAccount {
     return this.create({
       role: Role.ADMIN,
       email: this.generateEmail('admin'),
@@ -188,7 +167,7 @@ export class AccountMockFactory extends BaseMockFactory<MockAccount> {
     });
   }
 
-  createAdminWithNulls(overrides?: Partial<MockAccount>): MockAccount {
+  createAdminWithNulls(overrides?: DeepPartial<MockAccount>): Nullified<MockAccount> {
     return this.createWithNulls({
       role: Role.ADMIN,
       email: this.generateEmail('admin'),
@@ -197,42 +176,19 @@ export class AccountMockFactory extends BaseMockFactory<MockAccount> {
     });
   }
 
-  createPremiumUser(overrides?: Partial<MockAccount>): MockAccount {
-    return this.create({
-      role: Role.PREMIUM_USER,
-      email: this.generateEmail('premium'),
-      name: `Premium User ${this.generateId().slice(-8)}`,
+  createManyAdmins(count: number, overrides?: DeepPartial<MockAccount>): MockAccount[] {
+    return this.createMany(count, {
+      role: Role.ADMIN,
       ...overrides,
     });
   }
 
-  createPremiumUserWithNulls(overrides?: Partial<MockAccount>): MockAccount {
-    return this.createWithNulls({
-      role: Role.PREMIUM_USER,
-      email: this.generateEmail('premium'),
-      name: `Premium User ${this.generateId().slice(-8)}`,
-      ...overrides,
-    });
-  }
-
-  createInactive(overrides?: Partial<MockAccount>): MockAccount {
-    return this.create({
-      isActive: false,
-      ...overrides,
-    });
-  }
-
-  createOffline(overrides?: Partial<MockAccount>): MockAccount {
-    return this.create({
-      isOnline: false,
-      ...overrides,
-    });
-  }
-
-  createWithDisability(overrides?: Partial<MockAccount>): MockAccount {
-    return this.create({
-      disability: true,
-      disabilityCause: this.randomDisabilityCause(),
+  createManyAdminsWithNulls(
+    count: number,
+    overrides?: DeepPartial<MockAccount>
+  ): Nullified<MockAccount>[] {
+    return this.createManyWithNulls(count, {
+      role: Role.ADMIN,
       ...overrides,
     });
   }
@@ -303,15 +259,5 @@ export class AccountMockFactory extends BaseMockFactory<MockAccount> {
 
   private randomProfileImage(): string {
     return `https://example.com/images/profile_${Math.floor(Math.random() * 100)}.jpg`;
-  }
-
-  private randomDisabilityCause(): string {
-    const causes = [
-      'Mobility impairment',
-      'Visual impairment',
-      'Hearing impairment',
-      'Chronic condition',
-    ];
-    return causes[Math.floor(Math.random() * causes.length)] ?? 'Not specified';
   }
 }

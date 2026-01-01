@@ -58,6 +58,7 @@ export default [
       '**/jest.config.ts',
       'jest.preset.js',
       '**/test/reporters/*.js',
+      '**/webpack.config.js',
     ],
   },
   ...typescriptEslint.configs.recommended,

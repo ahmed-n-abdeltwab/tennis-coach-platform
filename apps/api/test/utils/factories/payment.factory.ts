@@ -2,9 +2,8 @@
  * Payment mock factory for creating test payment data
  */
 
+import { DeepPartial } from '@api-sdk/testing';
 import { Decimal } from '@prisma/client/runtime/client';
-
-import { DeepPartial } from '../http';
 
 import { BaseMockFactory } from './base-factory';
 
@@ -44,9 +43,11 @@ export class PaymentMockFactory extends BaseMockFactory<MockPayment> {
     const id = this.generateId();
     const now = this.createDate();
 
-    return {
+    // Note: sessionId should be provided via overrides when creating payment
+    // for a specific session. Default generates a placeholder ID.
+    const payment = {
       id,
-      sessionId: this.generateId(),
+      sessionId: overrides?.sessionId ?? this.generateId(),
       orderId: this.generatePayPalOrderId(),
       amount: new Decimal(this.randomAmount()),
       status: 'pending',
@@ -54,29 +55,10 @@ export class PaymentMockFactory extends BaseMockFactory<MockPayment> {
       updatedAt: now,
       ...overrides,
     } as MockPayment;
-  }
 
-  createCompleted(overrides?: Partial<MockPayment>): MockPayment {
-    return this.create({
-      status: 'completed',
-      paypalOrderId: this.generatePayPalOrderId(),
-      captureId: this.generateCaptureId(),
-      ...overrides,
-    });
-  }
+    this.validateRequired(payment.sessionId, 'sessionId');
 
-  createFailed(overrides?: Partial<MockPayment>): MockPayment {
-    return this.create({
-      status: 'failed',
-      ...overrides,
-    });
-  }
-
-  createWithSession(sessionId: string, overrides?: Partial<MockPayment>): MockPayment {
-    return this.create({
-      sessionId,
-      ...overrides,
-    });
+    return payment;
   }
 
   createPayPalOrder(overrides?: Partial<MockPayPalOrder>): MockPayPalOrder {

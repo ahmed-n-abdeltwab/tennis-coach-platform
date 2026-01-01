@@ -46,11 +46,10 @@ export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {
       email: this.generateEmail('test'),
       role: Role.USER,
       iat: now,
-      exp: now + 3600, // 1 hour from now
+      exp: now + 3600,
       ...overrides,
     };
   }
-
   createUserPayload(overrides?: Partial<MockAuthPayload>): MockAuthPayload {
     return this.create({
       role: Role.USER,
@@ -58,7 +57,6 @@ export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {
       ...overrides,
     });
   }
-
   createCoachPayload(overrides?: Partial<MockAuthPayload>): MockAuthPayload {
     return this.create({
       role: Role.COACH,
@@ -66,7 +64,6 @@ export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {
       ...overrides,
     });
   }
-
   createExpiredPayload(overrides?: Partial<MockAuthPayload>): MockAuthPayload {
     const now = Math.floor(Date.now() / 1000);
     return this.create({
@@ -75,10 +72,8 @@ export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {
       ...overrides,
     });
   }
-
   generateToken(payload?: Partial<MockAuthPayload>): string {
     if (!this.jwtService) {
-      // Return a mock JWT token for testing without actual JWT service
       const mockPayload = this.create(payload);
       const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString(
         'base64url'
@@ -114,7 +109,7 @@ export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {
     const refreshToken = this.generateToken({
       ...authPayload,
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 604800, // 7 days from now
+      exp: Math.floor(Date.now() / 1000) + 604800,
     });
 
     return {
@@ -127,7 +122,6 @@ export class AuthMockFactory extends BaseMockFactory<MockAuthPayload> {
       },
     };
   }
-
   createLoginDto(overrides?: { email?: string; password?: string }) {
     return {
       email: overrides?.email ?? this.generateEmail('test'),

@@ -259,7 +259,7 @@ describe('AccountsService', () => {
 
   describe('findByRole', () => {
     it('should return accounts by role', async () => {
-      const mockAccounts = test.factory.account.createManyCoachWithNulls(2);
+      const mockAccounts = test.factory.account.createManyCoachesWithNulls(2);
 
       test.mocks.PrismaService.account.findMany.mockResolvedValue(mockAccounts);
 
@@ -282,7 +282,7 @@ describe('AccountsService', () => {
 
   describe('findUsers', () => {
     it('should return active users', async () => {
-      const mockUsers = test.factory.account.createManyUserWithNulls(1);
+      const mockUsers = test.factory.account.createManyUsersWithNulls(1);
 
       test.mocks.PrismaService.account.findMany.mockResolvedValue(mockUsers);
 

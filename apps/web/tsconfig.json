@@ -18,8 +18,7 @@
     // Web-specific paths
     "baseUrl": "./src",
     "paths": {
-      "@routes-helpers": ["../../libs/routes-helpers/src/index.ts"],
-      "@utils": ["../../libs/utils/src/index.ts"],
+      "@api-sdk": ["../../libs/api-sdk/src/index.ts"],
       "@/*": ["./*"],
       "@components/*": ["app/components/*"],
       "@contexts/*": ["app/contexts/*"],

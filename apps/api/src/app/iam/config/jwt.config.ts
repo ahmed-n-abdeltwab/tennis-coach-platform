@@ -1,5 +1,6 @@
 import { registerAs } from '@nestjs/config';
-import { parseJwtTime } from '@utils';
+
+import { parseJwtTime } from '@common';
 
 export default registerAs('jwt', () => ({
   secret: process.env.JWT_SECRET ?? '',

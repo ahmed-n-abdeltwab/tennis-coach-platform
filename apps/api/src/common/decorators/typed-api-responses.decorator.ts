@@ -1,12 +1,7 @@
 import { applyDecorators, Type } from '@nestjs/common';
 import { ApiResponse, getSchemaPath } from '@nestjs/swagger';
 
-import {
-  BulkOperationResultDto,
-  ErrorResponseDto,
-  OperationStatusDto,
-  ValidationErrorResponseDto,
-} from '../dto/base-response.dto';
+import { ErrorResponseDto, ValidationErrorResponseDto } from '../dto/base-response.dto';
 
 /**
  * BETTER APPROACH: Type-safe decorator factories
@@ -161,39 +156,6 @@ export interface TypedApiDecorators<_T extends Type<any>> {
    * @param description - Optional custom description
    */
   NoContent: (description?: string) => MethodDecorator;
-
-  /**
-   * Bulk create response decorator
-   * Returns HTTP 201 with array of created resources
-   * Includes error responses for: 400 Bad Request, 401 Unauthorized, 422 Unprocessable Entity
-   * @param description - Optional custom description
-   */
-  BulkCreated: (description?: string) => MethodDecorator;
-
-  /**
-   * Bulk update response decorator
-   * Returns HTTP 200 with array of updated resources
-   * Includes error responses for: 400 Bad Request, 401 Unauthorized, 422 Unprocessable Entity
-   * @param description - Optional custom description
-   */
-  BulkUpdated: (description?: string) => MethodDecorator;
-
-  /**
-   * Bulk delete response decorator
-   * Returns HTTP 200 with operation summary (success count, failed count, errors)
-   * Includes error responses for: 400 Bad Request, 401 Unauthorized
-   * @param description - Optional custom description
-   */
-  BulkDeleted: (description?: string) => MethodDecorator;
-
-  /**
-   * Accepted for async processing response decorator
-   * Returns HTTP 202 with operation status tracking information
-   * Includes error responses for: 400 Bad Request, 401 Unauthorized, 503 Service Unavailable
-   * @param description - Optional custom description
-   * @param statusType - Optional custom status DTO type (defaults to OperationStatusDto)
-   */
-  Accepted: (description?: string, statusType?: Type<any>) => MethodDecorator;
 }
 
 /**
@@ -241,12 +203,6 @@ export interface TypedApiDecorators<_T extends Type<any>> {
  * ### Special Operations
  * - `AuthSuccess`: Authentication endpoints (200)
  * - `Paginated`: List endpoints with pagination metadata (200)
- * - `Accepted`: Async operations accepted for processing (202)
- *
- * ### Bulk Operations
- * - `BulkCreated`: Create multiple resources (201)
- * - `BulkUpdated`: Update multiple resources (200)
- * - `BulkDeleted`: Delete multiple resources with summary (200)
  *
  * ### Error Decorators (Composable)
  * - `errors.BadRequest`: 400 - Malformed request
@@ -296,30 +252,8 @@ export interface TypedApiDecorators<_T extends Type<any>> {
  * // Use pagination for list endpoints
  * @Get()
  * @SessionApiResponses.Paginated('Sessions retrieved with pagination')
- * async findAll(@Query() query: PaginationQueryDto) {
+ * async findAll(@Query() query: PaginationQuery) {
  *   return this.sessionsService.findAllPaginated(query);
- * }
- * ```
- *
- * @example
- * ```typescript
- * // Use bulk operations
- * @Post('bulk')
- * @Roles(Role.ADMIN)
- * @SessionApiResponses.BulkCreated('Multiple sessions created')
- * async createBulk(@Body() createDtos: CreateSessionDto[]) {
- *   return this.sessionsService.createBulk(createDtos);
- * }
- * ```
- *
- * @example
- * ```typescript
- * // Use async operations
- * @Post('import')
- * @Roles(Role.ADMIN)
- * @SessionApiResponses.Accepted('Import job started', ImportStatusDto)
- * async importSessions(@Body() importDto: ImportSessionsDto) {
- *   return this.sessionsService.startImport(importDto);
  * }
  * ```
  *
@@ -653,166 +587,6 @@ export function createTypedApiDecorators<T extends Type<any>>(
         errors.Unauthorized(),
         errors.NotFound(),
         errors.Conflict('Operation cannot be completed due to conflict')
-      ),
-
-    /**
-     * Bulk Created response decorator
-     * Use for POST endpoints that create multiple resources in a single request
-     *
-     * Returns HTTP 201 with an array of created resources
-     * Includes error responses for:
-     * - 400 Bad Request (malformed request)
-     * - 401 Unauthorized (authentication required)
-     * - 422 Unprocessable Entity (validation failed on one or more items)
-     *
-     * @example
-     * ```typescript
-     * @Post('bulk')
-     * @Roles(Role.ADMIN)
-     * @ApiBearerAuth('JWT-auth')
-     * @DiscountApiResponses.BulkCreated('Discounts created successfully')
-     * async createBulk(@Body() createDtos: CreateDiscountDto[]) {
-     *   return this.discountsService.createBulk(createDtos);
-     * }
-     * ```
-     */
-    BulkCreated: (description?: string) =>
-      applyDecorators(
-        ApiResponse({
-          status: 201,
-          description: description ?? 'Resources created successfully',
-          type: [responseType],
-        }),
-        errors.BadRequest(),
-        errors.Unauthorized(),
-        errors.UnprocessableEntity()
-      ),
-
-    /**
-     * Bulk Updated response decorator
-     * Use for PUT/PATCH endpoints that update multiple resources in a single request
-     *
-     * Returns HTTP 200 with an array of updated resources
-     * Includes error responses for:
-     * - 400 Bad Request (malformed request)
-     * - 401 Unauthorized (authentication required)
-     * - 422 Unprocessable Entity (validation failed on one or more items)
-     *
-     * @example
-     * ```typescript
-     * @Patch('bulk')
-     * @Roles(Role.ADMIN)
-     * @ApiBearerAuth('JWT-auth')
-     * @SessionApiResponses.BulkUpdated('Sessions updated successfully')
-     * async updateBulk(@Body() updateDtos: UpdateSessionDto[]) {
-     *   return this.sessionsService.updateBulk(updateDtos);
-     * }
-     * ```
-     */
-    BulkUpdated: (description?: string) =>
-      applyDecorators(
-        ApiResponse({
-          status: 200,
-          description: description ?? 'Resources updated successfully',
-          type: [responseType],
-        }),
-        errors.BadRequest(),
-        errors.Unauthorized(),
-        errors.UnprocessableEntity()
-      ),
-
-    /**
-     * Bulk Deleted response decorator
-     * Use for DELETE endpoints that delete multiple resources in a single request
-     *
-     * Returns HTTP 200 with a summary object containing:
-     * - success: number of successfully deleted items
-     * - failed: number of failed deletions
-     * - errors: array of error details for failed items (optional)
-     *
-     * Includes error responses for:
-     * - 400 Bad Request (malformed request)
-     * - 401 Unauthorized (authentication required)
-     *
-     * @example
-     * ```typescript
-     * @Delete('bulk')
-     * @Roles(Role.ADMIN)
-     * @ApiBearerAuth('JWT-auth')
-     * @TimeSlotApiResponses.BulkDeleted('Time slots deleted')
-     * async deleteBulk(@Body() ids: string[]) {
-     *   return this.timeSlotsService.deleteBulk(ids);
-     * }
-     * ```
-     */
-    BulkDeleted: (description?: string) =>
-      applyDecorators(
-        ApiResponse({
-          status: 200,
-          description: description ?? 'Resources deleted successfully',
-          type: BulkOperationResultDto,
-        }),
-        errors.BadRequest(),
-        errors.Unauthorized()
-      ),
-
-    /**
-     * Accepted response decorator
-     * Use for endpoints that accept requests for asynchronous processing
-     * Returns HTTP 202 to indicate the request has been accepted but not yet processed
-     *
-     * Common use cases:
-     * - Long-running operations (imports, exports, batch processing)
-     * - Background jobs that will be processed asynchronously
-     * - Operations that require significant processing time
-     *
-     * Returns HTTP 202 with an operation status object containing:
-     * - operationId: unique identifier to track the operation
-     * - status: current status (pending, processing, completed, failed)
-     * - statusUrl: optional URL to check operation status
-     * - estimatedCompletion: optional estimated completion time
-     *
-     * Includes error responses for:
-     * - 400 Bad Request (malformed request)
-     * - 401 Unauthorized (authentication required)
-     * - 503 Service Unavailable (service cannot accept new operations)
-     *
-     * @param description - Custom description for the success response
-     * @param statusType - Custom DTO type for the status response (defaults to OperationStatusDto)
-     *
-     * @example
-     * ```typescript
-     * @Post('import')
-     * @Roles(Role.ADMIN)
-     * @ApiBearerAuth('JWT-auth')
-     * @SessionApiResponses.Accepted('Import started', ImportStatusDto)
-     * async importSessions(@Body() importDto: ImportSessionsDto) {
-     *   return this.sessionsService.startImport(importDto);
-     * }
-     * ```
-     *
-     * @example
-     * ```typescript
-     * // Using default OperationStatusDto
-     * @Post('export')
-     * @Roles(Role.COACH)
-     * @ApiBearerAuth('JWT-auth')
-     * @SessionApiResponses.Accepted('Export job queued')
-     * async exportSessions(@Body() exportDto: ExportSessionsDto) {
-     *   return this.sessionsService.startExport(exportDto);
-     * }
-     * ```
-     */
-    Accepted: (description?: string, statusType?: Type<any>) =>
-      applyDecorators(
-        ApiResponse({
-          status: 202,
-          description: description ?? 'Operation accepted for processing',
-          type: statusType ?? OperationStatusDto,
-        }),
-        errors.BadRequest(),
-        errors.Unauthorized(),
-        errors.ServiceUnavailable('Service cannot accept new operations at this time')
       ),
   };
 }

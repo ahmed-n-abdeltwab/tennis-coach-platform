@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "version": "0.0.1",
+  "compilerOptions": {
+    // CommonJS for maximum compatibility
+    "module": "CommonJS",
+    "moduleResolution": "Node10",
+
+    // Library output
+    "outDir": "../../dist/libs/api-sdk",
+
+    // Composite project
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "tsBuildInfoFile": "../../dist/libs/api-sdk/.tsbuildinfo",
+    "paths": {
+      "@contracts": ["dist/libs/contracts"]
+    },
+    // Node environment
+    "lib": ["ES2023"],
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__tests__/**"]
+}

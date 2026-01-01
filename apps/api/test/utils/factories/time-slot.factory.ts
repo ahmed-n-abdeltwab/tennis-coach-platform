@@ -2,7 +2,7 @@
  * TimeSlot mock factory for creating test time slot data
  */
 
-import { DeepPartial } from '../http';
+import { DeepPartial } from '@api-sdk/testing';
 
 import { AccountMockFactory, type MockAccount } from './account.factory';
 import { BaseMockFactory } from './base-factory';
@@ -19,12 +19,12 @@ export interface MockTimeSlot {
 }
 
 export class TimeSlotMockFactory extends BaseMockFactory<MockTimeSlot> {
-  private readonly account: AccountMockFactory;
-  constructor() {
-    // Initialize mixins
-    super();
-    this.account = new AccountMockFactory();
+  private _account?: AccountMockFactory;
+
+  private get account(): AccountMockFactory {
+    return (this._account ??= new AccountMockFactory());
   }
+
   protected generateMock(overrides?: DeepPartial<MockTimeSlot>): MockTimeSlot {
     const id = this.generateId();
     const now = this.createDate();
@@ -74,7 +74,7 @@ export class TimeSlotMockFactory extends BaseMockFactory<MockTimeSlot> {
   }
 
   private randomDuration(): number {
-    const durations = [30, 45, 60, 90, 120]; // minutes
+    const durations = [30, 45, 60, 90, 120];
     return durations[Math.floor(Math.random() * durations.length)] ?? 30;
   }
 }

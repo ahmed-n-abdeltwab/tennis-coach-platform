@@ -21,8 +21,9 @@ const config: Config = {
 
   // Module resolution with clean imports
   moduleNameMapper: {
-    '^@routes-helpers$': '<rootDir>/../../libs/routes-helpers/src/index',
-    '^@utils$': '<rootDir>/../../libs/utils/src/index',
+    '^@api-sdk/testing$': '<rootDir>/../../libs/api-sdk/src/testing',
+    '^@api-sdk$': '<rootDir>/../../libs/api-sdk/src/index',
+    '^@contracts$': '<rootDir>/../../libs/contracts/src/index',
     '^@app/(.*)$': '<rootDir>/src/app/$1',
     '^@common$': '<rootDir>/src/common/index',
     '^@common/(.*)$': '<rootDir>/src/common/$1',
@@ -81,7 +82,7 @@ const config: Config = {
 
   // Custom reporters
   reporters: [
-    'default',
+    // 'default',
     [
       'jest-junit',
       {

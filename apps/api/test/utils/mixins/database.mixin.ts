@@ -1,7 +1,7 @@
 /**
  * Database Mixin
  * Provides reusable database operations and test data factories
- * Eliminates duplication of database setup/clean
+ * Eliminates duplication of database setup/cleanup
  */
 
 import {
@@ -12,6 +12,7 @@ import {
   Prisma,
   Role,
   Session,
+  SessionStatus,
   TimeSlot,
 } from '@prisma/client';
 
@@ -25,15 +26,12 @@ import {
 } from '../../infrastructure/helpers/common-helpers';
 import { testEntityCache } from '../cache/test-entity-cache';
 import {
-  DEFAULT_TEST_BOOKING_TYPE,
-  DEFAULT_TEST_COACH,
-  DEFAULT_TEST_DISCOUNT,
-  DEFAULT_TEST_MESSAGE,
-  DEFAULT_TEST_SESSION,
-  DEFAULT_TEST_TIME_SLOT,
-  DEFAULT_TEST_USER,
-  SEED_DATA_CONSTANTS,
-} from '../constants/test-constants';
+  accountFactory,
+  bookingTypeFactory,
+  discountFactory,
+  messageFactory,
+  timeSlotFactory,
+} from '../factories';
 
 /**
  * Test data structure created during database seeding
@@ -87,9 +85,7 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
   }
 
   /**
-   * Seeds the database with basic test data
-   *
-   * Creates a minimal set of test data including users, coaches, and booking types.
+   * Seeds the database with basic test data using factories
    */
   async seedTestData(): Promise<void> {
     try {
@@ -109,39 +105,46 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
         );
       }
 
-      // Create test users using seed data constants
-      const usersData = SEED_DATA_CONSTANTS.DEFAULT_USERS;
+      // Create test users using factory
       const users: Account[] = [];
-      for (const userData of usersData) {
+      for (let i = 0; i < 2; i++) {
         try {
+          const mockUser = accountFactory.createUser();
           const user = await this.host.database.account.create({
             data: {
-              ...userData,
+              email: mockUser.email,
+              name: mockUser.name,
+              passwordHash: mockUser.passwordHash,
+              gender: mockUser.gender,
+              age: mockUser.age,
+              country: mockUser.country,
               role: Role.USER,
             },
           });
           users.push(user);
         } catch (userError) {
-          // Log but continue - user might already exist
-          console.warn(`Failed to create user ${userData.email}:`, userError);
+          console.warn(`Failed to create user:`, userError);
         }
       }
 
-      // Create test coaches using seed data constants
-      const coachesData = SEED_DATA_CONSTANTS.DEFAULT_COACHES;
+      // Create test coaches using factory
       const coaches: Account[] = [];
-      for (const coachData of coachesData) {
+      for (let i = 0; i < 2; i++) {
         try {
+          const mockCoach = accountFactory.createCoach();
           const coach = await this.host.database.account.create({
             data: {
-              ...coachData,
+              email: mockCoach.email,
+              name: mockCoach.name,
+              passwordHash: mockCoach.passwordHash,
+              bio: mockCoach.bio,
+              credentials: mockCoach.credentials,
               role: Role.COACH,
             },
           });
           coaches.push(coach);
         } catch (coachError) {
-          // Log but continue - coach might already exist
-          console.warn(`Failed to create coach ${coachData.email}:`, coachError);
+          console.warn(`Failed to create coach:`, coachError);
         }
       }
 
@@ -156,43 +159,36 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
         }
       }
 
-      // Ensure at least one coach exists before creating booking types
       if (coaches.length === 0) {
-        throw createDatabaseError(
-          'seed test database',
-          `No coaches were created or found. Coaches data count: ${coachesData.length}`,
-          {
-            operation: 'seedTestDatabase',
-            coachesDataCount: coachesData.length,
-          }
-        );
+        throw createDatabaseError('seed test database', 'No coaches were created or found', {
+          operation: 'seedTestDatabase',
+        });
       }
 
-      // Extract the first coach for booking types
       const firstCoach = coaches[0];
       if (!firstCoach?.id) {
         throw createDatabaseError('seed test database', 'First coach is undefined or has no id', {
           operation: 'seedTestDatabase',
-          firstCoach: firstCoach ? JSON.stringify(firstCoach) : 'undefined',
-          coachesLength: coaches.length,
         });
       }
 
-      // Create test booking types using seed data constants sequentially to avoid race conditions
+      // Create test booking types using factory
       const bookingTypes: BookingType[] = [];
-      for (const bookingTypeData of SEED_DATA_CONSTANTS.DEFAULT_BOOKING_TYPES) {
+      for (let i = 0; i < 2; i++) {
         try {
+          const mockBookingType = bookingTypeFactory.create();
           const bookingType = await this.host.database.bookingType.create({
             data: {
-              ...bookingTypeData,
+              name: mockBookingType.name,
+              description: mockBookingType.description,
+              basePrice: mockBookingType.basePrice,
               coachId: firstCoach.id,
               isActive: true,
             },
           });
           bookingTypes.push(bookingType);
         } catch (bookingTypeError) {
-          // Log but continue
-          console.warn(`Failed to create booking type ${bookingTypeData.name}:`, bookingTypeError);
+          console.warn(`Failed to create booking type:`, bookingTypeError);
         }
       }
 
@@ -215,7 +211,9 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
       return this.cachedCoach;
     }
 
-    const cachedCoach = testEntityCache.getCoachByEmail(DEFAULT_TEST_COACH.NAME);
+    // Try to get from cache by looking for any cached coach
+    const mockCoach = accountFactory.createCoach();
+    const cachedCoach = testEntityCache.getCoachByEmail(mockCoach.email);
     if (cachedCoach) {
       this.cachedCoach = cachedCoach;
       return cachedCoach;
@@ -231,7 +229,8 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
       return this.cachedUser;
     }
 
-    const cachedUser = testEntityCache.getUserByEmail(DEFAULT_TEST_USER.EMAIL);
+    const mockUser = accountFactory.createUser();
+    const cachedUser = testEntityCache.getUserByEmail(mockUser.email);
     if (cachedUser) {
       this.cachedUser = cachedUser;
       return cachedUser;
@@ -243,17 +242,19 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
   }
 
   async createTestUser(overrides: Partial<Account> = {}): Promise<Account> {
+    const mockUser = accountFactory.createUser();
+
     const userData = {
       email: generateUniqueEmail('test-user'),
-      name: DEFAULT_TEST_USER.NAME,
-      passwordHash: DEFAULT_TEST_USER.PASSWORD_HASH,
+      name: mockUser.name,
+      passwordHash: mockUser.passwordHash,
       role: Role.USER,
-      gender: DEFAULT_TEST_USER.GENDER,
-      age: DEFAULT_TEST_USER.AGE,
-      height: DEFAULT_TEST_USER.HEIGHT,
-      weight: DEFAULT_TEST_USER.WEIGHT,
-      country: DEFAULT_TEST_USER.COUNTRY,
-      address: DEFAULT_TEST_USER.ADDRESS,
+      gender: mockUser.gender,
+      age: mockUser.age,
+      height: mockUser.height,
+      weight: mockUser.weight,
+      country: mockUser.country,
+      address: mockUser.address,
       isActive: true,
       isOnline: true,
       createdAt: new Date(),
@@ -265,15 +266,17 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
   }
 
   async createTestCoach(overrides: Partial<Account> = {}): Promise<Account> {
+    const mockCoach = accountFactory.createCoach();
+
     const coachData = {
       email: generateUniqueEmail('test-coach'),
-      name: DEFAULT_TEST_COACH.NAME,
-      bio: DEFAULT_TEST_COACH.BIO,
-      passwordHash: DEFAULT_TEST_USER.PASSWORD_HASH,
+      name: mockCoach.name,
+      bio: mockCoach.bio,
+      passwordHash: mockCoach.passwordHash,
       role: Role.COACH,
-      credentials: DEFAULT_TEST_COACH.CREDENTIALS,
-      philosophy: DEFAULT_TEST_COACH.PHILOSOPHY,
-      profileImage: DEFAULT_TEST_COACH.PROFILE_IMAGE,
+      credentials: mockCoach.credentials,
+      philosophy: mockCoach.philosophy,
+      profileImage: mockCoach.profileImage,
       isActive: true,
       isOnline: true,
       createdAt: new Date(),
@@ -286,12 +289,13 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
 
   async createTestBookingType(overrides: Partial<BookingType> = {}): Promise<BookingType> {
     const coachId = overrides.coachId ?? (await this.getCachedCoach()).id;
+    const mockBookingType = bookingTypeFactory.create();
 
     const bookingTypeData = {
       coachId,
-      name: DEFAULT_TEST_BOOKING_TYPE.NAME,
-      description: DEFAULT_TEST_BOOKING_TYPE.DESCRIPTION,
-      basePrice: DEFAULT_TEST_BOOKING_TYPE.BASE_PRICE,
+      name: mockBookingType.name,
+      description: mockBookingType.description,
+      basePrice: mockBookingType.basePrice,
       createdAt: new Date(),
       updatedAt: new Date(),
       isActive: true,
@@ -318,16 +322,15 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
     }
 
     const sessionData = {
-      notes: DEFAULT_TEST_SESSION.NOTES,
-      dateTime: getFutureDate(DEFAULT_TEST_SESSION.FUTURE_OFFSET_HOURS),
-      durationMin: DEFAULT_TEST_SESSION.DURATION_MIN,
-      status: DEFAULT_TEST_SESSION.STATUS,
-      price: DEFAULT_TEST_SESSION.PRICE,
-      isPaid: DEFAULT_TEST_SESSION.IS_PAID,
+      notes: `Session notes - ${Date.now()}`,
+      dateTime: getFutureDate(24),
+      durationMin: 60,
+      status: SessionStatus.SCHEDULED,
+      price: 75.0,
+      isPaid: false,
       createdAt: new Date(),
       updatedAt: new Date(),
       ...overrides,
-      // Ensure required IDs are not overwritten by undefined values in overrides
       coachId: overrides.coachId ?? coachId,
       userId: overrides.userId ?? userId,
       bookingTypeId: overrides.bookingTypeId ?? bookingTypeId,
@@ -339,12 +342,13 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
 
   async createTestTimeSlot(overrides: Partial<TimeSlot> = {}): Promise<TimeSlot> {
     const coachId = overrides.coachId ?? (await this.getCachedCoach()).id;
+    const mockTimeSlot = timeSlotFactory.create();
 
     const timeSlotData = {
       coachId,
-      dateTime: getFutureDate(DEFAULT_TEST_TIME_SLOT.FUTURE_OFFSET_HOURS),
-      durationMin: DEFAULT_TEST_TIME_SLOT.DURATION_MIN,
-      isAvailable: DEFAULT_TEST_TIME_SLOT.IS_AVAILABLE,
+      dateTime: getFutureDate(48),
+      durationMin: mockTimeSlot.durationMin,
+      isAvailable: true,
       createdAt: new Date(),
       updatedAt: new Date(),
       ...overrides,
@@ -355,15 +359,16 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
 
   async createTestDiscount(overrides: Partial<Discount> = {}): Promise<Discount> {
     const coachId = overrides.coachId ?? (await this.getCachedCoach()).id;
+    const mockDiscount = discountFactory.create();
 
     const discountData = {
       coachId,
-      code: `DISCOUNT${Date.now()}`,
-      amount: DEFAULT_TEST_DISCOUNT.AMOUNT,
-      isActive: DEFAULT_TEST_DISCOUNT.IS_ACTIVE,
-      expiry: getFutureDateByDays(DEFAULT_TEST_DISCOUNT.EXPIRY_OFFSET_DAYS),
-      useCount: DEFAULT_TEST_DISCOUNT.USE_COUNT,
-      maxUsage: DEFAULT_TEST_DISCOUNT.MAX_USAGE,
+      code: mockDiscount.code,
+      amount: mockDiscount.amount,
+      isActive: true,
+      expiry: getFutureDateByDays(30),
+      useCount: 0,
+      maxUsage: mockDiscount.maxUsage,
       createdAt: new Date(),
       updatedAt: new Date(),
       ...overrides,
@@ -376,12 +381,13 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
     const senderId = overrides.senderId ?? (await this.getCachedUser()).id;
     const receiverId = overrides.receiverId ?? (await this.getCachedCoach()).id;
     const sessionId = overrides.sessionId ?? (await this.createTestSession()).id;
+    const mockMessage = messageFactory.create();
 
     const messageData = {
       senderId,
       receiverId,
       sessionId,
-      content: DEFAULT_TEST_MESSAGE.CONTENT,
+      content: mockMessage.content,
       sentAt: overrides.sentAt ?? new Date(),
       senderType: overrides.senderType ?? Role.USER,
       receiverType: overrides.receiverType ?? Role.COACH,
@@ -409,72 +415,5 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
 
   async withTransaction<T>(callback: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
     return this.host.database.$transaction(callback);
-  }
-
-  async executeTransaction<T>(callback: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
-    return this.withTransaction(callback);
-  }
-
-  async countRecords(model: string, where: any = {}): Promise<number> {
-    return this.host.database[model].count({ where });
-  }
-
-  async findRecord(model: string, where: any): Promise<any> {
-    return this.host.database[model].findFirst({ where });
-  }
-
-  async findRecords(model: string, where: any = {}): Promise<any[]> {
-    return this.host.database[model].findMany({ where });
-  }
-
-  async updateRecord(model: string, where: any, data: any): Promise<any> {
-    return this.host.database[model].update({ where, data });
-  }
-
-  async deleteRecord(model: string, where: any): Promise<any> {
-    return this.host.database[model].delete({ where });
-  }
-
-  async assertDataExists(model: string, where: any): Promise<void> {
-    const record = await this.findRecord(model, where);
-    expect(record).toBeDefined();
-    expect(record).not.toBeNull();
-  }
-
-  async assertDataNotExists(model: string, where: any): Promise<void> {
-    const record = await this.findRecord(model, where);
-    expect(record).toBeNull();
-  }
-
-  async waitForCondition(
-    condition: () => boolean | Promise<boolean>,
-    timeout = 5000,
-    interval = 100
-  ): Promise<void> {
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < timeout) {
-      const result = await Promise.resolve(condition());
-      if (result) {
-        return;
-      }
-      await new Promise(resolve => setTimeout(resolve, interval));
-    }
-
-    throw new Error('Condition not met within timeout');
-  }
-
-  async waitForRecord(model: string, where: any, timeout = 5000, interval = 100): Promise<any> {
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < timeout) {
-      const record = await this.findRecord(model, where);
-      if (record) {
-        return record;
-      }
-      await new Promise(resolve => setTimeout(resolve, interval));
-    }
-
-    throw new Error(`Record not found within timeout: ${JSON.stringify(where)}`);
   }
 }

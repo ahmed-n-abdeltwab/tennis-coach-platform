@@ -8,10 +8,11 @@ import { randomUUID } from 'crypto';
 import { CanActivate, ExecutionContext, INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
-import { parseJwtTime } from '@utils';
 
 import { JwtPayload } from '../../../src/app/iam/interfaces/jwt.types';
-import { DEFAULT_TEST_USER, HTTP_CONSTANTS, JWT_CONSTANTS } from '../constants/test-constants';
+import { parseJwtTime } from '../../../src/common/utils/jwt-time.util';
+import { HTTP_CONSTANTS, JWT_CONSTANTS } from '../constants/test-constants';
+import { AuthMockFactory } from '../factories';
 
 export interface AuthHeaders {
   Authorization: string;
@@ -31,8 +32,10 @@ export class MockAuthGuard implements CanActivate {
 export class AuthMixin {
   private jwtService: JwtService;
   private refreshJwtService: JwtService;
+  private authFactory: AuthMockFactory;
 
   constructor(jwtSecret?: string, jwtRefreshSecret?: string) {
+    this.authFactory = new AuthMockFactory();
     this.jwtService = new JwtService({
       secret: jwtSecret ?? process.env.JWT_SECRET ?? JWT_CONSTANTS.DEFAULT_SECRET,
       signOptions: {
@@ -64,9 +67,10 @@ export class AuthMixin {
    */
   async createToken(payload?: Partial<JwtPayload>): Promise<string> {
     const role = payload?.role ?? Role.USER;
+    const mockPayload = this.authFactory.create({ role });
     const fullPayload: JwtPayload = {
-      sub: payload?.sub ?? DEFAULT_TEST_USER.ID,
-      email: payload?.email ?? DEFAULT_TEST_USER.EMAIL,
+      sub: payload?.sub ?? mockPayload.sub,
+      email: payload?.email ?? mockPayload.email,
       role,
       ...payload,
     };
@@ -81,9 +85,10 @@ export class AuthMixin {
    */
   async createRefreshToken(payload?: Partial<JwtPayload>): Promise<string> {
     const role = payload?.role ?? Role.USER;
+    const mockPayload = this.authFactory.create({});
     const tokenPayload = {
-      sub: payload?.sub ?? DEFAULT_TEST_USER.ID,
-      email: payload?.email ?? DEFAULT_TEST_USER.EMAIL,
+      sub: payload?.sub ?? mockPayload.sub,
+      email: payload?.email ?? mockPayload.email,
       role,
       refreshTokenId: randomUUID(),
     };

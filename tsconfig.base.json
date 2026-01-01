@@ -44,8 +44,9 @@
     // Paths (workspace libraries only)
     "baseUrl": ".",
     "paths": {
-      "@routes-helpers": ["libs/routes-helpers/src/index.ts"],
-      "@utils": ["libs/utils/src/index.ts"]
+      "@contracts": ["libs/contracts/src/index.ts"],
+      "@api-sdk": ["libs/api-sdk/src/index.ts"],
+      "@api-sdk/testing": ["libs/api-sdk/src/testing.ts"]
     }
   },
   "exclude": ["node_modules", "tmp", "test-reports"]

@@ -4,7 +4,6 @@
  * Delegates to TypeSafeHttpClient for core functionality with full type safety
  */
 
-import { INestApplication } from '@nestjs/common';
 import {
   type Endpoints,
   type ExtractMethods,
@@ -12,14 +11,14 @@ import {
   type ExtractResponseType,
   type PathsForRoute,
   type PathsWithMethod,
-} from '@routes-helpers';
-
+} from '@api-sdk';
 import {
   type RequestOptions,
   type RequestType,
   type TypedResponse,
   TypeSafeHttpClient,
-} from '../http/type-safe-http-client';
+} from '@api-sdk/testing';
+import { INestApplication } from '@nestjs/common';
 
 import type { AuthHeaders } from './auth.mixin';
 import { BaseMixin } from './base-mixin';
@@ -70,52 +69,52 @@ export class HttpMethodsMixin<
    * @param options - Additional request options
    * @returns TypedResponse with discriminated union for success/error handling
    */
-  async request<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
+  async request<P extends ExtractPaths<E>, M extends ExtractMethods<P, E>>(
     endpoint: P,
     method: M,
     payload?: RequestType<P, M, E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, M, E>>> {
     return this.httpClient.request(endpoint, method, payload, options);
   }
 
-  async get<P extends PathsWithMethod<E, 'GET'>>(
+  async get<P extends PathsWithMethod<'GET', E>>(
     endpoint: P,
     payload?: RequestType<P, 'GET', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'GET', E>>> {
     return this.request(endpoint, 'GET', payload, options);
   }
 
-  async post<P extends PathsWithMethod<E, 'POST'>>(
+  async post<P extends PathsWithMethod<'POST', E>>(
     endpoint: P,
     payload?: RequestType<P, 'POST', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'POST', E>>> {
     return this.request(endpoint, 'POST', payload, options);
   }
 
-  async put<P extends PathsWithMethod<E, 'PUT'>>(
+  async put<P extends PathsWithMethod<'PUT', E>>(
     endpoint: P,
     payload?: RequestType<P, 'PUT', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PUT', E>>> {
     return this.request(endpoint, 'PUT', payload, options);
   }
 
-  async patch<P extends PathsWithMethod<E, 'PATCH'>>(
+  async patch<P extends PathsWithMethod<'PATCH', E>>(
     endpoint: P,
     payload?: RequestType<P, 'PATCH', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PATCH', E>>> {
     return this.request(endpoint, 'PATCH', payload, options);
   }
 
-  async delete<P extends PathsWithMethod<E, 'DELETE'>>(
+  async delete<P extends PathsWithMethod<'DELETE', E>>(
     endpoint: P,
     payload?: RequestType<P, 'DELETE', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'DELETE', E>>> {
     return this.request(endpoint, 'DELETE', payload, options);
   }
 
@@ -127,13 +126,13 @@ export class HttpMethodsMixin<
    *
    * @private
    */
-  private async authenticatedRequest<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
+  private async authenticatedRequest<P extends ExtractPaths<E>, M extends ExtractMethods<P, E>>(
     endpoint: P,
     method: M,
     token: string,
     payload?: RequestType<P, M, E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, M, E>>> {
     const authHeaders = await this.host.createAuthHeaders(token);
     return this.request(endpoint, method, payload, {
       ...options,
@@ -141,48 +140,48 @@ export class HttpMethodsMixin<
     });
   }
 
-  async authenticatedGet<P extends PathsWithMethod<E, 'GET'>>(
+  async authenticatedGet<P extends PathsWithMethod<'GET', E>>(
     endpoint: P,
     token: string,
     payload?: RequestType<P, 'GET', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'GET', E>>> {
     return this.authenticatedRequest(endpoint, 'GET', token, payload, options);
   }
 
-  async authenticatedPost<P extends PathsWithMethod<E, 'POST'>>(
+  async authenticatedPost<P extends PathsWithMethod<'POST', E>>(
     endpoint: P,
     token: string,
     payload?: RequestType<P, 'POST', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'POST', E>>> {
     return this.authenticatedRequest(endpoint, 'POST', token, payload, options);
   }
 
-  async authenticatedPut<P extends PathsWithMethod<E, 'PUT'>>(
+  async authenticatedPut<P extends PathsWithMethod<'PUT', E>>(
     endpoint: P,
     token: string,
     payload?: RequestType<P, 'PUT', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PUT', E>>> {
     return this.authenticatedRequest(endpoint, 'PUT', token, payload, options);
   }
 
-  async authenticatedPatch<P extends PathsWithMethod<E, 'PATCH'>>(
+  async authenticatedPatch<P extends PathsWithMethod<'PATCH', E>>(
     endpoint: P,
     token: string,
     payload?: RequestType<P, 'PATCH', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PATCH', E>>> {
     return this.authenticatedRequest(endpoint, 'PATCH', token, payload, options);
   }
 
-  async authenticatedDelete<P extends PathsWithMethod<E, 'DELETE'>>(
+  async authenticatedDelete<P extends PathsWithMethod<'DELETE', E>>(
     endpoint: P,
     token: string,
     payload?: RequestType<P, 'DELETE', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'DELETE', E>>> {
     return this.authenticatedRequest(endpoint, 'DELETE', token, payload, options);
   }
 
@@ -190,7 +189,7 @@ export class HttpMethodsMixin<
     endpoint: P,
     payload?: RequestType<P, 'GET', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'GET', E>>> {
     return this.request(endpoint, 'GET', payload, options);
   }
 
@@ -198,7 +197,7 @@ export class HttpMethodsMixin<
     endpoint: P,
     payload?: RequestType<P, 'POST', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'POST', E>>> {
     return this.request(endpoint, 'POST', payload, options);
   }
 
@@ -206,7 +205,7 @@ export class HttpMethodsMixin<
     endpoint: P,
     payload?: RequestType<P, 'PUT', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PUT', E>>> {
     return this.request(endpoint, 'PUT', payload, options);
   }
 
@@ -214,7 +213,7 @@ export class HttpMethodsMixin<
     endpoint: P,
     payload?: RequestType<P, 'PATCH', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PATCH', E>>> {
     return this.request(endpoint, 'PATCH', payload, options);
   }
 
@@ -222,7 +221,7 @@ export class HttpMethodsMixin<
     endpoint: P,
     payload?: RequestType<P, 'DELETE', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'DELETE', E>>> {
     return this.request(endpoint, 'DELETE', payload, options);
   }
 
@@ -231,7 +230,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, 'GET', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'GET', E>>> {
     return this.authenticatedRequest(endpoint, 'GET', token, payload, options);
   }
 
@@ -240,7 +239,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, 'POST', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'POST', E>>> {
     return this.authenticatedRequest(endpoint, 'POST', token, payload, options);
   }
 
@@ -249,7 +248,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, 'PUT', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PUT', E>>> {
     return this.authenticatedRequest(endpoint, 'PUT', token, payload, options);
   }
 
@@ -258,7 +257,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, 'PATCH', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PATCH', E>>> {
     return this.authenticatedRequest(endpoint, 'PATCH', token, payload, options);
   }
 
@@ -267,7 +266,7 @@ export class HttpMethodsMixin<
     token: string,
     payload?: RequestType<P, 'DELETE', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'DELETE', E>>> {
     return this.authenticatedRequest(endpoint, 'DELETE', token, payload, options);
   }
 }

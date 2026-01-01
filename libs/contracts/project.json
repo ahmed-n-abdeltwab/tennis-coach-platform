@@ -1,0 +1,42 @@
+{
+  "name": "contracts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/contracts/src",
+  "tags": ["scope:shared", "type:contracts", "platform:all"],
+  "metadata": {
+    "description": "Auto-generated TypeScript API contracts from Swagger/OpenAPI documentation",
+    "technologies": ["typescript", "swagger", "openapi"]
+  },
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/contracts",
+        "main": "libs/contracts/src/index.ts",
+        "tsConfig": "libs/contracts/tsconfig.lib.json",
+        "assets": ["libs/contracts/*.md"]
+      }
+    },
+    "generate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx ts-node libs/api-sdk/src/generator/cli.ts apps/api/swagger.json libs/contracts/src/endpoints.generated.ts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/contracts/**/*.ts"]
+      }
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/contracts/tsconfig.lib.json --noEmit"
+      }
+    }
+  }
+}

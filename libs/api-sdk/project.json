@@ -1,0 +1,43 @@
+{
+  "name": "api-sdk",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/api-sdk/src",
+  "tags": ["scope:shared", "type:util", "platform:all"],
+  "metadata": {
+    "description": "Type-safe API SDK providing utility types, HTTP clients, and code generation tools",
+    "technologies": ["typescript", "axios", "supertest"]
+  },
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "options": {
+        "outputPath": "dist/libs/api-sdk",
+        "main": "libs/api-sdk/src/index.ts",
+        "tsConfig": "libs/api-sdk/tsconfig.lib.json",
+        "assets": []
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/api-sdk/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/api-sdk"],
+      "options": {
+        "jestConfig": "libs/api-sdk/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/api-sdk/tsconfig.lib.json --noEmit"
+      }
+    }
+  }
+}

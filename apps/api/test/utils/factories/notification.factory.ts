@@ -2,7 +2,7 @@
  * Notification mock factory for creating test notification data
  */
 
-import { DeepPartial } from '../http';
+import { DeepPartial } from '@api-sdk/testing';
 
 import { BaseMockFactory } from './base-factory';
 

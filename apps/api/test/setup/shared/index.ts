@@ -7,3 +7,4 @@ export * from './cleanup.utils';
 export * from './console.utils';
 export * from './database.utils';
 export * from './environment.utils';
+export type { TestType } from './environment.utils';
