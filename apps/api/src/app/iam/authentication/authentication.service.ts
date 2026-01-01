@@ -1,10 +1,10 @@
 import { randomUUID } from 'crypto';
 
+import { parseJwtTime } from '@common';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
-import { parseJwtTime } from '@utils';
 
 import { AccountsService } from '../../accounts/accounts.service';
 import { RedisService } from '../../redis/redis.service';

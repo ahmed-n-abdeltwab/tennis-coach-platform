@@ -8,9 +8,9 @@ import { randomUUID } from 'crypto';
 import { CanActivate, ExecutionContext, INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
-import { parseJwtTime } from '@utils';
 
 import { JwtPayload } from '../../../src/app/iam/interfaces/jwt.types';
+import { parseJwtTime } from '../../../src/common/utils/jwt-time.util';
 import { DEFAULT_TEST_USER, HTTP_CONSTANTS, JWT_CONSTANTS } from '../constants/test-constants';
 
 export interface AuthHeaders {

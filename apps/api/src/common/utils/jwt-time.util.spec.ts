@@ -1,4 +1,4 @@
-import { parseJwtTime } from './utils';
+import { parseJwtTime } from './jwt-time.util';
 
 describe('parseJwtTime', () => {
   describe('with valid formats', () => {

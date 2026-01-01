@@ -17,6 +17,7 @@ export * from './dto/base-response.dto';
 
 // Utils
 export * from './utils/pagination.helper';
+export * from './utils/jwt-time.util';
 
 // Endpoints (dynamically generated from Swagger, shared from contracts)
 export type { Endpoints } from '@contracts';

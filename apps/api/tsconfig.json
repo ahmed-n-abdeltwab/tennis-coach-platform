@@ -17,8 +17,8 @@
     "baseUrl": ".",
     "paths": {
       "@api-sdk": ["../../libs/api-sdk/src/index"],
+      "@api-sdk/testing": ["../../libs/api-sdk/src/testing"],
       "@contracts": ["../../libs/contracts/src/index"],
-      "@utils": ["../../libs/utils/src/index"],
       "@api/*": ["src/app/*"],
       "@common": ["src/common/index"],
       "@common/*": ["src/common/*"],

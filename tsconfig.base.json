@@ -46,8 +46,7 @@
     "paths": {
       "@contracts": ["libs/contracts/src/index.ts"],
       "@api-sdk": ["libs/api-sdk/src/index.ts"],
-      "@api-sdk/testing": ["libs/api-sdk/src/testing.ts"],
-      "@utils": ["libs/utils/src/index.ts"]
+      "@api-sdk/testing": ["libs/api-sdk/src/testing.ts"]
     }
   },
   "exclude": ["node_modules", "tmp", "test-reports"]

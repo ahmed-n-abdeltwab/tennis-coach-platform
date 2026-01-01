@@ -19,7 +19,6 @@
     "baseUrl": "./src",
     "paths": {
       "@api-sdk": ["../../libs/api-sdk/src/index.ts"],
-      "@utils": ["../../libs/utils/src/index.ts"],
       "@/*": ["./*"],
       "@components/*": ["app/components/*"],
       "@contexts/*": ["app/contexts/*"],
