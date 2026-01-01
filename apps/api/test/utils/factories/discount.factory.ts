@@ -2,10 +2,10 @@
  * Discount mock factory for creating test discount data
  */
 
+import { DeepPartial } from '@api-sdk/testing';
 import { Decimal } from '@prisma/client/runtime/client';
 
-import { DeepPartial } from '../http';
-
+import { AccountMockFactory, type MockAccount } from './account.factory';
 import { BaseMockFactory } from './base-factory';
 
 export interface MockDiscount {
@@ -17,24 +17,40 @@ export interface MockDiscount {
   maxUsage: number;
   isActive: boolean;
   coachId: string;
+  coach: Pick<MockAccount, 'id' | 'email' | 'name'>;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export class DiscountMockFactory extends BaseMockFactory<MockDiscount> {
+  private _account?: AccountMockFactory;
+
+  private get account(): AccountMockFactory {
+    return (this._account ??= new AccountMockFactory());
+  }
+
   protected generateMock(overrides?: DeepPartial<MockDiscount>): MockDiscount {
     const id = this.generateId();
     const now = this.createDate();
+
+    // Resolve Coach (Ensuring ID and Object match)
+    const rawCoach = overrides?.coach ?? this.account.createCoach();
+    const coach = {
+      id: overrides?.coachId ?? rawCoach.id,
+      email: rawCoach.email,
+      name: rawCoach.name,
+    };
 
     const discount = {
       id,
       code: this.randomDiscountCode(),
       amount: this.randomAmount(),
-      expiry: this.generateFutureDate(30), // Expires within 30 days
+      expiry: this.generateFutureDate(30),
       useCount: 0,
       maxUsage: this.randomMaxUsage(),
       isActive: true,
-      coachId: this.generateId(),
+      coachId: coach.id,
+      coach,
       createdAt: now,
       updatedAt: now,
       ...overrides,
@@ -56,53 +72,6 @@ export class DiscountMockFactory extends BaseMockFactory<MockDiscount> {
     }
 
     return discount;
-  }
-
-  createActive(overrides?: Partial<MockDiscount>): MockDiscount {
-    return this.create({
-      isActive: true,
-      expiry: this.generateFutureDate(30),
-      ...overrides,
-    });
-  }
-
-  createExpired(overrides?: Partial<MockDiscount>): MockDiscount {
-    return this.create({
-      isActive: true,
-      expiry: this.generatePastDate(7),
-      ...overrides,
-    });
-  }
-
-  createInactive(overrides?: Partial<MockDiscount>): MockDiscount {
-    return this.create({
-      isActive: false,
-      ...overrides,
-    });
-  }
-
-  createFullyUsed(overrides?: Partial<MockDiscount>): MockDiscount {
-    const maxUsage = this.randomMaxUsage();
-    return this.create({
-      maxUsage,
-      useCount: maxUsage,
-      ...overrides,
-    });
-  }
-
-  createWithCoach(coachId: string, overrides?: Partial<MockDiscount>): MockDiscount {
-    return this.create({
-      coachId,
-      ...overrides,
-    });
-  }
-
-  createSingleUse(overrides?: Partial<MockDiscount>): MockDiscount {
-    return this.create({
-      maxUsage: 1,
-      useCount: 0,
-      ...overrides,
-    });
   }
 
   private randomDiscountCode(): string {

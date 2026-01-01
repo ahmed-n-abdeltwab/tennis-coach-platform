@@ -7,9 +7,8 @@
  * @module test-utils/factories
  */
 
+import { DeepPartial } from '@api-sdk/testing';
 import { Decimal } from '@prisma/client/runtime/client';
-
-import { DeepPartial } from '../http';
 
 /**
  * Converts all optional properties from T | undefined to T | null.

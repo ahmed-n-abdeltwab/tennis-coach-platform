@@ -6,11 +6,6 @@
 import { INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 
-export interface BaseTestConfig {
-  /** Optional timeout for setup/cleanup operations */
-  timeout?: number;
-}
-
 /**
  * Abstract base class for all test types
  * Provides common patterns for setup, cleanup, and resource access

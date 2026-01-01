@@ -2,10 +2,10 @@
  * BookingType mock factory for creating test booking type data
  */
 
+import { DeepPartial } from '@api-sdk/testing';
 import { Decimal } from '@prisma/client/runtime/client';
 
-import { DeepPartial } from '../http';
-
+import { AccountMockFactory, type MockAccount } from './account.factory';
 import { BaseMockFactory } from './base-factory';
 
 export interface MockBookingType {
@@ -15,14 +15,29 @@ export interface MockBookingType {
   basePrice: Decimal;
   isActive: boolean;
   coachId: string;
+  coach: Pick<MockAccount, 'id' | 'email' | 'name'>;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
+  private _account?: AccountMockFactory;
+
+  private get account(): AccountMockFactory {
+    return (this._account ??= new AccountMockFactory());
+  }
+
   protected generateMock(overrides?: DeepPartial<MockBookingType>): MockBookingType {
     const id = this.generateId();
     const now = this.createDate();
+
+    // Resolve Coach (Ensuring ID and Object match)
+    const rawCoach = overrides?.coach ?? this.account.createCoach();
+    const coach = {
+      id: overrides?.coachId ?? rawCoach.id,
+      email: rawCoach.email,
+      name: rawCoach.name,
+    };
 
     const bookingType = {
       id,
@@ -30,7 +45,8 @@ export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
       description: this.randomDescription(),
       basePrice: new Decimal(this.randomPrice()),
       isActive: true,
-      coachId: this.generateId(),
+      coachId: coach.id,
+      coach,
       createdAt: now,
       updatedAt: now,
       ...overrides,

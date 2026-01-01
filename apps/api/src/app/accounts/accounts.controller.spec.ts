@@ -28,7 +28,7 @@ describe('AccountsController', () => {
 
   describe('GET /accounts', () => {
     it('should call findUsers service method', async () => {
-      const mockUsers = test.factory.account.createManyUser(1);
+      const mockUsers = test.factory.account.createManyUsers(1);
 
       test.mocks.AccountsService.findUsers.mockResolvedValue(mockUsers);
 

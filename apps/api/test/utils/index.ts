@@ -13,7 +13,6 @@ export * from './implementations/guard-test';
 export * from './implementations/integration-test';
 export * from './implementations/service-test';
 
-export * from './mixins/assertions.mixin';
 export * from './mixins/auth.mixin';
 export * from './mixins/database.mixin';
 export * from './mixins/factory.mixin';

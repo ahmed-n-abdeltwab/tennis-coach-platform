@@ -17,7 +17,6 @@ import {
   DATABASE_CONSTANTS,
   ERROR_MESSAGES,
   SECURITY_CONSTANTS,
-  SEED_DATA_CONSTANTS,
   TEST_ENV_CONSTANTS,
 } from '../../utils/constants/test-constants';
 import { createDatabaseError } from '../errors/test-infrastructure-errors';
@@ -564,79 +563,74 @@ export class TestDatabaseManager {
   }
 
   private async insertSeedData(_client: PrismaClient, _seedData: SeedDataItem[]): Promise<void> {
-    // Implementation depends on the structure of seedData
-    // This is a placeholder for custom seed data insertion
-    // for (const data of seedData) {
-    //   // Insert data based on type
-    //   // This would need to be implemented based on specific requirements
-    // }
+    // Placeholder for custom seed data insertion
   }
 
   private async insertDefaultSeedData(client: PrismaClient): Promise<void> {
-    // Create default test users using seed data constants
-    await Promise.all(
-      SEED_DATA_CONSTANTS.DEFAULT_USERS.map(userData =>
-        client.account.create({
-          data: {
-            ...userData,
-            role: Role.USER,
-          },
-        })
-      )
-    );
+    // Create test users using factory
+    const users = [];
+    for (let i = 0; i < 2; i++) {
+      const mockUser = accountFactory.createUser();
+      const user = await client.account.create({
+        data: {
+          email: mockUser.email,
+          name: mockUser.name,
+          passwordHash: mockUser.passwordHash,
+          gender: mockUser.gender,
+          age: mockUser.age,
+          country: mockUser.country,
+          role: Role.USER,
+        },
+      });
+      users.push(user);
+    }
 
-    // Create default test coaches using seed data constants
-    const coaches = await Promise.all(
-      SEED_DATA_CONSTANTS.DEFAULT_COACHES.map(coachData =>
-        client.account.create({
-          data: {
-            ...coachData,
-            role: Role.COACH,
-          },
-        })
-      )
-    );
+    // Create test coaches using factory
+    const coaches = [];
+    for (let i = 0; i < 2; i++) {
+      const mockCoach = accountFactory.createCoach();
+      const coach = await client.account.create({
+        data: {
+          email: mockCoach.email,
+          name: mockCoach.name,
+          passwordHash: mockCoach.passwordHash,
+          bio: mockCoach.bio,
+          credentials: mockCoach.credentials,
+          role: Role.COACH,
+        },
+      });
+      coaches.push(coach);
+    }
 
-    // Create default booking types using seed data constants
+    // Create booking types and time slots for first coach
     const firstCoach = coaches[0];
     if (firstCoach) {
-      await Promise.all(
-        SEED_DATA_CONSTANTS.DEFAULT_BOOKING_TYPES.map(bookingTypeData =>
-          client.bookingType.create({
-            data: {
-              ...bookingTypeData,
-              coachId: firstCoach.id,
-              isActive: true,
-            },
-          })
-        )
-      );
-
-      // Create default time slots using helper function
-      const baseTime = getFutureDate(SEED_DATA_CONSTANTS.DEFAULT_TIME_SLOT_OFFSET_HOURS);
-      baseTime.setMinutes(0, 0, 0);
-
-      await Promise.all([
-        client.timeSlot.create({
+      // Create booking types using factory
+      for (let i = 0; i < 2; i++) {
+        const mockBookingType = bookingTypeFactory.create();
+        await client.bookingType.create({
           data: {
-            dateTime: baseTime,
-            durationMin: SEED_DATA_CONSTANTS.DEFAULT_TIME_SLOT_DURATION_MIN,
+            name: mockBookingType.name,
+            description: mockBookingType.description,
+            basePrice: mockBookingType.basePrice,
+            coachId: firstCoach.id,
+            isActive: true,
+          },
+        });
+      }
+
+      // Create time slots using factory
+      for (let i = 0; i < 2; i++) {
+        const mockTimeSlot = timeSlotFactory.create();
+        await client.timeSlot.create({
+          data: {
+            dateTime: getFutureDate(24 + i * 24), // 24h and 48h in future
+            durationMin: mockTimeSlot.durationMin,
             isAvailable: true,
             coachId: firstCoach.id,
           },
-        }),
-        client.timeSlot.create({
-          data: {
-            dateTime: getFutureDate(
-              SEED_DATA_CONSTANTS.DEFAULT_TIME_SLOT_OFFSET_HOURS +
-                SEED_DATA_CONSTANTS.DEFAULT_TIME_SLOT_INTERVAL_HOURS
-            ),
-            durationMin: SEED_DATA_CONSTANTS.DEFAULT_TIME_SLOT_DURATION_MIN,
-            isAvailable: true,
-            coachId: firstCoach.id,
-          },
-        }),
-      ]);
+        });
+      }
     }
   }
 }

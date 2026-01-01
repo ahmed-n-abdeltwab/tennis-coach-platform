@@ -2,9 +2,8 @@
  * Message mock factory for creating test message data
  */
 
+import { DeepPartial } from '@api-sdk/testing';
 import { Role } from '@prisma/client';
-
-import { DeepPartial } from '../http';
 
 import { AccountMockFactory, MockAccount } from './account.factory';
 import { BaseMockFactory } from './base-factory';
@@ -25,12 +24,10 @@ export interface MockMessage {
 }
 
 export class MessageMockFactory extends BaseMockFactory<MockMessage> {
-  private readonly account: AccountMockFactory;
+  private _account?: AccountMockFactory;
 
-  constructor() {
-    // Initialize mixins
-    super();
-    this.account = new AccountMockFactory();
+  private get account(): AccountMockFactory {
+    return (this._account ??= new AccountMockFactory());
   }
 
   protected generateMock(overrides?: DeepPartial<MockMessage>): MockMessage {
@@ -81,7 +78,6 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
 
     return message;
   }
-
   createUserToCoach(
     userId: string,
     coachId: string,
@@ -220,7 +216,6 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
     const contents = contentMap[type][senderType];
     return contents[messageIndex % contents.length] ?? contents[0] ?? "Shouldn't print this";
   }
-
   private randomContent(): string {
     const contents = [
       'Hello, I have a question about my next session.',

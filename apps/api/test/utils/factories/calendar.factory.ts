@@ -1,23 +1,24 @@
 /**
- * BookingType mock factory for creating test booking type data
+ * Calendar mock factory for creating test calendar event data
  */
 
-import { DeepPartial } from '../http';
+import { DeepPartial } from '@api-sdk/testing';
 
 import { BaseMockFactory } from './base-factory';
 
 export interface MockCalendar {
   eventId: string;
   summary: string;
-  start?: Date;
-  end?: Date;
-  attendees?: string[];
+  start: Date;
+  end: Date;
+  attendees: string[];
 }
 
 export class CalendarMockFactory extends BaseMockFactory<MockCalendar> {
   protected generateMock(overrides?: DeepPartial<MockCalendar>): MockCalendar {
     const eventId = this.generateId();
     const now = this.createDate();
+
     const calendar = {
       eventId,
       summary: this.randomSummary(),
@@ -27,7 +28,6 @@ export class CalendarMockFactory extends BaseMockFactory<MockCalendar> {
       ...overrides,
     } as MockCalendar;
 
-    // Validate required fields
     this.validateRequired(calendar.eventId, 'eventId');
     this.validateRequired(calendar.summary, 'summary');
 
@@ -35,16 +35,14 @@ export class CalendarMockFactory extends BaseMockFactory<MockCalendar> {
   }
 
   private randomSummary(): string {
-    const descriptions = [
-      'One-on-one personalized coaching session',
-      'Small group training for skill development',
-      'Competitive match play with coaching guidance',
-      'Detailed analysis of technique and form',
-      'Tennis-specific fitness and conditioning',
-      'Age-appropriate coaching for young players',
-      'High-intensity training for competitive players',
-      'Introduction to tennis fundamentals',
+    const summaries = [
+      'Tennis Coaching Session',
+      'Group Training Session',
+      'Match Play Practice',
+      'Technique Analysis Session',
+      'Fitness Training',
+      'Junior Coaching Session',
     ];
-    return descriptions[Math.floor(Math.random() * descriptions.length)] ?? 'default descriptions';
+    return summaries[Math.floor(Math.random() * summaries.length)] ?? 'Tennis Session';
   }
 }
