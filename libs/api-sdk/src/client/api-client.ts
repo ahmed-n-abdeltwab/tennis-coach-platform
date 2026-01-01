@@ -12,8 +12,9 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse 
 import type { HttpMethod } from '../interfaces/IRoutes';
 import {
   buildPath,
+  type FlexibleApiPath,
+  type ShortPathsWithMethod,
   type ExtractMethods,
-  type ExtractPaths,
   type ExtractRequestBody,
   type ExtractRequestParams,
   type ExtractResponseType,
@@ -87,7 +88,7 @@ export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
  * Request payload type
  */
 export interface ApiRequestPayload<
-  P extends keyof E,
+  P extends FlexibleApiPath<E>,
   M extends HttpMethod,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Record<string, any> = Endpoints,
@@ -132,7 +133,7 @@ export class ApiClient<E extends Record<string, any> = Endpoints> {
   }
 
   /** Make a type-safe request to any endpoint */
-  async request<P extends ExtractPaths<E>, M extends ExtractMethods<P, E>>(
+  async request<P extends FlexibleApiPath<E>, M extends ExtractMethods<P, E>>(
     path: P,
     method: M,
     payload?: ApiRequestPayload<P, M, E>,
@@ -200,7 +201,7 @@ export class ApiClient<E extends Record<string, any> = Endpoints> {
   }
 
   /** Type-safe GET request */
-  async get<P extends PathsWithMethod<'GET', E>>(
+  async get<P extends PathsWithMethod<'GET', E> | ShortPathsWithMethod<'GET', E>>(
     path: P,
     payload?: ApiRequestPayload<P, 'GET', E>,
     options?: RequestOptions
@@ -209,7 +210,7 @@ export class ApiClient<E extends Record<string, any> = Endpoints> {
   }
 
   /** Type-safe POST request */
-  async post<P extends PathsWithMethod<'POST', E>>(
+  async post<P extends PathsWithMethod<'POST', E> | ShortPathsWithMethod<'POST', E>>(
     path: P,
     payload?: ApiRequestPayload<P, 'POST', E>,
     options?: RequestOptions
@@ -218,7 +219,7 @@ export class ApiClient<E extends Record<string, any> = Endpoints> {
   }
 
   /** Type-safe PUT request */
-  async put<P extends PathsWithMethod<'PUT', E>>(
+  async put<P extends PathsWithMethod<'PUT', E> | ShortPathsWithMethod<'PUT', E>>(
     path: P,
     payload?: ApiRequestPayload<P, 'PUT', E>,
     options?: RequestOptions
@@ -227,7 +228,7 @@ export class ApiClient<E extends Record<string, any> = Endpoints> {
   }
 
   /** Type-safe PATCH request */
-  async patch<P extends PathsWithMethod<'PATCH', E>>(
+  async patch<P extends PathsWithMethod<'PATCH', E> | ShortPathsWithMethod<'PATCH', E>>(
     path: P,
     payload?: ApiRequestPayload<P, 'PATCH', E>,
     options?: RequestOptions
@@ -236,7 +237,7 @@ export class ApiClient<E extends Record<string, any> = Endpoints> {
   }
 
   /** Type-safe DELETE request */
-  async delete<P extends PathsWithMethod<'DELETE', E>>(
+  async delete<P extends PathsWithMethod<'DELETE', E> | ShortPathsWithMethod<'DELETE', E>>(
     path: P,
     payload?: ApiRequestPayload<P, 'DELETE', E>,
     options?: RequestOptions

@@ -14,12 +14,13 @@ import type { HttpMethod } from '../interfaces/IRoutes';
 import {
   buildPath,
   type ExtractMethods,
-  type ExtractPaths,
   type ExtractRequestBody,
   type ExtractRequestParams,
   type ExtractResponseType,
+  type FlexibleApiPath,
   type PathsForRoute,
   type PathsWithMethod,
+  type ShortPathsWithMethod,
 } from '../utils/type-utils';
 
 /**
@@ -110,7 +111,7 @@ export type TypedResponse<T> = SuccessResponse<T> | FailureResponse;
  * Typed Request from an API endpoint
  */
 export interface RequestType<
-  P extends keyof E,
+  P extends FlexibleApiPath<E>,
   M extends HttpMethod,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Record<string, any> = Endpoints,
@@ -150,7 +151,7 @@ export class TypeSafeHttpClient<
   /**
    * Make a type-safe request to any endpoint
    */
-  async request<P extends ExtractPaths<E>, M extends ExtractMethods<P, E>>(
+  async request<P extends FlexibleApiPath<E>, M extends ExtractMethods<P, E>>(
     path: P,
     method: M,
     payload?: RequestType<P, M, E>,
@@ -237,7 +238,7 @@ export class TypeSafeHttpClient<
   /**
    * Type-safe GET request
    */
-  async get<P extends PathsWithMethod<'GET', E>>(
+  async get<P extends PathsWithMethod<'GET', E> | ShortPathsWithMethod<'GET', E>>(
     path: P,
     payload?: RequestType<P, 'GET', E>,
     options?: RequestOptions
@@ -248,7 +249,7 @@ export class TypeSafeHttpClient<
   /**
  Type-safe POST request
    */
-  async post<P extends PathsWithMethod<'POST', E>>(
+  async post<P extends PathsWithMethod<'POST', E> | ShortPathsWithMethod<'POST', E>>(
     path: P,
     payload?: RequestType<P, 'POST', E>,
     options?: RequestOptions
@@ -259,7 +260,7 @@ export class TypeSafeHttpClient<
   /**
    * Type-safe PUT request
    */
-  async put<P extends PathsWithMethod<'PUT', E>>(
+  async put<P extends PathsWithMethod<'PUT', E> | ShortPathsWithMethod<'PUT', E>>(
     path: P,
     payload?: RequestType<P, 'PUT', E>,
     options?: RequestOptions
@@ -270,7 +271,7 @@ export class TypeSafeHttpClient<
   /**
    * Type-safe DELETE request
    */
-  async delete<P extends PathsWithMethod<'DELETE', E>>(
+  async delete<P extends PathsWithMethod<'DELETE', E> | ShortPathsWithMethod<'DELETE', E>>(
     path: P,
     payload?: RequestType<P, 'DELETE', E>,
     options?: RequestOptions
@@ -281,7 +282,7 @@ export class TypeSafeHttpClient<
   /**
    * Type-safe PATCH request
    */
-  async patch<P extends PathsWithMethod<'PATCH', E>>(
+  async patch<P extends PathsWithMethod<'PATCH', E> | ShortPathsWithMethod<'PATCH', E>>(
     path: P,
     payload?: RequestType<P, 'PATCH', E>,
     options?: RequestOptions
@@ -289,7 +290,7 @@ export class TypeSafeHttpClient<
     return this.request(path, 'PATCH', payload, options);
   }
 
-  async authenticatedGet<P extends PathsWithMethod<'GET', E>>(
+  async authenticatedGet<P extends PathsWithMethod<'GET', E> | ShortPathsWithMethod<'GET', E>>(
     path: P,
     token: string,
     payload?: RequestType<P, 'GET', E>,
@@ -301,7 +302,7 @@ export class TypeSafeHttpClient<
     });
   }
 
-  async authenticatedPost<P extends PathsWithMethod<'POST', E>>(
+  async authenticatedPost<P extends PathsWithMethod<'POST', E> | ShortPathsWithMethod<'POST', E>>(
     path: P,
     token: string,
     payload?: RequestType<P, 'POST', E>,
@@ -313,7 +314,7 @@ export class TypeSafeHttpClient<
     });
   }
 
-  async authenticatedPut<P extends PathsWithMethod<'PUT', E>>(
+  async authenticatedPut<P extends PathsWithMethod<'PUT', E> | ShortPathsWithMethod<'PUT', E>>(
     path: P,
     token: string,
     payload?: RequestType<P, 'PUT', E>,
@@ -325,7 +326,9 @@ export class TypeSafeHttpClient<
     });
   }
 
-  async authenticatedDelete<P extends PathsWithMethod<'DELETE', E>>(
+  async authenticatedDelete<
+    P extends PathsWithMethod<'DELETE', E> | ShortPathsWithMethod<'DELETE', E>,
+  >(
     path: P,
     token: string,
     payload?: RequestType<P, 'DELETE', E>,
@@ -337,7 +340,9 @@ export class TypeSafeHttpClient<
     });
   }
 
-  async authenticatedPatch<P extends PathsWithMethod<'PATCH', E>>(
+  async authenticatedPatch<
+    P extends PathsWithMethod<'PATCH', E> | ShortPathsWithMethod<'PATCH', E>,
+  >(
     path: P,
     token: string,
     payload?: RequestType<P, 'PATCH', E>,
