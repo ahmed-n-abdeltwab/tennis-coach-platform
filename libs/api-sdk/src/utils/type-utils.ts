@@ -4,8 +4,6 @@
  * These types provide compile-time type safety for API route operations
  */
 
-import type { Endpoints } from '@contracts';
-
 import { HttpMethod } from '../interfaces/IRoutes';
 
 /**
@@ -13,43 +11,48 @@ import { HttpMethod } from '../interfaces/IRoutes';
  *
  * @example Basic Usage
  * ```typescript
- * import { ExtractPaths, Endpoints } from '@api-sdk';
+ * import { ExtractPaths } from '@api-sdk';
  *
- * type AllPaths = ExtractPaths<Endpoints>;
+ * type AllPaths = ExtractPaths;
  * // Result: "/api/authentication/login" | "/api/sessions" | "/api/accounts/{id}" | ...
  * ```
  *
  * @example In Function Signature
  * ```typescript
- * function makeRequest<P extends ExtractPaths<Endpoints>>(path: P) {
+ * function makeRequest<P extends ExtractPaths>(path: P) {
  *   // TypeScript ensures path is valid
  * }
  *
  * makeRequest('/api/sessions'); // ✅ Valid
  * makeRequest('/api/invalid');  // ❌ Compile error
  * ```
+ *
+ * @example With Custom Endpoints
+ * ```typescript
+ * type CustomPaths = ExtractPaths<CustomEndpoints>;
+ * ```
  */
-export type ExtractPaths<E extends Record<string, any>> = Extract<keyof E, string>;
+export type ExtractPaths<E extends Record<string, any> = Endpoints> = Extract<keyof E, string>;
 
 /**
  * Extract all HTTP methods for a given path
  *
  * @example Basic Usage
  * ```typescript
- * import { ExtractMethods, Endpoints } from '@api-sdk';
+ * import { ExtractMethods } from '@api-sdk';
  *
- * type LoginMethods = ExtractMethods<Endpoints, "/api/authentication/login">;
+ * type LoginMethods = ExtractMethods<"/api/authentication/login">;
  * // Result: "POST"
  *
- * type SessionMethods = ExtractMethods<Endpoints, "/api/sessions">;
+ * type SessionMethods = ExtractMethods<"/api/sessions">;
  * // Result: "GET" | "POST"
  * ```
  *
  * @example In Function Signature
  * ```typescript
  * function makeRequest<
- *   P extends ExtractPaths<Endpoints>,
- *   M extends ExtractMethods<Endpoints, P>
+ *   P extends ExtractPaths,
+ *   M extends ExtractMethods<P>
  * >(path: P, method: M) {
  *   // TypeScript ensures method is valid for the path
  * }
@@ -57,19 +60,26 @@ export type ExtractPaths<E extends Record<string, any>> = Extract<keyof E, strin
  * makeRequest('/api/sessions', 'GET');  // ✅ Valid
  * makeRequest('/api/sessions', 'PUT');  // ❌ Compile error - PUT not supported
  * ```
+ *
+ * @example With Custom Endpoints
+ * ```typescript
+ * type CustomMethods = ExtractMethods<"/api/custom", CustomEndpoints>;
+ * ```
  */
-export type ExtractMethods<E extends Record<string, any>, P extends ExtractPaths<E>> = keyof E[P] &
-  HttpMethod;
+export type ExtractMethods<
+  P extends ExtractPaths<E>,
+  E extends Record<string, any> = Endpoints,
+> = keyof E[P] & HttpMethod;
 
 /**
  * Extract request type for a specific path and method
- * Returns a tuple [params, body] where both are always present
+ * Returns an object with params and body properties
  *
  * @example GET Request (Query Parameters)
  * ```typescript
- * import { ExtractRequestType, Endpoints } from '@api-sdk';
+ * import { ExtractRequestType } from '@api-sdk';
  *
- * type SessionRequest = ExtractRequestType<Endpoints, "/api/sessions", "GET">;
+ * type SessionRequest = ExtractRequestType<"/api/sessions", "GET">;
  * // Result: {
  * //    params: {
  * //        status?: string | undefined;
@@ -82,7 +92,7 @@ export type ExtractMethods<E extends Record<string, any>, P extends ExtractPaths
  *
  * @example POST Request (Body only)
  * ```typescript
- * type LoginRequest = ExtractRequestType<Endpoints, "/api/authentication/login", "POST">;
+ * type LoginRequest = ExtractRequestType<"/api/authentication/login", "POST">;
  * // Result: {
  * //    params: undefined;
  * //    body: {
@@ -94,7 +104,7 @@ export type ExtractMethods<E extends Record<string, any>, P extends ExtractPaths
  *
  * @example PATCH with Path Parameters and Body
  * ```typescript
- * type UpdateBookingRequest = ExtractRequestType<Endpoints, "/api/booking-types/{id}", "PATCH">;
+ * type UpdateBookingRequest = ExtractRequestType<"/api/booking-types/{id}", "PATCH">;
  * // Result: {
  * //    params: {
  * //        id: string;
@@ -111,23 +121,28 @@ export type ExtractMethods<E extends Record<string, any>, P extends ExtractPaths
  * @example In Function Signature
  * ```typescript
  * async function makeRequest<
- *   P extends ExtractPaths<Endpoints>,
- *   M extends ExtractMethods<Endpoints, P>
+ *   P extends ExtractPaths,
+ *   M extends ExtractMethods<P>
  * >(
  *   path: P,
  *   method: M,
- *   request: ExtractRequestType<Endpoints, P, M>
+ *   request: ExtractRequestType<P, M>
  * ) {
  *   // TypeScript validates request structure matches endpoint requirements
  *   const {params, body} = request;
  * }
  * ```
+ *
+ * @example With Custom Endpoints
+ * ```typescript
+ * type CustomRequest = ExtractRequestType<"/api/custom", "POST", CustomEndpoints>;
+ * ```
  */
 
 export type ExtractRequestType<
-  E extends Record<string, any>,
   P extends keyof E,
   M extends HttpMethod,
+  E extends Record<string, any> = Endpoints,
 > =
   E[P] extends Record<string, any>
     ? M extends keyof E[P]
@@ -141,76 +156,86 @@ export type ExtractRequestType<
     : never;
 
 /**
- * Extract params type from request tuple
- * Use this to get the first element (params) from ExtractRequestType
+ * Extract params type from request
+ * Use this to get the params property from ExtractRequestType
  *
  * @example GET Request
  * ```typescript
- * import { ExtractRequestParams, Endpoints } from '@api-sdk';
+ * import { ExtractRequestParams } from '@api-sdk';
  *
- * type SessionParams = ExtractRequestParams<Endpoints, "/api/sessions", "GET">;
+ * type SessionParams = ExtractRequestParams<"/api/sessions", "GET">;
  * // Result: { status?: string; startDate?: string; endDate?: string }
  * ```
  *
  * @example PATCH with Path Parameters
  * ```typescript
- * type UpdateParams = ExtractRequestParams<Endpoints, "/api/booking-types/{id}", "PATCH">;
+ * type UpdateParams = ExtractRequestParams<"/api/booking-types/{id}", "PATCH">;
  * // Result: { id: string }
+ * ```
+ *
+ * @example With Custom Endpoints
+ * ```typescript
+ * type CustomParams = ExtractRequestParams<"/api/custom", "GET", CustomEndpoints>;
  * ```
  */
 export type ExtractRequestParams<
-  E extends Record<string, any>,
   P extends keyof E,
   M extends HttpMethod,
-> = ExtractRequestType<E, P, M>['params'];
+  E extends Record<string, any> = Endpoints,
+> = ExtractRequestType<P, M, E>['params'];
 
 /**
- * Extract body type from request tuple
- * Use this to get the second element (body) from ExtractRequestType
+ * Extract body type from request
+ * Use this to get the body property from ExtractRequestType
  *
  * @example POST Request
  * ```typescript
- * import { ExtractRequestBody, Endpoints } from '@api-sdk';
+ * import { ExtractRequestBody } from '@api-sdk';
  *
- * type LoginBody = ExtractRequestBody<Endpoints, "/api/authentication/login", "POST">;
+ * type LoginBody = ExtractRequestBody<"/api/authentication/login", "POST">;
  * // Result: { email: string; password: string }
  * ```
  *
  * @example GET Request (no body)
  * ```typescript
- * type SessionBody = ExtractRequestBody<Endpoints, "/api/sessions", "GET">;
+ * type SessionBody = ExtractRequestBody<"/api/sessions", "GET">;
  * // Result: undefined | never
+ * ```
+ *
+ * @example With Custom Endpoints
+ * ```typescript
+ * type CustomBody = ExtractRequestBody<"/api/custom", "POST", CustomEndpoints>;
  * ```
  */
 export type ExtractRequestBody<
-  E extends Record<string, any>,
   P extends keyof E,
   M extends HttpMethod,
-> = ExtractRequestType<E, P, M>['body'];
+  E extends Record<string, any> = Endpoints,
+> = ExtractRequestType<P, M, E>['body'];
 
 /**
  * Extract response type for a specific path and method
  *
  * @example Basic Usage
  * ```typescript
- * import { ExtractResponseType, Endpoints } from '@api-sdk';
+ * import { ExtractResponseType } from '@api-sdk';
  *
- * type LoginResponse = ExtractResponseType<Endpoints, "/api/authentication/login", "POST">;
+ * type LoginResponse = ExtractResponseType<"/api/authentication/login", "POST">;
  * // Result: { accessToken: string; refreshToken: string; account: {...} }
  *
- * type SessionsResponse = ExtractResponseType<Endpoints, "/api/sessions", "GET">;
+ * type SessionsResponse = ExtractResponseType<"/api/sessions", "GET">;
  * // Result: Session[]
  * ```
  *
  * @example In Function Signature
  * ```typescript
  * async function makeRequest<
- *   P extends ExtractPaths<Endpoints>,
- *   M extends ExtractMethods<Endpoints, P>
+ *   P extends ExtractPaths,
+ *   M extends ExtractMethods<P>
  * >(
  *   path: P,
  *   method: M
- * ): Promise<ExtractResponseType<Endpoints, P, M>> {
+ * ): Promise<ExtractResponseType<P, M>> {
  *   // Return type is automatically inferred from endpoint
  *   const response = await fetch(path, { method });
  *   return response.json();
@@ -223,17 +248,22 @@ export type ExtractRequestBody<
  *
  * @example With Type Assertion
  * ```typescript
- * type SessionResponse = ExtractResponseType<Endpoints, '/api/sessions/{id}', 'GET'>;
+ * type SessionResponse = ExtractResponseType<'/api/sessions/{id}', 'GET'>;
  *
  * function processSession(session: SessionResponse) {
  *   console.log(session.coachId); // ✅ Type-safe access
  * }
  * ```
+ *
+ * @example With Custom Endpoints
+ * ```typescript
+ * type CustomResponse = ExtractResponseType<"/api/custom", "GET", CustomEndpoints>;
+ * ```
  */
 export type ExtractResponseType<
-  E extends Record<string, any>,
   P extends ExtractPaths<E>,
   M extends HttpMethod,
+  E extends Record<string, any> = Endpoints,
 > =
   E[P] extends Record<string, any>
     ? M extends keyof E[P]
@@ -248,21 +278,21 @@ export type ExtractResponseType<
  *
  * @example Basic Usage
  * ```typescript
- * import { PathsWithMethod, Endpoints } from '@api-sdk';
+ * import { PathsWithMethod } from '@api-sdk';
  *
- * type GetPaths = PathsWithMethod<Endpoints, "GET">;
+ * type GetPaths = PathsWithMethod<"GET">;
  * // Result: "/api/sessions" | "/api/accounts" | "/api/sessions/{id}" | ...
  *
- * type PostPaths = PathsWithMethod<Endpoints, "POST">;
+ * type PostPaths = PathsWithMethod<"POST">;
  * // Result: "/api/authentication/login" | "/api/sessions" | ...
  * ```
  *
  * @example In Function Signature
  * ```typescript
- * function createResource<P extends PathsWithMethod<Endpoints, 'POST'>>(
+ * function createResource<P extends PathsWithMethod<'POST'>>(
  *   path: P,
- *   data: ExtractRequestType<Endpoints, P, 'POST'>
- * ): Promise<ExtractResponseType<Endpoints, P, 'POST'>> {
+ *   data: ExtractRequestType<P, 'POST'>
+ * ): Promise<ExtractResponseType<P, 'POST'>> {
  *   // Function only accepts paths that support POST
  * }
  *
@@ -273,15 +303,23 @@ export type ExtractResponseType<
  * @example Filtering Paths
  * ```typescript
  * // Get all paths that support DELETE
- * type DeletablePaths = PathsWithMethod<Endpoints, 'DELETE'>;
+ * type DeletablePaths = PathsWithMethod<'DELETE'>;
  *
  * // Create a function that only works with deletable resources
  * function deleteResource<P extends DeletablePaths>(path: P) {
  *   // Implementation
  * }
  * ```
+ *
+ * @example With Custom Endpoints
+ * ```typescript
+ * type CustomGetPaths = PathsWithMethod<"GET", CustomEndpoints>;
+ * ```
  */
-export type PathsWithMethod<E extends Record<string, unknown>, M extends HttpMethod> = Extract<
+export type PathsWithMethod<
+  M extends HttpMethod,
+  E extends Record<string, any> = Endpoints,
+> = Extract<
   {
     [P in ExtractPaths<E>]: M extends keyof E[P] ? P : never;
   }[ExtractPaths<E>],
@@ -450,20 +488,6 @@ export type ExtractPathParams<P extends string> =
  * type Pattern = PathPattern<"/api/users/{id}/posts/{postId}">
  * // Result: `/api/users/${string}/posts/${string}`
  */
-type ExtractParams<P extends string> = P extends `${infer _Before}{${infer Param}}${infer After}`
-  ? Param | ExtractParams<After>
-  : never;
-
-type PathBuilder<P extends string> = <
-  Params extends Record<string, string> &
-    Record<ExtractParams<P>, string> & {
-      // ✅ all required params
-      [K in keyof Params]: K extends ExtractParams<P> ? string : never;
-    }, // ❌ forbid extras
->(
-  params: Params
-) => PathPattern<P>;
-
 type Segment = Exclude<string, `${string}/${string}`> & { __noSlash?: true };
 
 export type PathPattern<P extends string> =
@@ -480,10 +504,10 @@ export type PathPattern<P extends string> =
  * type UserPath = PathWithValues<"/api/users/{id}">
  * // Result: "/api/users/{id}" | `/api/users/${string}`
  */
-// 1. Create a literal lock helper
+// Create a literal lock helper
 type AsLiteral<T extends string> = T & { __locked?: true };
-type Literal<T extends string> = T extends `${infer P}` ? P : never;
-// 2. Path builder
+
+// Path builder
 export type PathWithValues<P extends string> =
   P extends `${infer Before}{${infer _Param}}${infer After}`
     ? {

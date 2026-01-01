@@ -13,9 +13,6 @@ export {
   type GenerationOptions,
 } from './generator';
 
-// Legacy re-exports for backward compatibility
-export { generateApiRoutes, generateEndpointsInterface } from './lib/generate-routes-from-swagger';
-
 /**
  * Endpoints interface - Re-exported from @contracts
  * Contains all API routes with their request/response types
@@ -89,10 +86,10 @@ export {
   ApiClient,
   type ApiClientConfig,
   type ApiErrorResponse,
+  type RequestOptions as ApiRequestOptions,
   type ApiRequestPayload,
   type ApiResponse,
   type ApiSuccessResponse,
-  type RequestOptions as ApiRequestOptions,
 } from './client';
 
 /**

@@ -7,7 +7,6 @@
  * @module http/type-safe-client
  */
 
-import type { Endpoints } from '@contracts';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 
@@ -116,8 +115,8 @@ export interface RequestType<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Record<string, any> = Endpoints,
 > {
-  body?: DeepPartial<ExtractRequestBody<E, P, M>>;
-  params?: DeepPartial<ExtractRequestParams<E, P, M>>;
+  body?: DeepPartial<ExtractRequestBody<P, M, E>>;
+  params?: DeepPartial<ExtractRequestParams<P, M, E>>;
 }
 
 /**
@@ -151,12 +150,12 @@ export class TypeSafeHttpClient<
   /**
    * Make a type-safe request to any endpoint
    */
-  async request<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
+  async request<P extends ExtractPaths<E>, M extends ExtractMethods<P, E>>(
     path: P,
     method: M,
     payload?: RequestType<P, M, E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, M>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, M, E>>> {
     const { body, params } = payload ?? {};
 
     // Build path with params
@@ -221,129 +220,129 @@ export class TypeSafeHttpClient<
     if (isSuccess) {
       return {
         status: response.status as SuccessStatus,
-        body: response.body as ExtractResponseType<E, P, M>,
+        body: response.body as ExtractResponseType<P, M, E>,
         headers: response.headers as Record<string, string>,
         ok: true,
-      } as TypedResponse<ExtractResponseType<E, P, M>>;
+      } as TypedResponse<ExtractResponseType<P, M, E>>;
     } else {
       return {
         status: response.status,
         body: response.body as ErrorResponse | ValidationErrorResponse,
         headers: response.headers as Record<string, string>,
         ok: false,
-      } as TypedResponse<ExtractResponseType<E, P, M>>;
+      } as TypedResponse<ExtractResponseType<P, M, E>>;
     }
   }
 
   /**
    * Type-safe GET request
    */
-  async get<P extends PathsWithMethod<E, 'GET'>>(
+  async get<P extends PathsWithMethod<'GET', E>>(
     path: P,
     payload?: RequestType<P, 'GET', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'GET', E>>> {
     return this.request(path, 'GET', payload, options);
   }
 
   /**
  Type-safe POST request
    */
-  async post<P extends PathsWithMethod<E, 'POST'>>(
+  async post<P extends PathsWithMethod<'POST', E>>(
     path: P,
     payload?: RequestType<P, 'POST', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'POST', E>>> {
     return this.request(path, 'POST', payload, options);
   }
 
   /**
    * Type-safe PUT request
    */
-  async put<P extends PathsWithMethod<E, 'PUT'>>(
+  async put<P extends PathsWithMethod<'PUT', E>>(
     path: P,
     payload?: RequestType<P, 'PUT', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PUT', E>>> {
     return this.request(path, 'PUT', payload, options);
   }
 
   /**
    * Type-safe DELETE request
    */
-  async delete<P extends PathsWithMethod<E, 'DELETE'>>(
+  async delete<P extends PathsWithMethod<'DELETE', E>>(
     path: P,
     payload?: RequestType<P, 'DELETE', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'DELETE', E>>> {
     return this.request(path, 'DELETE', payload, options);
   }
 
   /**
    * Type-safe PATCH request
    */
-  async patch<P extends PathsWithMethod<E, 'PATCH'>>(
+  async patch<P extends PathsWithMethod<'PATCH', E>>(
     path: P,
     payload?: RequestType<P, 'PATCH', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PATCH', E>>> {
     return this.request(path, 'PATCH', payload, options);
   }
 
-  async authenticatedGet<P extends PathsWithMethod<E, 'GET'>>(
+  async authenticatedGet<P extends PathsWithMethod<'GET', E>>(
     path: P,
     token: string,
     payload?: RequestType<P, 'GET', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'GET', E>>> {
     return this.get(path, payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
     });
   }
 
-  async authenticatedPost<P extends PathsWithMethod<E, 'POST'>>(
+  async authenticatedPost<P extends PathsWithMethod<'POST', E>>(
     path: P,
     token: string,
     payload?: RequestType<P, 'POST', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'POST', E>>> {
     return this.post(path, payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
     });
   }
 
-  async authenticatedPut<P extends PathsWithMethod<E, 'PUT'>>(
+  async authenticatedPut<P extends PathsWithMethod<'PUT', E>>(
     path: P,
     token: string,
     payload?: RequestType<P, 'PUT', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PUT', E>>> {
     return this.put(path, payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
     });
   }
 
-  async authenticatedDelete<P extends PathsWithMethod<E, 'DELETE'>>(
+  async authenticatedDelete<P extends PathsWithMethod<'DELETE', E>>(
     path: P,
     token: string,
     payload?: RequestType<P, 'DELETE', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'DELETE', E>>> {
     return this.delete(path, payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
     });
   }
 
-  async authenticatedPatch<P extends PathsWithMethod<E, 'PATCH'>>(
+  async authenticatedPatch<P extends PathsWithMethod<'PATCH', E>>(
     path: P,
     token: string,
     payload?: RequestType<P, 'PATCH', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PATCH', E>>> {
     return this.patch(path, payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
@@ -357,7 +356,7 @@ export class TypeSafeHttpClient<
     path: P,
     payload?: RequestType<P, 'GET', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'GET', E>>> {
     return this.request(path, 'GET', payload, options);
   }
 
@@ -368,7 +367,7 @@ export class TypeSafeHttpClient<
     path: P,
     payload?: RequestType<P, 'POST', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'POST', E>>> {
     return this.request(path, 'POST', payload, options);
   }
 
@@ -379,7 +378,7 @@ export class TypeSafeHttpClient<
     path: P,
     payload?: RequestType<P, 'PUT', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PUT', E>>> {
     return this.request(path, 'PUT', payload, options);
   }
 
@@ -390,7 +389,7 @@ export class TypeSafeHttpClient<
     path: P,
     payload?: RequestType<P, 'PATCH', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PATCH', E>>> {
     return this.request(path, 'PATCH', payload, options);
   }
 
@@ -401,7 +400,7 @@ export class TypeSafeHttpClient<
     path: P,
     payload?: RequestType<P, 'DELETE', E>,
     options?: RequestOptions
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'DELETE', E>>> {
     return this.request(path, 'DELETE', payload, options);
   }
 
@@ -413,7 +412,7 @@ export class TypeSafeHttpClient<
     token: string,
     payload?: RequestType<P, 'GET', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'GET'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'GET', E>>> {
     return this.request(path, 'GET', payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
@@ -428,7 +427,7 @@ export class TypeSafeHttpClient<
     token: string,
     payload?: RequestType<P, 'POST', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'POST'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'POST', E>>> {
     return this.request(path, 'POST', payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
@@ -443,7 +442,7 @@ export class TypeSafeHttpClient<
     token: string,
     payload?: RequestType<P, 'PUT', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PUT'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PUT', E>>> {
     return this.request(path, 'PUT', payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
@@ -458,7 +457,7 @@ export class TypeSafeHttpClient<
     token: string,
     payload?: RequestType<P, 'PATCH', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'PATCH'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'PATCH', E>>> {
     return this.request(path, 'PATCH', payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },
@@ -473,7 +472,7 @@ export class TypeSafeHttpClient<
     token: string,
     payload?: RequestType<P, 'DELETE', E>,
     options?: Omit<RequestOptions, 'headers'>
-  ): Promise<TypedResponse<ExtractResponseType<E, P, 'DELETE'>>> {
+  ): Promise<TypedResponse<ExtractResponseType<P, 'DELETE', E>>> {
     return this.request(path, 'DELETE', payload, {
       ...options,
       headers: { Authorization: `Bearer ${token}` },

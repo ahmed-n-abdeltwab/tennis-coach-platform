@@ -1,0 +1,27 @@
+{
+  "name": "@tennis-coach/contracts",
+  "version": "0.0.1",
+  "description": "Auto-generated TypeScript API contracts from Swagger/OpenAPI documentation. Contains the Endpoints interface that defines type-safe API routes.",
+  "private": true,
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "keywords": [
+    "api",
+    "contracts",
+    "typescript",
+    "swagger",
+    "openapi",
+    "endpoints",
+    "type-safe"
+  ],
+  "repository": {
+    "type": "git",
+    "directory": "libs/contracts"
+  },
+  "author": "Tennis Coach Platform Team",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "tslib": "^2.3.0"
+  }
+}

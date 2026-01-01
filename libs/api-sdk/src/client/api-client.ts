@@ -7,7 +7,6 @@
  * @module client/api-client
  */
 
-import type { Endpoints } from '@contracts';
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
 
 import type { HttpMethod } from '../interfaces/IRoutes';
@@ -94,9 +93,9 @@ export interface ApiRequestPayload<
   E extends Record<string, any> = Endpoints,
 > {
   /** Request body data */
-  body?: ExtractRequestBody<E, P, M>;
+  body?: ExtractRequestBody<P, M, E>;
   /** URL parameters (path params and query params) */
-  params?: ExtractRequestParams<E, P, M>;
+  params?: ExtractRequestParams<P, M, E>;
 }
 
 /**
@@ -133,12 +132,12 @@ export class ApiClient<E extends Record<string, any> = Endpoints> {
   }
 
   /** Make a type-safe request to any endpoint */
-  async request<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
+  async request<P extends ExtractPaths<E>, M extends ExtractMethods<P, E>>(
     path: P,
     method: M,
     payload?: ApiRequestPayload<P, M, E>,
     options?: RequestOptions
-  ): Promise<ApiResponse<ExtractResponseType<E, P, M>>> {
+  ): Promise<ApiResponse<ExtractResponseType<P, M, E>>> {
     const { body, params } = payload ?? {};
     const builtPath = params ? buildPath(path, params as Record<string, string | number>) : path;
 
@@ -166,7 +165,7 @@ export class ApiClient<E extends Record<string, any> = Endpoints> {
     try {
       const response: AxiosResponse = await this.axios.request(config);
       return {
-        data: response.data as ExtractResponseType<E, P, M>,
+        data: response.data as ExtractResponseType<P, M, E>,
         status: response.status,
         headers: response.headers as Record<string, string>,
         ok: true,
@@ -201,47 +200,47 @@ export class ApiClient<E extends Record<string, any> = Endpoints> {
   }
 
   /** Type-safe GET request */
-  async get<P extends PathsWithMethod<E, 'GET'>>(
+  async get<P extends PathsWithMethod<'GET', E>>(
     path: P,
     payload?: ApiRequestPayload<P, 'GET', E>,
     options?: RequestOptions
-  ): Promise<ApiResponse<ExtractResponseType<E, P, 'GET'>>> {
+  ): Promise<ApiResponse<ExtractResponseType<P, 'GET', E>>> {
     return this.request(path, 'GET', payload, options);
   }
 
   /** Type-safe POST request */
-  async post<P extends PathsWithMethod<E, 'POST'>>(
+  async post<P extends PathsWithMethod<'POST', E>>(
     path: P,
     payload?: ApiRequestPayload<P, 'POST', E>,
     options?: RequestOptions
-  ): Promise<ApiResponse<ExtractResponseType<E, P, 'POST'>>> {
+  ): Promise<ApiResponse<ExtractResponseType<P, 'POST', E>>> {
     return this.request(path, 'POST', payload, options);
   }
 
   /** Type-safe PUT request */
-  async put<P extends PathsWithMethod<E, 'PUT'>>(
+  async put<P extends PathsWithMethod<'PUT', E>>(
     path: P,
     payload?: ApiRequestPayload<P, 'PUT', E>,
     options?: RequestOptions
-  ): Promise<ApiResponse<ExtractResponseType<E, P, 'PUT'>>> {
+  ): Promise<ApiResponse<ExtractResponseType<P, 'PUT', E>>> {
     return this.request(path, 'PUT', payload, options);
   }
 
   /** Type-safe PATCH request */
-  async patch<P extends PathsWithMethod<E, 'PATCH'>>(
+  async patch<P extends PathsWithMethod<'PATCH', E>>(
     path: P,
     payload?: ApiRequestPayload<P, 'PATCH', E>,
     options?: RequestOptions
-  ): Promise<ApiResponse<ExtractResponseType<E, P, 'PATCH'>>> {
+  ): Promise<ApiResponse<ExtractResponseType<P, 'PATCH', E>>> {
     return this.request(path, 'PATCH', payload, options);
   }
 
   /** Type-safe DELETE request */
-  async delete<P extends PathsWithMethod<E, 'DELETE'>>(
+  async delete<P extends PathsWithMethod<'DELETE', E>>(
     path: P,
     payload?: ApiRequestPayload<P, 'DELETE', E>,
     options?: RequestOptions
-  ): Promise<ApiResponse<ExtractResponseType<E, P, 'DELETE'>>> {
+  ): Promise<ApiResponse<ExtractResponseType<P, 'DELETE', E>>> {
     return this.request(path, 'DELETE', payload, options);
   }
 }

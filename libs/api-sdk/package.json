@@ -1,11 +1,48 @@
 {
   "name": "@tennis-coach/api-sdk",
   "version": "0.0.1",
+  "description": "Type-safe API SDK for the Tennis Coach Platform. Provides TypeScript utility types, HTTP clients, and code generation tools for working with API endpoints.",
   "private": true,
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./testing": {
+      "types": "./src/testing.d.ts",
+      "default": "./src/testing.js"
+    }
+  },
+  "keywords": [
+    "api",
+    "sdk",
+    "typescript",
+    "type-safe",
+    "http-client",
+    "swagger",
+    "openapi",
+    "code-generation",
+    "axios",
+    "supertest"
+  ],
+  "repository": {
+    "type": "git",
+    "directory": "libs/api-sdk"
+  },
+  "author": "Tennis Coach Platform Team",
+  "license": "UNLICENSED",
   "dependencies": {
     "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "axios": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "axios": {
+      "optional": false
+    }
   }
 }

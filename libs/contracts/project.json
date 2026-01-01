@@ -3,7 +3,11 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "sourceRoot": "libs/contracts/src",
-  "tags": ["scope:shared", "type:contracts"],
+  "tags": ["scope:shared", "type:contracts", "platform:all"],
+  "metadata": {
+    "description": "Auto-generated TypeScript API contracts from Swagger/OpenAPI documentation",
+    "technologies": ["typescript", "swagger", "openapi"]
+  },
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",

@@ -267,7 +267,3 @@ export class TestEntityCache {
 
 // Export singleton instance
 export const testEntityCache = TestEntityCache.getInstance();
-
-// Backward compatibility alias
-export const testDataCache = testEntityCache;
-export type TestDataCache = TestEntityCache;

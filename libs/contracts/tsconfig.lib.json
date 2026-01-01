@@ -16,8 +16,11 @@
 
     // Node environment
     "lib": ["ES2023"],
-    "types": ["node"]
+    "types": ["node"],
+
+    // Include global type declarations
+    "typeRoots": ["./src", "../../node_modules/@types"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__tests__/**"]
 }
