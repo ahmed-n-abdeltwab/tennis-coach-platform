@@ -6,42 +6,12 @@
  * Drops test databases for integration and e2e tests
  */
 
-import { delayForCleanup, dropTestDatabase, performGarbageCollection } from './shared';
-
-/**
- * Detect test type from various sources
- */
-function detectTestType(): 'unit' | 'integration' | 'e2e' {
-  // Check explicit environment variable first
-  const envTestType = process.env.JEST_TEST_TYPE;
-  if (envTestType === 'integration' || envTestType === 'e2e') {
-    return envTestType;
-  }
-
-  // Check NX_TASK_TARGET_TARGET which Nx sets when running tasks
-  const nxTarget = process.env.NX_TASK_TARGET_TARGET ?? '';
-  if (nxTarget.includes('e2e')) {
-    return 'e2e';
-  }
-  if (nxTarget.includes('integration')) {
-    return 'integration';
-  }
-
-  // Check Jest config displayName if available
-  const jestConfig = (global as Record<string, unknown>).jestConfig as
-    | { displayName?: string }
-    | undefined;
-  const displayName = jestConfig?.displayName ?? '';
-
-  if (displayName.toLowerCase().includes('e2e')) {
-    return 'e2e';
-  }
-  if (displayName.toLowerCase().includes('integration')) {
-    return 'integration';
-  }
-
-  return 'unit';
-}
+import {
+  delayForCleanup,
+  detectTestType,
+  dropTestDatabase,
+  performGarbageCollection,
+} from './shared';
 
 export default async function globalTeardown(): Promise<void> {
   // Detect test type

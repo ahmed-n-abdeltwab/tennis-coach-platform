@@ -1,49 +1,30 @@
 /**
  * Integration test setup
  * This file runs before each integration test file
+ *
+ * Note: For integration testing, use the `IntegrationTest` class from `@test-utils`
+ * instead of the legacy `NestIntegrationTestContext`. The IntegrationTest class
+ * provides a modern API with type-safe HTTP methods, authentication helpers,
+ * and database utilities through mixins.
+ *
+ * @example
+ * ```typescript
+ * import { IntegrationTest } from '@test-utils';
+ *
+ * describe('My Integration Test', () => {
+ *   let test: IntegrationTest;
+ *
+ *   beforeAll(async () => {
+ *     test = new IntegrationTest({es: [MyModule] });
+ *     await test.setup();
+ *   });
+ *
+ *   afterAll(() => test.cleanup());
+ * });
+ * ```
  */
 
-import { Test } from '@nestjs/testing';
-
-import { PrismaService } from './../../src/app/prisma/prisma.service';
 import { suppressConsoleOutput } from './shared';
-
-export class NestIntegrationTestContext {
-  public prismaService: PrismaService;
-
-  async setup() {
-    // Create a test module for Prisma service
-    const moduleRef = await Test.createTestingModule({
-      providers: [PrismaService],
-    }).compile();
-
-    this.prismaService = moduleRef.get<PrismaService>(PrismaService);
-
-    // Ensure database connection
-    await this.prismaService.$connect();
-  }
-
-  async cleanDatabase() {
-    if (this.prismaService) {
-      await this.prismaService.session.deleteMany();
-      await this.prismaService.timeSlot.deleteMany();
-      await this.prismaService.bookingType.deleteMany();
-      await this.prismaService.account.deleteMany();
-      await this.prismaService.discount.deleteMany();
-      await this.prismaService.message.deleteMany();
-    }
-  }
-
-  async teardown() {
-    // Clean up and disconnect
-    if (this.prismaService) {
-      await this.prismaService.$disconnect();
-    }
-  }
-}
-
-// Make Prisma service available globally for integration tests
-global.NestIntegrationTestContext = NestIntegrationTestContext;
 
 // Suppress console output in integration tests
 suppressConsoleOutput();

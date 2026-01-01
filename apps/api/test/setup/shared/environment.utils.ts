@@ -83,3 +83,67 @@ export function setupTestEnvironment(config: TestEnvironmentConfig): void {
   // Logging configuration
   assign('LOG_LEVEL', 'error');
 }
+
+/**
+ * Test type detection result
+ */
+export type TestType = 'unit' | 'integration' | 'e2e';
+
+/**
+ * Detect test type from various sources
+ * Used by global setup and teardown to determine appropriate configuration
+ */
+export function detectTestType(): TestType {
+  // Check explicit environment variable first
+  const envTestType = process.env.JEST_TEST_TYPE;
+  if (envTestType === 'integration' || envTestType === 'e2e') {
+    return envTestType;
+  }
+
+  // Check NX_TASK_TARGET_TARGET which Nx sets when running tasks
+  const nxTarget = process.env.NX_TASK_TARGET_TARGET ?? '';
+  if (nxTarget.includes('e2e')) {
+    return 'e2e';
+  }
+  if (nxTarget.includes('integration')) {
+    return 'integration';
+  }
+
+  // Check command line arguments for config file hints
+  const args = process.argv.join(' ');
+
+  // Check for e2e patterns
+  if (
+    args.includes('e2e.config') ||
+    args.includes('test:e2e') ||
+    args.includes(':e2e') ||
+    args.includes('e2e.spec')
+  ) {
+    return 'e2e';
+  }
+
+  // Check for integration patterns
+  if (
+    args.includes('integration.config') ||
+    args.includes('test:integration') ||
+    args.includes(':integration') ||
+    args.includes('integration.spec')
+  ) {
+    return 'integration';
+  }
+
+  // Check Jest config displayName if available
+  const jestConfig = (global as Record<string, unknown>).jestConfig as
+    | { displayName?: string }
+    | undefined;
+  const displayName = jestConfig?.displayName ?? '';
+
+  if (displayName.toLowerCase().includes('e2e')) {
+    return 'e2e';
+  }
+  if (displayName.toLowerCase().includes('integration')) {
+    return 'integration';
+  }
+
+  return 'unit';
+}
