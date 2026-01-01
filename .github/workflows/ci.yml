@@ -174,7 +174,7 @@ jobs:
         uses: nrwl/nx-set-shas@v4
 
       - name: Run library tests
-        run: pnpm exec nx run-many -t test --projects=utils,routes-helpers --coverage
+        run: pnpm exec nx run-many -t test --projects=utils,api-sdk --coverage
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ env.NX_CLOUD_ENABLED == 'true' && secrets.NX_CLOUD_ACCESS_TOKEN || '' }}
 

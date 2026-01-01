@@ -1,6 +1,3 @@
-import fs from 'fs';
-import path from 'path';
-
 import {
   OpenAPIObject,
   OperationObject,
@@ -12,7 +9,6 @@ import {
 } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
 
 import { ExtractedRoute } from '../interfaces/IRoutes';
-import { getWorkspaceRoot } from '../utils/routes.util';
 
 /**
  * Configuration options for route generation
@@ -35,12 +31,6 @@ export interface GenerationOptions {
    * @default false
    */
   generateSchemas?: boolean;
-
-  /**
-   * Custom output path for the generated file
-   * If not provided, uses default location in routes-helpers library
-   */
-  outputPath?: string;
 }
 
 /**
@@ -51,7 +41,7 @@ export interface GenerationOptions {
  * @param options - Configuration options for generation behavior
  * @returns The generated TypeScript code as a string
  */
-export function generateEndpointsInterface(
+export function generateEndpointsFromSwagger(
   document: OpenAPIObject,
   options: GenerationOptions = {}
 ): string {
@@ -60,7 +50,6 @@ export function generateEndpointsInterface(
     inlineDTOs: options.inlineDTOs ?? true,
     generateUtilityTypes: options.generateUtilityTypes ?? true,
     generateSchemas: options.generateSchemas ?? false,
-    outputPath: options.outputPath ?? '',
   };
 
   const routes = extractRoutesFromSwaggerDoc(document);
@@ -115,60 +104,8 @@ export function generateEndpointsObject(
 }
 
 /**
- * Generates API routes from Swagger document with configurable options
- *
- * @param document - The OpenAPI/Swagger document
- * @param options - Configuration options for generation behavior
- *
- * @example
- * // Use default options
- * await generateApiRoutes(document);
- *
- * @example
- * // Custom configuration
- * await generateApiRoutes(document, {
- *   inlineDTOs: true,
- *   generateUtilityTypes: true,
- *   generateSchemas: false,
- *   outputPath: './custom/path/routes.ts'
- * });
- */
-export async function generateApiRoutes(
-  document: OpenAPIObject,
-  options: GenerationOptions = {}
-): Promise<void> {
-  // Apply default options
-  const config: Required<GenerationOptions> = {
-    inlineDTOs: options.inlineDTOs ?? true,
-    generateUtilityTypes: options.generateUtilityTypes ?? true,
-    generateSchemas: options.generateSchemas ?? false,
-    outputPath:
-      options.outputPath ??
-      path.join(getWorkspaceRoot(), 'libs/routes-helpers/src/constants/api-routes.registry.ts'),
-  };
-
-  console.log('🚀 Generating API routes from Swagger metadata...');
-  console.log(`   - Inline DTOs: ${config.inlineDTOs}`);
-  console.log(`   - Generate Utility Types: ${config.generateUtilityTypes}`);
-
-  // Extract routes from Swagger paths
-  const routes = extractRoutesFromSwaggerDoc(document);
-
-  // Generate TypeScript code (in memory)
-  const code = generateCode(routes, document, config);
-
-  // Ensure the directory exists
-  const outputDir = path.dirname(config.outputPath);
-  fs.mkdirSync(outputDir, { recursive: true });
-
-  // Write to file
-  fs.writeFileSync(config.outputPath, code);
-}
-
-/**
  * Extracts route information from Swagger document
  */
-
 function extractRoutesFromSwaggerDoc(document: OpenAPIObject): ExtractedRoute[] {
   const routes: ExtractedRoute[] = [];
 
@@ -258,7 +195,7 @@ function generateCode(
   // Add header comment
   code += `/**\n`;
   code += ` * AUTO-GENERATED FILE - DO NOT EDIT MANUALLY\n`;
-  code += ` * Generated from Swagger metadata\n`;
+  code += ` * Generated from Swagger metadata by: nx run contracts:generate\n`;
   code += ` * \n`;
   code += ` * Generation Options:\n`;
   code += ` * - Inline DTOs: ${config.inlineDTOs}\n`;
@@ -274,8 +211,8 @@ function generateCode(
   if (config.generateUtilityTypes) {
     code += `\n`;
     code += `/**\n`;
-    code += ` * Utility types are exported from @routes-helpers\n`;
-    code += ` * Import them using: import { ExtractPaths, ExtractMethods, ... } from '@routes-helpers';\n`;
+    code += ` * Utility types are exported from @api-sdk\n`;
+    code += ` * Import them using: import { ExtractPaths, ExtractMethods, ... } from '@api-sdk';\n`;
     code += ` */\n`;
   }
 

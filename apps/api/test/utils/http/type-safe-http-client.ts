@@ -1,4 +1,3 @@
-import { INestApplication } from '@nestjs/common';
 import type {
   Endpoints,
   ExtractMethods,
@@ -9,8 +8,9 @@ import type {
   HttpMethod,
   PathsForRoute,
   PathsWithMethod,
-} from '@routes-helpers';
-import { buildPath } from '@routes-helpers';
+} from '@api-sdk';
+import { buildPath } from '@api-sdk';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 
 /**
@@ -157,7 +157,7 @@ export interface RequestType<
  *
  * @example Path Parameters
  * ```typescript
- * import { buildPath } from '@routes-helpers';
+ * import { buildPath } from '@api-sdk';
  *
  * const sessionId = 'session-123';
  *

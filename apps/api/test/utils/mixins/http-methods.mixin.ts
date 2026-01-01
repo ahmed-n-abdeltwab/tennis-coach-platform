@@ -4,7 +4,6 @@
  * Delegates to TypeSafeHttpClient for core functionality with full type safety
  */
 
-import { INestApplication } from '@nestjs/common';
 import {
   type Endpoints,
   type ExtractMethods,
@@ -12,7 +11,8 @@ import {
   type ExtractResponseType,
   type PathsForRoute,
   type PathsWithMethod,
-} from '@routes-helpers';
+} from '@api-sdk';
+import { INestApplication } from '@nestjs/common';
 
 import {
   type RequestOptions,

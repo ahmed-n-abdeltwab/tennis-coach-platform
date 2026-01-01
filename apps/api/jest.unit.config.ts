@@ -21,7 +21,7 @@ const config: Config = {
 
   // Module resolution with clean imports
   moduleNameMapper: {
-    '^@routes-helpers$': '<rootDir>/../../libs/routes-helpers/src/index',
+    '^@api-sdk$': '<rootDir>/../../libs/api-sdk/src/index',
     '^@utils$': '<rootDir>/../../libs/utils/src/index',
     '^@app/(.*)$': '<rootDir>/src/app/$1',
     '^@common$': '<rootDir>/src/common/index',

@@ -1,6 +1,6 @@
 /**
  * AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from Swagger metadata
+ * Generated from Swagger metadata by: nx run contracts:generate
  *
  * Generation Options:
  * - Inline DTOs: true
@@ -921,6 +921,6 @@ export interface Endpoints {
 }
 
 /**
- * Utility types are exported from @routes-helpers
- * Import them using: import { ExtractPaths, ExtractMethods, ... } from '@routes-helpers';
+ * Utility types are exported from @api-sdk
+ * Import them using: import { ExtractPaths, ExtractMethods, ... } from '@api-sdk';
  */

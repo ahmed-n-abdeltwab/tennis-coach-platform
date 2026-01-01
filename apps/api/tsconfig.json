@@ -16,7 +16,8 @@
     // API-specific paths
     "baseUrl": ".",
     "paths": {
-      "@routes-helpers": ["../../libs/routes-helpers/src/index"],
+      "@api-sdk": ["../../libs/api-sdk/src/index"],
+      "@contracts": ["../../libs/contracts/src/index"],
       "@utils": ["../../libs/utils/src/index"],
       "@api/*": ["src/app/*"],
       "@common": ["src/common/index"],

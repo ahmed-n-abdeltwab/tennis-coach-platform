@@ -4,7 +4,8 @@
  * These types provide compile-time type safety for API route operations
  */
 
-import { Endpoints } from '../constants/api-routes.registry';
+import type { Endpoints } from '@contracts';
+
 import { HttpMethod } from '../interfaces/IRoutes';
 
 /**
@@ -12,7 +13,7 @@ import { HttpMethod } from '../interfaces/IRoutes';
  *
  * @example Basic Usage
  * ```typescript
- * import { ExtractPaths, Endpoints } from '@routes-helpers';
+ * import { ExtractPaths, Endpoints } from '@api-sdk';
  *
  * type AllPaths = ExtractPaths<Endpoints>;
  * // Result: "/api/authentication/login" | "/api/sessions" | "/api/accounts/{id}" | ...
@@ -35,7 +36,7 @@ export type ExtractPaths<E extends Record<string, any>> = Extract<keyof E, strin
  *
  * @example Basic Usage
  * ```typescript
- * import { ExtractMethods, Endpoints } from '@routes-helpers';
+ * import { ExtractMethods, Endpoints } from '@api-sdk';
  *
  * type LoginMethods = ExtractMethods<Endpoints, "/api/authentication/login">;
  * // Result: "POST"
@@ -66,7 +67,7 @@ export type ExtractMethods<E extends Record<string, any>, P extends ExtractPaths
  *
  * @example GET Request (Query Parameters)
  * ```typescript
- * import { ExtractRequestType, Endpoints } from '@routes-helpers';
+ * import { ExtractRequestType, Endpoints } from '@api-sdk';
  *
  * type SessionRequest = ExtractRequestType<Endpoints, "/api/sessions", "GET">;
  * // Result: {
@@ -145,7 +146,7 @@ export type ExtractRequestType<
  *
  * @example GET Request
  * ```typescript
- * import { ExtractRequestParams, Endpoints } from '@routes-helpers';
+ * import { ExtractRequestParams, Endpoints } from '@api-sdk';
  *
  * type SessionParams = ExtractRequestParams<Endpoints, "/api/sessions", "GET">;
  * // Result: { status?: string; startDate?: string; endDate?: string }
@@ -169,7 +170,7 @@ export type ExtractRequestParams<
  *
  * @example POST Request
  * ```typescript
- * import { ExtractRequestBody, Endpoints } from '@routes-helpers';
+ * import { ExtractRequestBody, Endpoints } from '@api-sdk';
  *
  * type LoginBody = ExtractRequestBody<Endpoints, "/api/authentication/login", "POST">;
  * // Result: { email: string; password: string }
@@ -192,7 +193,7 @@ export type ExtractRequestBody<
  *
  * @example Basic Usage
  * ```typescript
- * import { ExtractResponseType, Endpoints } from '@routes-helpers';
+ * import { ExtractResponseType, Endpoints } from '@api-sdk';
  *
  * type LoginResponse = ExtractResponseType<Endpoints, "/api/authentication/login", "POST">;
  * // Result: { accessToken: string; refreshToken: string; account: {...} }
@@ -247,7 +248,7 @@ export type ExtractResponseType<
  *
  * @example Basic Usage
  * ```typescript
- * import { PathsWithMethod, Endpoints } from '@routes-helpers';
+ * import { PathsWithMethod, Endpoints } from '@api-sdk';
  *
  * type GetPaths = PathsWithMethod<Endpoints, "GET">;
  * // Result: "/api/sessions" | "/api/accounts" | "/api/sessions/{id}" | ...
@@ -292,7 +293,7 @@ export type PathsWithMethod<E extends Record<string, unknown>, M extends HttpMet
  *
  * @example Basic Usage (All Methods)
  * ```typescript
- * import { PathsForRoute } from '@routes-helpers';
+ * import { PathsForRoute } from '@api-sdk';
  *
  * type AccountPaths = PathsForRoute<"accounts">;
  * // Result: "/api/accounts" | "/api/accounts/me" | "/api/accounts/{id}"
@@ -359,7 +360,7 @@ export type PathsForRoute<
  *
  * @example Basic Usage
  * ```typescript
- * import { RequiresParams } from '@routes-helpers';
+ * import { RequiresParams } from '@api-sdk';
  *
  * type NeedsParams = RequiresParams<"/api/users/{id}">;
  * // Result: true
@@ -393,7 +394,7 @@ export type RequiresParams<P extends string> = P extends `${string}{${string}}${
  *
  * @example Single Parameter
  * ```typescript
- * import { ExtractPathParams } from '@routes-helpers';
+ * import { ExtractPathParams } from '@api-sdk';
  *
  * type Params = ExtractPathParams<"/api/users/{id}">;
  * // Result: "id"
@@ -565,7 +566,7 @@ export type AcceptPath<E extends Record<string, unknown>> = ExtractPaths<E> | Fl
  *
  * @example In Type-Safe HTTP Client
  * ```typescript
- * import { buildPath } from '@routes-helpers';
+ * import { buildPath } from '@api-sdk';
  * import { TypeSafeHttpClient } from '@test-utils';
  *
  * const client = new TypeSafeHttpClient(app);

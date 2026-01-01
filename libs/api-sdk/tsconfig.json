@@ -1,4 +1,6 @@
 {
+  "name": "@api-sdk",
+  "type": "commonjs",
   "extends": "../../tsconfig.base.json",
   "files": [],
   "include": [],

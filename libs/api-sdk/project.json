@@ -1,16 +1,16 @@
 {
-  "name": "routes-helpers",
+  "name": "api-sdk",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
-  "sourceRoot": "libs/routes-helpers/src",
+  "sourceRoot": "libs/api-sdk/src",
   "tags": [],
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
       "options": {
-        "outputPath": "dist/libs/routes-helpers",
-        "main": "libs/routes-helpers/src/index.ts",
-        "tsConfig": "libs/routes-helpers/tsconfig.lib.json",
+        "outputPath": "dist/libs/api-sdk",
+        "main": "libs/api-sdk/src/index.ts",
+        "tsConfig": "libs/api-sdk/tsconfig.lib.json",
         "assets": []
       }
     },
@@ -18,21 +18,21 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["libs/routes-helpers/**/*.ts"]
+        "lintFilePatterns": ["libs/api-sdk/**/*.ts"]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/libs/routes-helpers"],
+      "outputs": ["{workspaceRoot}/coverage/libs/api-sdk"],
       "options": {
-        "jestConfig": "libs/routes-helpers/jest.config.ts",
+        "jestConfig": "libs/api-sdk/jest.config.ts",
         "passWithNoTests": true
       }
     },
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p libs/routes-helpers/tsconfig.lib.json --noEmit"
+        "command": "tsc -p libs/api-sdk/tsconfig.lib.json --noEmit"
       }
     }
   }

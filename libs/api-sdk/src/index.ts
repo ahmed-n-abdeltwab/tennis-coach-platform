@@ -1,25 +1,31 @@
 /**
- * Routes Helpers Library
+ * API SDK Library
  *
- * This library provides utilities for generating and working with type-safe API routes.
- * It extracts endpoint definitions from Swagger/OpenAPI documentation and provides
- * TypeScript utility types for compile-time type safety.
+ * This library provides utilities for working with type-safe API routes.
+ * It provides TypeScript utility types for compile-time type safety
+ * and runtime helpers for building paths.
  */
 
-// Route generation functions
-export * from './lib/generate-routes-from-swagger';
+// Route generation functions (from generator module)
+export {
+  generateEndpointsFromSwagger,
+  generateEndpointsObject,
+  type GenerationOptions,
+} from './generator';
+
+// Legacy re-exports for backward compatibility
+export { generateApiRoutes, generateEndpointsInterface } from './lib/generate-routes-from-swagger';
 
 /**
- * Endpoints interface - Auto-generated from Swagger documentation
+ * Endpoints interface - Re-exported from @contracts
  * Contains all API routes with their request/response types
  *
  * @example
- * import { Endpoints } from '@routes-helpers';
+ * import { Endpoints } from '@api-sdk';
  *
  * type LoginPath = keyof Endpoints; // "/api/auth/login" | ...
  */
-// // @ts-expect-error - This file is auto-generated at runtime
-export type { Endpoints } from './constants/api-routes.registry';
+export type { Endpoints } from '@contracts';
 
 /**
  * TypeScript utility types for working with Endpoints
@@ -28,7 +34,7 @@ export type { Endpoints } from './constants/api-routes.registry';
  * for API routes, methods, requests, and responses.
  *
  * @example
- * import { ExtractPaths, ExtractRequestType } from '@routes-helpers';
+ * import { ExtractPaths, ExtractRequestType } from '@api-sdk';
  *
  * type AllPaths = ExtractPaths<Endpoints>;
  * type LoginRequest = ExtractRequestType<Endpoints, "/api/auth/login", "POST">;

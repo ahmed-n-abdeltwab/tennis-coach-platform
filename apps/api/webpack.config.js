@@ -17,6 +17,12 @@ module.exports = composePlugins(withNx(), config => {
     // Utilities and shared
     '@test-utils': path.resolve(__dirname, 'test/utils'),
     '@test': path.resolve(__dirname, 'test'),
+
+    // Workspace libraries
+    '@api-sdk': path.resolve(__dirname, '../../libs/api-sdk/src/index.ts'),
+    '@contracts': path.resolve(__dirname, '../../libs/contracts/src/index.ts'),
+    '@routes-helpers': path.resolve(__dirname, '../../libs/api-sdk/src/index.ts'),
+    '@utils': path.resolve(__dirname, '../../libs/utils/src/index.ts'),
   };
 
   // Handle TypeScript 7's module system

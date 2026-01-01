@@ -2,7 +2,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { generateApiRoutes } from '@routes-helpers';
 
 import { AppModule } from './app/app.module';
 import { AppLoggerService } from './app/logger/app-logger.service';
