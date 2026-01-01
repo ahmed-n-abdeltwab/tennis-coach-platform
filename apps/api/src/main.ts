@@ -62,11 +62,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api/docs', app, document);
 
-  generateApiRoutes(document).catch(error => {
-    console.error('❌ Error generating routes:', error);
-    process.exit(1);
-  });
-
   const port = parseInt(process.env.PORT ?? '3333', 10);
 
   await app.listen(port);

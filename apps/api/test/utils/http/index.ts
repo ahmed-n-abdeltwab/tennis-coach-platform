@@ -24,4 +24,16 @@
  * @module base/http
  */
 
-export * from './type-safe-http-client';
+// Re-export from @api-sdk/testing for backward compatibility
+export {
+  TypeSafeHttpClient,
+  type DeepPartial,
+  type ErrorResponse,
+  type FailureResponse,
+  type RequestOptions,
+  type RequestType,
+  type SuccessResponse,
+  type SuccessStatus,
+  type TypedResponse,
+  type ValidationErrorResponse,
+} from '@api-sdk/testing';

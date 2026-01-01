@@ -20,3 +20,16 @@ export * from './utils/pagination.helper';
 
 // Endpoints (dynamically generated from Swagger, shared from contracts)
 export type { Endpoints } from '@contracts';
+
+// API SDK utilities for type-safe API interactions
+export type {
+  ExtractPaths,
+  ExtractMethods,
+  ExtractRequestType,
+  ExtractResponseType,
+  PathsWithMethod,
+  PathsForRoute,
+  RequiresParams,
+  ExtractPathParams,
+} from '@api-sdk';
+export { buildPath } from '@api-sdk';

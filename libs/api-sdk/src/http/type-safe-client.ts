@@ -1,17 +1,27 @@
-import type {
-  Endpoints,
-  ExtractMethods,
-  ExtractPaths,
-  ExtractRequestBody,
-  ExtractRequestParams,
-  ExtractResponseType,
-  HttpMethod,
-  PathsForRoute,
-  PathsWithMethod,
-} from '@api-sdk';
-import { buildPath } from '@api-sdk';
-import { INestApplication } from '@nestjs/common';
+/**
+ * Type-Safe HTTP Client
+ *
+ * A type-safe HTTP client for testing API endpoints with compile-time validation
+ * of paths, methods, request data, and response types.
+ *
+ * @module http/type-safe-client
+ */
+
+import type { Endpoints } from '@contracts';
+import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+
+import type { HttpMethod } from '../interfaces/IRoutes';
+import {
+  buildPath,
+  type ExtractMethods,
+  type ExtractPaths,
+  type ExtractRequestBody,
+  type ExtractRequestParams,
+  type ExtractResponseType,
+  type PathsForRoute,
+  type PathsWithMethod,
+} from '../utils/type-utils';
 
 /**
  * DeepPartial utility type
@@ -55,7 +65,7 @@ export interface RequestOptions {
   expectedStatus?: number;
   /** Request timeout in milliseconds */
   timeout?: number;
-  /** Enable runtime validation of request/response data */
+  /** Enable runtime validation of requesnse data */
   validateRuntime?: boolean;
 }
 
@@ -99,11 +109,11 @@ export type TypedResponse<T> = SuccessResponse<T> | FailureResponse;
 
 /**
  * Typed Request from an API endpoint
- *
  */
 export interface RequestType<
   P extends keyof E,
   M extends HttpMethod,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Record<string, any> = Endpoints,
 > {
   body?: DeepPartial<ExtractRequestBody<E, P, M>>;
@@ -121,109 +131,10 @@ export interface RequestType<
  *
  * @template TModuleName - Optional module name for module-scoped requests
  * @template E - The Endpoints interface type (defaults to auto-imported Endpoints)
- *
- * @example Basic Usage
- * ```typescript
- * const client = new TypeSafeHttpClient(app);
- *
- * // ✅ Valid: TypeScript validates path, method, and request body
- * const response = await client.post('/api/authentication/user/login', { body: {
- *   email: 'user@example.com',
- *   password: 'password123'
- * }});
- *
- * // ❌ Compile error: Invalid path
- * await client.get('/api/invalid-path');
- *
- * // ❌ Compile error: Invalid request body structure
- * await client.post('/api/authentication/user/login', { invalidField: 'test' });
- * ```
- *
- * @example Discriminated Union Response Handling
- * ```typescript
- * const response = await client.get('/api/sessions');
- *
- * // Use discriminated union to handle success/error
- * if (response.ok) {
- *   // TypeScript knows response.body is Session[]
- *   console.log(response.body[0].coachId);
- *   expect(response.status).toBe(200);
- * } else {
- *   // TypeScript knows response.body is ErrorResponse
- *   console.error(response.body.message);
- *   expect(response.status).toBeGreaterThanOrEqual(400);
- * }
- * ```
- *
- * @example Path Parameters
- * ```typescript
- * import { buildPath } from '@api-sdk';
- *
- * const sessionId = 'session-123';
- *
- * // Option 1: Use template literal with type assertion
- * const response1 = await client.get(`/api/sessions/${sessionId}` as '/api/sessions/{id}');
- *
- * // Option 2: Use buildPath helper
- * const path = buildPath('/api/sessions/{id}', { id: sessionId });
- * const response2 = await client.get(path as '/api/sessions/{id}');
- *
- * // Option 3: Use the params props
- * const response3 = await client.get('/api/sessions/{id}', {
- *    params: {
- *      id: sessionId
- *    }
- * })
- * ```
- *
- * @example Authenticated Requests
- * ```typescript
- * const token = 'jwt-token-here';
- *
- * // Authenticated GET
- * const sessions = await client.authenticatedGet('/api/sessions', token);
- *
- * // Authenticated POST
- * const newSession = await client.authenticatedPost('/api/sessions', token, { body: {
- *   bookingTypeId: 'booking-123',
- *   timeSlotId: 'slot-456'
- * }});
- * ```
- *
- * @example Request Options
- * ```typescript
- * // With expected status
- * const response = await client.get('/api/sessions', undefined, {
- *   expectedStatus: 200
- * });
- *
- * // With custom headers
- * const response = await client.post('/api/sessions', data, {
- *   headers: { 'X-Custom-Header': 'value' }
- * });
- *
- * // With timeout
- * const response = await client.get('/api/sessions', undefined, {
- *   timeout: 5000
- * });
- * ```
- *
- * @example Module-Scoped Requests
- * ```typescript
- * // Create client with module name for type-safe module-scoped requests
- * const client = new TypeSafeHttpClient(app, 'sessions');
- *
- * // Module-scoped GET (only shows paths for 'sessions' module)
- * const response = await client.moduleGet('/api/sessions');
- *
- * // Module-scoped authenticated POST
- * const newSession = await client.moduleAuthenticatedPost('/api/sessions', token, {
- *   body: { bookingTypeId: 'booking-123' }
- * });
- * ```
  */
 export class TypeSafeHttpClient<
   TModuleName extends string = string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   E extends Record<string, any> = Endpoints,
 > {
   /**
@@ -239,19 +150,6 @@ export class TypeSafeHttpClient<
 
   /**
    * Make a type-safe request to any endpoint
-   *
-   * This is the core method that all other methods delegate to.
-   * Provides full type safety for path, method, request data, and response.
-   *
-   * @template P - The API path (must exist in Endpoints)
-   * @template M - The HTTP method (must be supported by the path)
-   * @param path - The API endpoint path
-   * @param method - The HTTP method
-   * @param data - Request data (body for POST/PUT/PATCH, params for GET/DELETE)
-   * @param options - Additional request options
-   * @returns Typed response with proper response body type
-   *
-   * @throws {Error} If an invalid HTTP method is provided
    */
   async request<P extends ExtractPaths<E>, M extends ExtractMethods<E, P>>(
     path: P,
@@ -339,28 +237,6 @@ export class TypeSafeHttpClient<
 
   /**
    * Type-safe GET request
-   *
-   * @template P - The API path (must support GET method)
-   * @param path - The API endpoint path (literal or template string with type assertion)
-   * @param params - Query parameters or path parameters
-   * @param options - Additional request options
-   * @returns Typed response with discriminated union (check response.ok to narrow type)
-   *
-   * @example
-   * ```typescript
-   * // With literal path
-   * const response = await client.get('/api/accounts/me');
-   *
-   * // With template literal (use type assertion)
-   * const response = await client.get(`/api/accounts/${id}` as '/api/accounts/{id}');
-   *
-   * // Use discriminated union to narrow type
-   * if (response.ok) {
-   *   console.log(response.body.id);
-   * } else {
-   *   console.error(response.body.message);
-   * }
-   * ```
    */
   async get<P extends PathsWithMethod<E, 'GET'>>(
     path: P,
@@ -371,28 +247,7 @@ export class TypeSafeHttpClient<
   }
 
   /**
-   * Type-safe POST request
-   *
-   * @template P - The API path (must support POST method)
-   * @param path - The API endpoint path (can be literal or template string)
-   * @param body - Request body
-   * @param options - Additional request options
-   * @returns Typed response with discriminated union
-   *
-   * @example
-   * ```typescript
-   * // With literal path (full type safety)
-   * const response = await client.post('/api/authentication/user/login', { email, password });
-   *
-   * // With template literal (use type assertion for full type safety)
-   * const response = await client.post(`/api/users/${id}` as '/api/users/{id}', data);
-   *
-   * if (response.ok) {
-   *   console.log(response.body.accessToken);
-   * } else {
-   *   console.error(response.body.message);
-   * }
-   * ```
+ Type-safe POST request
    */
   async post<P extends PathsWithMethod<E, 'POST'>>(
     path: P,
@@ -483,9 +338,6 @@ export class TypeSafeHttpClient<
     });
   }
 
-  /**
-   * Authenticated PATCH request (with known path type)
-   */
   async authenticatedPatch<P extends PathsWithMethod<E, 'PATCH'>>(
     path: P,
     token: string,
@@ -500,22 +352,6 @@ export class TypeSafeHttpClient<
 
   /**
    * Type-safe GET request scoped to the module specified in constructor
-   *
-   * Only allows paths that belong to the module specified when creating the client.
-   * Provides additional type safety by restricting available endpoints.
-   *
-   * @template P - The API path (must be in the module and support GET)
-   * @param path - The API endpoint path
-   * @param payload - Request payload (params)
-   * @param options - Additional request options
-   * @returns Typed response with discriminated union
-   *
-   * @example
-   * ```typescript
-   * const client = new TypeSafeHttpClient(app, 'sessions');
-   * // Only paths starting with /api/sessions are allowed
-   * const response = await client.moduleGet('/api/sessions');
-   * ```
    */
   async moduleGet<P extends PathsForRoute<TModuleName, 'GET', E>>(
     path: P,
@@ -527,12 +363,6 @@ export class TypeSafeHttpClient<
 
   /**
    * Type-safe POST request scoped to the module
-   *
-   * @template P - The API path (must be in the module and support POST)
-   * @param path - The API endpoint path
-   * @param payload - Request payload (body)
-   * @param options - Additional request options
-   * @returns Typed response with discriminated union
    */
   async modulePost<P extends PathsForRoute<TModuleName, 'POST', E>>(
     path: P,
@@ -544,12 +374,6 @@ export class TypeSafeHttpClient<
 
   /**
    * Type-safe PUT request scoped to the module
-   *
-   * @template P - The API path (must be in the module and support PUT)
-   * @param path - The API endpoint path
-   * @param payload - Request payload (body)
-   * @param options - Additional request options
-   * @returns Typed response with discriminated union
    */
   async modulePut<P extends PathsForRoute<TModuleName, 'PUT', E>>(
     path: P,
@@ -561,12 +385,6 @@ export class TypeSafeHttpClient<
 
   /**
    * Type-safe PATCH request scoped to the module
-   *
-   * @template P - The API path (must be in the module and support PATCH)
-   * @param path - The API endpoint path
-   * @param payload - Request payload (body)
-   * @param options - Additional request options
-   * @returns Typed response with discriminated union
    */
   async modulePatch<P extends PathsForRoute<TModuleName, 'PATCH', E>>(
     path: P,
@@ -578,12 +396,6 @@ export class TypeSafeHttpClient<
 
   /**
    * Type-safe DELETE request scoped to the module
-   *
-   * @template P - The API path (must be in the module and support DELETE)
-   * @param path - The API endpoint path
-   * @param payload - Request payload (params)
-   * @param options - Additional request options
-   * @returns Typed response with discriminated union
    */
   async moduleDelete<P extends PathsForRoute<TModuleName, 'DELETE', E>>(
     path: P,
@@ -595,20 +407,6 @@ export class TypeSafeHttpClient<
 
   /**
    * Type-safe authenticated GET request scoped to the module
-   *
-   * @template P - The API path (must be in the module and support GET)
-   * @param path - The API endpoint path
-   * @param token - JWT authentication token
-   * @param payload - Request payload (params)
-   * @param options - Additional request options (headers will be merged with auth)
-   * @returns Typed response with discriminated union
-   *
-   * @example
-   * ```typescript
-   * const client = new TypeSafeHttpClient(app, 'sessions');
-   * const token = 'jwt-token-here';
-   * const response = await client.moduleAuthenticatedGet('/api/sessions', token);
-   * ```
    */
   async moduleAuthenticatedGet<P extends PathsForRoute<TModuleName, 'GET', E>>(
     path: P,
@@ -624,13 +422,6 @@ export class TypeSafeHttpClient<
 
   /**
    * Type-safe authenticated POST request scoped to the module
-   *
-   * @template P - The API path (must be in the module and support POST)
-   * @param path - The API endpoint path
-   * @param token - JWT authentication token
-   * @param payload - Request payload (body)
-   * @param options - Additional request options (headers will be merged with auth)
-   * @returns Typed response with discriminated union
    */
   async moduleAuthenticatedPost<P extends PathsForRoute<TModuleName, 'POST', E>>(
     path: P,
@@ -646,13 +437,6 @@ export class TypeSafeHttpClient<
 
   /**
    * Type-safe authenticated PUT request scoped to the module
-   *
-   * @template P - The API path (must be in the module and support PUT)
-   * @param path - The API endpoint path
-   * @param token - JWT authentication token
-   * @param payload - Request payload (body)
-   * @param options - Additional request options (headers will be merged with auth)
-   * @returns Typed response with discriminated union
    */
   async moduleAuthenticatedPut<P extends PathsForRoute<TModuleName, 'PUT', E>>(
     path: P,
@@ -668,13 +452,6 @@ export class TypeSafeHttpClient<
 
   /**
    * Type-safe authenticated PATCH request scoped to the module
-   *
-   * @template P - The API path (must be in the module and support PATCH)
-   * @param path - The API endpoint path
-   * @param token - JWT authentication token
-   * @param payload - Request payload (body)
-   * @param options - Additional request options (headers will be merged with auth)
-   * @returns Typed response with discriminated union
    */
   async moduleAuthenticatedPatch<P extends PathsForRoute<TModuleName, 'PATCH', E>>(
     path: P,
@@ -690,13 +467,6 @@ export class TypeSafeHttpClient<
 
   /**
    * Type-safe authenticated DELETE request scoped to the module
-   *
-   * @template P - The API path (must be in the module and support DELETE)
-   * @param path - The API endpoint path
-   * @param token - JWT authentication token
-   * @param payload - Request payload (params)
-   * @param options - Additional request options (headers will be merged with auth)
-   * @returns Typed response with discriminated union
    */
   async moduleAuthenticatedDelete<P extends PathsForRoute<TModuleName, 'DELETE', E>>(
     path: P,

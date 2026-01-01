@@ -20,8 +20,8 @@ module.exports = composePlugins(withNx(), config => {
 
     // Workspace libraries
     '@api-sdk': path.resolve(__dirname, '../../libs/api-sdk/src/index.ts'),
+    '@api-sdk/testing': path.resolve(__dirname, '../../libs/api-sdk/src/testing.ts'),
     '@contracts': path.resolve(__dirname, '../../libs/contracts/src/index.ts'),
-    '@routes-helpers': path.resolve(__dirname, '../../libs/api-sdk/src/index.ts'),
     '@utils': path.resolve(__dirname, '../../libs/utils/src/index.ts'),
   };
 

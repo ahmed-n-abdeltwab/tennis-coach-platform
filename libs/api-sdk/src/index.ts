@@ -62,3 +62,47 @@ export type {
 export { buildPath } from './utils/type-utils';
 
 export type { HttpMethod } from './interfaces/IRoutes';
+
+/**
+ * Production API Client using axios
+ *
+ * Type-safe HTTP client for making API requests from web applications.
+ * Provides compile-time validation of paths, methods, request data, and response types.
+ *
+ * @example
+ * import { ApiClient } from '@api-sdk';
+ *
+ * const api = new ApiClient({ baseURL: 'https://api.example.com' });
+ *
+ * // Type-safe GET request
+ * const response = await api.get('/api/sessions');
+ * if (response.ok) {
+ *   console.log(response.data); // Typed as Session[]
+ * }
+ *
+ * // Type-safe POST with body
+ * const loginResponse = await api.post('/api/authentication/login', {
+ *   body: { email: 'user@example.com', password: 'password123' }
+ * });
+ */
+export {
+  ApiClient,
+  type ApiClientConfig,
+  type ApiErrorResponse,
+  type ApiRequestPayload,
+  type ApiResponse,
+  type ApiSuccessResponse,
+  type RequestOptions as ApiRequestOptions,
+} from './client';
+
+/**
+ * Test utilities are available from '@api-sdk/testing'
+ *
+ * For test utilities like TypeSafeHttpClient, import from the testing sub-path:
+ * ```typescript
+ * import { TypeSafeHttpClient, TypedResponse } from '@api-sdk/testing';
+ * ```
+ *
+ * This keeps the main '@api-sdk' entry point free of test-specific dependencies
+ * (supertest, @nestjs/testing) for cleaner production bundles.
+ */

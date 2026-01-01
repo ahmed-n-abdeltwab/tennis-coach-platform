@@ -12,14 +12,13 @@ import {
   type PathsForRoute,
   type PathsWithMethod,
 } from '@api-sdk';
-import { INestApplication } from '@nestjs/common';
-
 import {
   type RequestOptions,
   type RequestType,
   type TypedResponse,
   TypeSafeHttpClient,
-} from '../http/type-safe-http-client';
+} from '@api-sdk/testing';
+import { INestApplication } from '@nestjs/common';
 
 import type { AuthHeaders } from './auth.mixin';
 import { BaseMixin } from './base-mixin';
