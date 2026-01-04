@@ -349,7 +349,13 @@ export interface Endpoints {
       status: 'ok' | 'error';
       timestamp: string;
       uptime: number;
-      memory: string | null;
+      memory: {
+        rss: number;
+        heapTotal: number;
+        heapUsed: number;
+        external: number;
+        arrayBuffers: number;
+      };
       version: string;
       environment: string;
       database: string;

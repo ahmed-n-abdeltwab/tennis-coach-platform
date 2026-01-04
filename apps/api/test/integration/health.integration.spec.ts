@@ -7,7 +7,8 @@ import { IntegrationTest } from '../utils';
 
 /**
  * Health Endpoints Integration Tests
- * Demonstrates using BaseIntegrationTest for integration testing
+ * Tests the health check endpoints for status, liveness, and readiness probes.
+ * These endpoints are accessible without authentication (Requirement 5.5).
  */
 describe('Health Endpoints Integration', () => {
   let test: IntegrationTest;
@@ -40,25 +41,70 @@ describe('Health Endpoints Integration', () => {
     it('should return valid timestamp in ISO format', async () => {
       const response = await test.http.get('/api/health');
 
+      expect(response.ok).toBe(true);
       if (response.ok) {
         expect(response.body.timestamp).toBeDefined();
-        expect(new Date(response.body.timestamp).toISOString()).toBe(response.body.timestamp);
+        const parsedDate = new Date(response.body.timestamp);
+        expect(parsedDate.toISOString()).toBe(response.body.timestamp);
       }
     });
 
-    it.todo('should return positive uptime');
+    it('should return positive uptime', async () => {
+      const response = await test.http.get('/api/health');
 
-    it.todo('should return valid memory usage information');
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(response.body.uptime).toBeDefined();
+        expect(typeof response.body.uptime).toBe('number');
+        expect(response.body.uptime).toBeGreaterThan(0);
+      }
+    });
 
-    it.todo('should return configuration information');
+    it('should return valid memory usage information', async () => {
+      const response = await test.http.get('/api/health');
 
-    it.todo('should return database connection status');
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(response.body.memory).toBeDefined();
+        expect(response.body.memory).toHaveProperty('heapUsed');
+        expect(response.body.memory).toHaveProperty('heapTotal');
+        expect(response.body.memory).toHaveProperty('rss');
+        expect(typeof response.body.memory.heapUsed).toBe('number');
+        expect(typeof response.body.memory.heapTotal).toBe('number');
+      }
+    });
 
-    it.todo('should handle multiple concurrent requests');
+    it('should return configuration information', async () => {
+      const response = await test.http.get('/api/health');
 
-    it.todo('should return consistent structure across multiple calls');
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(response.body.version).toBeDefined();
+        expect(response.body.environment).toBeDefined();
+        expect(typeof response.body.version).toBe('string');
+        expect(typeof response.body.environment).toBe('string');
+      }
+    });
 
-    it.todo('should have reasonable response time');
+    it('should return database connection status', async () => {
+      const response = await test.http.get('/api/health');
+
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(response.body.database).toBeDefined();
+        expect(response.body.database).toBe('connected');
+      }
+    });
+
+    it('should be accessible without authentication', async () => {
+      // No token provided - should still work
+      const response = await test.http.get('/api/health');
+
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(response.status).toBe(200);
+      }
+    });
   });
 
   describe('GET /api/health/liveness', () => {
@@ -74,22 +120,27 @@ describe('Health Endpoints Integration', () => {
       }
     });
 
-    it('should return valid timestamp', async () => {
+    it('should return valid timestamp in ISO format', async () => {
       const response = await test.http.get('/api/health/liveness');
 
+      expect(response.ok).toBe(true);
       if (response.ok) {
         expect(response.body.timestamp).toBeDefined();
-        expect(new Date(response.body.timestamp).toISOString()).toBe(response.body.timestamp);
+        const parsedDate = new Date(response.body.timestamp);
+        expect(parsedDate.toISOString()).toBe(response.body.timestamp);
       }
     });
 
-    it.todo('should always return alive status');
+    it('should be accessible without authentication', async () => {
+      // No token provided - should still work
+      const response = await test.http.get('/api/health/liveness');
 
-    it.todo('should be very fast');
-
-    it.todo('should handle high frequency requests');
-
-    it.todo('should return different timestamps for consecutive calls');
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(response.status).toBe(200);
+        expect(response.body.status).toBe('alive');
+      }
+    });
   });
 
   describe('GET /api/health/readiness', () => {
@@ -105,39 +156,57 @@ describe('Health Endpoints Integration', () => {
       }
     });
 
-    it('should return valid timestamp', async () => {
+    it('should return valid timestamp in ISO format', async () => {
       const response = await test.http.get('/api/health/readiness');
 
+      expect(response.ok).toBe(true);
       if (response.ok) {
         expect(response.body.timestamp).toBeDefined();
-        expect(new Date(response.body.timestamp).toISOString()).toBe(response.body.timestamp);
+        const parsedDate = new Date(response.body.timestamp);
+        expect(parsedDate.toISOString()).toBe(response.body.timestamp);
       }
     });
 
-    it.todo('should verify database connectivity');
+    it('should be accessible without authentication', async () => {
+      // No token provided - should still work
+      const response = await test.http.get('/api/health/readiness');
 
-    it.todo('should handle multiple readiness checks');
-
-    it.todo('should have reasonable response time');
-
-    it.todo('should return consistent results');
+      expect(response.ok).toBe(true);
+      if (response.ok) {
+        expect(response.status).toBe(200);
+      }
+    });
   });
 
-  describe('Error handling scenarios', () => {
-    it.todo('should handle invalid endpoints gracefully');
+  /**
+   * Health Endpoint Accessibility Tests
+   * Feature: integration-tests-refactoring, Property 12: Health Endpoint Accessibility
+   * Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5
+   */
+  describe('Health Endpoint Accessibility', () => {
+    const healthEndpoints = [
+      '/api/health',
+      '/api/health/liveness',
+      '/api/health/readiness',
+    ] as const;
 
-    it.todo('should handle malformed requests');
+    it.each(healthEndpoints)(
+      'should return valid response with status and ISO timestamp for %s',
+      async endpoint => {
+        const response = await test.http.get(endpoint);
 
-    it.todo('should return proper content-type headers');
+        expect(response.ok).toBe(true);
+        if (response.ok) {
+          expect(response.status).toBe(200);
+          expect(response.body).toHaveProperty('status');
+          expect(response.body).toHaveProperty('timestamp');
 
-    it.todo('should handle concurrent requests without errors');
-  });
-
-  describe('Performance and reliability', () => {
-    it.todo('should maintain performance under load');
-
-    it.todo('should handle stress testing of liveness endpoint');
-
-    it.todo('should maintain database connectivity during multiple readiness checks');
+          // Validate timestamp is valid ISO format
+          const body = response.body;
+          const parsedDate = new Date(body.timestamp);
+          expect(parsedDate.toISOString()).toBe(body.timestamp);
+        }
+      }
+    );
   });
 });
