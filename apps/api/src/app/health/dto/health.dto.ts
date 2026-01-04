@@ -14,23 +14,46 @@ export class BaseHealthDto {
   @IsNotEmpty()
   timestamp: string;
 }
+
+export class MemoryUsageDto {
+  @ApiProperty({ description: 'Resident Set Size - total memory allocated for the process' })
+  @IsNumber()
+  rss: number;
+
+  @ApiProperty({ description: 'Total size of the allocated heap' })
+  @IsNumber()
+  heapTotal: number;
+
+  @ApiProperty({ description: 'Actual memory used during execution' })
+  @IsNumber()
+  heapUsed: number;
+
+  @ApiProperty({ description: 'Memory used by C++ objects bound to JavaScript' })
+  @IsNumber()
+  external: number;
+
+  @ApiProperty({ description: 'Memory allocated for ArrayBuffers and SharedArrayBuffers' })
+  @IsNumber()
+  arrayBuffers: number;
+}
+
 export class CheckHealthDto extends BaseHealthDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'Process uptime in seconds' })
   @IsNumber()
   uptime: number;
 
-  @ApiProperty()
-  memory: NodeJS.MemoryUsage;
+  @ApiProperty({ type: MemoryUsageDto, description: 'Memory usage statistics' })
+  memory: MemoryUsageDto;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'API version' })
   @IsString()
   version: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Current environment (development, production, etc.)' })
   @IsString()
   environment: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Database connection status' })
   @IsString()
   database: string;
 }

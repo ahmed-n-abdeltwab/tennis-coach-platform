@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app/app.module';
 import { AppLoggerService } from './app/logger/app-logger.service';
@@ -60,13 +60,25 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, options);
+
+  // Setup Swagger UI at /api/docs
   SwaggerModule.setup('api/docs', app, document);
+
+  // Expose raw JSON at /api/docs-json for runtime API discovery
+  const httpAdapter = app.getHttpAdapter();
+  httpAdapter.get(
+    '/api/docs-json',
+    (_req: unknown, res: { json: (doc: OpenAPIObject) => void }) => {
+      res.json(document);
+    }
+  );
 
   const port = parseInt(process.env.PORT ?? '3333', 10);
 
   await app.listen(port);
   console.log(`🚀 API is running on: http://localhost:${port}/api`);
   console.log(`📚 API docs: http://localhost:${port}/api/docs`);
+  console.log(`📄 API JSON: http://localhost:${port}/api/docs-json`);
 }
 
 bootstrap();
