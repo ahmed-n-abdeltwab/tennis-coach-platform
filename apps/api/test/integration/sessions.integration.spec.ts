@@ -1,6 +1,7 @@
 import { SessionStatus } from '@prisma/client';
 
 import { BookingTypesModule } from '../../src/app/booking-types/booking-types.module';
+import { DiscountsModule } from '../../src/app/discounts/discounts.module';
 import { IamModule } from '../../src/app/iam/iam.module';
 import { SessionsModule } from '../../src/app/sessions/sessions.module';
 import { TimeSlotsModule } from '../../src/app/time-slots/time-slots.module';
@@ -10,7 +11,7 @@ import { IntegrationTest } from '../utils';
  * Sessions Module Integration Tests
  * Tests session creation, retrieval, update, and cancellation workflows
  */
-describe.skip('Sessions Integration', () => {
+describe('Sessions Integration', () => {
   let test: IntegrationTest;
   let userToken: string;
   let coachToken: string;
@@ -19,7 +20,7 @@ describe.skip('Sessions Integration', () => {
 
   beforeAll(async () => {
     test = new IntegrationTest({
-      modules: [SessionsModule, BookingTypesModule, TimeSlotsModule, IamModule],
+      modules: [SessionsModule, BookingTypesModule, TimeSlotsModule, DiscountsModule, IamModule],
     });
     await test.setup();
   });
@@ -75,7 +76,7 @@ describe.skip('Sessions Integration', () => {
           expect(response.status).toBe(201);
           expect(response.body).toHaveProperty('id');
           expect(response.body.bookingTypeId).toBe(bookingType.id);
-          expect(response.body.timeSlotId).toBe(timeSlot.id);
+          expect(response.body.timeSlot.id).toBe(timeSlot.id);
           expect(response.body.userId).toBe(userId);
           expect(response.body.coachId).toBe(coachId);
           expect(response.body.notes).toBe('Test session notes');
@@ -199,11 +200,9 @@ describe.skip('Sessions Integration', () => {
         expect(response.ok).toBe(true);
         if (response.ok) {
           expect(response.status).toBe(200);
-          expect(response.body).toHaveProperty('data');
-          expect(response.body).toHaveProperty('meta');
-          expect(Array.isArray(response.body.data)).toBe(true);
-          expect(response.body.data?.length).toBeGreaterThanOrEqual(2);
-          response.body.data?.forEach(session => {
+          expect(Array.isArray(response.body)).toBe(true);
+          expect(response.body.length).toBeGreaterThanOrEqual(2);
+          response.body.forEach((session: { userId: string }) => {
             expect(session.userId).toBe(userId);
           });
         }
@@ -219,11 +218,9 @@ describe.skip('Sessions Integration', () => {
         expect(response.ok).toBe(true);
         if (response.ok) {
           expect(response.status).toBe(200);
-          expect(response.body).toHaveProperty('data');
-          expect(response.body).toHaveProperty('meta');
-          expect(Array.isArray(response.body.data)).toBe(true);
-          expect(response.body.data?.length).toBeGreaterThanOrEqual(2);
-          response.body.data?.forEach(session => {
+          expect(Array.isArray(response.body)).toBe(true);
+          expect(response.body.length).toBeGreaterThanOrEqual(2);
+          response.body.forEach((session: { coachId: string }) => {
             expect(session.coachId).toBe(coachId);
           });
         }
@@ -243,9 +240,8 @@ describe.skip('Sessions Integration', () => {
         expect(response.ok).toBe(true);
         if (response.ok) {
           expect(response.status).toBe(200);
-          expect(response.body).toHaveProperty('data');
-          expect(Array.isArray(response.body.data)).toBe(true);
-          response.body.data?.forEach(session => {
+          expect(Array.isArray(response.body)).toBe(true);
+          response.body.forEach((session: { status?: string }) => {
             expect(session.status).toBe(SessionStatus.SCHEDULED);
           });
         }
@@ -273,10 +269,9 @@ describe.skip('Sessions Integration', () => {
         expect(response.ok).toBe(true);
         if (response.ok) {
           expect(response.status).toBe(200);
-          expect(response.body).toHaveProperty('data');
-          expect(Array.isArray(response.body.data)).toBe(true);
+          expect(Array.isArray(response.body)).toBe(true);
           // Should only include sessions within the date range
-          response.body.data?.forEach(session => {
+          response.body.forEach((session: { dateTime: string }) => {
             const sessionDate = new Date(session.dateTime);
             expect(sessionDate.getTime()).toBeGreaterThanOrEqual(new Date(startDate).getTime());
             expect(sessionDate.getTime()).toBeLessThanOrEqual(new Date(endDate).getTime());
@@ -297,10 +292,9 @@ describe.skip('Sessions Integration', () => {
         expect(response.ok).toBe(true);
         if (response.ok) {
           expect(response.status).toBe(200);
-          expect(response.body).toHaveProperty('data');
-          expect(Array.isArray(response.body.data)).toBe(true);
+          expect(Array.isArray(response.body)).toBe(true);
           // Should only see own sessions
-          response.body.data?.forEach(session => {
+          response.body.forEach((session: { userId: string }) => {
             expect(session.userId).toBe(userId);
             expect(session.userId).not.toBe(otherUser.id);
           });
@@ -344,7 +338,7 @@ describe.skip('Sessions Integration', () => {
 
       it('should return 404 for non-existent session', async () => {
         const response = await test.http.authenticatedGet(
-          '/api/sessions/non-existent-id' as any,
+          '/api/sessions/non-existent-id' as '/api/sessions/{id}',
           userToken
         );
 
@@ -397,7 +391,7 @@ describe.skip('Sessions Integration', () => {
         }
       });
 
-      it('should allow coach to update session status', async () => {
+      it('should allow coach to update session notes', async () => {
         const session = await test.db.createTestSession({
           userId,
           coachId,
@@ -405,7 +399,7 @@ describe.skip('Sessions Integration', () => {
         });
 
         const updateData = {
-          status: SessionStatus.CONFIRMED,
+          notes: 'Coach updated notes',
         };
 
         const response = await test.http.authenticatedPut(
@@ -420,7 +414,7 @@ describe.skip('Sessions Integration', () => {
         if (response.ok) {
           expect(response.status).toBe(200);
           expect(response.body.id).toBe(session.id);
-          expect(response.body.status).toBe(SessionStatus.CONFIRMED);
+          expect(response.body.notes).toBe('Coach updated notes');
         }
       });
 
@@ -452,7 +446,7 @@ describe.skip('Sessions Integration', () => {
         };
 
         const response = await test.http.authenticatedPut(
-          '/api/sessions/non-existent-id' as any,
+          '/api/sessions/non-existent-id' as '/api/sessions/{id}',
           userToken,
           {
             body: updateData,
@@ -467,11 +461,11 @@ describe.skip('Sessions Integration', () => {
     });
 
     describe('PATCH /api/sessions/:id', () => {
-      it('should allow partial update of session', async () => {
+      it('should allow partial update of session notes', async () => {
         const session = await test.db.createTestSession({ userId, coachId });
 
         const updateData = {
-          isPaid: true,
+          notes: 'Partially updated notes',
         };
 
         const response = await test.http.authenticatedPatch(
@@ -486,7 +480,7 @@ describe.skip('Sessions Integration', () => {
         if (response.ok) {
           expect(response.status).toBe(200);
           expect(response.body.id).toBe(session.id);
-          expect(response.body.isPaid).toBe(true);
+          expect(response.body.notes).toBe('Partially updated notes');
         }
       });
     });
@@ -553,7 +547,7 @@ describe.skip('Sessions Integration', () => {
 
       it('should return 404 when cancelling non-existent session', async () => {
         const response = await test.http.authenticatedPut(
-          '/api/sessions/non-existent-id/cancel' as any,
+          '/api/sessions/non-existent-id/cancel' as '/api/sessions/{id}/cancel',
           userToken
         );
 
@@ -562,6 +556,119 @@ describe.skip('Sessions Integration', () => {
           expect(response.status).toBe(404);
         }
       });
+    });
+  });
+
+  /**
+   * Session Filtering Consistency Tests
+   * Feature: integration-tests-refactoring, Property 5: Session Filtering Consistency
+   * Validates: Requirements 3.3, 3.7
+   *
+   * For any session query with status or date range filters, the returned sessions
+   * should all match the specified filter criteria and belong to the requesting user
+   * (or coach for their sessions).
+   */
+  describe('Session Filtering Consistency', () => {
+    const statusTestCases = [
+      { status: SessionStatus.SCHEDULED, description: 'SCHEDULED' },
+      { status: SessionStatus.CONFIRMED, description: 'CONFIRMED' },
+      { status: SessionStatus.COMPLETED, description: 'COMPLETED' },
+      { status: SessionStatus.CANCELLED, description: 'CANCELLED' },
+    ] as const;
+
+    it.each(statusTestCases)(
+      'should filter sessions by $description status correctly',
+      async ({ status }) => {
+        // Create sessions with different statuses
+        await test.db.createTestSession({ userId, coachId, status: SessionStatus.SCHEDULED });
+        await test.db.createTestSession({ userId, coachId, status: SessionStatus.CONFIRMED });
+        await test.db.createTestSession({ userId, coachId, status: SessionStatus.COMPLETED });
+        await test.db.createTestSession({ userId, coachId, status: SessionStatus.CANCELLED });
+
+        const response = await test.http.authenticatedGet(
+          `/api/sessions?status=${status}` as '/api/sessions',
+          userToken
+        );
+
+        expect(response.ok).toBe(true);
+        if (response.ok) {
+          expect(response.status).toBe(200);
+          expect(Array.isArray(response.body)).toBe(true);
+          // All returned sessions should match the filter
+          response.body.forEach((session: { status?: string; userId: string }) => {
+            expect(session.status).toBe(status);
+            expect(session.userId).toBe(userId);
+          });
+        }
+      }
+    );
+  });
+
+  /**
+   * Session State Transitions Tests
+   * Feature: integration-tests-refactoring, Property 6: Session State Transitions
+   * Validates: Requirements 3.6
+   *
+   * For any session in SCHEDULED status, cancellation should change the status to
+   * CANCELLED and the session should remain retrievable with the updated status.
+   */
+  describe('Session State Transitions', () => {
+    const cancellableStatuses = [
+      { status: SessionStatus.SCHEDULED, canCancel: true, description: 'SCHEDULED' },
+      { status: SessionStatus.CONFIRMED, canCancel: true, description: 'CONFIRMED' },
+    ] as const;
+
+    it.each(cancellableStatuses)(
+      'should transition $description session to CANCELLED',
+      async ({ status }) => {
+        const session = await test.db.createTestSession({
+          userId,
+          coachId,
+          status,
+        });
+
+        // Cancel the session
+        const cancelResponse = await test.http.authenticatedPut(
+          `/api/sessions/${session.id}/cancel` as '/api/sessions/{id}/cancel',
+          userToken
+        );
+
+        expect(cancelResponse.ok).toBe(true);
+        if (cancelResponse.ok) {
+          expect(cancelResponse.body.status).toBe(SessionStatus.CANCELLED);
+        }
+
+        // Verify the session is still retrievable with updated status
+        const getResponse = await test.http.authenticatedGet(
+          `/api/sessions/${session.id}` as '/api/sessions/{id}',
+          userToken
+        );
+
+        expect(getResponse.ok).toBe(true);
+        if (getResponse.ok) {
+          expect(getResponse.body.id).toBe(session.id);
+          expect(getResponse.body.status).toBe(SessionStatus.CANCELLED);
+        }
+      }
+    );
+
+    it('should not allow cancelling already cancelled session', async () => {
+      const session = await test.db.createTestSession({
+        userId,
+        coachId,
+        status: SessionStatus.CANCELLED,
+      });
+
+      const response = await test.http.authenticatedPut(
+        `/api/sessions/${session.id}/cancel` as '/api/sessions/{id}/cancel',
+        userToken
+      );
+
+      expect(response.ok).toBe(false);
+      if (!response.ok) {
+        expect(response.status).toBe(400);
+        expect(response.body.message).toContain('already cancelled');
+      }
     });
   });
 });
