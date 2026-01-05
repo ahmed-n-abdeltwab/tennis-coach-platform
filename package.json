@@ -151,7 +151,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.50.0",
-    "@typescript-eslint/parser": "^8.50.1",
+    "@typescript-eslint/parser": "^8.51.0",
     "@vitejs/plugin-react": "^5.1.2",
     "commitizen": "^4.3.1",
     "cz-conventional-changelog": "^3.3.0",
