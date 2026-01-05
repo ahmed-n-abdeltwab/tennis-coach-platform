@@ -53,9 +53,12 @@ class JestCustomReporter {
     const endTime = Date.now();
     const duration = endTime - this.startTime;
     const testType = this.determineTestType();
+    // Calculate success based on actual test results, not Jest's success flag
+    // Jest's success can be false due to snapshot failures or other non-test issues
+    const isSuccess = results.numFailedTests === 0 && results.numFailedTestSuites === 0;
     const testResults = {
       testType,
-      success: results.numFailedTests === 0 && results.numRuntimeErrorTestSuites === 0,
+      success: isSuccess,
       numTotalTests: results.numTotalTests,
       numPassedTests: results.numPassedTests,
       numFailedTests: results.numFailedTests,
@@ -76,10 +79,19 @@ class JestCustomReporter {
     this.displayQuickSummary(testResults);
   }
   determineTestType() {
+    // Check NX_TASK_TARGET_TARGET which Nx sets when running tasks
+    const nxTarget = process.env.NX_TASK_TARGET_TARGET ?? '';
+    if (nxTarget.includes('e2e')) return 'e2e';
+    if (nxTarget.includes('integration')) return 'integration';
+    // Fallback to config path check
     const configPath = this.globalConfig.rootDir ?? '';
     if (configPath.includes('integration')) return 'integration';
     if (configPath.includes('e2e')) return 'e2e';
     if (configPath.includes('all')) return 'all';
+    // Check command line arguments
+    const args = process.argv.join(' ');
+    if (args.includes('integration')) return 'integration';
+    if (args.includes('e2e')) return 'e2e';
     return 'unit';
   }
   getTerminalWidth() {

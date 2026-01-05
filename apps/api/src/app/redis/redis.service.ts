@@ -35,8 +35,16 @@ export class RedisService implements OnApplicationBootstrap, OnApplicationShutdo
     }
   }
 
-  onApplicationShutdown() {
-    return this.client.quit();
+  async onApplicationShutdown() {
+    try {
+      // Disconnect gracefully - this allows pending commands to complete
+      await this.client.quit();
+    } catch (error) {
+      // Ignore errors during shutdown - connection might already be closed
+      if (error instanceof Error && !error.message.includes('Connection is closed')) {
+        this.logger.error('Redis shutdown error', error.stack, RedisService.name);
+      }
+    }
   }
 
   // Public API

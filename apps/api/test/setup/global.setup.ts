@@ -6,7 +6,12 @@
  * Automatically creates and migrates test databases using Prisma's programmatic API
  */
 
-import { detectTestType, ensureTestDatabaseReady, setupTestEnvironment } from './shared';
+import {
+  detectTestType,
+  ensureRedisReady,
+  ensureTestDatabaseReady,
+  setupTestEnvironment,
+} from './shared';
 
 export default async function globalSetup(): Promise<void> {
   // Detect test type
@@ -54,6 +59,11 @@ export default async function globalSetup(): Promise<void> {
 
     // Create database if needed and sync schema
     await ensureTestDatabaseReady(databaseUrl);
+
+    // Set up Redis for integration and e2e tests
+    // eslint-disable-next-line no-console
+    console.log(`🔴 Setting up Redis (db: ${process.env.REDIS_DB})`);
+    await ensureRedisReady();
   } else if (isCI) {
     // eslint-disable-next-line no-console
     console.log(`\n🗄️  Using CI-provided database: ${databaseName}`);
