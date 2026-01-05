@@ -7,7 +7,7 @@
  * @module test-utils/implementations/integration-test
  */
 
-import { DynamicModule, Provider, Type } from '@nestjs/common';
+import { DynamicModule, Provider, Type, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 
 import { PrismaService } from '../../../src/app/prisma/prisma.service';
@@ -105,6 +105,13 @@ export class IntegrationTest<TModuleName extends string = string>
 
       this._app = this._module.createNestApplication();
       this._app.setGlobalPrefix('api');
+      this._app.useGlobalPipes(
+        new ValidationPipe({
+          whitelist: true,
+          forbidNonWhitelisted: true,
+          transform: true,
+        })
+      );
       await this._app.init();
 
       try {

@@ -238,20 +238,23 @@ export abstract class BaseMockFactory<T> implements MockFactory<T> {
   protected abstract generateMock(overrides?: DeepPartial<T>): T;
 
   /**
-   * Generates a unique ID for mock entities.
-   * Format: `test_{timestamp}_{counter}`
+   * Generates a unique CUID-like ID for mock entities.
+   * Format matches Prisma's cuid() output: starts with 'c' followed by lowercase alphanumeric.
    *
-   * @returns A unique string ID
+   * @returns A unique string ID in CUID format
    *
    * @example
    * ```typescript
    * const id = this.generateId();
-   * // Returns: "test_1703936400000_1"
+   * // Returns: "c1703936400000abc123def456"
    * ```
    */
   protected generateId(): string {
     this.idCounter++;
-    return `test_${Date.now()}_${this.idCounter}`;
+    const timestamp = Date.now().toString(36);
+    const counter = this.idCounter.toString(36).padStart(4, '0');
+    const random = Math.random().toString(36).substring(2, 10);
+    return `c${timestamp}${counter}${random}`;
   }
 
   /**

@@ -3,7 +3,7 @@
  * Runs BEFORE module imports - sets up environment without mocking Prisma
  */
 
-import { RedisService } from '../utils/mocks/redis.mock';
+import { nodemailerMock, RedisService } from '../utils/mocks';
 
 import { setupTestEnvironment } from './shared';
 
@@ -19,13 +19,4 @@ setupTestEnvironment({
 
 jest.mock('../../src/app/redis/redis.service', () => ({ RedisService }));
 
-jest.mock('nodemailer', () => ({
-  createTransport: jest.fn().mockReturnValue({
-    sendMail: jest.fn().mockResolvedValue({
-      messageId: 'test-message-id',
-      accepted: ['test@example.com'],
-      rejected: [],
-    }),
-    verify: jest.fn().mockResolvedValue(true),
-  }),
-}));
+jest.mock('nodemailer', () => nodemailerMock);

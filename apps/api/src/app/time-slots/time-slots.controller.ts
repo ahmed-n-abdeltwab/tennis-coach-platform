@@ -3,9 +3,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestj
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 
-import { Auth } from '../iam/authentication/decorators/auth.decorator';
 import { CurrentUser } from '../iam/authentication/decorators/current-user.decorator';
-import { AuthType } from '../iam/authentication/enums/auth-type.enum';
 import { Roles } from '../iam/authorization/decorators/roles.decorator';
 import { JwtPayload } from '../iam/interfaces/jwt.types';
 
@@ -24,7 +22,7 @@ export class TimeSlotsController {
   constructor(private readonly timeSlotsService: TimeSlotsService) {}
 
   @Get()
-  @Auth(AuthType.None)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get available time slots' })
   @TimeSlotApiResponses.FoundMany('Available time slots retrieved successfully')
   async findAvailable(@Query() query: GetTimeSlotsQuery): Promise<TimeSlotResponseDto[]> {
@@ -32,7 +30,7 @@ export class TimeSlotsController {
   }
 
   @Get('coach/:coachId')
-  @Auth(AuthType.None)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get time slots for specific coach' })
   @TimeSlotApiResponses.FoundMany('Coach time slots retrieved successfully')
   @ApiNotFoundResponse('Coach not found')
@@ -44,7 +42,7 @@ export class TimeSlotsController {
   }
 
   @Get(':id')
-  @Auth(AuthType.None)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get time slot by ID' })
   @TimeSlotApiResponses.Found('Time slot retrieved successfully')
   @ApiNotFoundResponse('Time slot not found')

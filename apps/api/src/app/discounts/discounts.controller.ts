@@ -29,7 +29,7 @@ export class DiscountsController {
     return this.discountsService.validateCode(validateDto.code);
   }
 
-  @Get('coach')
+  @Get()
   @Roles(Role.ADMIN, Role.COACH)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get all discounts for the authenticated coach (only coach)' })

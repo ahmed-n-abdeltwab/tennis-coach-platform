@@ -13,11 +13,19 @@ import {
 } from 'class-validator';
 
 import { CoachSummaryDto } from '../../time-slots/dto/time-slot.dto';
+
 export class ValidateDiscountResponseDto {
+  @ApiProperty({ example: 'SUMMER2024' })
   code: string;
+
+  @ApiProperty({ example: 10.0, description: 'Discount amount' })
+  @Type(() => Number)
   amount: Decimal;
+
+  @ApiProperty({ example: true, description: 'Whether the discount code is valid' })
   isValid: boolean;
 }
+
 export class DiscountResponseDto {
   @ApiProperty({ example: 'discount-id-123' })
   @IsString()

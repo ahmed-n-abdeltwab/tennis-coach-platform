@@ -14,6 +14,7 @@ import {
   DiscountMockFactory,
   FactorySingletons,
   MessageMockFactory,
+  NotificationMockFactory,
   SessionMockFactory,
   TimeSlotMockFactory,
   type MockAccount,
@@ -116,5 +117,12 @@ export class FactoryMixin {
    */
   get calendar(): CalendarMockFactory {
     return FactorySingletons.calendar;
+  }
+
+  /**
+   * Notification factory for creating mock email notifications.
+   */
+  get notification(): NotificationMockFactory {
+    return FactorySingletons.notification;
   }
 }

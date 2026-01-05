@@ -56,7 +56,7 @@ describe('DiscountsController', () => {
       test.mocks.DiscountsService.findByCoach.mockResolvedValue(mockDiscounts);
 
       const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
-      await test.http.moduleAuthenticatedGet('/api/discounts/coach', coachToken);
+      await test.http.moduleAuthenticatedGet('/api/discounts', coachToken);
 
       expect(test.mocks.DiscountsService.findByCoach).toHaveBeenCalledWith('coach-123');
     });
@@ -65,7 +65,7 @@ describe('DiscountsController', () => {
       test.mocks.DiscountsService.findByCoach.mockResolvedValue([]);
 
       const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-456' });
-      await test.http.moduleAuthenticatedGet('/api/discounts/coach', coachToken);
+      await test.http.moduleAuthenticatedGet('/api/discounts', coachToken);
 
       expect(test.mocks.DiscountsService.findByCoach).toHaveBeenCalledWith('coach-456');
     });
@@ -213,7 +213,7 @@ describe('DiscountsController', () => {
 
       it('should return 403 when USER tries to get coach discounts', async () => {
         const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
-        const response = await test.http.moduleAuthenticatedGet('/api/discounts/coach', userToken);
+        const response = await test.http.moduleAuthenticatedGet('/api/discounts', userToken);
 
         expect(response.status).toBe(403);
         expect(test.mocks.DiscountsService.findByCoach).not.toHaveBeenCalled();

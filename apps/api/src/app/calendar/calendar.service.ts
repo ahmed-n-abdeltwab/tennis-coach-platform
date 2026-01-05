@@ -50,24 +50,22 @@ export class CalendarService {
 
   async deleteEvent(eventId: string, userId: string, role: Role): Promise<CalendarEventResponse> {
     // Find session by calendar event ID
-    const session = await this.sessionsService.findOne(eventId, userId, role);
+    const session = await this.sessionsService.findFirstByCalendarId(eventId);
 
     if (!session) {
       throw new BadRequestException('Event not found');
     }
 
     // Check Authorization
-    const isAuthorized =
-      role === Role.USER || role === Role.PREMIUM_USER
-        ? session.userId === userId
-        : session.coachId === userId;
+    const isClientRole = ([Role.USER, Role.PREMIUM_USER] as Role[]).includes(role);
+    const isAuthorized = isClientRole ? session.userId === userId : session.coachId === userId;
 
     if (!isAuthorized) {
       throw new BadRequestException('Not authorized');
     }
 
     // Mock deletion - in production, call Google Calendar API
-    await this.sessionsService.updateCalendarEventInternal(eventId, null);
+    await this.sessionsService.updateCalendarEventInternal(session.id, null);
     return {
       eventId,
       summary: `The calender event successfully deleted`,
