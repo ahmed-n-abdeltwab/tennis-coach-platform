@@ -9,19 +9,6 @@ import { SessionsModule } from '../../src/app/sessions/sessions.module';
 import { TimeSlotsModule } from '../../src/app/time-slots/time-slots.module';
 import { IntegrationTest } from '../utils';
 
-/**
- * Payments Module Integration Tests
- * Tests payment creation, retrieval, and status update workflows
- *
- * Note: These tests validate the API's validation logic and authentication
- * requirements. Since the PaymentsService makes external calls to PayPal API,
- * tests that would require actual PayPal responses will fail at the PayPal
- * API call stage, but we can still verify:
- * - Authentication requirements (401 for unauthenticated requests)
- * - Session validation (400 for invalid session)
- * - Session ownership validation (400 for sessions not belonging to user)
- * - Already paid session validation (400 for already paid sessions)
- */
 describe('Payments Integration', () => {
   let test: IntegrationTest;
   let userToken: string;
@@ -67,10 +54,6 @@ describe('Payments Integration', () => {
     });
   });
 
-  /**
-   * Payment Creation Tests
-   * Requirements: 7.1, 7.4
-   */
   describe('Payment Creation', () => {
     describe('POST /api/payments/create-order', () => {
       it('should return 401 for unauthenticated requests', async () => {
@@ -250,10 +233,6 @@ describe('Payments Integration', () => {
     });
   });
 
-  /**
-   * Payment Capture Tests
-   * Requirements: 7.3
-   */
   describe('Payment Status Update', () => {
     describe('POST /api/payments/capture-order', () => {
       it('should return 401 for unauthenticated requests', async () => {
@@ -366,14 +345,6 @@ describe('Payments Integration', () => {
     });
   });
 
-  /**
-   * Payment Retrieval Tests
-   * Requirements: 7.2
-   *
-   * Note: The current PaymentsController does not have a GET endpoint for
-   * retrieving payment history. This section documents the expected behavior
-   * if such an endpoint were to be added.
-   */
   describe('Payment Retrieval', () => {
     it('should verify payment history retrieval is not currently implemented', async () => {
       // The PaymentsController only has create-order and capture-order endpoints
@@ -394,15 +365,6 @@ describe('Payments Integration', () => {
     });
   });
 
-  /**
-   * Cross-Module Data Integrity Tests
-   * Feature: integration-tests-refactoring, Property 14: Cross-Module Data Integrity
-   * Validates: Requirements 7.1, 10.2
-   *
-   * For any session with an associated payment, the payment should reference
-   * the correct session ID and the session's isPaid status should reflect
-   * the payment state.
-   */
   describe('Cross-Module Data Integrity', () => {
     const sessionPaymentStates = [
       { isPaid: false, description: 'unpaid session' },

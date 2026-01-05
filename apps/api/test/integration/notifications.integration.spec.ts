@@ -98,10 +98,6 @@ describe('Notifications Integration', () => {
     });
   });
 
-  /**
-   * Notification Creation Tests (Email Sending)
-   * Validates: Requirements 9.1
-   */
   describe('Notification Creation (Email Sending)', () => {
     describe('POST /api/notifications/email', () => {
       it('should send email notification for authenticated user', async () => {
@@ -256,10 +252,6 @@ describe('Notifications Integration', () => {
     });
   });
 
-  /**
-   * Booking Confirmation Tests
-   * Validates: Requirements 9.1 (notification creation for session events)
-   */
   describe('Booking Confirmation Notifications', () => {
     describe('POST /api/notifications/confirm', () => {
       it('should send booking confirmation for valid session', async () => {
@@ -382,14 +374,6 @@ describe('Notifications Integration', () => {
     });
   });
 
-  /**
-   * Notification Retrieval Tests
-   * Note: The current notifications module is email-based and doesn't store
-   * notifications in the database. These tests verify the email sending
-   * functionality which is the "retrieval" equivalent - users receive
-   * notifications via email.
-   * Validates: Requirements 9.2, 9.4
-   */
   describe('Notification Delivery Verification', () => {
     it('should deliver notification to correct recipient', async () => {
       const recipientEmail = 'specific-recipient@example.com';
@@ -437,13 +421,6 @@ describe('Notifications Integration', () => {
     });
   });
 
-  /**
-   * Notification Marking Tests
-   * Note: Since the current module is email-based, "marking as read" is not
-   * applicable. These tests verify that notifications are successfully sent
-   * (the email equivalent of "delivered/read").
-   * Validates: Requirements 9.3
-   */
   describe('Notification Delivery Status', () => {
     it('should return success status when email is sent', async () => {
       const emailData = {
@@ -487,14 +464,6 @@ describe('Notifications Integration', () => {
     });
   });
 
-  /**
-   * Notification Ownership Tests
-   * Feature: integration-tests-refactoring, Property 15: Notification Ownership
-   * Validates: Requirements 9.1, 9.2, 9.3, 9.4
-   *
-   * For any notification created for a user, only that user should be able
-   * to trigger notifications for their own sessions.
-   */
   describe('Notification Ownership', () => {
     const userRoles = [
       { role: 'user', description: 'regular user' },

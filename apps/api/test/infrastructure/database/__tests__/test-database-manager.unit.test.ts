@@ -1,16 +1,3 @@
-/**
- * Unit tests for TestDatabaseManager
- *
- * This test suite verifies the core functionality of TestDatabaseManager:
- * - generateTestDatabaseName() format validation
- * - buildDatabaseUrl() construction
- * - extractBaseUrl() parsing
- * - getInstance() singleton pattern
- *
- * **Feature: test-infrastructure-improvement**
- * **Validates: Requirements 2.1, 2.2, 2.3**
- */
-
 import { TestDatabaseManager, testDatabaseManager } from '../test-database-manager';
 
 describe('TestDatabaseManager - Unit Tests', () => {

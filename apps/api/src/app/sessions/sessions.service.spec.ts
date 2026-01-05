@@ -19,6 +19,7 @@ interface SessionMocks {
     session: {
       findFirst: jest.Mock;
       findMany: jest.Mock;
+      count: jest.Mock;
       create: jest.Mock;
       update: jest.Mock;
     };
@@ -44,6 +45,7 @@ describe('SessionsService', () => {
             session: {
               findFirst: jest.fn(),
               findMany: jest.fn(),
+              count: jest.fn(),
               create: jest.fn(),
               update: jest.fn(),
             },
@@ -61,6 +63,8 @@ describe('SessionsService', () => {
           useValue: {
             findAvailableById: jest.fn(),
             findById: jest.fn(),
+            markAsUnavailableInternal: jest.fn(),
+            markAsAvailableInternal: jest.fn(),
           },
         },
         {
@@ -422,14 +426,23 @@ describe('SessionsService', () => {
         notes: createDto.notes,
       });
 
+      test.mocks.PrismaService.session.count.mockResolvedValue(0);
       test.mocks.BookingTypesService.findActiveById.mockResolvedValue(mockBookingType);
       test.mocks.TimeSlotsService.findAvailableById.mockResolvedValue(mockTimeSlot);
       test.mocks.PrismaService.session.create.mockResolvedValue(mockCreatedSession);
+      test.mocks.TimeSlotsService.markAsUnavailableInternal.mockResolvedValue(undefined);
 
       const result = await test.service.create(createDto, userId);
 
       expect(result.userId).toBe(userId);
       expect(result.notes).toBe(createDto.notes);
+      expect(test.mocks.PrismaService.session.count).toHaveBeenCalledWith({
+        where: {
+          userId,
+          isPaid: false,
+          status: SessionStatus.SCHEDULED,
+        },
+      });
       expect(test.mocks.BookingTypesService.findActiveById).toHaveBeenCalledWith(
         createDto.bookingTypeId
       );
@@ -437,6 +450,9 @@ describe('SessionsService', () => {
         createDto.timeSlotId
       );
       expect(test.mocks.PrismaService.session.create).toHaveBeenCalledTimes(1);
+      expect(test.mocks.TimeSlotsService.markAsUnavailableInternal).toHaveBeenCalledWith(
+        createDto.timeSlotId
+      );
     });
 
     it('should create a session with discount applied', async () => {
@@ -468,10 +484,12 @@ describe('SessionsService', () => {
         discountId: mockDiscount.id,
       });
 
+      test.mocks.PrismaService.session.count.mockResolvedValue(0);
       test.mocks.BookingTypesService.findActiveById.mockResolvedValue(mockBookingType);
       test.mocks.TimeSlotsService.findAvailableById.mockResolvedValue(mockTimeSlot);
       test.mocks.DiscountsService.findActiveByCode.mockResolvedValue(mockDiscount);
       test.mocks.PrismaService.session.create.mockResolvedValue(mockCreatedSession);
+      test.mocks.TimeSlotsService.markAsUnavailableInternal.mockResolvedValue(undefined);
       test.mocks.DiscountsService.incrementUsageInternal.mockResolvedValue(undefined);
 
       const result = await test.service.create(createDtoWithDiscount, userId);
@@ -480,7 +498,20 @@ describe('SessionsService', () => {
       expect(test.mocks.DiscountsService.incrementUsageInternal).toHaveBeenCalledWith(discountCode);
     });
 
+    it('should throw BadRequestException when max pending bookings reached', async () => {
+      const userId = 'user-123';
+      test.mocks.PrismaService.session.count.mockResolvedValue(3);
+
+      await expect(test.service.create(createDto, userId)).rejects.toThrow(BadRequestException);
+      await expect(test.service.create(createDto, userId)).rejects.toThrow(
+        'Maximum pending bookings (3) reached'
+      );
+      expect(test.mocks.BookingTypesService.findActiveById).not.toHaveBeenCalled();
+      expect(test.mocks.PrismaService.session.create).not.toHaveBeenCalled();
+    });
+
     it('should throw BadRequestException when booking type is inactive', async () => {
+      test.mocks.PrismaService.session.count.mockResolvedValue(0);
       test.mocks.BookingTypesService.findActiveById.mockResolvedValue(null);
 
       await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(BadRequestException);
@@ -491,6 +522,7 @@ describe('SessionsService', () => {
     });
 
     it('should throw BadRequestException when booking type not found', async () => {
+      test.mocks.PrismaService.session.count.mockResolvedValue(0);
       test.mocks.BookingTypesService.findActiveById.mockResolvedValue(null);
 
       await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(BadRequestException);
@@ -503,6 +535,7 @@ describe('SessionsService', () => {
         isActive: true,
       });
 
+      test.mocks.PrismaService.session.count.mockResolvedValue(0);
       test.mocks.BookingTypesService.findActiveById.mockResolvedValue(mockBookingType);
       test.mocks.TimeSlotsService.findAvailableById.mockResolvedValue(null);
 
@@ -518,6 +551,7 @@ describe('SessionsService', () => {
         id: createDto.bookingTypeId,
         isActive: true,
       });
+      test.mocks.PrismaService.session.count.mockResolvedValue(0);
       test.mocks.BookingTypesService.findActiveById.mockResolvedValue(mockBookingType);
       test.mocks.TimeSlotsService.findAvailableById.mockResolvedValue(null);
 
@@ -579,25 +613,29 @@ describe('SessionsService', () => {
   });
 
   describe('cancel', () => {
-    it('should cancel a session successfully', async () => {
+    it('should cancel a session successfully and mark time slot as available', async () => {
       const sessionId = 'session-123';
       const userId = 'user-123';
+      const timeSlotId = 'time-slot-123';
       const futureDate = new Date(Date.now() + ONE_DAY_MS);
       const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
         userId,
+        timeSlotId,
         dateTime: futureDate,
         status: SessionStatus.SCHEDULED,
       });
       const mockCancelledSession = test.factory.session.createWithNulls({
         id: sessionId,
         userId,
+        timeSlotId,
         dateTime: futureDate,
         status: SessionStatus.CANCELLED,
       });
 
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
       test.mocks.PrismaService.session.update.mockResolvedValue(mockCancelledSession);
+      test.mocks.TimeSlotsService.markAsAvailableInternal.mockResolvedValue(undefined);
 
       const result = await test.service.cancel(sessionId, userId, Role.USER);
 
@@ -607,30 +645,36 @@ describe('SessionsService', () => {
         data: { status: SessionStatus.CANCELLED },
         include: expect.any(Object),
       });
+      expect(test.mocks.TimeSlotsService.markAsAvailableInternal).toHaveBeenCalledWith(timeSlotId);
     });
 
     it('should allow coach to cancel session', async () => {
       const sessionId = 'session-123';
       const coachId = 'coach-123';
+      const timeSlotId = 'time-slot-123';
       const futureDate = new Date(Date.now() + ONE_DAY_MS);
       const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
         coachId,
+        timeSlotId,
         dateTime: futureDate,
         status: SessionStatus.SCHEDULED,
       });
       const mockCancelledSession = test.factory.session.createWithNulls({
         id: sessionId,
         coachId,
+        timeSlotId,
         status: SessionStatus.CANCELLED,
       });
 
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
       test.mocks.PrismaService.session.update.mockResolvedValue(mockCancelledSession);
+      test.mocks.TimeSlotsService.markAsAvailableInternal.mockResolvedValue(undefined);
 
       const result = await test.service.cancel(sessionId, coachId, Role.COACH);
 
       expect(result.status).toBe(SessionStatus.CANCELLED);
+      expect(test.mocks.TimeSlotsService.markAsAvailableInternal).toHaveBeenCalledWith(timeSlotId);
     });
 
     it('should throw NotFoundException when session not found', async () => {
@@ -640,6 +684,7 @@ describe('SessionsService', () => {
         NotFoundException
       );
       expect(test.mocks.PrismaService.session.update).not.toHaveBeenCalled();
+      expect(test.mocks.TimeSlotsService.markAsAvailableInternal).not.toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException when user is not authorized', async () => {
@@ -658,6 +703,7 @@ describe('SessionsService', () => {
         'Not authorized to cancel this session'
       );
       expect(test.mocks.PrismaService.session.update).not.toHaveBeenCalled();
+      expect(test.mocks.TimeSlotsService.markAsAvailableInternal).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when session already cancelled', async () => {
@@ -675,6 +721,7 @@ describe('SessionsService', () => {
         'Session already cancelled'
       );
       expect(test.mocks.PrismaService.session.update).not.toHaveBeenCalled();
+      expect(test.mocks.TimeSlotsService.markAsAvailableInternal).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when cancelling past session', async () => {
@@ -693,6 +740,7 @@ describe('SessionsService', () => {
         'Cannot cancel past sessions'
       );
       expect(test.mocks.PrismaService.session.update).not.toHaveBeenCalled();
+      expect(test.mocks.TimeSlotsService.markAsAvailableInternal).not.toHaveBeenCalled();
     });
   });
 

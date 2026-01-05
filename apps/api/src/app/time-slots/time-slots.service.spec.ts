@@ -526,4 +526,88 @@ describe('TimeSlotsService', () => {
       expect(test.mocks.PrismaService.timeSlot.delete).not.toHaveBeenCalled();
     });
   });
+
+  describe('markAsUnavailableInternal', () => {
+    it('should mark time slot as unavailable', async () => {
+      const existingTimeSlot = test.factory.timeSlot.createWithNulls({
+        id: 'slot-123',
+        isAvailable: true,
+      });
+      test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(existingTimeSlot);
+      test.mocks.PrismaService.timeSlot.update.mockResolvedValue({
+        ...existingTimeSlot,
+        isAvailable: false,
+      });
+
+      await test.service.markAsUnavailableInternal('slot-123');
+
+      expect(test.mocks.PrismaService.timeSlot.findFirst).toHaveBeenCalledWith({
+        where: { id: 'slot-123' },
+        include: {
+          coach: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+      expect(test.mocks.PrismaService.timeSlot.update).toHaveBeenCalledWith({
+        where: { id: 'slot-123' },
+        data: { isAvailable: false },
+      });
+    });
+
+    it('should throw NotFoundException when time slot not found', async () => {
+      test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(null);
+
+      await expect(test.service.markAsUnavailableInternal('nonexistent-id')).rejects.toThrow(
+        NotFoundException
+      );
+      expect(test.mocks.PrismaService.timeSlot.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('markAsAvailableInternal', () => {
+    it('should mark time slot as available', async () => {
+      const existingTimeSlot = test.factory.timeSlot.createWithNulls({
+        id: 'slot-123',
+        isAvailable: false,
+      });
+      test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(existingTimeSlot);
+      test.mocks.PrismaService.timeSlot.update.mockResolvedValue({
+        ...existingTimeSlot,
+        isAvailable: true,
+      });
+
+      await test.service.markAsAvailableInternal('slot-123');
+
+      expect(test.mocks.PrismaService.timeSlot.findFirst).toHaveBeenCalledWith({
+        where: { id: 'slot-123' },
+        include: {
+          coach: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+      expect(test.mocks.PrismaService.timeSlot.update).toHaveBeenCalledWith({
+        where: { id: 'slot-123' },
+        data: { isAvailable: true },
+      });
+    });
+
+    it('should throw NotFoundException when time slot not found', async () => {
+      test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(null);
+
+      await expect(test.service.markAsAvailableInternal('nonexistent-id')).rejects.toThrow(
+        NotFoundException
+      );
+      expect(test.mocks.PrismaService.timeSlot.update).not.toHaveBeenCalled();
+    });
+  });
 });

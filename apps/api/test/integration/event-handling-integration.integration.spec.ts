@@ -1,10 +1,3 @@
-/**
- * Event Handling Integration Tests
- * Tests event handling, message passing, and session state changes across modules
- *
- * Validates: Requirements 6.1, 3.6
- */
-
 import { SessionStatus } from '@prisma/client';
 
 import { AccountsModule } from '../../src/app/accounts/accounts.module';
@@ -67,13 +60,6 @@ describe('Event Handling Integration Tests', () => {
     });
   });
 
-  /**
-   * Message Event Handling Tests
-   * Validates: Requirements 6.1
-   *
-   * Tests message creation events across sessions and verifies
-   * that messages are properly associated with sessions.
-   */
   describe('Message Event Handling', () => {
     describe('Message creation events across sessions', () => {
       it('should create message event and associateth session', async () => {
@@ -271,12 +257,6 @@ describe('Event Handling Integration Tests', () => {
     });
   });
 
-  /**
-   * Session State Change Events Tests
-   * Validates: Requirements 3.6
-   *
-   * Tests session status change events and cancellation events.
-   */
   describe('Session State Change Events', () => {
     describe('Session status change events', () => {
       it('should handle session update event', async () => {

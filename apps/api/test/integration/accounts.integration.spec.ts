@@ -392,14 +392,6 @@ describe('Accounts Integration', () => {
     );
   });
 
-  /**
-   * Resource Ownership Authorization Tests
-   * Feature: integration-tests-refactoring, Property 3: Resource Ownership Authorization
-   * Validates: Requirements 2.2, 2.4, 2.5, 12.3
-   *
-   * For any user attempting to access, update, or delete a resource (account),
-   * access should be granted only if the user owns the resource or has an elevated role (ADMIN).
-   */
   describe('Resource Ownership Authorization', () => {
     describe('Account Access Authorization', () => {
       const accessTestCases = [
