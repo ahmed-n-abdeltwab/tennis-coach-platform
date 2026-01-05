@@ -354,4 +354,189 @@ describe('Accounts Integration', () => {
       });
     });
   });
+
+  describe('Role-Based Account Listing Access', () => {
+    const roleTestCases = [
+      { role: Role.ADMIN, shouldHaveAccess: true, description: 'ADMIN' },
+      { role: Role.COACH, shouldHaveAccess: true, description: 'COACH' },
+      { role: Role.USER, shouldHaveAccess: false, description: 'USER' },
+      { role: Role.PREMIUM_USER, shouldHaveAccess: false, description: 'PREMIUM_USER' },
+    ] as const;
+
+    it.each(roleTestCases)(
+      'should $description role $shouldHaveAccess access to account listing',
+      async ({ role, shouldHaveAccess }) => {
+        // Create a user with the specified role
+        const account = await test.db.createTestUser({ role });
+        const token = await test.auth.createToken({
+          sub: account.id,
+          email: account.email,
+          role,
+        });
+
+        const response = await test.http.authenticatedGet('/api/accounts', token);
+
+        if (shouldHaveAccess) {
+          expect(response.ok).toBe(true);
+          if (response.ok) {
+            expect(response.status).toBe(200);
+            expect(Array.isArray(response.body)).toBe(true);
+          }
+        } else {
+          expect(response.ok).toBe(false);
+          if (!response.ok) {
+            expect(response.status).toBe(403);
+          }
+        }
+      }
+    );
+  });
+
+  /**
+   * Resource Ownership Authorization Tests
+   * Feature: integration-tests-refactoring, Property 3: Resource Ownership Authorization
+   * Validates: Requirements 2.2, 2.4, 2.5, 12.3
+   *
+   * For any user attempting to access, update, or delete a resource (account),
+   * access should be granted only if the user owns the resource or has an elevated role (ADMIN).
+   */
+  describe('Resource Ownership Authorization', () => {
+    describe('Account Access Authorization', () => {
+      const accessTestCases = [
+        { isOwner: true, isAdmin: false, description: 'owner accessing own account' },
+        { isOwner: false, isAdmin: true, description: 'admin accessing other account' },
+        {
+          isOwner: false,
+          isAdmin: false,
+          description: 'non-owner non-admin accessing other account',
+        },
+      ] as const;
+
+      it.each(accessTestCases)(
+        'should handle $description correctly for GET',
+        async ({ isOwner, isAdmin }) => {
+          // Create target account
+          const targetAccount = await test.db.createTestUser();
+
+          // Create requesting user
+          let requestingAccount;
+          if (isOwner) {
+            requestingAccount = targetAccount;
+          } else if (isAdmin) {
+            requestingAccount = await test.db.createTestUser({ role: Role.ADMIN });
+          } else {
+            requestingAccount = await test.db.createTestUser();
+          }
+
+          const token = await test.auth.createToken({
+            sub: requestingAccount.id,
+            email: requestingAccount.email,
+            role: requestingAccount.role,
+          });
+
+          const response = await test.http.authenticatedGet(
+            `/api/accounts/${targetAccount.id}` as '/api/accounts/{id}',
+            token
+          );
+
+          expect(response.ok).toBe(true);
+          if (response.ok) {
+            if (isOwner || isAdmin) {
+              // Owner or admin should get the target account
+              expect(response.body.id).toBe(targetAccount.id);
+            } else {
+              // Non-owner non-admin gets their own account (API behavior)
+              expect(response.body.id).toBe(requestingAccount.id);
+            }
+          }
+        }
+      );
+
+      it.each(accessTestCases)(
+        'should handle $description correctly for PATCH',
+        async ({ isOwner, isAdmin }) => {
+          // Create target account
+          const targetAccount = await test.db.createTestUser();
+
+          // Create requesting user
+          let requestingAccount;
+          if (isOwner) {
+            requestingAccount = targetAccount;
+          } else if (isAdmin) {
+            requestingAccount = await test.db.createTestUser({ role: Role.ADMIN });
+          } else {
+            requestingAccount = await test.db.createTestUser();
+          }
+
+          const token = await test.auth.createToken({
+            sub: requestingAccount.id,
+            email: requestingAccount.email,
+            role: requestingAccount.role,
+          });
+
+          const updateData = { name: 'Updated Name' };
+
+          const response = await test.http.authenticatedPatch(
+            `/api/accounts/${targetAccount.id}` as '/api/accounts/{id}',
+            token,
+            { body: updateData }
+          );
+
+          expect(response.ok).toBe(true);
+          if (response.ok) {
+            if (isOwner || isAdmin) {
+              // Owner or admin should update the target account
+              expect(response.body.id).toBe(targetAccount.id);
+              expect(response.body.name).toBe(updateData.name);
+            } else {
+              // Non-owner non-admin updates their own account (API behavior)
+              expect(response.body.id).toBe(requestingAccount.id);
+            }
+          }
+        }
+      );
+    });
+
+    describe('Account Deletion Authorization', () => {
+      const deleteTestCases = [
+        { role: Role.ADMIN, shouldSucceed: true, description: 'ADMIN' },
+        { role: Role.COACH, shouldSucceed: true, description: 'COACH' },
+        { role: Role.USER, shouldSucceed: false, description: 'USER' },
+        { role: Role.PREMIUM_USER, shouldSucceed: false, description: 'PREMIUM_USER' },
+      ] as const;
+
+      it.each(deleteTestCases)(
+        'should $description role $shouldSucceed delete other accounts',
+        async ({ role, shouldSucceed }) => {
+          // Create target account to delete
+          const targetAccount = await test.db.createTestUser();
+
+          // Create requesting user with specified role
+          const requestingAccount = await test.db.createTestUser({ role });
+          const token = await test.auth.createToken({
+            sub: requestingAccount.id,
+            email: requestingAccount.email,
+            role,
+          });
+
+          const response = await test.http.authenticatedDelete(
+            `/api/accounts/${targetAccount.id}` as '/api/accounts/{id}',
+            token
+          );
+
+          if (shouldSucceed) {
+            expect(response.ok).toBe(true);
+            if (response.ok) {
+              expect(response.status).toBe(200);
+            }
+          } else {
+            expect(response.ok).toBe(false);
+            if (!response.ok) {
+              expect(response.status).toBe(403);
+            }
+          }
+        }
+      );
+    });
+  });
 });

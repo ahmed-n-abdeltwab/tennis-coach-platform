@@ -1,4 +1,4 @@
-import { createTypedApiDecorators } from '@common';
+import { createTypedApiDecorators, IsCuid } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SessionStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
@@ -12,7 +12,6 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
 } from 'class-validator';
 
 import { BookingTypeResponseDto } from '../../booking-types/dto';
@@ -143,13 +142,13 @@ export class SessionResponseDto {
 // -------------------------------------------------------
 
 export class CreateSessionDto {
-  @ApiProperty()
-  @IsUUID()
+  @ApiProperty({ description: 'Booking type CUID' })
+  @IsCuid()
   @IsNotEmpty()
   bookingTypeId: string;
 
-  @ApiProperty()
-  @IsUUID()
+  @ApiProperty({ description: 'Time slot CUID' })
+  @IsCuid()
   @IsNotEmpty()
   timeSlotId: string;
 

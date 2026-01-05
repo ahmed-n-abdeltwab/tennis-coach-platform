@@ -23,19 +23,28 @@ export class PrismaService
     const pool = new Pool({ connectionString: prismaConfiguration.database_url });
     const adapter = new PrismaPg(pool);
 
+    // Only enable query logging in non-test environments
+    const isTestEnv = process.env.NODE_ENV === 'test';
+    const logConfig: Prisma.LogLevel[] = isTestEnv
+      ? ['warn', 'error']
+      : ['query', 'info', 'warn', 'error'];
+
     super({
       adapter,
-      log: ['query', 'info', 'warn', 'error'],
+      log: logConfig,
       errorFormat: 'pretty',
     });
 
     this.pool = pool;
 
-    this.$on('query', queryEvent => {
-      this.logger.log(
-        `Query took ${queryEvent.duration}ms\nSQL: ${queryEvent.query}\nParams: ${queryEvent.params}`
-      );
-    });
+    // Only attach query listener in non-test environments
+    if (!isTestEnv) {
+      this.$on('query', queryEvent => {
+        this.logger.log(
+          `Query took ${queryEvent.duration}ms\nSQL: ${queryEvent.query}\nParams: ${queryEvent.params}`
+        );
+      });
+    }
   }
   async onModuleInit() {
     await this.$connect();

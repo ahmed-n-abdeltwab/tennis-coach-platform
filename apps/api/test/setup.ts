@@ -4,7 +4,7 @@
  */
 
 import { setupTestEnvironment } from './setup/shared';
-import { RedisService } from './utils/mocks/redis.mock';
+import { nodemailerMock, RedisService } from './utils/mocks';
 
 // Set up common test environment variables
 setupTestEnvironment({
@@ -74,9 +74,4 @@ jest.mock('@prisma/client', () => ({
   },
 }));
 
-jest.mock('nodemailer', () => ({
-  createTransport: jest.fn(() => ({
-    sendMail: jest.fn().mockResolvedValue({ messageId: 'test-message-id' }),
-    verify: jest.fn().mockResolvedValue(true),
-  })),
-}));
+jest.mock('nodemailer', () => nodemailerMock);

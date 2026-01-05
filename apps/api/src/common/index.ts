@@ -1,5 +1,6 @@
 // Decorators
 export * from './decorators/api-responses.decorator';
+export * from './decorators/is-cuid.decorator';
 export * from './decorators/typed-api-responses.decorator';
 
 // Filters

@@ -75,6 +75,14 @@ export function setupTestEnvironment(config: TestEnvironmentConfig): void {
   assign('SMTP_SENDER_EMAIL', 'test@example.com');
   assign('SMTP_TOKEN', `${jwtSecretSuffix}-token`);
 
+  // Redis configuration
+  const redisDb =
+    databaseSuffix === 'test_integration' ? '1' : databaseSuffix === 'test_e2e' ? '2' : '0';
+  assign('REDIS_HOST', process.env.REDIS_HOST ?? '127.0.0.1');
+  assign('REDIS_PORT', process.env.REDIS_PORT ?? '6379');
+  assign('REDIS_DB', redisDb);
+  // REDIS_PASSWORD is optional - only set if provided in environment
+
   // App configuration
   assign('PORT', port);
   assign('FRONTEND_URL', port === '0' ? 'http://localhost:3000' : 'http://localhost:4200');

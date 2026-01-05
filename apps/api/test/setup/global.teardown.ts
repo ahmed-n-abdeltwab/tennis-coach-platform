@@ -7,6 +7,7 @@
  */
 
 import {
+  cleanupRedis,
   delayForCleanup,
   detectTestType,
   dropTestDatabase,
@@ -37,6 +38,9 @@ export default async function globalTeardown(): Promise<void> {
     const databaseUrl = `postgresql://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${databaseName}`;
 
     await dropTestDatabase(databaseUrl);
+
+    // Cleanup Redis
+    await cleanupRedis();
   }
 
   // eslint-disable-next-line no-console

@@ -15,13 +15,7 @@
         "main": "apps/api/src/main.ts",
         "tsConfig": "apps/api/tsconfig.app.json",
         "webpackConfig": "apps/api/webpack.config.js",
-        "assets": [
-          {
-            "input": "apps/api",
-            "glob": "swagger.json",
-            "output": "."
-          }
-        ]
+        "assets": []
       },
       "configurations": {
         "development": {
@@ -50,6 +44,14 @@
           "buildTarget": "api:build:production"
         }
       }
+    },
+    "generate-types": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx ts-node -r tsconfig-paths/register scripts/generate-types.ts",
+        "cwd": "{projectRoot}"
+      },
+      "outputs": ["{workspaceRoot}/libs/contracts/src/endpoints.generated.ts"]
     },
     "test": {
       "executor": "nx:run-commands",

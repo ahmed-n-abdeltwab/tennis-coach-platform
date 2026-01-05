@@ -1,9 +1,10 @@
 /**
  * Integration Test Environment Setup
  * Runs BEFORE module imports - sets up environment without mocking Prisma
+ * Uses real Redis connection (not mocked)
  */
 
-import { RedisService } from '../utils/mocks/redis.mock';
+import { nodemailerMock } from '../utils/mocks';
 
 import { setupTestEnvironment } from './shared';
 
@@ -17,15 +18,7 @@ setupTestEnvironment({
   useStrictAssignment: true,
 });
 
-jest.mock('../../src/app/redis/redis.service', () => ({ RedisService }));
+// Note: Redis is NOT mocked for integration tests - uses real Redis connection
+// The RedisService will connect to Redis db specified by REDIS_DB env var
 
-jest.mock('nodemailer', () => ({
-  createTransport: jest.fn().mockReturnValue({
-    sendMail: jest.fn().mockResolvedValue({
-      messageId: 'test-message-id',
-      accepted: ['test@example.com'],
-      rejected: [],
-    }),
-    verify: jest.fn().mockResolvedValue(true),
-  }),
-}));
+jest.mock('nodemailer', () => nodemailerMock);
