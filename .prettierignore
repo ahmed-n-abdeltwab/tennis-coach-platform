@@ -16,6 +16,7 @@ out/
 *.min.css
 coverage/
 .nyc_output/
+libs/contracts/src/endpoints.generated.ts
 
 # Package manager files
 package-lock.json
