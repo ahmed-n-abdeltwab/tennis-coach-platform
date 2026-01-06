@@ -63,6 +63,18 @@ describe('BookingTypesService', () => {
       expect(result).toHaveLength(1);
       expect(test.mocks.PrismaService.bookingType.findMany).toHaveBeenCalledWith({
         where: { isActive: true },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          coach: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
       });
     });
   });
@@ -86,6 +98,18 @@ describe('BookingTypesService', () => {
           coachId,
           isActive: true,
         },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          coach: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
       });
     });
   });
@@ -107,6 +131,15 @@ describe('BookingTypesService', () => {
       });
       expect(test.mocks.PrismaService.bookingType.findFirst).toHaveBeenCalledWith({
         where: { id: 'booking-type-1' },
+        include: {
+          coach: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
       });
     });
 
@@ -183,6 +216,15 @@ describe('BookingTypesService', () => {
       });
       expect(test.mocks.PrismaService.bookingType.findFirst).toHaveBeenCalledWith({
         where: { id: bookingTypeId },
+        include: {
+          coach: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
       });
       expect(test.mocks.PrismaService.bookingType.update).toHaveBeenCalledWith({
         where: { id: bookingTypeId },
@@ -240,6 +282,15 @@ describe('BookingTypesService', () => {
 
       expect(test.mocks.PrismaService.bookingType.findFirst).toHaveBeenCalledWith({
         where: { id: bookingTypeId },
+        include: {
+          coach: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
       });
       expect(test.mocks.PrismaService.bookingType.update).toHaveBeenCalledWith({
         where: { id: bookingTypeId },

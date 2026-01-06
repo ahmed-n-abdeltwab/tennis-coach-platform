@@ -69,10 +69,6 @@ describe('Messages Integration', () => {
     });
   });
 
-  /**
-   * Message Creation Tests
-   * Validates: Requirements 6.1, 6.4
-   */
   describe('Message Creation Workflows', () => {
     describe('POST /api/messages', () => {
       it('should allow user to send message to coach', async () => {
@@ -211,10 +207,6 @@ describe('Messages Integration', () => {
     });
   });
 
-  /**
-   * Message Retrieval Tests
-   * Validates: Requirements 6.2, 6.3
-   */
   describe('Message Retrieval Workflows', () => {
     describe('GET /api/messages', () => {
       it('should retrieve all messages for current user', async () => {
@@ -561,14 +553,6 @@ describe('Messages Integration', () => {
     });
   });
 
-  /**
-   * Message Session Context Tests
-   * Feature: integration-tests-refactoring, Property 13: Message Session Context
-   * Validates: Requirements 6.1, 6.2, 10.4
-   *
-   * For any message created within a session, the message should be retrievable
-   * by both the sender and receiver who are participants in that session.
-   */
   describe('Message Session Context', () => {
     const participantTestCases = [
       { role: 'sender', description: 'sender (user)' },

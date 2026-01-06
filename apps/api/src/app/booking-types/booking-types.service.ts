@@ -11,6 +11,20 @@ import {
   UpdateBookingTypeDto,
 } from './dto/booking-type.dto';
 
+/**
+ * Standard include object for booking type queries.
+ * Includes coach relation with selected fields for consistent responses.
+ */
+const BOOKING_TYPE_INCLUDE = {
+  coach: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+} as const;
+
 @Injectable()
 export class BookingTypesService {
   constructor(private prisma: PrismaService) {}
@@ -23,11 +37,18 @@ export class BookingTypesService {
 
     // 1. Run the query based on if we expect one or many
     const result = isMany
-      ? await this.prisma.bookingType.findMany({ where })
-      : await this.prisma.bookingType.findFirst({ where }); // findFirst returns Object | null
+      ? await this.prisma.bookingType.findMany({
+          where,
+          include: BOOKING_TYPE_INCLUDE,
+          orderBy: { createdAt: 'desc' },
+        })
+      : await this.prisma.bookingType.findFirst({
+          where,
+          include: BOOKING_TYPE_INCLUDE,
+        });
 
     // 2. Handle the "Not Found" case
-    const isEmpty = isMany ? (result as any[]).length === 0 : result === null;
+    const isEmpty = isMany ? (result as BookingType[]).length === 0 : result === null;
 
     if (throwIfNotFound && isEmpty) {
       throw new NotFoundException('Booking Type not found');

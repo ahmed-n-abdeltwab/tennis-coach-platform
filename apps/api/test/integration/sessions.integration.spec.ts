@@ -559,15 +559,6 @@ describe('Sessions Integration', () => {
     });
   });
 
-  /**
-   * Session Filtering Consistency Tests
-   * Feature: integration-tests-refactoring, Property 5: Session Filtering Consistency
-   * Validates: Requirements 3.3, 3.7
-   *
-   * For any session query with status or date range filters, the returned sessions
-   * should all match the specified filter criteria and belong to the requesting user
-   * (or coach for their sessions).
-   */
   describe('Session Filtering Consistency', () => {
     const statusTestCases = [
       { status: SessionStatus.SCHEDULED, description: 'SCHEDULED' },
@@ -604,14 +595,6 @@ describe('Sessions Integration', () => {
     );
   });
 
-  /**
-   * Session State Transitions Tests
-   * Feature: integration-tests-refactoring, Property 6: Session State Transitions
-   * Validates: Requirements 3.6
-   *
-   * For any session in SCHEDULED status, cancellation should change the status to
-   * CANCELLED and the session should remain retrievable with the updated status.
-   */
   describe('Session State Transitions', () => {
     const cancellableStatuses = [
       { status: SessionStatus.SCHEDULED, canCancel: true, description: 'SCHEDULED' },

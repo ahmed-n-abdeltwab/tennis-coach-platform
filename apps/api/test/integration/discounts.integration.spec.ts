@@ -49,10 +49,6 @@ describe('Discounts Integration', () => {
     });
   });
 
-  /**
-   * Discount Creation Tests
-   * Requirements: 8.1
-   */
   describe('Discount Creation', () => {
     describe('POST /api/discounts', () => {
       it('should allow coach to create discount code', async () => {
@@ -183,10 +179,6 @@ describe('Discounts Integration', () => {
     });
   });
 
-  /**
-   * Discount Retrieval Tests
-   * Requirements: 8.2
-   */
   describe('Discount Retrieval', () => {
     describe('GET /api/discounts', () => {
       it('should allow coach to retrieve their discounts', async () => {
@@ -278,10 +270,6 @@ describe('Discounts Integration', () => {
     });
   });
 
-  /**
-   * Discount Validation Tests
-   * Requirements: 8.3, 8.5
-   */
   describe('Discount Validation', () => {
     describe('POST /api/discounts/validate', () => {
       it('should validate active discount code successfully', async () => {
@@ -376,10 +364,6 @@ describe('Discounts Integration', () => {
     });
   });
 
-  /**
-   * Discount Usage Tracking Tests
-   * Requirements: 8.4
-   */
   describe('Discount Usage Tracking', () => {
     describe('PUT /api/discounts/:code', () => {
       it('should allow coach to update their discount', async () => {
@@ -510,15 +494,6 @@ describe('Discounts Integration', () => {
     });
   });
 
-  /**
-   * Discount Validation and Usage Tracking Tests
-   * Feature: integration-tests-refactoring, Property 7: Discount Validation and Usage Tracking
-   * Validates: Requirements 3.2, 8.3, 8.4
-   *
-   * For any active, non-expired discount code with remaining usage, validation
-   * should succeed and applying it to a session should increment the usage count by
-   * exactly one.
-   */
   describe('Discount Validation and Usage Tracking', () => {
     const discountStates = [
       {

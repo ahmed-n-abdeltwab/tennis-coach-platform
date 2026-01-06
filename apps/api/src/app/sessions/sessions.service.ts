@@ -157,24 +157,42 @@ export class SessionsService {
     return plainToInstance(SessionResponseDto, session);
   }
 
+  /** Maximum number of pending (unpaid) bookings a user can have */
+  private static readonly MAX_PENDING_BOOKINGS = 3;
+
   async create(createDto: CreateSessionDto, userId: string): Promise<SessionResponseDto> {
     const { bookingTypeId, timeSlotId, discountCode, notes } = createDto;
 
-    // 1. Validate Booking Type using BookingTypesService internal method
+    // 1. Check user's pending bookings limit to prevent abuse
+    const pendingBookingsCount = await this.prisma.session.count({
+      where: {
+        userId,
+        isPaid: false,
+        status: SessionStatus.SCHEDULED,
+      },
+    });
+
+    if (pendingBookingsCount >= SessionsService.MAX_PENDING_BOOKINGS) {
+      throw new BadRequestException(
+        `Maximum pending bookings (${SessionsService.MAX_PENDING_BOOKINGS}) reached. Please complete payment for existing bookings.`
+      );
+    }
+
+    // 2. Validate Booking Type using BookingTypesService internal method
     const bookingType = await this.bookingTypesService.findActiveById(bookingTypeId);
 
     if (!bookingType) {
       throw new BadRequestException('Invalid booking type');
     }
 
-    // 2. Validate Time Slot using TimeSlotsService internal method
+    // 3. Validate Time Slot using TimeSlotsService internal method
     const timeSlot = await this.timeSlotsService.findAvailableById(timeSlotId);
 
     if (!timeSlot) {
       throw new BadRequestException('Time slot not available');
     }
 
-    // 3. Calculate Price & Apply Discount
+    // 4. Calculate Price & Apply Discount
     let price = bookingType.basePrice;
     let discountId: string | undefined;
     let appliedDiscountCode: string | undefined;
@@ -190,7 +208,7 @@ export class SessionsService {
       }
     }
 
-    // 4. Create Session
+    // 5. Create Session
     const session = await this.prisma.session.create({
       data: {
         userId,
@@ -207,7 +225,10 @@ export class SessionsService {
       include: SESSION_INCLUDE,
     });
 
-    // 5. Update discount usage if applicable using DiscountsService internal method
+    // 6. Mark time slot as unavailable immediately after booking
+    await this.timeSlotsService.markAsUnavailableInternal(timeSlotId);
+
+    // 7. Update discount usage if applicable using DiscountsService internal method
     if (appliedDiscountCode) {
       await this.discountsService.incrementUsageInternal(appliedDiscountCode);
     }
@@ -262,6 +283,9 @@ export class SessionsService {
       data: { status: SessionStatus.CANCELLED },
       include: SESSION_INCLUDE,
     });
+
+    // 4. Mark time slot as available again so others can book it
+    await this.timeSlotsService.markAsAvailableInternal(session.timeSlotId);
 
     return plainToInstance(SessionResponseDto, cancelledSession);
   }

@@ -628,15 +628,6 @@ describe('Booking System Integration', () => {
     });
   });
 
-  /**
-   * Session Creation with Valid Dependencies Tests
-   * Feature: integration-tests-refactoring, Property 4: Session Creation with Valid Dependencies
-   * Validates: Requirements 3.1, 10.1
-   *
-   * For any valid booking type and available time slot belonging to the same coach,
-   * POST /api/sessions should create a session linking the user, coach, booking type,
-   * and time slot correctly.
-   */
   describe('Session Creation with Valid Dependencies', () => {
     const bookingTypeConfigs = [
       { name: 'Individual Lesson', basePrice: 100, durationMin: 60 },

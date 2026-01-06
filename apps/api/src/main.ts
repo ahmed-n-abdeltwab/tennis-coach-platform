@@ -7,6 +7,7 @@ import { AppModule } from './app/app.module';
 import { AppLoggerService } from './app/logger/app-logger.service';
 import { HttpLoggingInterceptor } from './app/logger/http-logging.interceptor';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { createRateLimiter } from './config/security.config';
 
 async function bootstrap() {
   // Configure logger with environment-based log levels before application initialization
@@ -26,6 +27,9 @@ async function bootstrap() {
 
   // Global prefix
   app.setGlobalPrefix('api');
+
+  // Rate limiting - 100 requests per 15 minutes per IP
+  app.use(createRateLimiter());
 
   // Global validation pipe
   app.useGlobalPipes(

@@ -2,7 +2,7 @@ import { createTypedApiDecorators } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Decimal } from '@prisma/client/runtime/client';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsDate, IsEmail, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 export class CoachDto {
   @IsString()
   id: string;
@@ -11,8 +11,8 @@ export class CoachDto {
   name: string;
 
   @IsOptional()
-  @IsString()
-  credentials?: string;
+  @IsEmail()
+  email: string;
 }
 export class BookingTypeResponseDto {
   @ApiProperty()
@@ -49,6 +49,10 @@ export class BookingTypeResponseDto {
   @ApiProperty({ example: 'coach-id-123' })
   @IsString()
   coachId: string;
+
+  @ApiProperty({ type: CoachDto })
+  @Type(() => CoachDto)
+  coach: CoachDto;
 }
 
 export class GetAllBookingTypeResponseDto extends BookingTypeResponseDto {}

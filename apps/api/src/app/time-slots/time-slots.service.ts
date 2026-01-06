@@ -57,12 +57,21 @@ export class TimeSlotsService {
     return plainToInstance(TimeSlotResponseDto, timeSlot);
   }
 
-  /** Mark time slot as unavailable - used by PaymentsService after successful payment */
+  /** Mark time slot as unavailable - used by SessionsService after booking */
   async markAsUnavailableInternal(id: string): Promise<void> {
     await this.findTimeSlotInternal({ id }); // Verify exists
     await this.prisma.timeSlot.update({
       where: { id },
       data: { isAvailable: false },
+    });
+  }
+
+  /** Mark time slot as available - used by SessionsService after cancellation */
+  async markAsAvailableInternal(id: string): Promise<void> {
+    await this.findTimeSlotInternal({ id }); // Verify exists
+    await this.prisma.timeSlot.update({
+      where: { id },
+      data: { isAvailable: true },
     });
   }
 

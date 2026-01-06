@@ -90,10 +90,6 @@ describe('Middleware Pipeline Integration Tests', () => {
     });
   });
 
-  // ============================================================================
-  // 16.1 Authentication Middleware Pipeline Tests
-  // Validates: Requirements 12.1, 12.5
-  // ============================================================================
   describe('Authentication Middleware Pipeline', () => {
     it('should enforce authentication on GET /api/accounts/me', async () => {
       const response = await test.http.get('/api/accounts/me');
@@ -155,11 +151,6 @@ describe('Middleware Pipeline Integration Tests', () => {
       }
     });
   });
-
-  // ============================================================================
-  // 16.2 Authorization Middleware Pipeline Tests
-  // Validates: Requirements 12.2, 12.3, 12.6
-  // ============================================================================
   describe('Authorization Middleware Pipeline', () => {
     it('should enforce role-based access control on GET /api/accounts', async () => {
       const userResponse = await test.http.authenticatedGet('/api/accounts', userToken);
@@ -233,10 +224,6 @@ describe('Middleware Pipeline Integration Tests', () => {
     });
   });
 
-  // ============================================================================
-  // 16.3 Validation Middleware Pipeline Tests
-  // Validates: Requirements 13.1, 13.4
-  // ============================================================================
   describe('Validation Middleware Pipeline', () => {
     it('should validate request bodies for session creation', async () => {
       const response = await test.http.authenticatedPost('/api/sessions', userToken, { body: {} });
@@ -306,10 +293,6 @@ describe('Middleware Pipeline Integration Tests', () => {
     });
   });
 
-  // ============================================================================
-  // 16.4 Error Handling Middleware Pipeline Tests
-  // Validates: Requirements 13.2, 13.3
-  // ============================================================================
   describe('Error Handling Middleware Pipeline', () => {
     it('should handle 404 errors for non-existent accounts', async () => {
       const response = await test.http.authenticatedGet(
@@ -362,11 +345,6 @@ describe('Middleware Pipeline Integration Tests', () => {
     });
   });
 
-  // ============================================================================
-  // 16.5 Property 8: Authentication Enforcement
-  // Feature: integration-tests-refactoring
-  // Validates: Requirements 2.6, 4.3, 7.4, 12.1, 12.5
-  // ============================================================================
   describe('Authentication Enforcement (Property 8)', () => {
     // Note: /api/booking-types is public (no auth required) - everyone needs to see available booking types
     // /api/time-slots requires auth - users must login to see available time slots
@@ -413,11 +391,6 @@ describe('Middleware Pipeline Integration Tests', () => {
     });
   });
 
-  // ============================================================================
-  // 16.6 Property 9: Authorization Enforcement
-  // Feature: integration-tests-refactoring
-  // Validates: Requirements 12.2, 12.6
-  // ============================================================================
   describe('Authorization Enforcement (Property 9)', () => {
     const roleTestCases = [
       { role: Role.USER, canListAccounts: false, canDeleteAccounts: false },
@@ -482,11 +455,6 @@ describe('Middleware Pipeline Integration Tests', () => {
     );
   });
 
-  // ============================================================================
-  // 16.7 Property 11: Input Validation Enforcement
-  // Feature: integration-tests-refactoring
-  // Validates: Requirements 3.8, 13.1, 13.4
-  // ============================================================================
   describe('Input Validation Enforcement (Property 11)', () => {
     const invalidInputScenarios = [
       {
@@ -572,11 +540,6 @@ describe('Middleware Pipeline Integration Tests', () => {
     });
   });
 
-  // ============================================================================
-  // 16.8 Property 10: Non-Existent Resource Handling
-  // Feature: integration-tests-refactoring
-  // Validates: Requirements 2.7, 13.2, 13.3
-  // ============================================================================
   describe('Non-Existent Resource Handling (Property 10)', () => {
     const nonExistentResourceEndpoints = [
       {

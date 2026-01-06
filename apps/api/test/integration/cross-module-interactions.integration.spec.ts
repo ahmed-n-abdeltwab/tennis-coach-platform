@@ -98,13 +98,6 @@ describe('Cross-Module Integration Tests', () => {
     });
   });
 
-  /**
-   * Service-to-Service Interaction Tests
-   * Validates: Requirements 10.1, 10.4
-   *
-   * Tests the interaction between different services when creating sessions,
-   * applying discounts, and sending messages within session context.
-   */
   describe('Service-to-Service Interactions', () => {
     describe('Session Creation with Discount Service', () => {
       it('should create session with valid discount code applied', async () => {
@@ -322,13 +315,6 @@ describe('Cross-Module Integration Tests', () => {
     });
   });
 
-  /**
-   * Session with Payment Tests
-   * Validates: Requirements 10.2
-   *
-   * Tests the interaction between sessions and payments modules,
-   * ensuring sessions and payments are linked correctly.
-   */
   describe('Session with Payment Integration', () => {
     describe('Session-Payment Linkage', () => {
       it('should correctly reflect unpaid session status', async () => {
@@ -467,13 +453,6 @@ describe('Cross-Module Integration Tests', () => {
     });
   });
 
-  /**
-   * Session with Notifications Tests
-   * Validates: Requirements 10.3
-   *
-   * Tests the interaction between sessions and notifications modules,
-   * ensuring notifications can be triggered for session events.
-   */
   describe('Session with Notifications Integration', () => {
     describe('Booking Confirmation Notifications', () => {
       it('should send booking confirmation for valid session', async () => {

@@ -178,11 +178,6 @@ describe('Health Endpoints Integration', () => {
     });
   });
 
-  /**
-   * Health Endpoint Accessibility Tests
-   * Feature: integration-tests-refactoring, Property 12: Health Endpoint Accessibility
-   * Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5
-   */
   describe('Health Endpoint Accessibility', () => {
     const healthEndpoints = [
       '/api/health',
