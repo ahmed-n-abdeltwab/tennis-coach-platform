@@ -7,7 +7,7 @@ import { AppModule } from './app/app.module';
 import { AppLoggerService } from './app/logger/app-logger.service';
 import { HttpLoggingInterceptor } from './app/logger/http-logging.interceptor';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
-import { createRateLimiter } from './config/security.config';
+import { corsConfig, createRateLimiter } from './config/security.config';
 
 async function bootstrap() {
   // Configure logger with environment-based log levels before application initialization
@@ -39,11 +39,8 @@ async function bootstrap() {
       transform: true,
     })
   );
-  // CORS
-  app.enableCors({
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:4200',
-    credentials: true,
-  });
+  // CORS - use production-aware configuration
+  app.enableCors(corsConfig);
 
   // API Documentation
   const options = new DocumentBuilder()

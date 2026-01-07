@@ -1,6 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --color-orange-500: #f97316;
+  --color-orange-600: #ea580c;
+}
 
 @layer base {
   body {
