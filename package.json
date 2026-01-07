@@ -41,6 +41,7 @@
     "db:generate": "dotenv -e .env -- prisma generate --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
     "db:migrate": "dotenv -e .env -- prisma migrate dev --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
     "db:migrate:deploy": "dotenv -e .env -- prisma migrate deploy --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
+    "db:migrate:prod": "prisma migrate deploy --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
     "db:seed": "dotenv -e .env -- tsx apps/api/prisma/seed.ts",
     "db:reset": "dotenv -e .env -- prisma migrate reset --force --skip-seed --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
     "db:studio": "dotenv -e .env -- prisma studio --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
@@ -67,6 +68,7 @@
     "db:wait": "bash scripts/wait-for-db.sh",
     "setup": "pnpm install && pnpm docker:dev && pnpm db:wait && pnpm db:generate && pnpm db:migrate && pnpm db:seed",
     "@comment:maintenance": "DevOps and CI/CD housekeeping scripts.",
+    "start:prod": "node dist/apps/api/main.js",
     "clean": "nx reset && rm -rf node_modules dist coverage .nx",
     "type-check": "nx run-many --target=type-check --all",
     "prepare": "husky install",
@@ -141,6 +143,7 @@
     "@swc-node/register": "~1.11.1",
     "@swc/core": "~1.15.7",
     "@swc/helpers": "0.5.18",
+    "@tailwindcss/postcss": "^4.1.18",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/ms": "^2.1.0",
@@ -153,6 +156,7 @@
     "@typescript-eslint/eslint-plugin": "^8.50.0",
     "@typescript-eslint/parser": "^8.51.0",
     "@vitejs/plugin-react": "^5.1.2",
+    "autoprefixer": "^10.4.23",
     "commitizen": "^4.3.1",
     "cz-conventional-changelog": "^3.3.0",
     "dotenv-cli": "^11.0.0",
@@ -171,11 +175,13 @@
     "jsonc-eslint-parser": "^2.4.2",
     "lint-staged": "^16.2.7",
     "nx": "22.3.3",
+    "postcss": "^8.5.6",
     "prettier": "^3.7.4",
     "prisma": "^7.2.0",
     "qs": "^6.14.1",
     "standard-version": "^9.5.0",
     "supertest": "^7.1.4",
+    "tailwindcss": "^4.1.18",
     "testcafe": "^3.7.3",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
@@ -204,7 +210,7 @@
       "prettier --write"
     ],
     "*.prisma": [
-      "prisma format"
+      "prisma format --schema=./apps/api/prisma/schema.prisma"
     ]
   },
   "standard-version": {

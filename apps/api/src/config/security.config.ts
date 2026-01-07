@@ -42,13 +42,29 @@ export const helmetConfig = helmet({
 // CORS configuration
 export const corsConfig = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    const allowedOrigins = [
-      process.env.FRONTEND_URL,
-      'http://localhost:4200',
-      'http://localhost:3000',
-    ].filter(Boolean);
+    const isProduction = process.env.NODE_ENV === 'production';
+    const frontendUrl = process.env.FRONTEND_URL;
 
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Build allowed origins based on environment
+    const allowedOrigins: string[] = [];
+
+    // Always allow the configured FRONTEND_URL if set
+    if (frontendUrl) {
+      allowedOrigins.push(frontendUrl);
+    }
+
+    // Only allow localhost origins in development
+    if (!isProduction) {
+      allowedOrigins.push('http://localhost:4200', 'http://localhost:3000');
+    }
+
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));

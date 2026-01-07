@@ -59,6 +59,8 @@ export default [
       'jest.preset.js',
       '**/test/reporters/*.js',
       '**/webpack.config.js',
+      '**/postcss.config.js',
+      '**/postcss.config.mjs',
     ],
   },
   ...typescriptEslint.configs.recommended,

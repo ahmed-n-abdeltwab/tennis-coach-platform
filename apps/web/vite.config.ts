@@ -7,6 +7,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/apps/web',
+  publicDir: 'public',
 
   server: {
     port: 4200,
@@ -20,6 +21,10 @@ export default defineConfig({
 
   plugins: [react(), nxViteTsPaths()],
 
+  // Expose environment variables to the client
+  // Variables prefixed with VITE_ are automatically exposed
+  envPrefix: 'VITE_',
+
   resolve: {
     alias: {
       '@app': path.resolve(__dirname, './src/app'),
@@ -32,6 +37,7 @@ export default defineConfig({
       '@types': path.resolve(__dirname, './src/app/types'),
       '@assets': path.resolve(__dirname, './src/assets'),
       '@styles': path.resolve(__dirname, './src/styles'),
+      '@config': path.resolve(__dirname, './src/config'),
     },
   },
 
@@ -42,9 +48,22 @@ export default defineConfig({
 
   build: {
     outDir: '../../dist/apps/web',
+    emptyOutDir: true,
     reportCompressedSize: true,
     commonjsOptions: {
       transformMixedEsModules: true,
+    },
+    // Production optimizations
+    minify: 'esbuild',
+    sourcemap: false,
+    // Code splitting for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          axios: ['axios'],
+        },
+      },
     },
   },
 
