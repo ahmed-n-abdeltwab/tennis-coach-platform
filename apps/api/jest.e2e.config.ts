@@ -65,6 +65,17 @@ const config: Config = {
   coverageDirectory: '../../coverage/apps/api/e2e',
   coverageReporters: ['text', 'lcov', 'html', 'json'],
 
+  // Coverage thresholds for E2E tests
+  // E2E tests typically have lower coverage thresholds as they test integration flows
+  coverageThreshold: {
+    global: {
+      branches: 30,
+      functions: 30,
+      lines: 40,
+      statements: 40,
+    },
+  },
+
   // Performance optimizations for e2e tests
   maxWorkers: 1,
   testTimeout: 60000,

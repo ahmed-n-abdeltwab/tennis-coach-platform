@@ -2,6 +2,7 @@
   "name": "tennis-coach-platform",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Tennis Coach Booking and Management Platform Monorepo",
   "keywords": [
     "nestjs",
@@ -43,7 +44,7 @@
     "db:migrate:deploy": "dotenv -e .env -- prisma migrate deploy --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
     "db:migrate:prod": "prisma migrate deploy --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
     "db:seed": "dotenv -e .env -- tsx apps/api/prisma/seed.ts",
-    "db:reset": "dotenv -e .env -- prisma migrate reset --force --skip-seed --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
+    "db:reset": "dotenv -e .env -- prisma migrate reset --force --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
     "db:studio": "dotenv -e .env -- prisma studio --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
     "@comment:testing": "Centralized testing configuration powered by Nx and Jest.",
     "test": "nx run-many --target=test --all",
@@ -224,7 +225,7 @@
   },
   "prisma": {
     "seed": "tsx apps/api/prisma/seed.ts",
-    "schema": "./apps/api/prisma/schema.prisma",
+    "schema": "apps/api/prisma/schema.prisma",
     "config": "apps/api/prisma/prisma.config.ts"
   },
   "pnpm": {

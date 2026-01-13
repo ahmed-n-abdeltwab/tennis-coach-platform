@@ -4,5 +4,5 @@ pnpm lint-staged
 if git diff --cached --name-only | grep -q "^apps/api/src/"; then
   echo "🔄 API files changed, regenerating endpoint types..."
   pnpm nx run api:generate-types
-  git add libs/contracts/src/endpoints.generated.ts apps/api/swagger.json
+  git add libs/contracts/src/endpoints.generated.ts
 fi

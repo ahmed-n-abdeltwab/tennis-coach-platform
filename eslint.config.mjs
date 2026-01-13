@@ -61,6 +61,7 @@ export default [
       '**/webpack.config.js',
       '**/postcss.config.js',
       '**/postcss.config.mjs',
+      'commitlint.config.js',
     ],
   },
   ...typescriptEslint.configs.recommended,

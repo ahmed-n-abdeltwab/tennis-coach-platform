@@ -23,7 +23,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new HttpLoggingInterceptor(appLogger));
 
   // Register global exception filter for consistent error responses
-  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalFilters(new GlobalExceptionFilter(appLogger));
 
   // Global prefix
   app.setGlobalPrefix('api');

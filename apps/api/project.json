@@ -48,7 +48,7 @@
     "generate-types": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx ts-node -r tsconfig-paths/register scripts/generate-types.ts",
+        "command": "npx ts-node --transpile-only -r tsconfig-paths/register scripts/generate-types.ts",
         "cwd": "{projectRoot}"
       },
       "outputs": ["{workspaceRoot}/libs/contracts/src/endpoints.generated.ts"]

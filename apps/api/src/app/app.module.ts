@@ -3,8 +3,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { AccountsModule } from './accounts/accounts.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { BookingTypesModule } from './booking-types/booking-types.module';
 import { CalendarModule } from './calendar/calendar.module';
+import { ConversationsModule } from './conversations/conversations.module';
+import { CustomServicesModule } from './custom-services/custom-services.module';
 import { DiscountsModule } from './discounts/discounts.module';
 import { HealthModule } from './health/health.module';
 import { IamModule } from './iam/iam.module';
@@ -32,12 +35,15 @@ import { TimeSlotsModule } from './time-slots/time-slots.module';
     SessionsModule,
     TimeSlotsModule,
     DiscountsModule,
+    ConversationsModule,
     MessagesModule,
+    CustomServicesModule,
     PaymentsModule,
     CalendarModule,
     NotificationsModule,
     HealthModule,
     AccountsModule,
+    AnalyticsModule,
     RedisModule,
   ],
 })
