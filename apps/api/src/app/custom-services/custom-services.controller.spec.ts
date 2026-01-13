@@ -112,11 +112,12 @@ describe('CustomServicesController', () => {
         role: Role.COACH,
         sub: 'ccoach1234567890123456',
       });
-      await test.http.authenticatedGet(
+      const response = await test.http.authenticatedGet(
         '/api/custom-services?isTemplate=true' as '/api/custom-services',
         coachToken
       );
 
+      expect(response.ok).toBe(true);
       expect(test.mocks.CustomServicesService.findAll).toHaveBeenCalledWith(
         expect.objectContaining({ isTemplate: true }),
         'ccoach1234567890123456',

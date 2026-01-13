@@ -97,15 +97,7 @@ export class ConversationsService {
     userId: string,
     userRole: Role
   ): Promise<ConversationResponseDto[]> {
-    const where: Prisma.ConversationWhereInput = {
-      participantIds: {
-        has: userId, // User must be a participant in the conversation
-      },
-    };
-
-    if (query.isPinned !== undefined) {
-      where.isPinned = query.isPinned;
-    }
+    const where: Prisma.ConversationWhereInput = {};
 
     // Apply role-based filtering - admins can see all conversations
     if (userRole !== Role.ADMIN) {
@@ -113,6 +105,10 @@ export class ConversationsService {
       where.participantIds = {
         has: userId,
       };
+    }
+
+    if (query.isPinned !== undefined) {
+      where.isPinned = query.isPinned;
     }
 
     const conversations = (await this.findConversationInternal(where, {

@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MessageType } from '@prisma/client';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsBoolean, IsDate, IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 /**
@@ -127,9 +127,13 @@ export class GetConversationsQuery {
     example: false,
     description: 'Filter by pinned status',
   })
-  @IsBoolean()
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.toLowerCase() === 'true';
+    }
+    return Boolean(value);
+  })
   isPinned?: boolean;
 
   @ApiPropertyOptional({

@@ -108,7 +108,7 @@ export interface Endpoints {
   };
 
   "/api/authentication/signup": {
-    POST: (params: undefined | never, body: { email: string; password: string; name: string }) => { accessToken: string; refreshToken: string; account: { id: string; email: string; role: "USER" | "COACH" | "ADMIN" } };
+    POST: (params: undefined | never, body: { email: string; password: string; name: string; role?: "USER" | "COACH" | "ADMIN" }) => { accessToken: string; refreshToken: string; account: { id: string; email: string; role: "USER" | "COACH" | "ADMIN" } };
   };
 
   "/api/booking-types": {

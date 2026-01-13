@@ -1,8 +1,7 @@
 import { ApiResponses } from '@common';
-import { Controller, Get, Query, Res } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
-import { Response } from 'express';
 
 import { CurrentUser } from '../iam/authentication/decorators/current-user.decorator';
 import { Roles } from '../iam/authorization/decorators/roles.decorator';
@@ -114,17 +113,18 @@ export class AnalyticsController {
   @(ApiResponses.for(ExportAnalyticsResponseDto).Found('Analytics data exported successfully'))
   async exportAnalytics(
     @CurrentUser() user: JwtPayload,
-    @Query() query: ExportAnalyticsQuery,
-    @Res() res: Response
-  ): Promise<void> {
+    @Query() query: ExportAnalyticsQuery
+  ): Promise<ExportAnalyticsResponseDto> {
     const { data, filename, contentType } = await this.analyticsService.exportAnalytics(
       user.sub,
       user.role,
       query
     );
 
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(data);
+    return {
+      filename,
+      data,
+      contentType,
+    };
   }
 }

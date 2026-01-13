@@ -308,7 +308,7 @@ export class CustomServicesService {
       await this.messagesService.create(
         {
           content:
-            sendDto.message || `I've shared a custom service with you: ${existingService.name}`,
+            sendDto.message ?? `I've shared a custom service with you: ${existingService.name}`,
           receiverId: sendDto.userId,
           messageType: MessageType.CUSTOM_SERVICE,
           customServiceId: existingService.id,

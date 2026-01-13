@@ -59,11 +59,12 @@ describe('ConversationsController', () => {
         role: Role.COACH,
         sub: 'ccoach1234567890123456',
       });
-      await test.http.authenticatedGet(
+      const response = await test.http.authenticatedGet(
         '/api/conversations?isPinned=true' as '/api/conversations',
         coachToken
       );
 
+      expect(response.ok).toBe(true);
       expect(test.mocks.ConversationsService.findAll).toHaveBeenCalledWith(
         { isPinned: true },
         'ccoach1234567890123456',

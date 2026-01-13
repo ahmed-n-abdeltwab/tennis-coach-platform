@@ -2,7 +2,7 @@ import { IsCuid } from '@common';
 import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { IsEmail, IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 import { BaseAuthDto } from './base.dto';
 
@@ -10,6 +10,7 @@ import { BaseAuthDto } from './base.dto';
  * Sign up request DTO.
  * Extends BaseAuthDto with additional name field.
  * All new registrations are assigned USER role by default.
+ * The role field is accepted but ignored for security reasons.
  */
 export class SignUpDto extends BaseAuthDto {
   @ApiProperty({
@@ -19,6 +20,16 @@ export class SignUpDto extends BaseAuthDto {
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @ApiProperty({
+    enum: Role,
+    example: Role.USER,
+    description: 'Account role (ignored - all signups default to USER)',
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(Role)
+  role?: Role; // Optional field that gets ignored in service
 }
 
 /**

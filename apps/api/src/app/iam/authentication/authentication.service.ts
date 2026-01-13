@@ -112,7 +112,7 @@ export class AuthenticationService {
    * Always returns success to prevent email enumeration attacks.
    */
   async forgotPassword(dto: ForgotPasswordDto): Promise<ForgotPasswordResponseDto> {
-    const account = await this.accountsService.findByEmail(dto.email);
+    const account = await this.accountsService.findByEmailWithPassword(dto.email);
 
     // Always return success message to prevent email enumeration
     const successMessage =

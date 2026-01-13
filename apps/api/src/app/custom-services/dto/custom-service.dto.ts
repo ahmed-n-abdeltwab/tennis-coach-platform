@@ -1,7 +1,7 @@
 import { IsCuid } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Decimal } from '@prisma/client/runtime/client';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDate,
@@ -242,15 +242,23 @@ export class SendCustomServiceResponseDto {
 
 export class GetCustomServicesQuery {
   @ApiPropertyOptional({ example: false, description: 'Filter by template status' })
-  @IsBoolean()
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.toLowerCase() === 'true';
+    }
+    return Boolean(value);
+  })
   isTemplate?: boolean;
 
   @ApiPropertyOptional({ example: false, description: 'Filter by public visibility' })
-  @IsBoolean()
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.toLowerCase() === 'true';
+    }
+    return Boolean(value);
+  })
   isPublic?: boolean;
 
   @ApiPropertyOptional({ example: 'coach-id-123', description: 'Filter by coach ID' })

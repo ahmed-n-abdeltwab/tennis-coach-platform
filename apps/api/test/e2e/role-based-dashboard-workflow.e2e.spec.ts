@@ -456,17 +456,30 @@ describe('Role-Based Dashboard Workflow (E2E)', () => {
     });
 
     it('should enforce conversation access based on participation', async () => {
-      // Create messages between different users
+      // Create conversations and messages between different users
+
+      // Conversation 1: User ↔ Coach
+      const userCoachConversation = await test.db.createTestConversation({
+        participantIds: [testUser.id, testCoach.id],
+      });
+
       await test.db.createTestMessage({
         senderId: testUser.id,
         receiverId: testCoach.id,
         content: 'User to Coach message',
+        conversationId: userCoachConversation.id,
+      });
+
+      // Conversation 2: Admin ↔ Coach
+      const adminCoachConversation = await test.db.createTestConversation({
+        participantIds: [testAdmin.id, testCoach.id],
       });
 
       await test.db.createTestMessage({
         senderId: testAdmin.id,
         receiverId: testCoach.id,
         content: 'Admin to Coach message',
+        conversationId: adminCoachConversation.id,
       });
 
       // Step 1: User should only see conversations they participate in
