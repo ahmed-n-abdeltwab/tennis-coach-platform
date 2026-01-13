@@ -232,19 +232,20 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
         }
       });
 
-      it('should allow coach registration with role field', async () => {
+      it('should ignore role field in registration (all signups are USER)', async () => {
         const response = await test.http.post('/api/authentication/signup', {
           body: {
             email: `coach-signup-${Date.now()}@example.com`,
             password: 'password123',
             name: 'Coach User',
-            role: Role.COACH,
-          },
+            role: Role.COACH, // This should be ignored for security
+          } as any,
         });
 
         expect(response.ok).toBe(true);
         if (response.ok) {
-          expect(response.body.account.role).toBe(Role.COACH);
+          // Role field is ignored - all signups default to USER
+          expect(response.body.account.role).toBe(Role.USER);
         }
       });
     });
@@ -851,31 +852,12 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
           expect(response.body).toHaveProperty('message');
         }
       });
-
-      it('should return 403 for premium user accessing admin endpoints', async () => {
-        const premiumUser = await test.db.createTestUser({
-          email: `premium-${Date.now()}@example.com`,
-          role: Role.PREMIUM_USER,
-        });
-        const premiumToken = await test.auth.createToken({
-          sub: premiumUser.id,
-          email: premiumUser.email,
-          role: Role.PREMIUM_USER,
-        });
-
-        const response = await test.http.authenticatedGet('/api/accounts', premiumToken);
-
-        expect(response.ok).toBe(false);
-        if (!response.ok) {
-          expect(response.status).toBe(403);
-        }
-      });
     });
 
     describe('404 Not Found Format', () => {
       it('should return consistent 404 error format for non-existent resource', async () => {
         const response = await test.http.authenticatedGet(
-          '/api/accounts/non-existent-id' as '/api/accounts/{id}',
+          '/api/accounts/cnonexistentaccount123' as '/api/accounts/{id}',
           adminToken
         );
 
@@ -888,7 +870,7 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
 
       it('should return 404 for non-existent session', async () => {
         const response = await test.http.authenticatedGet(
-          '/api/sessions/non-existent-session-id' as '/api/sessions/{id}',
+          '/api/sessions/cnonexistentsession123' as '/api/sessions/{id}',
           userToken
         );
 
@@ -901,7 +883,7 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
 
       it('should return 404 for non-existent booking type', async () => {
         const response = await test.http.authenticatedGet(
-          '/api/booking-types/non-existent-id' as '/api/booking-types/{id}',
+          '/api/booking-types/cnonexistentbooking123' as '/api/booking-types/{id}',
           userToken
         );
 

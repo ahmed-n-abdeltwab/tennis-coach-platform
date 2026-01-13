@@ -452,26 +452,20 @@ describe('Cross-Workflow E2E Tests', () => {
     it('should complete full coach journey from registration to session completion', async () => {
       const timestamp = Date.now();
       const coachEmail = `coach-journey-${timestamp}@example.com`;
-      const coachPassword = 'password123';
 
-      // Step 1: Register as coach
-      const signupResponse = await test.http.post('/api/authentication/signup', {
-        body: {
-          email: coachEmail,
-          password: coachPassword,
-          name: 'Journey Coach',
-          role: Role.COACH,
-        },
+      // Step 1: Create coach account in database (coaches are created by admin, not self-registration)
+      const coach = await test.db.createTestCoach({
+        email: coachEmail,
+        name: 'Journey Coach',
       });
 
-      expect(signupResponse.ok).toBe(true);
-      if (!signupResponse.ok) return;
-
-      expect(signupResponse.status).toBe(201);
-      expect(signupResponse.body.account.role).toBe(Role.COACH);
-
-      const coachToken = signupResponse.body.accessToken;
-      const coachId = signupResponse.body.account.id;
+      // Get auth token for the coach
+      const coachToken = await test.auth.createToken({
+        sub: coach.id,
+        email: coach.email,
+        role: Role.COACH,
+      });
+      const coachId = coach.id;
 
       // Step 2: Setup coach profile
       const profileUpdateResponse = await test.http.authenticatedPatch(
@@ -667,20 +661,17 @@ describe('Cross-Workflow E2E Tests', () => {
     it('should allow coach to update booking type details', async () => {
       const timestamp = Date.now();
 
-      // Register coach
-      const signupResponse = await test.http.post('/api/authentication/signup', {
-        body: {
-          email: `coach-update-${timestamp}@example.com`,
-          password: 'password123',
-          name: 'Update Test Coach',
-          role: Role.COACH,
-        },
+      // Create coach account in database
+      const coach = await test.db.createTestCoach({
+        email: `coach-update-${timestamp}@example.com`,
+        name: 'Update Test Coach',
       });
 
-      expect(signupResponse.ok).toBe(true);
-      if (!signupResponse.ok) return;
-
-      const coachToken = signupResponse.body.accessToken;
+      const coachToken = await test.auth.createToken({
+        sub: coach.id,
+        email: coach.email,
+        role: Role.COACH,
+      });
 
       // Create booking type
       const createResponse = await test.http.authenticatedPost('/api/booking-types', coachToken, {
@@ -720,21 +711,17 @@ describe('Cross-Workflow E2E Tests', () => {
     it('should allow coach to manage time slot availability', async () => {
       const timestamp = Date.now();
 
-      // Register coach
-      const signupResponse = await test.http.post('/api/authentication/signup', {
-        body: {
-          email: `coach-timeslot-${timestamp}@example.com`,
-          password: 'password123',
-          name: 'TimeSlot Test Coach',
-          role: Role.COACH,
-        },
+      // Create coach account in database
+      const coach = await test.db.createTestCoach({
+        email: `coach-timeslot-${timestamp}@example.com`,
+        name: 'TimeSlot Test Coach',
       });
 
-      expect(signupResponse.ok).toBe(true);
-      if (!signupResponse.ok) return;
-
-      const coachToken = signupResponse.body.accessToken;
-      const _coachId = signupResponse.body.account.id;
+      const coachToken = await test.auth.createToken({
+        sub: coach.id,
+        email: coach.email,
+        role: Role.COACH,
+      });
 
       // Create time slot
       const futureDate = new Date();
@@ -810,21 +797,18 @@ describe('Cross-Workflow E2E Tests', () => {
         userToken = userSignupResponse.body.accessToken;
       }
 
-      // Create coach via signup
-      const coachSignupResponse = await test.http.post('/api/authentication/signup', {
-        body: {
-          email: `msg-coach-${timestamp}@example.com`,
-          password: 'password123',
-          name: 'Messaging Coach',
-          role: Role.COACH,
-        },
+      // Create coach in database (coaches are created by admin, not self-registration)
+      const coach = await test.db.createTestCoach({
+        email: `msg-coach-${timestamp}@example.com`,
+        name: 'Messaging Coach',
       });
 
-      expect(coachSignupResponse.ok).toBe(true);
-      if (coachSignupResponse.ok) {
-        testCoach = coachSignupResponse.body.account;
-        coachToken = coachSignupResponse.body.accessToken;
-      }
+      testCoach = coach;
+      coachToken = await test.auth.createToken({
+        sub: coach.id,
+        email: coach.email,
+        role: Role.COACH,
+      });
 
       // Create booking type
       testBookingType = await test.db.createTestBookingType({

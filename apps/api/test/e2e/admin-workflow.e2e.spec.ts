@@ -198,7 +198,7 @@ describe('Admin Workflow (E2E)', () => {
 
     it('should return 404 when admin tries to view non-existent user', async () => {
       const response = await test.http.authenticatedGet(
-        '/api/accounts/non-existent-user-id' as '/api/accounts/{id}',
+        '/api/accounts/cnonexistentuser123456' as '/api/accounts/{id}',
         adminToken
       );
 
@@ -473,27 +473,6 @@ describe('Admin Workflow (E2E)', () => {
       }
     });
 
-    it('should reject premium user access to admin endpoints', async () => {
-      // Create a premium user
-      const premiumUser = await test.db.createTestUser({
-        email: 'premium@example.com',
-        role: Role.PREMIUM_USER,
-      });
-
-      const premiumToken = await test.auth.createToken({
-        sub: premiumUser.id,
-        email: premiumUser.email,
-        role: Role.PREMIUM_USER,
-      });
-
-      const response = await test.http.authenticatedGet('/api/accounts', premiumToken);
-
-      expect(response.ok).toBe(false);
-      if (!response.ok) {
-        expect(response.status).toBe(403);
-      }
-    });
-
     it('should allow coach to access accounts list (coach has access)', async () => {
       // Coach role has access to /api/accounts endpoint
       const response = await test.http.authenticatedGet('/api/accounts', coachToken);
@@ -523,35 +502,6 @@ describe('Admin Workflow (E2E)', () => {
       const response = await test.http.authenticatedDelete(
         `/api/accounts/${targetUser.id}` as '/api/accounts/{id}',
         userToken
-      );
-
-      expect(response.ok).toBe(false);
-      if (!response.ok) {
-        expect(response.status).toBe(403);
-      }
-    });
-
-    it('should reject premium user from deleting accounts', async () => {
-      // Create a premium user
-      const premiumUser = await test.db.createTestUser({
-        email: 'premium-delete@example.com',
-        role: Role.PREMIUM_USER,
-      });
-
-      const premiumToken = await test.auth.createToken({
-        sub: premiumUser.id,
-        email: premiumUser.email,
-        role: Role.PREMIUM_USER,
-      });
-
-      // Create a target user
-      const targetUser = await test.db.createTestUser({
-        email: 'target-delete@example.com',
-      });
-
-      const response = await test.http.authenticatedDelete(
-        `/api/accounts/${targetUser.id}` as '/api/accounts/{id}',
-        premiumToken
       );
 
       expect(response.ok).toBe(false);

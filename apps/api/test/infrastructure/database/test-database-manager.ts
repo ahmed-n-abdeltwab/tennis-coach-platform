@@ -14,6 +14,13 @@ import { randomUUID } from 'crypto';
 import { Prisma, PrismaClient, Role } from '@prisma/client';
 
 import {
+  accountFactory,
+  bookingTypeFactory,
+  MockAccount,
+  Nullified,
+  timeSlotFactory,
+} from '../../utils';
+import {
   DATABASE_CONSTANTS,
   ERROR_MESSAGES,
   SECURITY_CONSTANTS,
@@ -568,7 +575,7 @@ export class TestDatabaseManager {
 
   private async insertDefaultSeedData(client: PrismaClient): Promise<void> {
     // Create test users using factory
-    const users = [];
+    const users: Nullified<MockAccount>[] = [];
     for (let i = 0; i < 2; i++) {
       const mockUser = accountFactory.createUser();
       const user = await client.account.create({
@@ -586,7 +593,7 @@ export class TestDatabaseManager {
     }
 
     // Create test coaches using factory
-    const coaches = [];
+    const coaches: Nullified<MockAccount>[] = [];
     for (let i = 0; i < 2; i++) {
       const mockCoach = accountFactory.createCoach();
       const coach = await client.account.create({

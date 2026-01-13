@@ -159,7 +159,7 @@ describe('Messages Integration', () => {
       it('should return 404 for non-existent receiver', async () => {
         const messageData = {
           content: 'Message to non-existent user.',
-          receiverId: 'non-existent-user-id',
+          receiverId: 'cnonexistent12345678901',
         };
 
         const response = await test.http.authenticatedPost('/api/messages', userToken, {
@@ -385,7 +385,7 @@ describe('Messages Integration', () => {
 
       it('should return 404 for non-existent message', async () => {
         const response = await test.http.authenticatedGet(
-          '/api/messages/non-existent-id' as '/api/messages/{id}',
+          '/api/messages/cnonexistentmsg12345678' as '/api/messages/{id}',
           userToken
         );
 
@@ -540,7 +540,7 @@ describe('Messages Integration', () => {
 
       it('should return 404 for non-existent session', async () => {
         const response = await test.http.authenticatedGet(
-          '/api/messages/session/non-existent-session' as '/api/messages/session/{sessionId}',
+          '/api/messages/session/cnonexistentsession123' as '/api/messages/session/{sessionId}',
           userToken
         );
 
@@ -603,7 +603,7 @@ describe('Messages Integration', () => {
             (m: { id: string }) => m.id === message.id
           );
           expect(foundMessage).toBeDefined();
-          expect(foundMessage.sessionId).toBe(session.id);
+          expect(foundMessage?.sessionId).toBe(session.id);
         }
       }
     );

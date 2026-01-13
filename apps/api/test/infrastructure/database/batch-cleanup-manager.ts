@@ -55,8 +55,11 @@ export class BatchCleanupManager {
       // First, delete refresh tokens and messages (leaf nodes)
       await Promise.all([prisma.refreshToken.deleteMany({}), prisma.message.deleteMany({})]);
 
-      // Then delete sessions (depends on bookingType, timeSlot, discount, accounts)
+      // Then delete sessions (depends on bookingType, timeSlot, discount, accounts, payment)
       await prisma.session.deleteMany({});
+
+      // Then delete payments (depends on accounts)
+      await prisma.payment.deleteMany({});
 
       // Then delete time slots, discounts, and booking types (depend on accounts)
       await Promise.all([
@@ -90,15 +93,18 @@ export class BatchCleanupManager {
       await prisma.refreshToken.deleteMany({});
       await prisma.message.deleteMany({});
 
-      // 2. Delete sessions (depends on bookingType, timeSlot, discount, accounts)
+      // 2. Delete sessions (depends on bookingType, timeSlot, discount, accounts, payment)
       await prisma.session.deleteMany({});
 
-      // 3. Delete entities that depend only on accounts
+      // 3. Delete payments (depends on accounts)
+      await prisma.payment.deleteMany({});
+
+      // 4. Delete entities that depend only on accounts
       await prisma.timeSlot.deleteMany({});
       await prisma.discount.deleteMany({});
       await prisma.bookingType.deleteMany({});
 
-      // 4. Finally delete accounts (root table)
+      // 5. Finally delete accounts (root table)
       await prisma.account.deleteMany({});
     } catch (error) {
       throw createDatabaseError(
