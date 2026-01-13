@@ -1,8 +1,33 @@
-pnpm lint-staged
+#!/usr/bin/env sh
+
+# 1. LOAD NVM (for developers using NVM)
+# This looks in the default NVM directory
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# 2. LOAD PROJECT BINARIES (the most portable way)
+# This adds the project's local pnpm/npx to the path
+export PATH="$PATH:$(pwd)/node_modules/.bin"
+
+# 3. FIND PNPM AND RUN LINT-STAGED
+run_pnpm() {
+  if command -v pnpm >/dev/null 2>&1; then
+    pnpm "$@"
+  elif [ -f "$HOME/.local/share/pnpm/pnpm" ]; then
+    "$HOME/.local/share/pnpm/pnpm" "$@"
+  elif [ -f "$(pwd)/node_modules/.bin/pnpm" ]; then
+    "$(pwd)/node_modules/.bin/pnpm" "$@"
+  else
+    echo "Error: pnpm not found. Please install pnpm or ensure it's in your PATH."
+    exit 1
+  fi
+}
+
+run_pnpm lint-staged
 
 # Generate API types if API files changed
 if git diff --cached --name-only | grep -q "^apps/api/src/"; then
   echo "🔄 API files changed, regenerating endpoint types..."
-  pnpm nx run api:generate-types
+  run_pnpm nx run api:generate-types
   git add libs/contracts/src/endpoints.generated.ts
 fi

@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -49,6 +51,7 @@ export class SessionsService {
     private bookingTypesService: BookingTypesService,
     private timeSlotsService: TimeSlotsService,
     private discountsService: DiscountsService,
+    @Inject(forwardRef(() => NotificationsService))
     private notificationsService: NotificationsService
   ) {}
 
@@ -144,7 +147,6 @@ export class SessionsService {
 
   async findOne(id: string, userId: string, role: Role): Promise<SessionResponseDto> {
     const session = (await this.findSessionInternal({ id })) as Session;
-
     // 1. Correct way to check for multiple roles
     const isClientRole = ([Role.USER] as Role[]).includes(role);
     // 2. Logic to determine if the user owns this session

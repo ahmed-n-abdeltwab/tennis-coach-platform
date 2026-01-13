@@ -350,6 +350,68 @@ describe('MessagesService', () => {
       );
     });
 
+    it('should create a BOOKING_REQUEST message', async () => {
+      const createBookingRequestDto = {
+        content: 'I would like to book a session for next week.',
+        receiverId,
+        messageType: 'BOOKING_REQUEST' as const,
+      };
+      const mockReceiver = test.factory.account.createCoachWithNulls({ id: receiverId });
+      const mockConversation = test.factory.conversation.createWithNulls({
+        participantIds: [senderId, receiverId].sort(),
+      });
+      const mockMessage = test.factory.message.createWithNulls({
+        content: createBookingRequestDto.content,
+        senderId,
+        receiverId: createBookingRequestDto.receiverId,
+        senderType: Role.USER,
+        receiverType: Role.COACH,
+        messageType: 'BOOKING_REQUEST',
+        conversationId: mockConversation.id,
+      });
+
+      test.mocks.AccountsService.existsById.mockResolvedValue(mockReceiver);
+      test.mocks.ConversationsService.findOrCreateByParticipants.mockResolvedValue(
+        mockConversation
+      );
+      test.mocks.ConversationsService.updateLastMessage.mockResolvedValue(undefined);
+      test.mocks.PrismaService.message.create.mockResolvedValue(mockMessage);
+
+      const result = await test.service.create(createBookingRequestDto, senderId, Role.USER);
+
+      expect(result.content).toBe(createBookingRequestDto.content);
+      expect(result.messageType).toBe('BOOKING_REQUEST');
+      expect(test.mocks.PrismaService.message.create).toHaveBeenCalledWith({
+        data: {
+          content: createBookingRequestDto.content,
+          sessionId: null,
+          senderId,
+          receiverId: createBookingRequestDto.receiverId,
+          senderType: Role.USER,
+          receiverType: Role.COACH,
+          messageType: 'BOOKING_REQUEST',
+          customServiceId: null,
+          conversationId: mockConversation.id,
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          receiver: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+    });
+
     it('should throw NotFoundException when receiver not found', async () => {
       test.mocks.AccountsService.existsById.mockResolvedValue(null);
 

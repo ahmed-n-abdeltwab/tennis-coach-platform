@@ -1,1 +1,13 @@
-pnpm commitlint --edit $1
+#!/usr/bin/env sh
+
+# Find pnpm in various common locations
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm commitlint --edit $1
+elif [ -f "$HOME/.local/share/pnpm/pnpm" ]; then
+  "$HOME/.local/share/pnpm/pnpm" commitlint --edit $1
+elif [ -f "$(pwd)/node_modules/.bin/pnpm" ]; then
+  "$(pwd)/node_modules/.bin/pnpm" commitlint --edit $1
+else
+  echo "Error: pnpm not found. Please install pnpm or ensure it's in your PATH."
+  exit 1
+fi

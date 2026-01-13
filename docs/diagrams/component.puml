@@ -81,7 +81,7 @@ cache "Redis" {
 
 note right of [accounts]
   Single unified table for all user types.
-  Role field (USER, PREMIUM_USER, ADMIN, COACH)
+  Role field (USER, ADMIN, COACH)
   determines capabilities and permissions.
 end note
 
