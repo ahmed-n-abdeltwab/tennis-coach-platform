@@ -11,15 +11,9 @@
 import { execSync } from 'child_process';
 import { randomUUID } from 'crypto';
 
-import { Prisma, PrismaClient, Role } from '@prisma/client';
+import { Account, Prisma, PrismaClient } from '@prisma/client';
 
-import {
-  accountFactory,
-  bookingTypeFactory,
-  MockAccount,
-  Nullified,
-  timeSlotFactory,
-} from '../../utils';
+import { accountFactory, bookingTypeFactory, timeSlotFactory } from '../../utils';
 import {
   DATABASE_CONSTANTS,
   ERROR_MESSAGES,
@@ -575,36 +569,21 @@ export class TestDatabaseManager {
 
   private async insertDefaultSeedData(client: PrismaClient): Promise<void> {
     // Create test users using factory
-    const users: Nullified<MockAccount>[] = [];
+    const users: Account[] = [];
     for (let i = 0; i < 2; i++) {
-      const mockUser = accountFactory.createUser();
+      const mockUser = accountFactory.createUserWithNulls();
       const user = await client.account.create({
-        data: {
-          email: mockUser.email,
-          name: mockUser.name,
-          passwordHash: mockUser.passwordHash,
-          gender: mockUser.gender,
-          age: mockUser.age,
-          country: mockUser.country,
-          role: Role.USER,
-        },
+        data: mockUser,
       });
       users.push(user);
     }
 
     // Create test coaches using factory
-    const coaches: Nullified<MockAccount>[] = [];
+    const coaches: Account[] = [];
     for (let i = 0; i < 2; i++) {
-      const mockCoach = accountFactory.createCoach();
+      const mockCoach = accountFactory.createCoachWithNulls();
       const coach = await client.account.create({
-        data: {
-          email: mockCoach.email,
-          name: mockCoach.name,
-          passwordHash: mockCoach.passwordHash,
-          bio: mockCoach.bio,
-          credentials: mockCoach.credentials,
-          role: Role.COACH,
-        },
+        data: mockCoach,
       });
       coaches.push(coach);
     }

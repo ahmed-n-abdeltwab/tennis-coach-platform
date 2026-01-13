@@ -34,6 +34,7 @@ module.exports = composePlugins(withNx(), config => {
     ...config.experiments,
     topLevelAwait: true,
   };
+
   config.watchOptions = {
     ignored: [
       'node_modules',

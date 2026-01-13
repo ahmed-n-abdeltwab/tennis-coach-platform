@@ -12,7 +12,16 @@ import jwtConfig from '../config/jwt.config';
 import { HashingService } from '../hashing/hashing.service';
 import { JwtPayload } from '../interfaces/jwt.types';
 
-import { AuthResponseDto, LoginDto, RefreshResponseDto, SignUpDto } from './dto';
+import {
+  AuthResponseDto,
+  ForgotPasswordDto,
+  ForgotPasswordResponseDto,
+  LoginDto,
+  RefreshResponseDto,
+  ResetPasswordDto,
+  ResetPasswordResponseDto,
+  SignUpDto,
+} from './dto';
 
 // Password reset token prefix for Redis keys
 const PASSWORD_RESET_PREFIX = 'password-reset:';

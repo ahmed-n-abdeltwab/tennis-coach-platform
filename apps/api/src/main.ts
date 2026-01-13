@@ -45,8 +45,13 @@ async function bootstrap() {
   // API Documentation
   const options = new DocumentBuilder()
     .setTitle('Tennis Coach API')
-    .setDescription('API for tennis coach booking platform')
     .setVersion('1.0')
+    .setContact(
+      'Tennis Coach Platform',
+      'https://github.com/tennis-coach-platform',
+      'support@tenniscoach.com'
+    )
+    .setLicense('MIT', 'https://opensource.org/licenses/MIT')
     .addBearerAuth(
       {
         type: 'http',

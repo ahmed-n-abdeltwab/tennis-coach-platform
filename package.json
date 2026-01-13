@@ -2,7 +2,6 @@
   "name": "tennis-coach-platform",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "description": "Tennis Coach Booking and Management Platform Monorepo",
   "keywords": [
     "nestjs",

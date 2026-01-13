@@ -4,21 +4,21 @@ import type { Decimal } from '@prisma/client/runtime/client';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsDate, IsEmail, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 export class CoachDto {
-  @ApiProperty()
+  @ApiProperty({ example: 'ccoach1234567890123456' })
   @IsString()
   @IsCuid()
   id: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'John Smith' })
   @IsString()
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'coach@example.com' })
   @IsEmail()
   email: string;
 }
 export class BookingTypeResponseDto {
-  @ApiProperty()
+  @ApiProperty({ example: 'cbookingtype12345678901' })
   @IsString()
   @IsCuid()
   id!: string;
@@ -50,7 +50,7 @@ export class BookingTypeResponseDto {
   @IsBoolean()
   isActive: boolean;
 
-  @ApiProperty({ example: 'coach-id-123' })
+  @ApiProperty({ example: 'ccoach1234567890123456' })
   @IsString()
   @IsCuid()
   coachId: string;
@@ -63,11 +63,11 @@ export class BookingTypeResponseDto {
 export class GetAllBookingTypeResponseDto extends BookingTypeResponseDto {}
 
 export class CreateBookingTypeDto {
-  @ApiProperty()
+  @ApiProperty({ example: 'Personal Training Session' })
   @IsString()
   name: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'One-on-one coaching session focused on your goals' })
   @IsOptional()
   @IsString()
   description?: string;
@@ -80,12 +80,12 @@ export class CreateBookingTypeDto {
 }
 
 export class UpdateBookingTypeDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'Personal Training Session' })
   @IsOptional()
   @IsString()
   name?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'One-on-one coaching session focused on your goals' })
   @IsOptional()
   @IsString()
   description?: string;
@@ -97,7 +97,7 @@ export class UpdateBookingTypeDto {
   @Type(() => Number)
   basePrice?: Decimal;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: true })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;

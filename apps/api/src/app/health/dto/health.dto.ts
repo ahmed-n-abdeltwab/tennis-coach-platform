@@ -2,56 +2,93 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class BaseHealthDto {
-  @ApiProperty({ enum: ['ok', 'error'] })
+  @ApiProperty({
+    enum: ['ok', 'error'],
+    example: 'ok',
+    description: 'Health check status',
+  })
   @IsString()
   @IsNotEmpty()
   status: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    example: '2024-11-10T10:00:00.000Z',
+    description: 'Timestamp of the health check',
+  })
   @IsString()
   @IsNotEmpty()
   timestamp: string;
 }
 
 export class MemoryUsageDto {
-  @ApiProperty({ description: 'Resident Set Size - total memory allocated for the process' })
+  @ApiProperty({
+    example: 52428800,
+    description: 'Resident Set Size - total memory allocated for the process (bytes)',
+  })
   @IsNumber()
   rss: number;
 
-  @ApiProperty({ description: 'Total size of the allocated heap' })
+  @ApiProperty({
+    example: 20971520,
+    description: 'Total size of the allocated heap (bytes)',
+  })
   @IsNumber()
   heapTotal: number;
 
-  @ApiProperty({ description: 'Actual memory used during execution' })
+  @ApiProperty({
+    example: 15728640,
+    description: 'Actual memory used during execution (bytes)',
+  })
   @IsNumber()
   heapUsed: number;
 
-  @ApiProperty({ description: 'Memory used by C++ objects bound to JavaScript' })
+  @ApiProperty({
+    example: 1048576,
+    description: 'Memory used by C++ objects bound to JavaScript (bytes)',
+  })
   @IsNumber()
   external: number;
 
-  @ApiProperty({ description: 'Memory allocated for ArrayBuffers and SharedArrayBuffers' })
+  @ApiProperty({
+    example: 524288,
+    description: 'Memory allocated for ArrayBuffers and SharedArrayBuffers (bytes)',
+  })
   @IsNumber()
   arrayBuffers: number;
 }
 
 export class CheckHealthDto extends BaseHealthDto {
-  @ApiProperty({ description: 'Process uptime in seconds' })
+  @ApiProperty({
+    example: 3600.5,
+    description: 'Process uptime in seconds',
+  })
   @IsNumber()
   uptime: number;
 
-  @ApiProperty({ type: MemoryUsageDto, description: 'Memory usage statistics' })
+  @ApiProperty({
+    type: MemoryUsageDto,
+    description: 'Memory usage statistics',
+  })
   memory: MemoryUsageDto;
 
-  @ApiProperty({ description: 'API version' })
+  @ApiProperty({
+    example: '1.0.0',
+    description: 'API version',
+  })
   @IsString()
   version: string;
 
-  @ApiProperty({ description: 'Current environment (development, production, etc.)' })
+  @ApiProperty({
+    example: 'development',
+    description: 'Current environment (development, production, etc.)',
+  })
   @IsString()
   environment: string;
 
-  @ApiProperty({ description: 'Database connection status' })
+  @ApiProperty({
+    example: 'connected',
+    description: 'Database connection status',
+  })
   @IsString()
   database: string;
 }

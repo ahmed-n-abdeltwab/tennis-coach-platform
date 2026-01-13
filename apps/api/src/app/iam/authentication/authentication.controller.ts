@@ -1,6 +1,6 @@
 import { ApiResponses } from '@common';
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { JwtPayload } from '../interfaces/jwt.types';
 
@@ -21,6 +21,7 @@ import {
 import { AuthType } from './enums/auth-type.enum';
 import { JwtRefreshGuard } from './guards/jwt-refresh/jwt-refresh.guard';
 
+@ApiTags('authentication')
 @Controller('authentication')
 export class AuthenticationController {
   constructor(private authenticationService: AuthenticationService) {}
