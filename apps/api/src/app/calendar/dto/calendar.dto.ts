@@ -1,36 +1,39 @@
-import { createTypedApiDecorators } from '@common';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsCuid } from '@common';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsDate, IsString } from 'class-validator';
+import { IsArray, IsDate, IsOptional, IsString } from 'class-validator';
 
 export class CreateCalendarEventDto {
   @ApiProperty()
   @IsString()
+  @IsCuid()
   sessionId: string;
 }
 
 export class CalendarEventResponse {
   @ApiProperty()
   @IsString()
+  @IsCuid()
   eventId: string;
 
   @ApiProperty()
   @IsString()
   summary: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: 'date-time' })
   @IsDate()
   @Type(() => Date)
+  @IsOptional()
   start?: Date;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: 'date-time' })
   @IsDate()
   @Type(() => Date)
+  @IsCuid()
   end?: Date;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsArray()
+  @IsString({ each: true })
   attendees?: string[];
 }
-
-export const CalendarEventApiResponse = createTypedApiDecorators(CalendarEventResponse);

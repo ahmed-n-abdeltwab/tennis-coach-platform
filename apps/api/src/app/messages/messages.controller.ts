@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { ApiResponses } from '@common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../iam/authentication/decorators/current-user.decorator';
@@ -7,7 +8,7 @@ import { JwtPayload } from '../iam/interfaces/jwt.types';
 import {
   CreateMessageDto,
   GetMessagesQuery,
-  MessageApiResponses,
+  MarkMessageReadDto,
   MessageResponseDto,
 } from './dto/message.dto';
 import { MessagesService } from './messages.service';
@@ -20,7 +21,7 @@ export class MessagesController {
   @Post()
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create a new message' })
-  @MessageApiResponses.Created('Message created successfully')
+  @(ApiResponses.for(MessageResponseDto).Created('Message created successfully'))
   async create(
     @Body() createDto: CreateMessageDto,
     @CurrentUser() user: JwtPayload
@@ -31,7 +32,7 @@ export class MessagesController {
   @Get()
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get all messages for current user' })
-  @MessageApiResponses.FoundMany('Messages retrieved successfully')
+  @(ApiResponses.for(MessageResponseDto).FoundMany('Messages retrieved successfully'))
   async findAll(
     @Query() query: GetMessagesQuery,
     @CurrentUser() user: JwtPayload
@@ -42,7 +43,7 @@ export class MessagesController {
   @Get('conversation/:userId')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get conversation with a specific user' })
-  @MessageApiResponses.FoundMany('Conversation retrieved successfully')
+  @(ApiResponses.for(MessageResponseDto).FoundMany('Conversation retrieved successfully'))
   async findConversation(
     @Param('userId') userId: string,
     @CurrentUser() user: JwtPayload
@@ -53,7 +54,7 @@ export class MessagesController {
   @Get('session/:sessionId')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get messages for a specific session' })
-  @MessageApiResponses.FoundMany('Session messages retrieved successfully')
+  @(ApiResponses.for(MessageResponseDto).FoundMany('Session messages retrieved successfully'))
   async findBySession(
     @Param('sessionId') sessionId: string,
     @Query() query: GetMessagesQuery,
@@ -65,11 +66,34 @@ export class MessagesController {
   @Get(':id')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get a single message by ID' })
-  @MessageApiResponses.Found('Message retrieved successfully')
+  @(ApiResponses.for(MessageResponseDto).Found('Message retrieved successfully'))
   async findOne(
     @Param('id') id: string,
     @CurrentUser('sub') userId: string
   ): Promise<MessageResponseDto> {
     return this.messagesService.findOne(id, userId);
+  }
+
+  @Patch(':id/read')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Mark a message as read' })
+  @(ApiResponses.for(MessageResponseDto).Found('Message marked as read successfully'))
+  async markAsRead(
+    @Param('id') id: string,
+    @Body() markReadDto: MarkMessageReadDto,
+    @CurrentUser('sub') userId: string
+  ): Promise<MessageResponseDto> {
+    return this.messagesService.markAsRead(id, userId, markReadDto);
+  }
+
+  @Get('conversation/:conversationId')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get messages for a specific conversation' })
+  @(ApiResponses.for(MessageResponseDto).FoundMany('Conversation messages retrieved successfully'))
+  async getConversationMessages(
+    @Param('conversationId') conversationId: string,
+    @CurrentUser() user: JwtPayload
+  ): Promise<MessageResponseDto[]> {
+    return this.messagesService.getConversationMessages(conversationId, user.sub, user.role);
   }
 }

@@ -1,6 +1,8 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import { Role } from '@prisma/client';
+import { Payment, PaymentStatus, Role } from '@prisma/client';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 import { SessionsService } from './../sessions/sessions.service';
 import { TimeSlotsService } from './../time-slots/time-slots.service';
@@ -10,7 +12,36 @@ import {
   CapturePaymentResponses,
   CreateOrderResponses,
   CreatePaymentDto,
+  PaymentResponseDto,
+  UpdatePaymentStatusDto,
 } from './dto/payment.dto';
+
+/**
+ * PayPal API Response Types
+ * These interfaces define the expected structure of PayPal API responses
+ */
+interface PayPalLink {
+  href: string;
+  rel: string;
+  method?: string;
+}
+
+interface PayPalOrderResponse {
+  id: string;
+  status: string;
+  links: PayPalLink[];
+}
+
+interface PayPalCaptureResponse {
+  id: string;
+  status: string;
+}
+
+interface PayPalTokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+}
 
 @Injectable()
 export class PaymentsService {
@@ -19,6 +50,7 @@ export class PaymentsService {
   constructor(
     @Inject(paymentsConfig.KEY)
     private readonly paymentsConfiguration: ConfigType<typeof paymentsConfig>,
+    private prisma: PrismaService,
     private sessionsService: SessionsService,
     private timeSlotsService: TimeSlotsService
   ) {
@@ -27,6 +59,166 @@ export class PaymentsService {
         ? 'https://api-m.sandbox.paypal.com'
         : 'https://api-m.paypal.com';
   }
+
+  // ========================= //
+  // INTERNAL METHODS (Own Table)
+  // ========================= //
+
+  /**
+   * Find payment by ID - internal method
+   */
+  private async findPaymentInternal(
+    where: { id?: string; paypalOrderId?: string },
+    options: { throwIfNotFound?: boolean } = {}
+  ): Promise<Payment | null> {
+    const { throwIfNotFound = true } = options;
+
+    const payment = await this.prisma.payment.findFirst({ where });
+
+    if (throwIfNotFound && !payment) {
+      throw new NotFoundException('Payment not found');
+    }
+
+    return payment;
+  }
+
+  /**
+   * Create a new payment record
+   */
+  private async createPaymentInternal(data: {
+    userId: string;
+    amount: number;
+    currency?: string;
+    paypalOrderId?: string;
+    status?: PaymentStatus;
+  }): Promise<Payment> {
+    return this.prisma.payment.create({
+      data: {
+        userId: data.userId,
+        amount: data.amount,
+        currency: data.currency ?? 'USD',
+        paypalOrderId: data.paypalOrderId,
+        status: data.status ?? PaymentStatus.PENDING,
+      },
+    });
+  }
+
+  /**
+   * Update payment record
+   */
+  private async updatePaymentInternal(
+    id: string,
+    data: {
+      status?: PaymentStatus;
+      paypalCaptureId?: string;
+    }
+  ): Promise<Payment> {
+    return this.prisma.payment.update({
+      where: { id },
+      data,
+    });
+  }
+
+  // ========================= //
+  // PUBLIC METHODS (For Controllers)
+  // ========================= //
+
+  /**
+   * Find payment by ID
+   */
+  async findById(id: string): Promise<PaymentResponseDto> {
+    const payment = await this.findPaymentInternal({ id });
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+    return this.toResponseDto(payment);
+  }
+
+  /**
+   * Find payments by user ID
+   */
+  async findByUserId(userId: string): Promise<PaymentResponseDto[]> {
+    const payments = await this.prisma.payment.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return payments.map(p => this.toResponseDto(p));
+  }
+
+  /**
+   * Update payment status
+   */
+  async updateStatus(id: string, dto: UpdatePaymentStatusDto): Promise<PaymentResponseDto> {
+    await this.findPaymentInternal({ id }); // Verify exists
+    const updated = await this.updatePaymentInternal(id, { status: dto.status });
+    return this.toResponseDto(updated);
+  }
+
+  /**
+   * Convert Payment entity to response DTO
+   */
+  private toResponseDto(payment: Payment): PaymentResponseDto {
+    return {
+      id: payment.id,
+      userId: payment.userId,
+      amount: Number(payment.amount),
+      currency: payment.currency,
+      status: payment.status,
+      paypalOrderId: payment.paypalOrderId ?? undefined,
+      paypalCaptureId: payment.paypalCaptureId ?? undefined,
+      createdAt: payment.createdAt,
+      updatedAt: payment.updatedAt,
+    };
+  }
+
+  // ========================= //
+  // PUBLIC METHODS (For Other Services)
+  // ========================= //
+
+  /**
+   * Count payments - used by AnalyticsService
+   */
+  async countPayments(): Promise<number> {
+    return this.prisma.payment.count();
+  }
+
+  /**
+   * Count payments by status - used by AnalyticsService
+   */
+  async countByStatus(status: PaymentStatus): Promise<number> {
+    return this.prisma.payment.count({ where: { status } });
+  }
+
+  /**
+   * Get total revenue (completed payments) - used by AnalyticsService
+   */
+  async getTotalRevenue(): Promise<number> {
+    const result = await this.prisma.payment.aggregate({
+      where: { status: PaymentStatus.COMPLETED },
+      _sum: { amount: true },
+    });
+    return Number(result._sum.amount ?? 0);
+  }
+
+  /**
+   * Get payments for a date range - used by AnalyticsService
+   */
+  async getPaymentsInDateRange(startDate: Date, endDate: Date): Promise<Payment[]> {
+    return this.prisma.payment.findMany({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+        status: PaymentStatus.COMPLETED,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  // ========================= //
+  // PAYPAL INTEGRATION METHODS
+  // ========================= //
 
   async createOrder(
     createDto: CreatePaymentDto,
@@ -45,6 +237,14 @@ export class PaymentsService {
     if (session.isPaid) {
       throw new BadRequestException('Session already paid');
     }
+
+    // Create payment record in PENDING status
+    const payment = await this.createPaymentInternal({
+      userId,
+      amount,
+      currency: 'USD',
+      status: PaymentStatus.PENDING,
+    });
 
     // Get PayPal access token
     const accessToken = await this.getAccessToken();
@@ -76,15 +276,26 @@ export class PaymentsService {
       body: JSON.stringify(orderData),
     });
 
-    const order = (await response.json()) as any;
+    const order = (await response.json()) as PayPalOrderResponse;
 
     if (!response.ok) {
+      // Mark payment as failed
+      await this.updatePaymentInternal(payment.id, { status: PaymentStatus.FAILED });
       throw new BadRequestException('Failed to create PayPal order');
     }
 
+    // Update payment with PayPal order ID
+    await this.updatePaymentInternal(payment.id, {
+      status: PaymentStatus.PENDING,
+    });
+    await this.prisma.payment.update({
+      where: { id: payment.id },
+      data: { paypalOrderId: order.id },
+    });
+
     return {
       orderId: order.id,
-      approvalUrl: order.links.find((link: any) => link.rel === 'approve')?.href,
+      approvalUrl: order.links.find(link => link.rel === 'approve')?.href,
     };
   }
 
@@ -102,6 +313,12 @@ export class PaymentsService {
       throw new BadRequestException('Invalid session');
     }
 
+    // Find the payment record by PayPal order ID
+    const payment = await this.findPaymentInternal(
+      { paypalOrderId: orderId },
+      { throwIfNotFound: false }
+    );
+
     // Get PayPal access token
     const accessToken = await this.getAccessToken();
 
@@ -114,20 +331,36 @@ export class PaymentsService {
       },
     });
 
-    const captureResult = (await response.json()) as any;
+    const captureResult = (await response.json()) as PayPalCaptureResponse;
 
     if (!response.ok || captureResult.status !== 'COMPLETED') {
+      // Mark payment as failed if we have a record
+      if (payment) {
+        await this.updatePaymentInternal(payment.id, { status: PaymentStatus.FAILED });
+      }
       throw new BadRequestException('Payment capture failed');
     }
 
-    // Update session as paid using SessionsService internal method
-    await this.sessionsService.markAsPaidInternal(sessionId, orderId);
+    // Update payment record as completed
+    if (payment) {
+      await this.updatePaymentInternal(payment.id, {
+        status: PaymentStatus.COMPLETED,
+        paypalCaptureId: captureResult.id,
+      });
+
+      // Update session as paid using SessionsService internal method
+      await this.sessionsService.markAsPaidInternal(sessionId, payment.id);
+    } else {
+      // Fallback: use orderId if no payment record exists (backward compatibility)
+      await this.sessionsService.markAsPaidInternal(sessionId, orderId);
+    }
+
     // Mark time slot as unavailable using TimeSlotsService internal method
     await this.timeSlotsService.markAsUnavailableInternal(session.timeSlotId);
 
     return {
       success: true,
-      paymentId: orderId,
+      paymentId: payment?.id ?? orderId,
       captureId: captureResult.id,
     };
   }
@@ -146,7 +379,7 @@ export class PaymentsService {
       body: 'grant_type=client_credentials',
     });
 
-    const data = (await response.json()) as any;
-    return data.accessToken;
+    const data = (await response.json()) as PayPalTokenResponse;
+    return data.access_token;
   }
 }

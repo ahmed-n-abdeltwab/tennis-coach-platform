@@ -1,8 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
-import { createTypedApiDecorators } from '../../../common';
-
 export class BaseHealthDto {
   @ApiProperty({ enum: ['ok', 'error'] })
   @IsString()
@@ -61,9 +59,3 @@ export class CheckHealthDto extends BaseHealthDto {
 export class LivenessHealthDto extends BaseHealthDto {}
 
 export class ReadinessHealthDto extends BaseHealthDto {}
-
-export const CheckHealthApiResponses = createTypedApiDecorators(CheckHealthDto);
-
-export const LivenessHealthApiResponses = createTypedApiDecorators(LivenessHealthDto);
-
-export const ReadinessHealthApiResponses = createTypedApiDecorators(ReadinessHealthDto);

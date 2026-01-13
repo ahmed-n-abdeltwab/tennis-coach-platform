@@ -1,4 +1,4 @@
-import { createTypedApiDecorators } from '@common';
+import { IsCuid } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -13,9 +13,11 @@ import {
 
 export class CoachSummaryDto {
   @ApiProperty()
+  @IsCuid()
   id!: string;
 
   @ApiProperty()
+  @IsString()
   name!: string;
 
   @ApiProperty()
@@ -25,6 +27,8 @@ export class CoachSummaryDto {
 
 export class TimeSlotResponseDto {
   @ApiProperty()
+  @IsCuid()
+  @IsString()
   id!: string;
 
   @ApiProperty({ type: Date })
@@ -32,12 +36,15 @@ export class TimeSlotResponseDto {
   dateTime!: Date;
 
   @ApiProperty()
+  @IsNumber()
   durationMin!: number;
 
   @ApiProperty()
+  @IsBoolean()
   isAvailable!: boolean;
 
   @ApiProperty()
+  @IsCuid()
   coachId!: string;
 
   @ApiProperty({ type: CoachSummaryDto })
@@ -87,7 +94,6 @@ export class GetTimeSlotsQuery {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @IsCuid()
   coachId?: string;
 }
-// Create typed API decorators for time slots
-export const TimeSlotApiResponses = createTypedApiDecorators(TimeSlotResponseDto);

@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 
 import { AccountsModule } from '../accounts/accounts.module';
+import { ConversationsModule } from '../conversations/conversations.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { SessionsModule } from '../sessions/sessions.module';
 
@@ -9,9 +10,14 @@ import { MessagesGateway } from './messages.gateway';
 import { MessagesService } from './messages.service';
 
 @Module({
-  imports: [PrismaModule, SessionsModule, AccountsModule],
+  imports: [
+    PrismaModule,
+    forwardRef(() => SessionsModule),
+    AccountsModule,
+    forwardRef(() => ConversationsModule),
+  ],
   controllers: [MessagesController],
   providers: [MessagesService, MessagesGateway],
-  exports: [MessagesService],
+  exports: [MessagesService, MessagesGateway],
 })
 export class MessagesModule {}

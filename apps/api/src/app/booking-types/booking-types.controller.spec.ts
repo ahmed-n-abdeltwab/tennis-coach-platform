@@ -7,7 +7,7 @@ import { BookingTypesController } from './booking-types.controller';
 import { BookingTypesService } from './booking-types.service';
 
 interface BookingTypesMocks {
-  BookingTypesService: DeepMocked<BookingTypesController>;
+  BookingTypesService: DeepMocked<BookingTypesService>;
 }
 
 describe('BookingTypesController', () => {
@@ -17,19 +17,7 @@ describe('BookingTypesController', () => {
     // Create test instance with configuration - no class extension needed!
     test = new ControllerTest({
       controller: BookingTypesController,
-      providers: [
-        {
-          provide: BookingTypesService,
-          useValue: {
-            findAll: jest.fn(),
-            findByCoach: jest.fn(),
-            findOne: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            remove: jest.fn(),
-          },
-        },
-      ],
+      providers: [BookingTypesService],
       moduleName: 'booking-types',
     });
 
@@ -43,9 +31,9 @@ describe('BookingTypesController', () => {
   describe('GET /booking-types', () => {
     it('should call findAll service method', async () => {
       const mockBookingTypes = test.factory.bookingType.createManyWithNulls(1, {
-        id: 'booking-type-1',
+        id: 'cbookingtype12345678901',
         name: 'Personal Training',
-        coachId: 'coach-1',
+        coachId: 'ccoach1234567890123456',
       });
 
       test.mocks.BookingTypesService.findAll.mockResolvedValue(mockBookingTypes);
@@ -59,9 +47,9 @@ describe('BookingTypesController', () => {
 
   describe('GET /booking-types/coach/:coachId', () => {
     it('should call findByCoach with the provided coach id', async () => {
-      const coachId = 'coach-1';
+      const coachId = 'ccoach1234567890123456';
       const mockBookingTypes = test.factory.bookingType.createManyWithNulls(1, {
-        id: 'booking-type-1',
+        id: 'cbookingtype12345678901',
         name: 'Personal Training',
         coachId,
       });
@@ -78,9 +66,9 @@ describe('BookingTypesController', () => {
   describe('GET /booking-types/:id', () => {
     it('should call findOne with the provided id', async () => {
       const mockBookingType = test.factory.bookingType.createWithNulls({
-        id: 'booking-type-1',
+        id: 'cbookingtype12345678901',
         name: 'Personal Training',
-        coachId: 'coach-1',
+        coachId: 'ccoach1234567890123456',
       });
       test.mocks.BookingTypesService.findOne.mockResolvedValue(mockBookingType);
 
@@ -96,12 +84,11 @@ describe('BookingTypesController', () => {
         name: 'Personal Training',
         description: 'One-on-one training',
         basePrice: 99.99,
-        isActive: true,
       };
 
-      const coachId = 'coach-1';
+      const coachId = 'ccoach1234567890123456';
       const mockCreatedBookingType = test.factory.bookingType.createWithNulls({
-        id: 'booking-type-1',
+        id: 'cbookingtype12345678901',
         ...createData,
         basePrice: new Decimal(createData.basePrice),
         coachId,
@@ -128,8 +115,8 @@ describe('BookingTypesController', () => {
         basePrice: 149.99,
       };
 
-      const coachId = 'coach-1';
-      const bookingTypeId = 'booking-type-1';
+      const coachId = 'ccoach1234567890123456';
+      const bookingTypeId = 'cbookingtype12345678901';
       const mockUpdatedBookingType = test.factory.bookingType.createWithNulls({
         id: bookingTypeId,
         ...updateData,
@@ -162,8 +149,8 @@ describe('BookingTypesController', () => {
         name: 'Partially Updated Training',
       };
 
-      const coachId = 'coach-1';
-      const bookingTypeId = 'booking-type-1';
+      const coachId = 'ccoach1234567890123456';
+      const bookingTypeId = 'cbookingtype12345678901';
 
       const mockUpdatedBookingType = test.factory.bookingType.createWithNulls({
         id: bookingTypeId,
@@ -191,8 +178,8 @@ describe('BookingTypesController', () => {
 
   describe('DELETE /booking-types/:id', () => {
     it('should call remove with provided id and coach id', async () => {
-      const coachId = 'coach-1';
-      const bookingTypeId = 'booking-type-1';
+      const coachId = 'ccoach1234567890123456';
+      const bookingTypeId = 'cbookingtype12345678901';
 
       test.mocks.BookingTypesService.remove.mockResolvedValue(undefined);
 

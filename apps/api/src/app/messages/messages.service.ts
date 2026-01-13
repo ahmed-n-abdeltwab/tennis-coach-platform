@@ -1,12 +1,24 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Message, Prisma, Role } from '@prisma/client';
+import {
+  ForbiddenException,
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Message, MessageType, Prisma, Role } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 
 import { AccountsService } from '../accounts/accounts.service';
+import { ConversationsService } from '../conversations/conversations.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 import { SessionsService } from './../sessions/sessions.service';
-import { CreateMessageDto, GetMessagesQuery, MessageResponseDto } from './dto/message.dto';
+import {
+  CreateMessageDto,
+  GetMessagesQuery,
+  MarkMessageReadDto,
+  MessageResponseDto,
+} from './dto/message.dto';
 
 /**
  * Standard include object for message queries.
@@ -33,8 +45,11 @@ const MESSAGE_INCLUDE = {
 export class MessagesService {
   constructor(
     private prisma: PrismaService,
+    @Inject(forwardRef(() => SessionsService))
     private sessionsService: SessionsService,
-    private accountsService: AccountsService
+    private accountsService: AccountsService,
+    @Inject(forwardRef(() => ConversationsService))
+    private conversationsService: ConversationsService
   ) {}
 
   /**
@@ -97,6 +112,84 @@ export class MessagesService {
     return plainToInstance(MessageResponseDto, messages);
   }
 
+  // ============================================================
+  // Methods for ConversationsService (Service Layer Pattern)
+  // ============================================================
+
+  /**
+   * Get unread message count for a recipient.
+   * Used by ConversationsService to show unread counts.
+   * @param recipientId - The recipient user ID
+   * @returns Count of unread messages
+   */
+  async getUnreadCountByRecipient(recipientId: string): Promise<number> {
+    return this.prisma.message.count({
+      where: {
+        receiverId: recipientId,
+        isRead: false,
+      },
+    });
+  }
+
+  /**
+   * Get messages for a conversation with pagination.
+   * Used by ConversationsService.getMessages().
+   * @param recipientId - The user requesting messages (for filtering)
+   * @param page - Page number (1-based)
+   * @param limit - Number of messages per page
+   * @returns Array of messages with sender/receiver info
+   */
+  async getMessagesByRecipient(
+    recipientId: string,
+    page: number,
+    limit: number
+  ): Promise<Message[]> {
+    return this.prisma.message.findMany({
+      where: {
+        OR: [{ senderId: recipientId }, { receiverId: recipientId }],
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        receiver: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { sentAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+  }
+
+  /**
+   * Mark all unread messages as read for a recipient.
+   * Used by ConversationsService.markMessagesAsRead().
+   * @param recipientId - The recipient user ID
+   * @returns Number of messages updated
+   */
+  async markAllAsReadByRecipient(recipientId: string): Promise<number> {
+    const result = await this.prisma.message.updateMany({
+      where: {
+        receiverId: recipientId,
+        isRead: false,
+      },
+      data: {
+        isRead: true,
+        readAt: new Date(),
+      },
+    });
+    return result.count;
+  }
+
   /**
    * Create a new message
    */
@@ -105,7 +198,9 @@ export class MessagesService {
     userId: string,
     role: Role
   ): Promise<MessageResponseDto> {
-    const { content, receiverId, sessionId } = createDto;
+    const { content, receiverId, sessionId, messageType, customServiceId } = createDto;
+
+    const finalMessageType = messageType ?? MessageType.TEXT;
 
     // Verify receiver exists using AccountsService internal method
     const receiver = await this.accountsService.existsById(receiverId);
@@ -122,15 +217,16 @@ export class MessagesService {
         throw new NotFoundException('Session not found');
       }
 
-      const hasAccess =
-        role === Role.USER || role === Role.PREMIUM_USER
-          ? session.userId === userId
-          : session.coachId === userId;
+      const hasAccess = role === Role.USER ? session.userId === userId : session.coachId === userId;
 
       if (!hasAccess) {
         throw new ForbiddenException('Not authorized to send messages for this session');
       }
     }
+
+    // Get or create conversation between the two users using ConversationsService
+    const participantIds = [userId, receiverId].sort();
+    const conversation = await this.conversationsService.findOrCreateByParticipants(participantIds);
 
     const message = await this.prisma.message.create({
       data: {
@@ -140,9 +236,15 @@ export class MessagesService {
         receiverId,
         senderType: role,
         receiverType: receiver.role,
+        messageType: finalMessageType,
+        customServiceId: customServiceId ?? null,
+        conversationId: conversation.id,
       },
       include: MESSAGE_INCLUDE,
     });
+
+    // Update conversation with last message info using ConversationsService
+    await this.conversationsService.updateLastMessage(conversation.id, message.id, message.sentAt);
 
     return plainToInstance(MessageResponseDto, message);
   }
@@ -167,6 +269,16 @@ export class MessagesService {
         { senderId: userId, receiverId: query.conversationWith },
         { senderId: query.conversationWith, receiverId: userId },
       ];
+    }
+
+    // Filter by conversation ID if provided
+    if (query.conversationId) {
+      where.conversationId = query.conversationId;
+    }
+
+    // Filter by message type if provided
+    if (query.messageType) {
+      where.messageType = query.messageType;
     }
 
     const messages = (await this.findMessageInternal(where, {
@@ -227,15 +339,82 @@ export class MessagesService {
       throw new NotFoundException('Session not found');
     }
 
-    const hasAccess =
-      role === Role.USER || role === Role.PREMIUM_USER
-        ? session.userId === userId
-        : session.coachId === userId;
+    const hasAccess = role === Role.USER ? session.userId === userId : session.coachId === userId;
 
     if (!hasAccess) {
       throw new ForbiddenException('Not authorized to view messages for this session');
     }
 
     return this.findBySessionId(sessionId);
+  }
+
+  /**
+   * Mark a message as read
+   */
+  async markAsRead(
+    messageId: string,
+    userId: string,
+    markReadDto: MarkMessageReadDto
+  ): Promise<MessageResponseDto> {
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      include: MESSAGE_INCLUDE,
+    });
+
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    // Only the receiver can mark a message as read
+    if (message.receiverId !== userId) {
+      throw new ForbiddenException('You can only mark messages sent to you as read');
+    }
+
+    const updatedMessage = await this.prisma.message.update({
+      where: { id: messageId },
+      data: {
+        isRead: markReadDto.isRead ?? true,
+        readAt: markReadDto.isRead !== false ? new Date() : null,
+      },
+      include: MESSAGE_INCLUDE,
+    });
+
+    return plainToInstance(MessageResponseDto, updatedMessage);
+  }
+
+  /**
+   * Get messages for a specific conversation
+   */
+  async getConversationMessages(
+    conversationId: string,
+    userId: string,
+    _role: Role
+  ): Promise<MessageResponseDto[]> {
+    // Verify user has access to this conversation using ConversationsService
+    const hasAccess = await this.conversationsService.existsWithParticipant(conversationId, userId);
+
+    if (!hasAccess) {
+      throw new ForbiddenException('Access denied to this conversation');
+    }
+
+    const messages = (await this.findMessageInternal(
+      { conversationId },
+      { isMany: true, throwIfNotFound: false }
+    )) as Message[];
+
+    return plainToInstance(MessageResponseDto, messages);
+  }
+
+  // ============================================================
+  // Analytics Methods (Service Layer Pattern)
+  // ============================================================
+
+  /**
+   * Count messages with optional filters - used by AnalyticsService
+   * @param where - Optional Prisma where clause for filtering
+   * @returns Count of matching messages
+   */
+  async countMessages(where?: Prisma.MessageWhereInput): Promise<number> {
+    return this.prisma.message.count({ where });
   }
 }

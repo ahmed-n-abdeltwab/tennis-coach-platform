@@ -1,22 +1,26 @@
-import { createTypedApiDecorators } from '@common';
+import { IsCuid } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Decimal } from '@prisma/client/runtime/client';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsDate, IsEmail, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 export class CoachDto {
+  @ApiProperty()
   @IsString()
+  @IsCuid()
   id: string;
 
+  @ApiProperty()
   @IsString()
   name: string;
 
-  @IsOptional()
+  @ApiProperty()
   @IsEmail()
   email: string;
 }
 export class BookingTypeResponseDto {
   @ApiProperty()
   @IsString()
+  @IsCuid()
   id!: string;
 
   @ApiProperty({ type: Date, format: 'date-time' })
@@ -48,6 +52,7 @@ export class BookingTypeResponseDto {
 
   @ApiProperty({ example: 'coach-id-123' })
   @IsString()
+  @IsCuid()
   coachId: string;
 
   @ApiProperty({ type: CoachDto })
@@ -97,8 +102,3 @@ export class UpdateBookingTypeDto {
   @IsBoolean()
   isActive?: boolean;
 }
-
-// Create typed API decorators for booking types
-export const GetAllBookingTypeApiResponses = createTypedApiDecorators(GetAllBookingTypeResponseDto);
-
-export const BookingTypeApiResponses = createTypedApiDecorators(BookingTypeResponseDto);

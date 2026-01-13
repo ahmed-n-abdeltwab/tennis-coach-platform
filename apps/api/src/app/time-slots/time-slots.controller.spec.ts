@@ -45,7 +45,7 @@ describe('TimeSlotsController', () => {
       test.mocks.TimeSlotsService.findAvailable.mockResolvedValue(mockTimeSlots);
 
       await test.http.get(
-        '/api/time-slots?coachId=coach-123&startDate=2024-12-25T00:00:00Z' as '/api/time-slots'
+        '/api/time-slots?coachId=ccoach1234567890123456&startDate=2024-12-25T00:00:00Z' as '/api/time-slots'
       );
 
       expect(test.mocks.TimeSlotsService.findAvailable).toHaveBeenCalledWith(expect.any(Object));
@@ -64,29 +64,33 @@ describe('TimeSlotsController', () => {
   describe('GET /time-slots/coach/:coachId', () => {
     it('should call findByCoach service method with correct parameters', async () => {
       const mockTimeSlots = [
-        test.factory.timeSlot.createWithNulls({ coachId: 'coach-123' }),
-        test.factory.timeSlot.createWithNulls({ coachId: 'coach-123' }),
+        test.factory.timeSlot.createWithNulls({ coachId: 'ccoach1234567890123456' }),
+        test.factory.timeSlot.createWithNulls({ coachId: 'ccoach1234567890123456' }),
       ];
       test.mocks.TimeSlotsService.findByCoach.mockResolvedValue(mockTimeSlots);
 
-      await test.http.get('/api/time-slots/coach/coach-123' as '/api/time-slots/coach/{coachId}');
+      await test.http.get(
+        '/api/time-slots/coach/ccoach1234567890123456' as '/api/time-slots/coach/{coachId}'
+      );
 
       expect(test.mocks.TimeSlotsService.findByCoach).toHaveBeenCalledWith(
-        'coach-123',
+        'ccoach1234567890123456',
         expect.any(Object)
       );
     });
 
     it('should call findByCoach service method with query parameters', async () => {
-      const mockTimeSlots = [test.factory.timeSlot.createWithNulls({ coachId: 'coach-123' })];
+      const mockTimeSlots = [
+        test.factory.timeSlot.createWithNulls({ coachId: 'ccoach1234567890123456' }),
+      ];
       test.mocks.TimeSlotsService.findByCoach.mockResolvedValue(mockTimeSlots);
 
       await test.http.get(
-        '/api/time-slots/coach/coach-123?startDate=2024-12-25T00:00:00Z&endDate=2024-12-31T23:59:59Z' as '/api/time-slots/coach/{coachId}'
+        '/api/time-slots/coach/ccoach1234567890123456?startDate=2024-12-25T00:00:00Z&endDate=2024-12-31T23:59:59Z' as '/api/time-slots/coach/{coachId}'
       );
 
       expect(test.mocks.TimeSlotsService.findByCoach).toHaveBeenCalledWith(
-        'coach-123',
+        'ccoach1234567890123456',
         expect.any(Object)
       );
     });
@@ -95,12 +99,12 @@ describe('TimeSlotsController', () => {
       test.mocks.TimeSlotsService.findByCoach.mockResolvedValue([]);
 
       const response = await test.http.get(
-        '/api/time-slots/coach/coach-456' as '/api/time-slots/coach/{coachId}'
+        '/api/time-slots/coach/ccoach4567890123456789' as '/api/time-slots/coach/{coachId}'
       );
 
       expect(response.status).toBe(200);
       expect(test.mocks.TimeSlotsService.findByCoach).toHaveBeenCalledWith(
-        'coach-456',
+        'ccoach4567890123456789',
         expect.any(Object)
       );
     });
@@ -108,12 +112,12 @@ describe('TimeSlotsController', () => {
 
   describe('GET /time-slots/:id', () => {
     it('should call findOne service method with correct parameters', async () => {
-      const mockTimeSlot = test.factory.timeSlot.createWithNulls({ id: 'slot-123' });
+      const mockTimeSlot = test.factory.timeSlot.createWithNulls({ id: 'ctimeslot1234567890123' });
       test.mocks.TimeSlotsService.findOne.mockResolvedValue(mockTimeSlot);
 
-      await test.http.get('/api/time-slots/slot-123' as '/api/time-slots/{id}');
+      await test.http.get('/api/time-slots/ctimeslot1234567890123' as '/api/time-slots/{id}');
 
-      expect(test.mocks.TimeSlotsService.findOne).toHaveBeenCalledWith('slot-123');
+      expect(test.mocks.TimeSlotsService.findOne).toHaveBeenCalledWith('ctimeslot1234567890123');
     });
 
     it('should return 404 when time slot not found', async () => {
@@ -122,7 +126,7 @@ describe('TimeSlotsController', () => {
       );
 
       const response = await test.http.get(
-        '/api/time-slots/nonexistent-id' as '/api/time-slots/{id}'
+        '/api/time-slots/cnonexistent12345678901' as '/api/time-slots/{id}'
       );
 
       expect(response.status).toBe(404);
@@ -140,16 +144,22 @@ describe('TimeSlotsController', () => {
         dateTime: new Date('2024-12-25T10:00:00Z'),
         durationMin: 60,
         isAvailable: true,
-        coachId: 'coach-123',
+        coachId: 'ccoach1234567890123456',
       });
       test.mocks.TimeSlotsService.create.mockResolvedValue(mockTimeSlot);
 
-      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({
+        role: Role.COACH,
+        sub: 'ccoach1234567890123456',
+      });
       await test.http.authenticatedPost('/api/time-slots', coachToken, {
         body: createDto,
       });
 
-      expect(test.mocks.TimeSlotsService.create).toHaveBeenCalledWith(createDto, 'coach-123');
+      expect(test.mocks.TimeSlotsService.create).toHaveBeenCalledWith(
+        createDto,
+        'ccoach1234567890123456'
+      );
     });
 
     it('should create time slot with default values', async () => {
@@ -158,16 +168,22 @@ describe('TimeSlotsController', () => {
       };
       const mockTimeSlot = test.factory.timeSlot.createWithNulls({
         dateTime: new Date('2024-12-25T10:00:00Z'),
-        coachId: 'coach-123',
+        coachId: 'ccoach1234567890123456',
       });
       test.mocks.TimeSlotsService.create.mockResolvedValue(mockTimeSlot);
 
-      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({
+        role: Role.COACH,
+        sub: 'ccoach1234567890123456',
+      });
       await test.http.authenticatedPost('/api/time-slots', coachToken, {
         body: createDto,
       });
 
-      expect(test.mocks.TimeSlotsService.create).toHaveBeenCalledWith(createDto, 'coach-123');
+      expect(test.mocks.TimeSlotsService.create).toHaveBeenCalledWith(
+        createDto,
+        'ccoach1234567890123456'
+      );
     });
   });
 
@@ -179,24 +195,27 @@ describe('TimeSlotsController', () => {
         durationMin: 90,
       };
       const mockTimeSlot = test.factory.timeSlot.createWithNulls({
-        id: 'slot-123',
+        id: 'ctimeslot1234567890123',
         isAvailable: false,
         durationMin: 90,
-        coachId: 'coach-123',
+        coachId: 'ccoach1234567890123456',
       });
       test.mocks.TimeSlotsService.update.mockResolvedValue(mockTimeSlot);
 
-      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({
+        role: Role.COACH,
+        sub: 'ccoach1234567890123456',
+      });
       await test.http.authenticatedPatch(
-        '/api/time-slots/slot-123' as '/api/time-slots/{id}',
+        '/api/time-slots/ctimeslot1234567890123' as '/api/time-slots/{id}',
         coachToken,
         { body: updateDto }
       );
 
       expect(test.mocks.TimeSlotsService.update).toHaveBeenCalledWith(
-        'slot-123',
+        'ctimeslot1234567890123',
         updateDto,
-        'coach-123'
+        'ccoach1234567890123456'
       );
     });
 
@@ -205,9 +224,12 @@ describe('TimeSlotsController', () => {
         new NotFoundException('Time slot not found')
       );
 
-      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({
+        role: Role.COACH,
+        sub: 'ccoach1234567890123456',
+      });
       const response = await test.http.authenticatedPatch(
-        '/api/time-slots/nonexistent-id' as '/api/time-slots/{id}',
+        '/api/time-slots/cnonexistent12345678901' as '/api/time-slots/{id}',
         coachToken,
         { body: { dateTime: '2024-12-25T10:00:00Z', isAvailable: false } }
       );
@@ -220,9 +242,12 @@ describe('TimeSlotsController', () => {
         new ForbiddenException('Not authorized to update this time slot')
       );
 
-      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'other-coach' });
+      const coachToken = await test.auth.createToken({
+        role: Role.COACH,
+        sub: 'cothercoach1234567890',
+      });
       const response = await test.http.authenticatedPatch(
-        '/api/time-slots/slot-123' as '/api/time-slots/{id}',
+        '/api/time-slots/ctimeslot1234567890123' as '/api/time-slots/{id}',
         coachToken,
         { body: { dateTime: '2024-12-25T10:00:00Z', isAvailable: false } }
       );
@@ -235,13 +260,19 @@ describe('TimeSlotsController', () => {
     it('should call remove service method with correct parameters', async () => {
       test.mocks.TimeSlotsService.remove.mockResolvedValue(undefined);
 
-      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({
+        role: Role.COACH,
+        sub: 'ccoach1234567890123456',
+      });
       await test.http.authenticatedDelete(
-        '/api/time-slots/slot-123' as '/api/time-slots/{id}',
+        '/api/time-slots/ctimeslot1234567890123' as '/api/time-slots/{id}',
         coachToken
       );
 
-      expect(test.mocks.TimeSlotsService.remove).toHaveBeenCalledWith('slot-123', 'coach-123');
+      expect(test.mocks.TimeSlotsService.remove).toHaveBeenCalledWith(
+        'ctimeslot1234567890123',
+        'ccoach1234567890123456'
+      );
     });
 
     it('should return 404 when time slot not found', async () => {
@@ -249,9 +280,12 @@ describe('TimeSlotsController', () => {
         new NotFoundException('Time slot not found')
       );
 
-      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({
+        role: Role.COACH,
+        sub: 'ccoach1234567890123456',
+      });
       const response = await test.http.authenticatedDelete(
-        '/api/time-slots/nonexistent-id' as '/api/time-slots/{id}',
+        '/api/time-slots/cnonexistent12345678901' as '/api/time-slots/{id}',
         coachToken
       );
 
@@ -263,9 +297,12 @@ describe('TimeSlotsController', () => {
         new ForbiddenException('Not authorized to delete this time slot')
       );
 
-      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'other-coach' });
+      const coachToken = await test.auth.createToken({
+        role: Role.COACH,
+        sub: 'cothercoach1234567890',
+      });
       const response = await test.http.authenticatedDelete(
-        '/api/time-slots/slot-123' as '/api/time-slots/{id}',
+        '/api/time-slots/ctimeslot1234567890123' as '/api/time-slots/{id}',
         coachToken
       );
 
@@ -281,7 +318,10 @@ describe('TimeSlotsController', () => {
           durationMin: 60,
         };
 
-        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
+        const userToken = await test.auth.createToken({
+          role: Role.USER,
+          sub: 'cuser12345678901234567',
+        });
         const response = await test.http.authenticatedPost('/api/time-slots', userToken, {
           body: createDto,
         });
@@ -296,9 +336,12 @@ describe('TimeSlotsController', () => {
           isAvailable: false,
         };
 
-        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
+        const userToken = await test.auth.createToken({
+          role: Role.USER,
+          sub: 'cuser12345678901234567',
+        });
         const response = await test.http.authenticatedPatch(
-          '/api/time-slots/slot-123' as '/api/time-slots/{id}',
+          '/api/time-slots/ctimeslot1234567890123' as '/api/time-slots/{id}',
           userToken,
           { body: updateDto }
         );
@@ -308,9 +351,12 @@ describe('TimeSlotsController', () => {
       });
 
       it('should return 403 when USER tries to delete time slot', async () => {
-        const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
+        const userToken = await test.auth.createToken({
+          role: Role.USER,
+          sub: 'cuser12345678901234567',
+        });
         const response = await test.http.authenticatedDelete(
-          '/api/time-slots/slot-123' as '/api/time-slots/{id}',
+          '/api/time-slots/ctimeslot1234567890123' as '/api/time-slots/{id}',
           userToken
         );
 
@@ -331,11 +377,13 @@ describe('TimeSlotsController', () => {
       });
 
       it('should allow unauthenticated access to findByCoach', async () => {
-        const mockTimeSlots = [test.factory.timeSlot.createWithNulls({ coachId: 'coach-123' })];
+        const mockTimeSlots = [
+          test.factory.timeSlot.createWithNulls({ coachId: 'ccoach1234567890123456' }),
+        ];
         test.mocks.TimeSlotsService.findByCoach.mockResolvedValue(mockTimeSlots);
 
         const response = await test.http.get(
-          '/api/time-slots/coach/coach-123' as '/api/time-slots/coach/{coachId}'
+          '/api/time-slots/coach/ccoach1234567890123456' as '/api/time-slots/coach/{coachId}'
         );
 
         expect(response.status).toBe(200);
@@ -343,10 +391,14 @@ describe('TimeSlotsController', () => {
       });
 
       it('should allow unauthenticated access to findOne', async () => {
-        const mockTimeSlot = test.factory.timeSlot.createWithNulls({ id: 'slot-123' });
+        const mockTimeSlot = test.factory.timeSlot.createWithNulls({
+          id: 'ctimeslot1234567890123',
+        });
         test.mocks.TimeSlotsService.findOne.mockResolvedValue(mockTimeSlot);
 
-        const response = await test.http.get('/api/time-slots/slot-123' as '/api/time-slots/{id}');
+        const response = await test.http.get(
+          '/api/time-slots/ctimeslot1234567890123' as '/api/time-slots/{id}'
+        );
 
         expect(response.status).toBe(200);
         expect(test.mocks.TimeSlotsService.findOne).toHaveBeenCalled();
