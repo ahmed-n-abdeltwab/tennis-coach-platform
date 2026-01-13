@@ -1,7 +1,14 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { CustomService, Prisma, Role } from '@prisma/client';
+import {
+  ForbiddenException,
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { CustomService, MessageType, Prisma, Role } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 
+import { MessagesService } from '../messages/messages.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -36,7 +43,9 @@ const CUSTOM_SERVICE_INCLUDE = {
 export class CustomServicesService {
   constructor(
     private prisma: PrismaService,
-    private notificationsService: NotificationsService
+    private notificationsService: NotificationsService,
+    @Inject(forwardRef(() => MessagesService))
+    private messagesService: MessagesService
   ) {}
 
   /**
@@ -292,6 +301,24 @@ export class CustomServicesService {
     // Only the coach who created the service or admin can send it
     if (userRole !== Role.ADMIN && existingService.coachId !== userId) {
       throw new ForbiddenException('You can only send your own custom services');
+    }
+
+    // Create a CUSTOM_SERVICE message in the chat system
+    try {
+      await this.messagesService.create(
+        {
+          content:
+            sendDto.message || `I've shared a custom service with you: ${existingService.name}`,
+          receiverId: sendDto.userId,
+          messageType: MessageType.CUSTOM_SERVICE,
+          customServiceId: existingService.id,
+        },
+        userId,
+        userRole
+      );
+    } catch (error) {
+      console.error('Failed to create custom service message:', error);
+      // Continue with the operation even if message creation fails
     }
 
     // Increment usage count

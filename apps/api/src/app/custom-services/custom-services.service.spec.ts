@@ -3,6 +3,7 @@ import { Role } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 import { ServiceTest } from '@test-utils';
 
+import { MessagesService } from '../messages/messages.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -22,6 +23,9 @@ interface CustomServiceMocks {
   };
   NotificationsService: {
     sendCustomServiceNotification: jest.Mock;
+  };
+  MessagesService: {
+    create: jest.Mock;
   };
 }
 
@@ -50,6 +54,12 @@ describe('CustomServicesService', () => {
           provide: NotificationsService,
           useValue: {
             sendCustomServiceNotification: jest.fn(),
+          },
+        },
+        {
+          provide: MessagesService,
+          useValue: {
+            create: jest.fn(),
           },
         },
       ],
