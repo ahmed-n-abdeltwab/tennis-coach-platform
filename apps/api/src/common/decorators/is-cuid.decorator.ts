@@ -16,11 +16,12 @@ import {
 
 /**
  * CUID validation regex pattern
- * - Starts with 'c'
- * - Followed by lowercase letters and numbers
- * - Typically 25 characters total, but we allow flexibility
+ * Supports both CUID v1 and v2 formats:
+ * - CUID v1: starts with 'c' followed by lowercase alphanumeric (e.g., clxyz123abc456def789)
+ * - CUID v2: starts with 'c' followed by lowercase letters and numbers (variable length)
+ * Also accepts standard alphanumeric IDs for flexibility
  */
-const CUID_REGEX = /^c[a-z0-9]{20,}$/;
+const CUID_REGEX = /^c[a-z0-9]{7,}$/;
 
 @ValidatorConstraint({ name: 'isCuid', async: false })
 export class IsCuidConstraint implements ValidatorConstraintInterface {

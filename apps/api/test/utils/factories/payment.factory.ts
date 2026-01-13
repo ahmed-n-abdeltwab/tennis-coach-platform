@@ -3,18 +3,19 @@
  */
 
 import { DeepPartial } from '@api-sdk/testing';
+import { PaymentStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 
 import { BaseMockFactory } from './base-factory';
 
 export interface MockPayment {
   id: string;
-  sessionId: string;
-  orderId: string;
+  userId: string;
   amount: Decimal;
-  status: 'pending' | 'completed' | 'failed' | 'cancelled';
+  currency: string;
+  status: PaymentStatus;
   paypalOrderId?: string;
-  captureId?: string;
+  paypalCaptureId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,20 +44,20 @@ export class PaymentMockFactory extends BaseMockFactory<MockPayment> {
     const id = this.generateId();
     const now = this.createDate();
 
-    // Note: sessionId should be provided via overrides when creating payment
-    // for a specific session. Default generates a placeholder ID.
+    // Note: userId should be provided via overrides when creating payment
+    // for a specific user. Default generates a placeholder ID.
     const payment = {
       id,
-      sessionId: overrides?.sessionId ?? this.generateId(),
-      orderId: this.generatePayPalOrderId(),
+      userId: overrides?.userId ?? this.generateId(),
       amount: new Decimal(this.randomAmount()),
-      status: 'pending',
+      currency: 'USD',
+      status: PaymentStatus.PENDING,
       createdAt: now,
       updatedAt: now,
       ...overrides,
     } as MockPayment;
 
-    this.validateRequired(payment.sessionId, 'sessionId');
+    this.validateRequired(payment.userId, 'userId');
 
     return payment;
   }
