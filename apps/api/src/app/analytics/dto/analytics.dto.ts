@@ -291,3 +291,14 @@ export class ExportAnalyticsResponseDto {
   @IsString()
   contentType!: string;
 }
+
+export class RealTimeMetricsDto {
+  @ApiProperty({ example: 25, description: 'Number of currently online users' })
+  onlineUsers!: number;
+
+  @ApiProperty({ example: 12, description: 'Number of active sessions today' })
+  activeSessions!: number;
+
+  @ApiProperty({ example: 1250.75, description: 'Total revenue generated today' })
+  todayRevenue!: number;
+}

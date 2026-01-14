@@ -18,6 +18,7 @@ import {
   FinancialAnalyticsDto,
   GetAnalyticsQuery,
   PlatformGrowthDto,
+  RealTimeMetricsDto,
   SessionMetricsDto,
   SystemMetricsDto,
   UserStatisticsDto,
@@ -408,6 +409,63 @@ export class AnalyticsService {
       userGrowthRate: currentUsers * 0.1, // Simplified
       revenueGrowthRate: currentRevenue * 0.08, // Simplified
       sessionGrowthRate: currentSessions * 0.12, // Simplified
+    });
+  }
+
+  /**
+   * Get real-time metrics for live dashboard updates.
+   * Returns current online users, active sessions today, and today's revenue.
+   * This endpoint is designed for frequent polling (no caching).
+   * @param userId - The ID of the user requesting metrics
+   * @param userRole - The role of the user (COACH sees own data, ADMIN sees all)
+   * @returns Real-time metrics DTO with current counts
+   */
+  async getRealTimeMetrics(userId: string, userRole: Role): Promise<RealTimeMetricsDto> {
+    const coachId = userRole === Role.COACH ? userId : undefined;
+
+    // Get start of today (midnight)
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    // Build where clause for coach filtering
+    const accountWhere: Prisma.AccountWhereInput = coachId
+      ? { id: { in: await this.sessionsService.getClientIdsByCoach(coachId) } }
+      : {};
+
+    const sessionWhere: Prisma.SessionWhereInput = {
+      createdAt: { gte: startOfToday },
+      status: { in: [SessionStatus.SCHEDULED, SessionStatus.CONFIRMED] },
+      ...(coachId && { coachId }),
+    };
+
+    const revenueWhere: Prisma.SessionWhereInput = {
+      createdAt: { gte: startOfToday },
+      status: SessionStatus.COMPLETED,
+      ...(coachId && { coachId }),
+    };
+
+    const [onlineUsers, activeSessions, todaySessions] = await Promise.all([
+      // Count currently online users
+      this.accountsService.countOnline(accountWhere),
+
+      // Count active sessions (scheduled or confirmed) created today
+      this.sessionsService.countSessions(sessionWhere),
+
+      // Get completed sessions today for revenue calculation
+      this.sessionsService.getCompletedSessionsWithRevenue(revenueWhere),
+    ]);
+
+    // Calculate today's revenue
+    const todayRevenue = todaySessions.reduce((sum, session) => {
+      const basePrice = Number(session.bookingType.basePrice);
+      const discountAmount = session.discount ? Number(session.discount.amount) : 0;
+      return sum + Math.max(0, basePrice - discountAmount);
+    }, 0);
+
+    return plainToInstance(RealTimeMetricsDto, {
+      onlineUsers,
+      activeSessions,
+      todayRevenue,
     });
   }
 

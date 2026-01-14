@@ -16,6 +16,7 @@ import {
   FinancialAnalyticsDto,
   GetAnalyticsQuery,
   PlatformGrowthDto,
+  RealTimeMetricsDto,
   SessionMetricsDto,
   SystemMetricsDto,
   UserStatisticsDto,
@@ -36,6 +37,15 @@ export class AnalyticsController {
     @Query() query: GetAnalyticsQuery
   ): Promise<DashboardAnalyticsDto> {
     return this.analyticsService.getDashboardAnalytics(user.sub, user.role, query);
+  }
+
+  @Get('realtime')
+  @Roles(Role.COACH, Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get real-time metrics for live dashboard updates' })
+  @(ApiResponses.for(RealTimeMetricsDto).Found('Real-time metrics retrieved successfully'))
+  async getRealTimeMetrics(@CurrentUser() user: JwtPayload): Promise<RealTimeMetricsDto> {
+    return this.analyticsService.getRealTimeMetrics(user.sub, user.role);
   }
 
   @Get('revenue')

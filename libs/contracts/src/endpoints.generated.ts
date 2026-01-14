@@ -71,6 +71,10 @@ export interface Endpoints {
     GET: (params: { timeRange?: "last_7_days" | "last_30_days" | "last_90_days" | "last_year" | "custom"; startDate?: string; endDate?: string }, body: undefined | never) => { userGrowthRate: number; revenueGrowthRate: number; sessionGrowthRate: number };
   };
 
+  "/api/analytics/realtime": {
+    GET: (params: undefined | never, body: undefined | never) => { onlineUsers: number; activeSessions: number; todayRevenue: number };
+  };
+
   "/api/analytics/revenue": {
     GET: (params: { timeRange?: "last_7_days" | "last_30_days" | "last_90_days" | "last_year" | "custom"; startDate?: string; endDate?: string }, body: undefined | never) => { totalRevenue: number; revenueThisPeriod: number; averageSessionPrice: number; totalSessions: number; paidSessions: number; pendingSessions: number; revenueByMonth: { month?: string; revenue?: number; sessionCount?: number }[]; topBookingTypes: { name?: string; bookingCount?: number; revenue?: number }[] };
   };

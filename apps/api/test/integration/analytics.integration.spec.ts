@@ -134,6 +134,121 @@ describe('Analytics Integration', () => {
     });
   });
 
+  describe('Real-Time Metrics', () => {
+    describe('GET /api/analytics/realtime', () => {
+      it('should return real-time metrics for coach', async () => {
+        // Create some test data for today
+        const bookingType = await test.db.createTestBookingType({
+          coachId,
+          basePrice: new Prisma.Decimal(100),
+        });
+        const timeSlot = await test.db.createTestTimeSlot({ coachId });
+        const user = await test.db.createTestUser({ isOnline: true });
+
+        // Create a completed session today
+        await test.db.createTestSession({
+          coachId,
+          userId: user.id,
+          bookingTypeId: bookingType.id,
+          timeSlotId: timeSlot.id,
+          status: SessionStatus.COMPLETED,
+          createdAt: new Date(),
+        });
+
+        // Create an active session today
+        await test.db.createTestSession({
+          coachId,
+          userId: user.id,
+          bookingTypeId: bookingType.id,
+          timeSlotId: timeSlot.id,
+          status: SessionStatus.SCHEDULED,
+          createdAt: new Date(),
+        });
+
+        const response = await test.http.authenticatedGet('/api/analytics/realtime', coachToken);
+
+        expect(response.ok).toBe(true);
+        if (response.ok) {
+          expect(response.status).toBe(200);
+          expect(response.body).toHaveProperty('onlineUsers');
+          expect(response.body).toHaveProperty('activeSessions');
+          expect(response.body).toHaveProperty('todayRevenue');
+          expect(typeof response.body.onlineUsers).toBe('number');
+          expect(typeof response.body.activeSessions).toBe('number');
+          expect(typeof response.body.todayRevenue).toBe('number');
+          expect(response.body.activeSessions).toBeGreaterThanOrEqual(1);
+          expect(response.body.todayRevenue).toBeGreaterThanOrEqual(0);
+        }
+      });
+
+      it('should return real-time metrics for admin', async () => {
+        const response = await test.http.authenticatedGet('/api/analytics/realtime', adminToken);
+
+        expect(response.ok).toBe(true);
+        if (response.ok) {
+          expect(response.status).toBe(200);
+          expect(response.body).toHaveProperty('onlineUsers');
+          expect(response.body).toHaveProperty('activeSessions');
+          expect(response.body).toHaveProperty('todayRevenue');
+        }
+      });
+
+      it('should deny access to regular users', async () => {
+        const response = await test.http.authenticatedGet('/api/analytics/realtime', userToken);
+
+        expect(response.ok).toBe(false);
+        if (!response.ok) {
+          expect(response.status).toBe(403);
+        }
+      });
+
+      it('should fail without authentication', async () => {
+        const response = await test.http.get('/api/analytics/realtime');
+
+        expect(response.ok).toBe(false);
+        if (!response.ok) {
+          expect(response.status).toBeGreaterThanOrEqual(401);
+        }
+      });
+
+      it('should calculate today revenue correctly', async () => {
+        // Create test data with known revenue
+        const bookingType = await test.db.createTestBookingType({
+          coachId,
+          basePrice: new Prisma.Decimal(150),
+        });
+        const timeSlot = await test.db.createTestTimeSlot({ coachId });
+        const user = await test.db.createTestUser();
+
+        // Create two completed sessions today
+        await test.db.createTestSession({
+          coachId,
+          userId: user.id,
+          bookingTypeId: bookingType.id,
+          timeSlotId: timeSlot.id,
+          status: SessionStatus.COMPLETED,
+          createdAt: new Date(),
+        });
+
+        await test.db.createTestSession({
+          coachId,
+          userId: user.id,
+          bookingTypeId: bookingType.id,
+          timeSlotId: timeSlot.id,
+          status: SessionStatus.COMPLETED,
+          createdAt: new Date(),
+        });
+
+        const response = await test.http.authenticatedGet('/api/analytics/realtime', coachToken);
+
+        expect(response.ok).toBe(true);
+        if (response.ok) {
+          expect(response.body.todayRevenue).toBe(300); // 2 sessions * $150
+        }
+      });
+    });
+  });
+
   describe('Revenue Analytics', () => {
     describe('GET /api/analytics/revenue', () => {
       it('should return revenue analytics for coach', async () => {
@@ -408,6 +523,7 @@ describe('Analytics Integration', () => {
   describe('Role-Based Access Control', () => {
     const analyticsEndpoints = [
       { path: '/api/analytics/dashboard', adminOnly: false },
+      { path: '/api/analytics/realtime', adminOnly: false },
       { path: '/api/analytics/revenue', adminOnly: false },
       { path: '/api/analytics/users', adminOnly: false },
       { path: '/api/analytics/sessions', adminOnly: false },
