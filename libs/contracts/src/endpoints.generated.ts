@@ -136,16 +136,16 @@ export interface Endpoints {
   };
 
   "/api/conversations": {
-    GET: (params: { isPinned?: boolean; limit?: number; offset?: number }, body: undefined | never) => { id: string; createdAt: string; updatedAt: string; participantIds: string[]; lastMessageId?: string; lastMessageAt?: string; isPinned: boolean; pinnedAt?: string; pinnedBy?: string; lastMessage?: { id: string; content: string; sentAt: string; senderId: string; messageType: "TEXT" | "CUSTOM_SERVICE" | "BOOKING_REQUEST" }; unreadCount?: number }[];
+    GET: (params: { isPinned?: boolean; limit?: number; offset?: number }, body: undefined | never) => { id: string; createdAt: string; updatedAt: string; participantIds: string[]; lastMessageId?: string; lastMessageAt?: string; isPinned: boolean; pinnedAt?: string; pinnedBy?: string; lastMessage?: { id: string; content: string; sentAt: string; senderId: string; messageType: "TEXT" | "CUSTOM_SERVICE" | "BOOKING_REQUEST"; sender?: { id: string; email: string; role: "USER" | "COACH" | "ADMIN" }; receiver?: { id: string; email: string; role: "USER" | "COACH" | "ADMIN" } }; unreadCount?: number }[];
   };
 
   "/api/conversations/{id}": {
-    GET: (params: { id: string }, body: undefined | never) => { id: string; createdAt: string; updatedAt: string; participantIds: string[]; lastMessageId?: string; lastMessageAt?: string; isPinned: boolean; pinnedAt?: string; pinnedBy?: string; lastMessage?: { id: string; content: string; sentAt: string; senderId: string; messageType: "TEXT" | "CUSTOM_SERVICE" | "BOOKING_REQUEST" }; unreadCount?: number };
+    GET: (params: { id: string }, body: undefined | never) => { id: string; createdAt: string; updatedAt: string; participantIds: string[]; lastMessageId?: string; lastMessageAt?: string; isPinned: boolean; pinnedAt?: string; pinnedBy?: string; lastMessage?: { id: string; content: string; sentAt: string; senderId: string; messageType: "TEXT" | "CUSTOM_SERVICE" | "BOOKING_REQUEST"; sender?: { id: string; email: string; role: "USER" | "COACH" | "ADMIN" }; receiver?: { id: string; email: string; role: "USER" | "COACH" | "ADMIN" } }; unreadCount?: number };
   };
 
   "/api/conversations/{id}/pin": {
-    DELETE: (params: { id: string }, body: undefined | never) => { id: string; createdAt: string; updatedAt: string; participantIds: string[]; lastMessageId?: string; lastMessageAt?: string; isPinned: boolean; pinnedAt?: string; pinnedBy?: string; lastMessage?: { id: string; content: string; sentAt: string; senderId: string; messageType: "TEXT" | "CUSTOM_SERVICE" | "BOOKING_REQUEST" }; unreadCount?: number };
-    POST: (params: { id: string }, body: undefined | never) => { id: string; createdAt: string; updatedAt: string; participantIds: string[]; lastMessageId?: string; lastMessageAt?: string; isPinned: boolean; pinnedAt?: string; pinnedBy?: string; lastMessage?: { id: string; content: string; sentAt: string; senderId: string; messageType: "TEXT" | "CUSTOM_SERVICE" | "BOOKING_REQUEST" }; unreadCount?: number };
+    DELETE: (params: { id: string }, body: undefined | never) => { id: string; createdAt: string; updatedAt: string; participantIds: string[]; lastMessageId?: string; lastMessageAt?: string; isPinned: boolean; pinnedAt?: string; pinnedBy?: string; lastMessage?: { id: string; content: string; sentAt: string; senderId: string; messageType: "TEXT" | "CUSTOM_SERVICE" | "BOOKING_REQUEST"; sender?: { id: string; email: string; role: "USER" | "COACH" | "ADMIN" }; receiver?: { id: string; email: string; role: "USER" | "COACH" | "ADMIN" } }; unreadCount?: number };
+    POST: (params: { id: string }, body: undefined | never) => { id: string; createdAt: string; updatedAt: string; participantIds: string[]; lastMessageId?: string; lastMessageAt?: string; isPinned: boolean; pinnedAt?: string; pinnedBy?: string; lastMessage?: { id: string; content: string; sentAt: string; senderId: string; messageType: "TEXT" | "CUSTOM_SERVICE" | "BOOKING_REQUEST"; sender?: { id: string; email: string; role: "USER" | "COACH" | "ADMIN" }; receiver?: { id: string; email: string; role: "USER" | "COACH" | "ADMIN" } }; unreadCount?: number };
   };
 
   "/api/custom-services": {

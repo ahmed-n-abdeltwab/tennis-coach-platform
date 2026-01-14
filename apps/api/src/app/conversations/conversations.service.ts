@@ -15,7 +15,7 @@ import { ConversationResponseDto, GetConversationsQuery } from './dto/conversati
 
 /**
  * Standard include object for conversation queries.
- * Includes last message and participant information for consistent responses.
+ * Includes last message with sender/receiver information and participant information for consistent responses.
  */
 const CONVERSATION_INCLUDE = {
   lastMessage: {
@@ -25,6 +25,18 @@ const CONVERSATION_INCLUDE = {
       sentAt: true,
       senderId: true,
       messageType: true,
+      sender: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      receiver: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
     },
   },
   _count: {

@@ -4,6 +4,19 @@ import { Transform, Type } from 'class-transformer';
 import { IsBoolean, IsDate, IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 /**
+ * Account summary for sender/receiver in messages.
+ */
+export class AccountSummaryDto {
+  @ApiProperty({ example: 'user-id-123' })
+  @IsString()
+  id!: string;
+
+  @ApiProperty({ example: 'John Doe' })
+  @IsString()
+  name!: string;
+}
+
+/**
  * Summary DTO for the last message in a conversation.
  * Contains basic message information for display purposes.
  */
@@ -28,6 +41,22 @@ export class LastMessageSummaryDto {
   @ApiProperty({ enum: MessageType, example: MessageType.TEXT })
   @IsEnum(MessageType)
   messageType!: MessageType;
+
+  @ApiPropertyOptional({
+    description: 'Sender account information',
+    type: AccountSummaryDto,
+  })
+  @IsOptional()
+  @Type(() => AccountSummaryDto)
+  sender?: AccountSummaryDto;
+
+  @ApiPropertyOptional({
+    description: 'Receiver account information',
+    type: AccountSummaryDto,
+  })
+  @IsOptional()
+  @Type(() => AccountSummaryDto)
+  receiver?: AccountSummaryDto;
 }
 
 /**
