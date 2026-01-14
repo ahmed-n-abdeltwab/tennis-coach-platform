@@ -40,7 +40,7 @@ export class MessagesController {
     return this.messagesService.findAll(user.sub, query);
   }
 
-  @Get('conversation/:userId')
+  @Get('conversation/with-user/:userId')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get conversation with a specific user' })
   @(ApiResponses.for(MessageResponseDto).FoundMany('Conversation retrieved successfully'))
@@ -49,6 +49,17 @@ export class MessagesController {
     @CurrentUser() user: JwtPayload
   ): Promise<MessageResponseDto[]> {
     return this.messagesService.findConversation(user.sub, userId);
+  }
+
+  @Get('conversation/:conversationId')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get messages for a specific conversation' })
+  @(ApiResponses.for(MessageResponseDto).FoundMany('Conversation messages retrieved successfully'))
+  async getConversationMessages(
+    @Param('conversationId') conversationId: string,
+    @CurrentUser() user: JwtPayload
+  ): Promise<MessageResponseDto[]> {
+    return this.messagesService.getConversationMessages(conversationId, user.sub, user.role);
   }
 
   @Get('session/:sessionId')
@@ -84,16 +95,5 @@ export class MessagesController {
     @CurrentUser('sub') userId: string
   ): Promise<MessageResponseDto> {
     return this.messagesService.markAsRead(id, userId, markReadDto);
-  }
-
-  @Get('conversation/:conversationId')
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get messages for a specific conversation' })
-  @(ApiResponses.for(MessageResponseDto).FoundMany('Conversation messages retrieved successfully'))
-  async getConversationMessages(
-    @Param('conversationId') conversationId: string,
-    @CurrentUser() user: JwtPayload
-  ): Promise<MessageResponseDto[]> {
-    return this.messagesService.getConversationMessages(conversationId, user.sub, user.role);
   }
 }
