@@ -1,16 +1,20 @@
 import {
+  BadRequestException,
   ForbiddenException,
   forwardRef,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CustomService, MessageType, Prisma, Role } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 
+import { BookingTypesService } from '../booking-types/booking-types.service';
 import { MessagesService } from '../messages/messages.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { TimeSlotsService } from '../time-slots/time-slots.service';
 
 import {
   CreateCustomServiceDto,
@@ -41,9 +45,13 @@ const CUSTOM_SERVICE_INCLUDE = {
  */
 @Injectable()
 export class CustomServicesService {
+  private readonly logger = new Logger(CustomServicesService.name);
+
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
+    private bookingTypesService: BookingTypesService,
+    private timeSlotsService: TimeSlotsService,
     @Inject(forwardRef(() => MessagesService))
     private messagesService: MessagesService
   ) {}
@@ -85,6 +93,52 @@ export class CustomServicesService {
   }
 
   /**
+   * Validate pre-filled booking references.
+   * Ensures that booking type and time slot exist and belong to the coach.
+   * @param coachId - The coach ID who owns the references
+   * @param prefilledBookingTypeId - Optional booking type ID to validate
+   * @param prefilledTimeSlotId - Optional time slot ID to validate
+   * @throws BadRequestException if validation fails
+   */
+  private async validatePrefilledReferences(
+    coachId: string,
+    prefilledBookingTypeId?: string,
+    prefilledTimeSlotId?: string
+  ): Promise<void> {
+    // Validate booking type if provided
+    if (prefilledBookingTypeId) {
+      try {
+        const bookingType = await this.bookingTypesService.findById(prefilledBookingTypeId);
+
+        if (bookingType.coachId !== coachId) {
+          throw new BadRequestException('Pre-filled booking type does not belong to this coach');
+        }
+      } catch (error) {
+        if (error instanceof NotFoundException) {
+          throw new BadRequestException('Pre-filled booking type not found');
+        }
+        throw error;
+      }
+    }
+
+    // Validate time slot if provided
+    if (prefilledTimeSlotId) {
+      try {
+        const timeSlot = await this.timeSlotsService.findById(prefilledTimeSlotId);
+
+        if (timeSlot.coachId !== coachId) {
+          throw new BadRequestException('Pre-filled time slot does not belong to this coach');
+        }
+      } catch (error) {
+        if (error instanceof NotFoundException) {
+          throw new BadRequestException('Pre-filled time slot not found');
+        }
+        throw error;
+      }
+    }
+  }
+
+  /**
    * Create a new custom service.
    * Only coaches and admins can create custom services.
    * @param createDto - DTO containing service details (name, description, price, duration, etc.)
@@ -92,6 +146,7 @@ export class CustomServicesService {
    * @param userRole - The role of the user (must be COACH or ADMIN)
    * @returns The created custom service response DTO
    * @throws ForbiddenException if user is not a coach or admin
+   * @throws BadRequestException if pre-filled references are invalid
    */
   async create(
     createDto: CreateCustomServiceDto,
@@ -102,6 +157,13 @@ export class CustomServicesService {
     if (userRole !== Role.COACH && userRole !== Role.ADMIN) {
       throw new ForbiddenException('Only coaches can create custom services');
     }
+
+    // Validate pre-filled booking references
+    await this.validatePrefilledReferences(
+      coachId,
+      createDto.prefilledBookingTypeId,
+      createDto.prefilledTimeSlotId
+    );
 
     const customService = await this.prisma.customService.create({
       data: {
@@ -144,11 +206,11 @@ export class CustomServicesService {
 
     // Role-based filtering
     if (userRole === Role.USER) {
-      // Users can only see public services or services sent to them
-      where.OR = [
-        { isPublic: true },
-        // Add logic for services sent to user when messaging is implemented
-      ];
+      // Users can see public services or services sent to them via chat
+      // Query messages table for CUSTOM_SERVICE messages where user is receiver
+      const sentServiceIds = await this.messagesService.getCustomServiceIdsSentToUser(userId);
+
+      where.OR = [{ isPublic: true }, { id: { in: sentServiceIds } }];
     } else if (userRole === Role.COACH) {
       // Coaches can see their own services and public services
       where.OR = [{ coachId: userId }, { isPublic: true }];
@@ -198,6 +260,7 @@ export class CustomServicesService {
    * @returns The updated custom service response DTO
    * @throws NotFoundException if service not found
    * @throws ForbiddenException if user is not the owner or admin
+   * @throws BadRequestException if pre-filled references are invalid
    */
   async update(
     id: string,
@@ -211,6 +274,13 @@ export class CustomServicesService {
     if (userRole !== Role.ADMIN && existingService.coachId !== userId) {
       throw new ForbiddenException('You can only update your own custom services');
     }
+
+    // Validate pre-filled booking references if they are being updated
+    await this.validatePrefilledReferences(
+      existingService.coachId,
+      updateDto.prefilledBookingTypeId,
+      updateDto.prefilledTimeSlotId
+    );
 
     const updatedService = await this.prisma.customService.update({
       where: { id },
@@ -317,7 +387,10 @@ export class CustomServicesService {
         userRole
       );
     } catch (error) {
-      console.error('Failed to create custom service message:', error);
+      this.logger.error(
+        `Failed to create custom service message for service ${id} to user ${sendDto.userId}`,
+        error instanceof Error ? error.stack : String(error)
+      );
       // Continue with the operation even if message creation fails
     }
 
@@ -338,7 +411,10 @@ export class CustomServicesService {
       );
     } catch (error) {
       // Log error but don't fail the operation
-      console.error('Failed to send custom service notification:', error);
+      this.logger.error(
+        `Failed to send custom service notification for service ${id} to user ${sendDto.userId}`,
+        error instanceof Error ? error.stack : String(error)
+      );
     }
 
     return { message: `Custom service sent to user ${sendDto.userId}` };

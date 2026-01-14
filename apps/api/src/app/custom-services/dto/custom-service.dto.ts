@@ -102,6 +102,7 @@ export class CreateCustomServiceDto {
 
   @ApiProperty({ example: '99.99', description: 'Base price of the service' })
   @IsDecimal({ decimal_digits: '0,2' })
+  @Min(0)
   @IsNotEmpty()
   basePrice!: string;
 
@@ -172,6 +173,7 @@ export class UpdateCustomServiceDto {
 
   @ApiPropertyOptional({ example: '99.99', description: 'Base price of the service' })
   @IsDecimal({ decimal_digits: '0,2' })
+  @Min(0)
   @IsOptional()
   basePrice?: string;
 

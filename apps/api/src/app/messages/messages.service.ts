@@ -132,6 +132,30 @@ export class MessagesService {
   }
 
   /**
+   * Get custom service IDs sent to a user via CUSTOM_SERVICE messages.
+   * Used by CustomServicesService to filter services visible to users.
+   * @param userId - The user ID to check for received custom services
+   * @returns Array of custom service IDs
+   */
+  async getCustomServiceIdsSentToUser(userId: string): Promise<string[]> {
+    const messages = await this.prisma.message.findMany({
+      where: {
+        receiverId: userId,
+        messageType: MessageType.CUSTOM_SERVICE,
+        customServiceId: { not: null },
+      },
+      select: {
+        customServiceId: true,
+      },
+    });
+
+    // Filter out null values and return unique IDs
+    return [
+      ...new Set(messages.map(m => m.customServiceId).filter((id): id is string => id !== null)),
+    ];
+  }
+
+  /**
    * Get messages for a conversation with pagination.
    * Used by ConversationsService.getMessages().
    * @param recipientId - The user requesting messages (for filtering)

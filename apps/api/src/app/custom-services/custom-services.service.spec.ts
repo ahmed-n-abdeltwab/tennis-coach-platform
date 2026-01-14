@@ -3,9 +3,11 @@ import { Role } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 import { ServiceTest } from '@test-utils';
 
+import { BookingTypesService } from '../booking-types/booking-types.service';
 import { MessagesService } from '../messages/messages.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { TimeSlotsService } from '../time-slots/time-slots.service';
 
 import { CustomServicesService } from './custom-services.service';
 
@@ -26,6 +28,13 @@ interface CustomServiceMocks {
   };
   MessagesService: {
     create: jest.Mock;
+    getCustomServiceIdsSentToUser: jest.Mock;
+  };
+  BookingTypesService: {
+    findById: jest.Mock;
+  };
+  TimeSlotsService: {
+    findById: jest.Mock;
   };
 }
 
@@ -60,6 +69,19 @@ describe('CustomServicesService', () => {
           provide: MessagesService,
           useValue: {
             create: jest.fn(),
+            getCustomServiceIdsSentToUser: jest.fn().mockResolvedValue([]),
+          },
+        },
+        {
+          provide: BookingTypesService,
+          useValue: {
+            findById: jest.fn(),
+          },
+        },
+        {
+          provide: TimeSlotsService,
+          useValue: {
+            findById: jest.fn(),
           },
         },
       ],
