@@ -1,17 +1,3 @@
-/**
- * Notifications Controller
- *
- * Handles HTTP endpoints for notification management including:
- * - Getting user notifications
- * - Marking notifications as read
- * - Getting unread counts
- * - Deleting notifications
- * - Sending email notifications
- * - Sending booking confirmations
- *
- * Requirements: 4.7, 1.5
- */
-
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { NotificationPriority, Role } from '@prisma/client';

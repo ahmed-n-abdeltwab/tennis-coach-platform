@@ -1,15 +1,3 @@
-/**
- * Notifications Service
- *
- * Handles various types of notifications including:
- * - Custom service notifications
- * - Booking reminders and confirmations
- * - System notifications for role changes
- * - Email integration for important notifications
- *
- * Requirements: 4.7, 1.5
- */
-
 import { forwardRef, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import {
   Notification,

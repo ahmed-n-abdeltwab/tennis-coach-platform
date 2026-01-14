@@ -202,6 +202,10 @@ export interface Endpoints {
     POST: (params: undefined | never, body: { content: string; receiverId: string; sessionId?: string; messageType?: "TEXT" | "CUSTOM_SERVICE" | "BOOKING_REQUEST"; customServiceId?: string }) => { id: string; createdAt: string; updatedAt: string; content: string; sentAt: string; senderId: string; receiverId: string; sessionId?: string; senderType: "USER" | "COACH" | "ADMIN"; receiverType: "USER" | "COACH" | "ADMIN"; messageType: "TEXT" | "CUSTOM_SERVICE" | "BOOKING_REQUEST"; customServiceId?: string; conversationId?: string; isRead: boolean; readAt?: string; sender?: { id: string; name: string; email: string }; receiver?: { id: string; name: string; email: string } };
   };
 
+  "/api/messages/booking-request": {
+    POST: (params: undefined | never, body: { bookingTypeId: string; coachId: string; message?: string }) => { id: string; createdAt: string; updatedAt: string; content: string; sentAt: string; senderId: string; receiverId: string; sessionId?: string; senderType: "USER" | "COACH" | "ADMIN"; receiverType: "USER" | "COACH" | "ADMIN"; messageType: "TEXT" | "CUSTOM_SERVICE" | "BOOKING_REQUEST"; customServiceId?: string; conversationId?: string; isRead: boolean; readAt?: string; sender?: { id: string; name: string; email: string }; receiver?: { id: string; name: string; email: string } };
+  };
+
   "/api/messages/conversation/with-user/{userId}": {
     GET: (params: { userId: string }, body: undefined | never) => { id: string; createdAt: string; updatedAt: string; content: string; sentAt: string; senderId: string; receiverId: string; sessionId?: string; senderType: "USER" | "COACH" | "ADMIN"; receiverType: "USER" | "COACH" | "ADMIN"; messageType: "TEXT" | "CUSTOM_SERVICE" | "BOOKING_REQUEST"; customServiceId?: string; conversationId?: string; isRead: boolean; readAt?: string; sender?: { id: string; name: string; email: string }; receiver?: { id: string; name: string; email: string } }[];
   };

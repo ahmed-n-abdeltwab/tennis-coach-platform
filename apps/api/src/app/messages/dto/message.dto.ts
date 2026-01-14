@@ -265,3 +265,33 @@ export class MarkMessageReadDto {
   @IsBoolean()
   isRead?: boolean;
 }
+
+/**
+ * DTO for sending a booking request through chat.
+ * Used when a user requests to book a service directly from the chat interface.
+ */
+export class SendBookingRequestDto {
+  @ApiProperty({
+    example: 'cbookingtype12345678901',
+    description: 'ID of the booking type being requested',
+  })
+  @IsString()
+  @IsCuid()
+  bookingTypeId!: string;
+
+  @ApiProperty({
+    example: 'ccoach1234567890123456',
+    description: 'ID of the coach to send the booking request to',
+  })
+  @IsString()
+  @IsCuid()
+  coachId!: string;
+
+  @ApiPropertyOptional({
+    example: 'I would like to book a session for next week.',
+    description: 'Optional message to include with the booking request',
+  })
+  @IsOptional()
+  @IsString()
+  message?: string;
+}

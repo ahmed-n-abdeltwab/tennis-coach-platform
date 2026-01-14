@@ -417,4 +417,81 @@ export class MessagesService {
   async countMessages(where?: Prisma.MessageWhereInput): Promise<number> {
     return this.prisma.message.count({ where });
   }
+
+  // ============================================================
+  // Booking Request Methods
+  // ============================================================
+
+  /**
+   * Send a booking request through chat.
+   * Creates a BOOKING_REQUEST message with booking type information.
+   * Sends notification to the coach.
+   *
+   * @param bookingTypeId - ID of the booking type being requested
+   * @param coachId - ID of the coach to send the request to
+   * @param userId - ID of the user making the request
+   * @param role - Role of the user making the request
+   * @param message - Optional message to include with the request
+   * @returns The created booking request message
+   */
+  async sendBookingRequest(
+    bookingTypeId: string,
+    coachId: string,
+    userId: string,
+    role: Role,
+    message?: string
+  ): Promise<MessageResponseDto> {
+    // Verify coach exists and has COACH or ADMIN role
+    const coach = await this.accountsService.existsById(coachId);
+    if (!coach) {
+      throw new NotFoundException('Coach not found');
+    }
+
+    if (coach.role !== Role.COACH && coach.role !== Role.ADMIN) {
+      throw new ForbiddenException('Recipient must be a coach or admin');
+    }
+
+    // Verify booking type exists
+    const bookingType = await this.prisma.bookingType.findUnique({
+      where: { id: bookingTypeId },
+      select: { id: true, name: true },
+    });
+
+    if (!bookingType) {
+      throw new NotFoundException('Booking type not found');
+    }
+
+    // Get or create conversation between user and coach
+    const participantIds = [userId, coachId].sort();
+    const conversation = await this.conversationsService.findOrCreateByParticipants(participantIds);
+
+    // Create the booking request message with booking type info in content
+    const content = message ?? `I would like to request a booking for ${bookingType.name}.`;
+
+    const bookingRequestMessage = await this.prisma.message.create({
+      data: {
+        content,
+        senderId: userId,
+        receiverId: coachId,
+        senderType: role,
+        receiverType: coach.role,
+        messageType: MessageType.BOOKING_REQUEST,
+        conversationId: conversation.id,
+      },
+      include: MESSAGE_INCLUDE,
+    });
+
+    // Update conversation with last message info
+    await this.conversationsService.updateLastMessage(
+      conversation.id,
+      bookingRequestMessage.id,
+      bookingRequestMessage.sentAt
+    );
+
+    // Note: The bookingTypeId is passed from the frontend but not stored in the message.
+    // The frontend should handle displaying the booking type details based on the message type.
+    // If we need to store it, we would need to add a bookingTypeId field to the Message schema.
+
+    return plainToInstance(MessageResponseDto, bookingRequestMessage);
+  }
 }

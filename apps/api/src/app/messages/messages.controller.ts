@@ -10,6 +10,7 @@ import {
   GetMessagesQuery,
   MarkMessageReadDto,
   MessageResponseDto,
+  SendBookingRequestDto,
 } from './dto/message.dto';
 import { MessagesService } from './messages.service';
 
@@ -95,5 +96,22 @@ export class MessagesController {
     @CurrentUser('sub') userId: string
   ): Promise<MessageResponseDto> {
     return this.messagesService.markAsRead(id, userId, markReadDto);
+  }
+
+  @Post('booking-request')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Send a booking request through chat' })
+  @(ApiResponses.for(MessageResponseDto).Created('Booking request sent successfully'))
+  async sendBookingRequest(
+    @Body() dto: SendBookingRequestDto,
+    @CurrentUser() user: JwtPayload
+  ): Promise<MessageResponseDto> {
+    return this.messagesService.sendBookingRequest(
+      dto.bookingTypeId,
+      dto.coachId,
+      user.sub,
+      user.role,
+      dto.message
+    );
   }
 }
