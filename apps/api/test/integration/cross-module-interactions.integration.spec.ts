@@ -352,7 +352,7 @@ describe('Cross-Module Integration Tests', () => {
 
         const createData = {
           sessionId: session.id,
-          amount: 75.0,
+          amount: '75.0',
         };
 
         const response = await test.http.authenticatedPost(
@@ -383,7 +383,7 @@ describe('Cross-Module Integration Tests', () => {
         // Other user tries to create payment for this session
         const createData = {
           sessionId: session.id,
-          amount: 75.0,
+          amount: '75.0',
         };
 
         const response = await test.http.authenticatedPost(
@@ -401,7 +401,7 @@ describe('Cross-Module Integration Tests', () => {
       it('should return 400 for payment with non-existent session', async () => {
         const createData = {
           sessionId: 'non-existent-session-id',
-          amount: 75.0,
+          amount: '75.0',
         };
 
         const response = await test.http.authenticatedPost(

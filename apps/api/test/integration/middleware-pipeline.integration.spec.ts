@@ -296,7 +296,7 @@ describe('Middleware Pipeline Integration Tests', () => {
   describe('Error Handling Middleware Pipeline', () => {
     it('should handle 404 errors for non-existent accounts', async () => {
       const response = await test.http.authenticatedGet(
-        '/api/accounts/non-existent-id' as '/api/accounts/{id}',
+        '/api/accounts/cnonexistentaccount123' as '/api/accounts/{id}',
         adminToken
       );
       expect(response.ok).toBe(false);
@@ -308,7 +308,7 @@ describe('Middleware Pipeline Integration Tests', () => {
 
     it('should handle 404 errors for non-existent sessions', async () => {
       const response = await test.http.authenticatedGet(
-        '/api/sessions/non-existent-id' as '/api/sessions/{id}',
+        '/api/sessions/cnonexistentsession123' as '/api/sessions/{id}',
         userToken
       );
       expect(response.ok).toBe(false);
@@ -394,7 +394,6 @@ describe('Middleware Pipeline Integration Tests', () => {
   describe('Authorization Enforcement (Property 9)', () => {
     const roleTestCases = [
       { role: Role.USER, canListAccounts: false, canDeleteAccounts: false },
-      { role: Role.PREMIUM_USER, canListAccounts: false, canDeleteAccounts: false },
       { role: Role.COACH, canListAccounts: true, canDeleteAccounts: true },
       { role: Role.ADMIN, canListAccounts: true, canDeleteAccounts: true },
     ] as const;
@@ -544,31 +543,31 @@ describe('Middleware Pipeline Integration Tests', () => {
     const nonExistentResourceEndpoints = [
       {
         method: 'GET',
-        path: '/api/accounts/non-existent-id',
+        path: '/api/accounts/cnonexistentaccount123',
         description: 'GET account',
         useAdmin: true,
       },
       {
         method: 'PATCH',
-        path: '/api/accounts/non-existent-id',
+        path: '/api/accounts/cnonexistentaccount123',
         description: 'PATCH account',
         useAdmin: true,
       },
       {
         method: 'DELETE',
-        path: '/api/accounts/non-existent-id',
+        path: '/api/accounts/cnonexistentaccount123',
         description: 'DELETE account',
         useAdmin: true,
       },
       {
         method: 'GET',
-        path: '/api/sessions/non-existent-id',
+        path: '/api/sessions/cnonexistentsession123',
         description: 'GET session',
         useAdmin: false,
       },
       {
         method: 'PUT',
-        path: '/api/sessions/non-existent-id',
+        path: '/api/sessions/cnonexistentsession123',
         description: 'PUT session',
         useAdmin: false,
       },

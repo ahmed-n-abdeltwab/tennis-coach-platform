@@ -480,7 +480,7 @@ describe('Event Handling Integration Tests', () => {
 
       it('should return 404 for cancellation of non-existent session', async () => {
         const response = await test.http.authenticatedPut(
-          '/api/sessions/non-existent-id/cancel' as '/api/sessions/{id}/cancel',
+          '/api/sessions/cnonexistentsession123/cancel' as '/api/sessions/{id}/cancel',
           userToken
         );
 

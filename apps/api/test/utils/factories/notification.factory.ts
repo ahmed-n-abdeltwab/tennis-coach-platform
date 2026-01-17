@@ -1,255 +1,283 @@
 /**
- * Notification mock factory for creating test notification data
+ * Notification mock factory for creating test Prisma Notification data
+ * This factory matches the Prisma Notification model schema.
+ * For email sending mocks (Nodemailer), use EmailMockFactory.
  */
 
 import { DeepPartial } from '@api-sdk/testing';
+import {
+  NotificationChannel,
+  NotificationPriority,
+  NotificationType,
+  Prisma,
+} from '@prisma/client';
 
+import { AccountMockFactory, type MockAccount } from './account.factory';
 import { BaseMockFactory } from './base-factory';
 
 export interface MockNotification {
   id: string;
-  to: string;
-  subject: string;
-  text?: string;
-  html?: string;
-  sentAt: Date;
-  success: boolean;
-  messageId?: string;
-  error?: string;
-}
+  type: NotificationType;
+  title: string;
+  message: string;
+  recipientId: string;
+  senderId: string | null;
+  priority: NotificationPriority;
+  channels: NotificationChannel[];
+  metadata: Prisma.JsonValue;
+  isRead: boolean;
+  readAt: Date | null;
+  scheduledFor: Date | null;
+  sentAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 
-export interface MockEmailResult {
-  success: boolean;
-  messageId?: string;
-  error?: string;
+  // Optional relations
+  recipient?: Pick<MockAccount, 'id' | 'email' | 'name'>;
+  sender?: Pick<MockAccount, 'id' | 'email' | 'name'> | null;
 }
 
 export class NotificationMockFactory extends BaseMockFactory<MockNotification> {
+  private _account?: AccountMockFactory;
+
+  private get account(): AccountMockFactory {
+    return (this._account ??= new AccountMockFactory());
+  }
+
   protected generateMock(overrides?: DeepPartial<MockNotification>): MockNotification {
     const id = this.generateId();
+    const now = this.createDate();
 
-    return {
+    // Resolve recipient
+    const rawRecipient = overrides?.recipient ?? this.account.createUser();
+    const recipient = {
+      id: overrides?.recipientId ?? rawRecipient.id,
+      email: rawRecipient.email,
+      name: rawRecipient.name,
+    };
+
+    // Resolve sender (optional)
+    const rawSender = overrides?.sender === null ? null : (overrides?.sender ?? null);
+    const sender = rawSender
+      ? {
+          id: overrides?.senderId ?? rawSender.id,
+          email: rawSender.email,
+          name: rawSender.name,
+        }
+      : null;
+
+    const notification = {
       id,
-      to: this.randomEmail(),
-      subject: this.randomSubject(),
-      text: this.randomText(),
-      html: this.randomHtml(),
-      sentAt: this.createDate(),
-      success: true,
-      messageId: this.generateId(),
+      type: this.randomNotificationType(),
+      title: this.randomTitle(),
+      message: this.randomMessage(),
+      recipientId: recipient.id,
+      senderId: sender?.id ?? null,
+      priority: NotificationPriority.MEDIUM,
+      channels: [NotificationChannel.IN_APP, NotificationChannel.WEBSOCKET],
+      metadata: {},
+      isRead: false,
+      readAt: null,
+      scheduledFor: null,
+      sentAt: null,
+      createdAt: now,
+      updatedAt: now,
+      recipient,
+      sender,
       ...overrides,
     } as MockNotification;
+
+    // Validate required fields
+    this.validateRequired(notification.recipientId, 'recipientId');
+    this.validateRequired(notification.type, 'type');
+    this.validateRequired(notification.title, 'title');
+    this.validateRequired(notification.message, 'message');
+
+    return notification;
   }
 
-  createEmailResult(success = true, overrides?: Partial<MockEmailResult>): MockEmailResult {
-    if (success) {
-      return {
-        success: true,
-        messageId: this.generateId(),
-        ...overrides,
-      };
-    } else {
-      return {
-        success: false,
-        error: 'Email sending failed',
-        ...overrides,
-      };
-    }
-  }
-
-  createBookingConfirmation(
-    userEmail: string,
-    userName: string,
-    coachName: string,
-    overrides?: Partial<MockNotification>
-  ): MockNotification {
-    return this.create({
-      to: userEmail,
-      subject: 'Booking Confirmation - Tennis Coaching Session',
-      html: this.createBookingConfirmationHtml(userName, coachName),
-      text: this.createBookingConfirmationText(userName, coachName),
-      ...overrides,
-    });
-  }
-
-  createSessionReminder(
-    userEmail: string,
-    userName: string,
-    sessionDate: Date,
-    overrides?: Partial<MockNotification>
-  ): MockNotification {
-    return this.create({
-      to: userEmail,
-      subject: 'Session Reminder - Tennis Coaching',
-      html: this.createSessionReminderHtml(userName, sessionDate),
-      text: this.createSessionReminderText(userName, sessionDate),
-      ...overrides,
-    });
-  }
-
-  createPasswordReset(userEmail: string, overrides?: Partial<MockNotification>): MockNotification {
-    return this.create({
-      to: userEmail,
-      subject: 'Password Reset Request',
-      html: this.createPasswordResetHtml(),
-      text: this.createPasswordResetText(),
-      ...overrides,
-    });
-  }
-
-  createWelcomeEmail(
-    userEmail: string,
-    userName: string,
-    overrides?: Partial<MockNotification>
-  ): MockNotification {
-    return this.create({
-      to: userEmail,
-      subject: 'Welcome to Tennis Coaching Platform',
-      html: this.createWelcomeHtml(userName),
-      text: this.createWelcomeText(userName),
-      ...overrides,
-    });
-  }
-
-  private randomEmail(): string {
-    const domains = ['example.com', 'test.com', 'demo.org'];
-    const names = ['john', 'jane', 'mike', 'sarah', 'alex'];
-    const name = names[Math.floor(Math.random() * names.length)];
-    const domain = domains[Math.floor(Math.random() * domains.length)];
-    return `${name}@${domain}`;
-  }
-
-  private randomSubject(): string {
-    const subjects = [
-      'Booking Confirmation',
-      'Session Reminder',
-      'Password Reset',
-      'Welcome to Tennis Coaching',
-      'Session Cancelled',
-      'Payment Confirmation',
-      'Schedule Update',
+  private randomNotificationType(): NotificationType {
+    const types = [
+      NotificationType.CUSTOM_SERVICE,
+      NotificationType.BOOKING_REMINDER,
+      NotificationType.BOOKING_CONFIRMATION,
+      NotificationType.ROLE_CHANGE,
+      NotificationType.SYSTEM_ANNOUNCEMENT,
+      NotificationType.MESSAGE_RECEIVED,
     ];
-    return subjects[Math.floor(Math.random() * subjects.length)] ?? 'Welcome to Tennis Coaching';
+    return types[Math.floor(Math.random() * types.length)] ?? NotificationType.SYSTEM_ANNOUNCEMENT;
   }
 
-  private randomText(): string {
-    return 'This is a test email notification.';
+  private randomTitle(): string {
+    const titles = [
+      'New Booking Confirmed',
+      'Session Reminder',
+      'Custom Service Shared',
+      'Role Updated',
+      'System Announcement',
+      'New Message Received',
+    ];
+    return titles[Math.floor(Math.random() * titles.length)] ?? 'Notification';
   }
 
-  private randomHtml(): string {
-    return '<p>This is a test email notification.</p>';
+  private randomMessage(): string {
+    const messages = [
+      'Your booking has been confirmed.',
+      'Your session starts in 1 hour.',
+      'A coach shared a custom service with you.',
+      'Your account role has been updated.',
+      'Important system update.',
+      'You have a new message.',
+    ];
+    return messages[Math.floor(Math.random() * messages.length)] ?? 'You have a new notification.';
   }
 
-  private createBookingConfirmationHtml(userName: string, coachName: string): string {
-    return `
-      <h2>Booking Confirmed!</h2>
-      <p>Dear ${userName},</p>
-      <p>Your tennis coaching session has been confirmed:</p>
-      <ul>
-        <li><strong>Coach:</strong> ${coachName}</li>
-        <li><strong>Type:</strong> Individual Lesson</li>
-        <li><strong>Date & Time:</strong> ${new Date().toLocaleString()}</li>
-        <li><strong>Duration:</strong> 60 minutes</li>
-        <li><strong>Price:</strong> $50</li>
-      </ul>
-      <p>See you on the court!</p>
-    `;
+  /**
+   * Create a custom service notification
+   */
+  createCustomServiceNotification(
+    recipientId: string,
+    senderId: string,
+    serviceName: string,
+    overrides?: DeepPartial<MockNotification>
+  ): MockNotification {
+    return this.create({
+      type: NotificationType.CUSTOM_SERVICE,
+      title: 'Custom Service Shared',
+      message: `A coach shared a custom service with you: ${serviceName}`,
+      recipientId,
+      senderId,
+      priority: NotificationPriority.MEDIUM,
+      channels: [
+        NotificationChannel.IN_APP,
+        NotificationChannel.WEBSOCKET,
+        NotificationChannel.EMAIL,
+      ],
+      metadata: { serviceName },
+      ...overrides,
+    });
   }
 
-  private createBookingConfirmationText(userName: string, coachName: string): string {
-    return `
-      Booking Confirmed!
-
-      Dear ${userName},
-
-      Your tennis coaching session has been confirmed:
-      - Coach: ${coachName}
-      - Type: Individual Lesson
-      - Date & Time: ${new Date().toLocaleString()}
-      - Duration: 60 minutes
-      - Price: $50
-
-      See you on the court!
-    `;
+  /**
+   * Create a booking reminder notification
+   */
+  createBookingReminder(
+    recipientId: string,
+    sessionId: string,
+    hoursUntil: number,
+    overrides?: DeepPartial<MockNotification>
+  ): MockNotification {
+    return this.create({
+      type: NotificationType.BOOKING_REMINDER,
+      title: 'Upcoming Session Reminder',
+      message: `Your session is in ${hoursUntil} hours`,
+      recipientId,
+      priority: NotificationPriority.HIGH,
+      channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
+      metadata: { sessionId, hoursUntil },
+      ...overrides,
+    });
   }
 
-  private createSessionReminderHtml(userName: string, sessionDate: Date): string {
-    return `
-      <h2>Session Reminder</h2>
-      <p>Dear ${userName},</p>
-      <p>This is a reminder that you have a tennis coaching session scheduled for:</p>
-      <p><strong>${sessionDate.toLocaleString()}</strong></p>
-      <p>Please arrive 10 minutes early and bring your racket and water bottle.</p>
-    `;
+  /**
+   * Create a booking confirmation notification
+   */
+  createBookingConfirmation(
+    recipientId: string,
+    sessionId: string,
+    sessionDate: Date,
+    overrides?: DeepPartial<MockNotification>
+  ): MockNotification {
+    return this.create({
+      type: NotificationType.BOOKING_CONFIRMATION,
+      title: 'Booking Confirmed',
+      message: `Your session has been confirmed for ${sessionDate.toLocaleDateString()}`,
+      recipientId,
+      priority: NotificationPriority.HIGH,
+      channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
+      metadata: { sessionId, sessionDateTime: sessionDate.toISOString() },
+      ...overrides,
+    });
   }
 
-  private createSessionReminderText(userName: string, sessionDate: Date): string {
-    return `
-      Session Reminder
-
-      Dear ${userName},
-
-      This is a reminder that you have a tennis coaching session scheduled for:
-      ${sessionDate.toLocaleString()}
-
-      Please arrive 10 minutes early and bring your racket and water bottle.
-    `;
+  /**
+   * Create a role change notification
+   */
+  createRoleChangeNotification(
+    recipientId: string,
+    oldRole: string,
+    newRole: string,
+    changedByUserId: string,
+    overrides?: DeepPartial<MockNotification>
+  ): MockNotification {
+    return this.create({
+      type: NotificationType.ROLE_CHANGE,
+      title: 'Account Role Updated',
+      message: `Your account role has been changed from ${oldRole} to ${newRole}`,
+      recipientId,
+      senderId: changedByUserId,
+      priority: NotificationPriority.HIGH,
+      channels: [
+        NotificationChannel.IN_APP,
+        NotificationChannel.EMAIL,
+        NotificationChannel.WEBSOCKET,
+      ],
+      metadata: { oldRole, newRole, changedByUserId },
+      ...overrides,
+    });
   }
 
-  private createPasswordResetHtml(): string {
-    return `
-      <h2>Password Reset Request</h2>
-      <p>You have requested to reset your password.</p>
-      <p>Click the link below to reset your password:</p>
-      <a href="https://example.com/reset-password?token=abc123">Reset Password</a>
-      <p>If you did not request this, please ignore this email.</p>
-    `;
+  /**
+   * Create a system announcement notification
+   */
+  createSystemAnnouncement(
+    recipientId: string,
+    title: string,
+    message: string,
+    overrides?: DeepPartial<MockNotification>
+  ): MockNotification {
+    return this.create({
+      type: NotificationType.SYSTEM_ANNOUNCEMENT,
+      title,
+      message,
+      recipientId,
+      priority: NotificationPriority.MEDIUM,
+      channels: [NotificationChannel.IN_APP, NotificationChannel.WEBSOCKET],
+      ...overrides,
+    });
   }
 
-  private createPasswordResetText(): string {
-    return `
-      Password Reset Request
-
-      You have requested to reset your password.
-
-      Click the link below to reset your password:
-      https://example.com/reset-password?token=abc123
-
-      If you did not request this, please ignore this email.
-    `;
+  /**
+   * Create a read notification
+   */
+  createRead(overrides?: DeepPartial<MockNotification>): MockNotification {
+    const readAt = this.createDate();
+    return this.create({
+      isRead: true,
+      readAt,
+      ...overrides,
+    });
   }
 
-  private createWelcomeHtml(userName: string): string {
-    return `
-      <h2>Welcome to Tennis Coaching Platform!</h2>
-      <p>Dear ${userName},</p>
-      <p>Welcome to our tennis coaching platform. We're excited to help you improve your game!</p>
-      <p>You can now:</p>
-      <ul>
-        <li>Browse available coaches</li>
-        <li>Book coaching sessions</li>
-        <li>Track your progress</li>
-        <li>Communicate with your coaches</li>
-      </ul>
-      <p>Get started by booking your first session!</p>
-    `;
+  /**
+   * Create a sent notification
+   */
+  createSent(overrides?: DeepPartial<MockNotification>): MockNotification {
+    const sentAt = this.createDate();
+    return this.create({
+      sentAt,
+      ...overrides,
+    });
   }
 
-  private createWelcomeText(userName: string): string {
-    return `
-      Welcome to Tennis Coaching Platform!
-
-      Dear ${userName},
-
-      Welcome to our tennis coaching platform. We're excited to help you improve your game!
-
-      You can now:
-      - Browse available coaches
-      - Book coaching sessions
-      - Track your progress
-      - Communicate with your coaches
-
-      Get started by booking your first session!
-    `;
+  /**
+   * Create a scheduled notification
+   */
+  createScheduled(scheduledFor: Date, overrides?: DeepPartial<MockNotification>): MockNotification {
+    return this.create({
+      scheduledFor,
+      sentAt: null,
+      ...overrides,
+    });
   }
 }

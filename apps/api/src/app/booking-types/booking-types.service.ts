@@ -143,4 +143,36 @@ export class BookingTypesService {
       data: { isActive: false },
     });
   }
+
+  // ============================================================
+  // Analytics Methods (Service Layer Pattern)
+  // ============================================================
+
+  /**
+   * Count all booking types - used by AnalyticsService
+   * @param where - Optional Prisma where clause for filtering
+   * @returns Count of matching booking types
+   */
+  async countBookingTypes(where?: Prisma.BookingTypeWhereInput): Promise<number> {
+    return this.prisma.bookingType.count({ where });
+  }
+
+  /**
+   * Find booking types by IDs - used by AnalyticsService for top booking types
+   * @param ids - Array of booking type IDs
+   * @returns Array of booking types with id, name, and basePrice
+   */
+  async findByIds(
+    ids: string[]
+  ): Promise<Array<{ id: string; name: string; basePrice: Prisma.Decimal }>> {
+    const bookingTypes = await this.prisma.bookingType.findMany({
+      where: { id: { in: ids } },
+      select: {
+        id: true,
+        name: true,
+        basePrice: true,
+      },
+    });
+    return bookingTypes;
+  }
 }
