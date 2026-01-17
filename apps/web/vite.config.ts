@@ -161,16 +161,31 @@ export default defineConfig({
     hookTimeout: 10000, // 10 second timeout for hooks
     teardownTimeout: 5000, // 5 second timeout for teardown
 
-    // Reduce memory usage and prevent hanging
+    // Vitest 4 pool configuration (no more poolOptions)
     pool: 'forks', // Use forks instead of threads to prevent memory issues
-    singleFork: true, // Use single fork to reduce memory usage
 
-    // Force exit after tests complete
-    watch: false, // Disable watch mode by default
-    run: true, // Ensure tests run once and exit
-
-    // Reduce memory usage
+    // Memory and performance settings
     isolate: false, // Don't isolate tests to reduce memory overhead
     maxConcurrency: 1, // Run tests sequentially to reduce memory usage
+
+    // Force exit settings
+    watch: false, // Disable watch mode by default
+
+    // Additional memory management
+    logHeapUsage: false, // Disable heap logging to reduce overhead
+    allowOnly: false, // Prevent .only tests in CI
+
+    // Environment cleanup
+    restoreMocks: true, // Restore mocks after each test
+    clearMocks: true, // Clear mock calls after each test
+
+    // Reduce DOM memory usage
+    environmentOptions: {
+      jsdom: {
+        resources: 'usable',
+        runScripts: 'dangerously',
+        pretendToBeVisual: false, // Reduce memory usage
+      },
+    },
   },
 });

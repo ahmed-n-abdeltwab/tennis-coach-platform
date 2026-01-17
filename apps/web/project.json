@@ -44,6 +44,13 @@
         "passWithNoTests": true,
         "reportsDirectory": "../../coverage/apps/web",
         "run": true
+      },
+      "configurations": {
+        "ci": {
+          "run": true,
+          "watch": false,
+          "coverage": true
+        }
       }
     },
     "lint": {

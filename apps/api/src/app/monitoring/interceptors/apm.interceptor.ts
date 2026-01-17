@@ -100,11 +100,11 @@ export class APMInterceptor implements NestInterceptor {
     // Fallback to URL pathname with parameter normalization
     const pathname = request.url?.split('?')[0] ?? request.url ?? '/unknown';
 
-    // Normalize common ID patterns
+    // Normalize common ID patterns (order matters - more specific patterns first)
     return pathname
-      .replace(/\/c[a-z0-9]{24,}/g, '/:id') // CUID pattern
-      .replace(/\/[0-9]+/g, '/:id') // Numeric IDs
-      .replace(/\/[a-f0-9-]{36}/g, '/:id'); // UUID pattern
+      .replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g, '/:id') // UUID pattern (exact format)
+      .replace(/\/c[a-z0-9]{17,}/g, '/:id') // CUID pattern (starts with 'c' + 17+ chars)
+      .replace(/\/[0-9]+/g, '/:id'); // Numeric IDs
   }
 
   /**

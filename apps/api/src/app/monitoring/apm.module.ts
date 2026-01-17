@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 
 import { APMService } from './apm/apm.service';
+import { TelemetryProvider } from './apm/providers/telemetry.provider';
 import { APMInterceptor } from './interceptors/apm.interceptor';
 import { MonitoringController } from './monitoring.controller';
 
@@ -14,7 +15,14 @@ import { MonitoringController } from './monitoring.controller';
 @Global()
 @Module({
   controllers: [MonitoringController],
-  providers: [APMService, APMInterceptor],
+  providers: [
+    {
+      provide: 'ITelemetryProvider',
+      useClass: TelemetryProvider,
+    },
+    APMService,
+    APMInterceptor,
+  ],
   exports: [APMService, APMInterceptor],
 })
 export class APMModule {}

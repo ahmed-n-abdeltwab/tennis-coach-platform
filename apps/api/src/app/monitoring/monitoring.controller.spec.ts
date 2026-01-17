@@ -1,5 +1,9 @@
 import { ServiceTest } from '@test-utils';
 
+import {
+  getDatabaseMetrics,
+  getSlowQueriesByOperation,
+} from './database/prisma-monitoring.extension';
 import { MonitoringController } from './monitoring.controller';
 
 /**
@@ -14,25 +18,16 @@ import { MonitoringController } from './monitoring.controller';
 
 // Mock the database monitoring functions
 jest.mock('./database/prisma-monitoring.extension', () => ({
-  getDatabaseMetrics: jest.fn(() => ({
-    totalQueries: 100,
-    slowQueries: 5,
-    errorQueries: 2,
-    averageQueryTime: 45.5,
-    queryTimesByOperation: new Map([
-      ['findMany.account', [10, 20, 30]],
-      ['create.session', [50, 60]],
-    ]),
-  })),
-  getSlowQueriesByOperation: jest.fn(() => ({
-    'findMany.account': [1200, 1500],
-    'create.session': [1100],
-  })),
+  getDatabaseMetrics: jest.fn(),
+  getSlowQueriesByOperation: jest.fn(),
 }));
 
-interface MonitoringMocks extends Record<string, never> {
-  // No external dependencies to mock for MonitoringController
-}
+const mockGetDatabaseMetrics = getDatabaseMetrics as jest.MockedFunction<typeof getDatabaseMetrics>;
+const mockGetSlowQueriesByOperation = getSlowQueriesByOperation as jest.MockedFunction<
+  typeof getSlowQueriesByOperation
+>;
+
+type MonitoringMocks = Record<string, never>;
 
 describe('MonitoringController', () => {
   let test: ServiceTest<MonitoringController, MonitoringMocks>;
@@ -44,6 +39,9 @@ describe('MonitoringController', () => {
     });
 
     await test.setup();
+
+    // Reset mocks before each test
+    jest.clearAllMocks();
   });
 
   afterEach(async () => {
@@ -52,6 +50,23 @@ describe('MonitoringController', () => {
 
   describe('getDatabaseMetrics', () => {
     it('should return database metrics with slow queries', () => {
+      // Setup mocks
+      mockGetDatabaseMetrics.mockReturnValue({
+        totalQueries: 100,
+        slowQueries: 5,
+        errorQueries: 2,
+        averageQueryTime: 45.5,
+        queryTimesByOperation: new Map([
+          ['findMany.account', [10, 20, 30]],
+          ['create.session', [50, 60]],
+        ]),
+      });
+
+      mockGetSlowQueriesByOperation.mockReturnValue({
+        'findMany.account': [1200, 1500],
+        'create.session': [1100],
+      });
+
       const result = test.service.getDatabaseMetrics();
 
       expect(result).toEqual({
@@ -68,16 +83,21 @@ describe('MonitoringController', () => {
           'create.session': [1100],
         },
       });
+
+      expect(mockGetDatabaseMetrics).toHaveBeenCalledTimes(1);
+      expect(mockGetSlowQueriesByOperation).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('getMonitoringHealth', () => {
     beforeEach(() => {
-      jest.spyOn(Date.prototype, 'toISOString').mockReturnValue('2024-01-01T00:00:00.000Z');
+      // Mock Date constructor to return a fixed date
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2024-01-01T00:00:00.000Z'));
     });
 
     afterEach(() => {
-      jest.restoreAllMocks();
+      jest.useRealTimers();
     });
 
     it('should return monitoring health status', () => {
@@ -94,7 +114,10 @@ describe('MonitoringController', () => {
 
   describe('getPerformanceSummary', () => {
     beforeEach(() => {
-      jest.spyOn(Date.prototype, 'toISOString').mockReturnValue('2024-01-01T00:00:00.000Z');
+      // Mock Date constructor and system time
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2024-01-01T00:00:00.000Z'));
+
       jest.spyOn(process, 'uptime').mockReturnValue(3600); // 1 hour
       jest.spyOn(process, 'memoryUsage').mockReturnValue({
         rss: 100 * 1024 * 1024, // 100MB
@@ -106,10 +129,23 @@ describe('MonitoringController', () => {
     });
 
     afterEach(() => {
+      jest.useRealTimers();
       jest.restoreAllMocks();
     });
 
     it('should return performance summary with calculated percentages', async () => {
+      // Setup mock for this test
+      mockGetDatabaseMetrics.mockReturnValue({
+        totalQueries: 100,
+        slowQueries: 5,
+        errorQueries: 2,
+        averageQueryTime: 45.5,
+        queryTimesByOperation: new Map([
+          ['findMany.account', [10, 20, 30]],
+          ['create.session', [50, 60]],
+        ]),
+      });
+
       const result = await test.service.getPerformanceSummary();
 
       expect(result).toEqual({
@@ -137,8 +173,7 @@ describe('MonitoringController', () => {
 
     it('should handle zero queries gracefully', async () => {
       // Mock getDatabaseMetrics to return zero queries
-      const { getDatabaseMetrics } = await import('./database/prisma-monitoring.extension');
-      (getDatabaseMetrics as jest.Mock).mockReturnValueOnce({
+      mockGetDatabaseMetrics.mockReturnValue({
         totalQueries: 0,
         slowQueries: 0,
         errorQueries: 0,
@@ -158,8 +193,7 @@ describe('MonitoringController', () => {
 
     it('should round average query time to 2 decimal places', async () => {
       // Mock getDatabaseMetrics to return a precise average
-      const { getDatabaseMetrics } = await import('./database/prisma-monitoring.extension');
-      (getDatabaseMetrics as jest.Mock).mockReturnValueOnce({
+      mockGetDatabaseMetrics.mockReturnValue({
         totalQueries: 100,
         slowQueries: 5,
         errorQueries: 2,
@@ -174,8 +208,7 @@ describe('MonitoringController', () => {
 
     it('should calculate percentages correctly with precision', async () => {
       // Mock getDatabaseMetrics with specific values for percentage calculation
-      const { getDatabaseMetrics } = await import('./database/prisma-monitoring.extension');
-      (getDatabaseMetrics as jest.Mock).mockReturnValueOnce({
+      mockGetDatabaseMetrics.mockReturnValue({
         totalQueries: 300,
         slowQueries: 7, // 7/300 = 2.33%
         errorQueries: 1, // 1/300 = 0.33%

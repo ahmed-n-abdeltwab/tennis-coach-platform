@@ -103,6 +103,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get customService() {
     return this.client.customService;
   }
+  get refreshToken() {
+    return this.client.refreshToken;
+  }
 
   get $connect() {
     return this.client.$connect.bind(this.client);

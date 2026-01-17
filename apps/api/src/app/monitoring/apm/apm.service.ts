@@ -1,5 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { metrics, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
+import { Inject, Injectable } from '@nestjs/common';
+import { Counter, Histogram, SpanKind, UpDownCounter } from '@opentelemetry/api';
+
+import {
+  ITelemetryMeter,
+  ITelemetryProvider,
+  ITelemetryTracer,
+} from './interfaces/telemetry.interface';
 
 /**
  * APM Service for Application Performance Monitoring
@@ -16,32 +22,50 @@ import { metrics, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
 
 @Injectable()
 export class APMService {
-  private readonly tracer = trace.getTracer('tennis-coach-api');
-  private readonly meter = metrics.getMeter('tennis-coach-api');
+  private readonly tracer: ITelemetryTracer;
+  private readonly meter: ITelemetryMeter;
 
-  // Custom metrics
-  private readonly requestCounter = this.meter.createCounter('api_requests_total', {
-    description: 'Total number of API requests',
-  });
-
-  private readonly requestDuration = this.meter.createHistogram('api_request_duration_ms', {
-    description: 'API request duration in milliseconds',
-  });
-
-  private readonly businessMetrics = {
-    bookingsCreated: this.meter.createCounter('bookings_created_total', {
-      description: 'Total number of bookings created',
-    }),
-    paymentsProcessed: this.meter.createCounter('payments_processed_total', {
-      description: 'Total number of payments processed',
-    }),
-    messagesExchanged: this.meter.createCounter('messages_exchanged_total', {
-      description: 'Total number of messages exchanged',
-    }),
-    activeUsers: this.meter.createUpDownCounter('active_users_current', {
-      description: 'Current number of active users',
-    }),
+  // Custom metrics - initialized in constructor
+  private readonly requestCounter: Counter;
+  private readonly requestDuration: Histogram;
+  private readonly businessMetrics: {
+    bookingsCreated: Counter;
+    paymentsProcessed: Counter;
+    messagesExchanged: Counter;
+    activeUsers: UpDownCounter;
   };
+
+  constructor(
+    @Inject('ITelemetryProvider') private readonly telemetryProvider: ITelemetryProvider
+  ) {
+    // Initialize telemetry components
+    this.tracer = this.telemetryProvider.getTracer('tennis-coach-api');
+    this.meter = this.telemetryProvider.getMeter('tennis-coach-api');
+
+    // Initialize metrics
+    this.requestCounter = this.meter.createCounter('api_requests_total', {
+      description: 'Total number of API requests',
+    });
+
+    this.requestDuration = this.meter.createHistogram('api_request_duration_ms', {
+      description: 'API request duration in milliseconds',
+    });
+
+    this.businessMetrics = {
+      bookingsCreated: this.meter.createCounter('bookings_created_total', {
+        description: 'Total number of bookings created',
+      }),
+      paymentsProcessed: this.meter.createCounter('payments_processed_total', {
+        description: 'Total number of payments processed',
+      }),
+      messagesExchanged: this.meter.createCounter('messages_exchanged_total', {
+        description: 'Total number of messages exchanged',
+      }),
+      activeUsers: this.meter.createUpDownCounter('active_users_current', {
+        description: 'Current number of active users',
+      }),
+    };
+  }
 
   /**
    * Create a custom span for tracing operations
@@ -51,42 +75,7 @@ export class APMService {
     operation: () => Promise<T>,
     attributes?: Record<string, string | number | boolean>
   ): Promise<T> {
-    return this.tracer.startActiveSpan(operationName, async span => {
-      try {
-        // Add custom attributes
-        if (attributes) {
-          span.setAttributes(attributes);
-        }
-
-        const startTime = Date.now();
-        const result = await operation();
-        const duration = Date.now() - startTime;
-
-        // Record success metrics
-        span.setStatus({ code: SpanStatusCode.OK });
-        span.setAttributes({
-          'operation.duration_ms': duration,
-          'operation.success': true,
-        });
-
-        return result;
-      } catch (error) {
-        // Record error information
-        span.recordException(error as Error);
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: (error as Error).message,
-        });
-        span.setAttributes({
-          'operation.success': false,
-          'error.type': (error as Error).constructor.name,
-        });
-
-        throw error;
-      } finally {
-        span.end();
-      }
-    });
+    return this.tracer.startActiveSpan(operationName, operation, attributes);
   }
 
   /**
@@ -113,16 +102,15 @@ export class APMService {
     });
 
     // Also create a custom span for the booking event
-    this.tracer
-      .startSpan('booking.created', {
-        kind: SpanKind.INTERNAL,
-        attributes: {
-          'booking.user_id': userId,
-          'booking.coach_id': coachId,
-          'booking.amount': amount,
-        },
-      })
-      .end();
+    const span = this.tracer.startSpan('booking.created', {
+      kind: SpanKind.INTERNAL,
+      attributes: {
+        'booking.user_id': userId,
+        'booking.coach_id': coachId,
+        'booking.amount': amount,
+      },
+    });
+    span.end();
   }
 
   /**
@@ -134,16 +122,15 @@ export class APMService {
       status,
     });
 
-    this.tracer
-      .startSpan('payment.processed', {
-        kind: SpanKind.INTERNAL,
-        attributes: {
-          'payment.id': paymentId,
-          'payment.amount': amount,
-          'payment.status': status,
-        },
-      })
-      .end();
+    const span = this.tracer.startSpan('payment.processed', {
+      kind: SpanKind.INTERNAL,
+      attributes: {
+        'payment.id': paymentId,
+        'payment.amount': amount,
+        'payment.status': status,
+      },
+    });
+    span.end();
   }
 
   /**
