@@ -743,7 +743,7 @@ describe('API Contract Validation and Error Handling (E2E)', () => {
         const response = await test.http.authenticatedPost(
           '/api/payments/create-order',
           userToken,
-          { body: { sessionId: session.id, amount: 100 } }
+          { body: { sessionId: session.id, amount: '100' } }
         );
 
         expect(response.ok).toBe(false);

@@ -43,7 +43,7 @@ describe('PaymentsController', () => {
     it('should call createOrder service method with correct parameters', async () => {
       const createDto: CreatePaymentDto = {
         sessionId: 'csession123456789012345',
-        amount: 99.99,
+        amount: '99.99',
       };
 
       const mockResponse = {
@@ -71,7 +71,7 @@ describe('PaymentsController', () => {
     it('should allow coach to create payment order', async () => {
       const createDto: CreatePaymentDto = {
         sessionId: 'csession456789012345678',
-        amount: 150.0,
+        amount: '150.0',
       };
 
       const mockResponse = {
@@ -99,7 +99,7 @@ describe('PaymentsController', () => {
     it('should handle invalid session error', async () => {
       const createDto: CreatePaymentDto = {
         sessionId: 'cinvalidsession12345678',
-        amount: 99.99,
+        amount: '99.99',
       };
 
       test.mocks.PaymentsService.createOrder.mockRejectedValue(
@@ -120,7 +120,7 @@ describe('PaymentsController', () => {
     it('should handle session already paid error', async () => {
       const createDto: CreatePaymentDto = {
         sessionId: 'cpaidsession1234567890',
-        amount: 99.99,
+        amount: '99.99',
       };
 
       test.mocks.PaymentsService.createOrder.mockRejectedValue(

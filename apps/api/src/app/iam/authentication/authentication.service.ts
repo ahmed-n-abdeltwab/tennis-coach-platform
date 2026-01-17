@@ -14,6 +14,8 @@ import { JwtPayload } from '../interfaces/jwt.types';
 
 import {
   AuthResponseDto,
+  ChangePasswordDto,
+  ChangePasswordResponseDto,
   ForgotPasswordDto,
   ForgotPasswordResponseDto,
   LoginDto,
@@ -133,6 +135,40 @@ export class AuthenticationService {
     // Example: await this.notificationsService.sendPasswordResetEmail(account.email, resetToken);
 
     return { message: successMessage };
+  }
+
+  /**
+   * Changes user password after verifying current password.
+   */
+  async changePassword(userId: string, dto: ChangePasswordDto): Promise<ChangePasswordResponseDto> {
+    // Get the account with password hash for verification
+    const account = await this.accountsService.findByIdWithPassword(userId);
+
+    if (!account) {
+      throw new UnauthorizedException('Account not found');
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await this.hashingService.compare(
+      dto.currentPassword,
+      account.passwordHash
+    );
+
+    if (!isCurrentPasswordValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    // Hash the new password
+    const newPasswordHash = await this.hashingService.hash(dto.newPassword);
+
+    // Update the password
+    await this.accountsService.updatePassword(userId, newPasswordHash);
+
+    // Invalidate all existing sessions for security (except current one)
+    // Note: In a production system, you might want to keep the current session active
+    await this.redis.invalidate(userId);
+
+    return { message: 'Password changed successfully' };
   }
 
   /**

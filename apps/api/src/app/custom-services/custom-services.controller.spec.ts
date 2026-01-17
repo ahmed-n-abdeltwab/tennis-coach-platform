@@ -50,10 +50,11 @@ describe('CustomServicesController', () => {
         role: Role.COACH,
         sub: 'ccoach1234567890123456',
       });
-      await test.http.authenticatedPost('/api/custom-services', coachToken, {
+      const response = await test.http.authenticatedPost('/api/custom-services', coachToken, {
         body: createDto,
       });
 
+      expect(response.status).toBe(201);
       expect(test.mocks.CustomServicesService.create).toHaveBeenCalledWith(
         createDto,
         'ccoach1234567890123456',
@@ -72,10 +73,11 @@ describe('CustomServicesController', () => {
         role: Role.ADMIN,
         sub: 'cadmin1234567890123456',
       });
-      await test.http.authenticatedPost('/api/custom-services', adminToken, {
+      const response = await test.http.authenticatedPost('/api/custom-services', adminToken, {
         body: createDto,
       });
 
+      expect(response.status).toBe(201);
       expect(test.mocks.CustomServicesService.create).toHaveBeenCalledWith(
         createDto,
         'cadmin1234567890123456',

@@ -11,7 +11,7 @@ import { BaseMockFactory } from './base-factory';
 export interface MockCustomService {
   id: string;
   name: string;
-  description: string | null;
+  description?: string;
   basePrice: Decimal;
   duration: number;
   isTemplate: boolean;
@@ -19,9 +19,9 @@ export interface MockCustomService {
   usageCount: number;
   coachId: string;
   coach: Pick<MockAccount, 'id' | 'email' | 'name'>;
-  prefilledBookingTypeId: string | null;
-  prefilledDateTime: Date | null;
-  prefilledTimeSlotId: string | null;
+  prefilledBookingTypeId?: string;
+  prefilledDateTime?: Date;
+  prefilledTimeSlotId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,9 +56,6 @@ export class CustomServiceMockFactory extends BaseMockFactory<MockCustomService>
       usageCount: 0,
       coachId: coach.id,
       coach,
-      prefilledBookingTypeId: null,
-      prefilledDateTime: null,
-      prefilledTimeSlotId: null,
       createdAt: now,
       updatedAt: now,
       ...overrides,
@@ -102,7 +99,8 @@ export class CustomServiceMockFactory extends BaseMockFactory<MockCustomService>
 
   private randomPrice(): Decimal {
     const prices = [49.99, 79.99, 99.99, 149.99, 199.99];
-    return new Decimal(prices[Math.floor(Math.random() * prices.length)] ?? 99.99);
+    const price = prices[Math.floor(Math.random() * prices.length)] ?? 99.99;
+    return new Decimal(price.toFixed(2));
   }
 
   private randomDuration(): number {

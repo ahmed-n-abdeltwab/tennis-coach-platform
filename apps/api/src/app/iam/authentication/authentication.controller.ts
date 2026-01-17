@@ -9,6 +9,8 @@ import { Auth } from './decorators/auth.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import {
   AuthResponseDto,
+  ChangePasswordDto,
+  ChangePasswordResponseDto,
   ForgotPasswordDto,
   ForgotPasswordResponseDto,
   LoginDto,
@@ -88,5 +90,17 @@ export class AuthenticationController {
     @Body() resetPasswordDto: ResetPasswordDto
   ): Promise<ResetPasswordResponseDto> {
     return this.authenticationService.resetPassword(resetPasswordDto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('change-password')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Change password for authenticated user' })
+  @(ApiResponses.for(ChangePasswordResponseDto).Found('Password changed successfully'))
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @CurrentUser() user: JwtPayload
+  ): Promise<ChangePasswordResponseDto> {
+    return this.authenticationService.changePassword(user.sub, changePasswordDto);
   }
 }

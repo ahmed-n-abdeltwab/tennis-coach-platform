@@ -84,6 +84,7 @@ describe('SessionsService', () => {
           provide: NotificationsService,
           useValue: {
             sendBookingConfirmation: jest.fn(),
+            sendBookingConfirmationNotification: jest.fn(),
             sendBookingReminder: jest.fn(),
             sendCancellationNotification: jest.fn(),
           },

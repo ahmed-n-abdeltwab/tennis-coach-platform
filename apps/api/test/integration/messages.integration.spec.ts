@@ -416,7 +416,7 @@ describe('Messages Integration', () => {
         });
 
         const response = await test.http.authenticatedGet(
-          `/api/messages/conversation/${coachId}` as '/api/messages/conversation/{userId}',
+          `/api/messages/conversation/with-user/${coachId}` as '/api/messages/conversation/with-user/{userId}',
           userToken
         );
 
@@ -438,7 +438,7 @@ describe('Messages Integration', () => {
         const otherUser = await test.db.createTestUser();
 
         const response = await test.http.authenticatedGet(
-          `/api/messages/conversation/${otherUser.id}` as '/api/messages/conversation/{userId}',
+          `/api/messages/conversation/with-user/${otherUser.id}` as '/api/messages/conversation/with-user/{userId}',
           userToken
         );
 

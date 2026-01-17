@@ -1,7 +1,8 @@
-import { IsCuid } from '@common';
+import { IsCuid, IsPositiveDecimal } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentStatus } from '@prisma/client';
-import { IsBoolean, IsDate, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { Decimal } from '@prisma/client/runtime/client';
+import { IsBoolean, IsDate, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
 // ========================= //
 // REQUEST DTOs
@@ -13,10 +14,9 @@ export class CreatePaymentDto {
   @IsCuid()
   sessionId: string;
 
-  @ApiProperty({ description: 'Payment amount', minimum: 0.01 })
-  @IsNumber()
-  @Min(0.01)
-  amount: number;
+  @ApiProperty({ description: 'Payment amount', example: '99.99' })
+  @IsPositiveDecimal()
+  amount: string;
 }
 
 export class CapturePaymentDto {
@@ -56,8 +56,9 @@ export class PaymentResponseDto {
   userId: string;
 
   @ApiProperty({ description: 'Payment amount' })
-  @IsNumber()
-  amount: number;
+  @IsPositiveDecimal()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  amount: Decimal;
 
   @ApiProperty({ description: 'Currency code', example: 'USD' })
   @IsString()

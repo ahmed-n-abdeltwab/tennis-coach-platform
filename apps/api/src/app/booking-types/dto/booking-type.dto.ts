@@ -1,8 +1,8 @@
-import { IsCuid } from '@common';
+import { IsCuid, IsPositiveDecimal } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Decimal } from '@prisma/client/runtime/client';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsDate, IsEmail, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsDate, IsEmail, IsOptional, IsString } from 'class-validator';
 export class CoachDto {
   @ApiProperty({ example: 'ccoach1234567890123456' })
   @IsString()
@@ -72,11 +72,9 @@ export class CreateBookingTypeDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ example: 99.99, description: 'Base price in decimal format' })
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  basePrice: Decimal;
+  @ApiProperty({ example: '99.99', description: 'Base price in decimal format' })
+  @IsPositiveDecimal()
+  basePrice: string;
 }
 
 export class UpdateBookingTypeDto {
@@ -90,12 +88,10 @@ export class UpdateBookingTypeDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ example: 99.99, description: 'Base price in decimal format' })
+  @ApiPropertyOptional({ example: '99.99', description: 'Base price in decimal format' })
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  basePrice?: Decimal;
+  @IsPositiveDecimal()
+  basePrice?: string;
 
   @ApiPropertyOptional({ example: true })
   @IsOptional()

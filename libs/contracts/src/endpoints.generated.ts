@@ -91,6 +91,10 @@ export interface Endpoints {
     GET: (params: { timeRange?: "last_7_days" | "last_30_days" | "last_90_days" | "last_year" | "custom"; startDate?: string; endDate?: string }, body: undefined | never) => { totalUsers: number; activeUsers: number; onlineUsers: number; newUsersThisPeriod: number; usersByRole: string | null };
   };
 
+  "/api/authentication/change-password": {
+    POST: (params: undefined | never, body: { currentPassword: string; newPassword: string }) => { message: string };
+  };
+
   "/api/authentication/forgot-password": {
     POST: (params: undefined | never, body: { email: string }) => { message: string };
   };
@@ -117,7 +121,7 @@ export interface Endpoints {
 
   "/api/booking-types": {
     GET: (params: undefined | never, body: undefined | never) => { id: string; createdAt: string; updatedAt: string; name: string; description?: string; basePrice: number; isActive: boolean; coachId: string; coach: { id: string; name: string; email: string } }[];
-    POST: (params: undefined | never, body: { name: string; description?: string; basePrice: number }) => { id: string; createdAt: string; updatedAt: string; name: string; description?: string; basePrice: number; isActive: boolean; coachId: string; coach: { id: string; name: string; email: string } };
+    POST: (params: undefined | never, body: { name: string; description?: string; basePrice: string }) => { id: string; createdAt: string; updatedAt: string; name: string; description?: string; basePrice: number; isActive: boolean; coachId: string; coach: { id: string; name: string; email: string } };
   };
 
   "/api/booking-types/coach/{coachId}": {
@@ -127,8 +131,8 @@ export interface Endpoints {
   "/api/booking-types/{id}": {
     DELETE: (params: { id: string }, body: undefined | never) => void;
     GET: (params: { id: string }, body: undefined | never) => { id: string; createdAt: string; updatedAt: string; name: string; description?: string; basePrice: number; isActive: boolean; coachId: string; coach: { id: string; name: string; email: string } };
-    PATCH: (params: { id: string }, body: { name?: string; description?: string; basePrice?: number; isActive?: boolean }) => { id: string; createdAt: string; updatedAt: string; name: string; description?: string; basePrice: number; isActive: boolean; coachId: string; coach: { id: string; name: string; email: string } };
-    PUT: (params: { id: string }, body: { name?: string; description?: string; basePrice?: number; isActive?: boolean }) => { id: string; createdAt: string; updatedAt: string; name: string; description?: string; basePrice: number; isActive: boolean; coachId: string; coach: { id: string; name: string; email: string } };
+    PATCH: (params: { id: string }, body: { name?: string; description?: string; basePrice?: string; isActive?: boolean }) => { id: string; createdAt: string; updatedAt: string; name: string; description?: string; basePrice: number; isActive: boolean; coachId: string; coach: { id: string; name: string; email: string } };
+    PUT: (params: { id: string }, body: { name?: string; description?: string; basePrice?: string; isActive?: boolean }) => { id: string; createdAt: string; updatedAt: string; name: string; description?: string; basePrice: number; isActive: boolean; coachId: string; coach: { id: string; name: string; email: string } };
   };
 
   "/api/calendar/event": {
@@ -173,7 +177,7 @@ export interface Endpoints {
 
   "/api/discounts": {
     GET: (params: undefined | never, body: undefined | never) => { id: string; createdAt: string; updatedAt: string; code: string; amount: number; expiry: string; useCount: number; maxUsage: number; isActive: boolean; coachId: string; coach?: { id: string; name: string; email: string } }[];
-    POST: (params: undefined | never, body: { code: string; amount: number; expiry: string; maxUsage?: number; isActive?: boolean }) => { id: string; createdAt: string; updatedAt: string; code: string; amount: number; expiry: string; useCount: number; maxUsage: number; isActive: boolean; coachId: string; coach?: { id: string; name: string; email: string } };
+    POST: (params: undefined | never, body: { code: string; amount: string; expiry: string; maxUsage?: number; isActive?: boolean }) => { id: string; createdAt: string; updatedAt: string; code: string; amount: number; expiry: string; useCount: number; maxUsage: number; isActive: boolean; coachId: string; coach?: { id: string; name: string; email: string } };
   };
 
   "/api/discounts/validate": {
@@ -182,7 +186,7 @@ export interface Endpoints {
 
   "/api/discounts/{code}": {
     DELETE: (params: { code: string }, body: undefined | never) => void;
-    PUT: (params: { code: string }, body: { amount?: number; expiry?: string; maxUsage?: number; isActive?: boolean }) => { id: string; createdAt: string; updatedAt: string; code: string; amount: number; expiry: string; useCount: number; maxUsage: number; isActive: boolean; coachId: string; coach?: { id: string; name: string; email: string } };
+    PUT: (params: { code: string }, body: { amount?: string; expiry?: string; maxUsage?: number; isActive?: boolean }) => { id: string; createdAt: string; updatedAt: string; code: string; amount: number; expiry: string; useCount: number; maxUsage: number; isActive: boolean; coachId: string; coach?: { id: string; name: string; email: string } };
   };
 
   "/api/health": {
@@ -226,6 +230,18 @@ export interface Endpoints {
     PATCH: (params: { id: string }, body: { isRead?: boolean }) => { id: string; createdAt: string; updatedAt: string; content: string; sentAt: string; senderId: string; receiverId: string; sessionId?: string; senderType: "USER" | "COACH" | "ADMIN"; receiverType: "USER" | "COACH" | "ADMIN"; messageType: "TEXT" | "CUSTOM_SERVICE" | "BOOKING_REQUEST"; customServiceId?: string; conversationId?: string; isRead: boolean; readAt?: string; sender?: { id: string; name: string; email: string }; receiver?: { id: string; name: string; email: string } };
   };
 
+  "/api/monitoring/database/metrics": {
+    GET: (params: undefined | never, body: undefined | never) => { totalQueries: number; slowQueries: number; errorQueries: number; averageQueryTime: number; queryTimesByOperation: string | null; slowQueriesByOperation: string | null };
+  };
+
+  "/api/monitoring/health": {
+    GET: (params: undefined | never, body: undefined | never) => { apm: boolean; database: boolean; metrics: boolean; timestamp: string };
+  };
+
+  "/api/monitoring/performance/summary": {
+    GET: (params: undefined | never, body: undefined | never) => { database: { totalQueries: number; averageQueryTime: number; slowQueryPercentage: number; errorRate: number }; system: { totalCoaches: number; activeCoaches: number; totalBookingTypes: number; totalTimeSlots: number; totalDiscounts: number; messageCount: number }; timestamp: string };
+  };
+
   "/api/notifications": {
     GET: (params: { limit?: number; offset?: number; unreadOnly?: boolean; type?: "CUSTOM_SERVICE" | "BOOKING_REMINDER" | "BOOKING_CONFIRMATION" | "ROLE_CHANGE" | "SYSTEM_ANNOUNCEMENT" | "MESSAGE_RECEIVED" }, body: undefined | never) => { notifications: { id: string; type: "CUSTOM_SERVICE" | "BOOKING_REMINDER" | "BOOKING_CONFIRMATION" | "ROLE_CHANGE" | "SYSTEM_ANNOUNCEMENT" | "MESSAGE_RECEIVED"; title: string; message: string; recipientId: string; senderId?: string | null; priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT"; channels: "IN_APP" | "EMAIL" | "WEBSOCKET"[]; metadata: string | null; isRead: boolean; readAt?: string | null; scheduledFor?: string | null; sentAt?: string | null; createdAt: string; updatedAt: string }[]; total: number; limit: number; offset: number };
   };
@@ -267,23 +283,23 @@ export interface Endpoints {
   };
 
   "/api/payments/create-order": {
-    POST: (params: undefined | never, body: { sessionId: string; amount: number }) => { orderId: string; approvalUrl?: string };
+    POST: (params: undefined | never, body: { sessionId: string; amount: string }) => { orderId: string; approvalUrl?: string };
   };
 
   "/api/payments/my-payments": {
-    GET: (params: undefined | never, body: undefined | never) => { id: string; userId: string; amount: number; currency: string; status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED"; paypalOrderId?: string; paypalCaptureId?: string; createdAt: string; updatedAt: string };
+    GET: (params: undefined | never, body: undefined | never) => { id: string; userId: string; amount: string | null; currency: string; status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED"; paypalOrderId?: string; paypalCaptureId?: string; createdAt: string; updatedAt: string };
   };
 
   "/api/payments/user/{userId}": {
-    GET: (params: { userId: string }, body: undefined | never) => { id: string; userId: string; amount: number; currency: string; status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED"; paypalOrderId?: string; paypalCaptureId?: string; createdAt: string; updatedAt: string };
+    GET: (params: { userId: string }, body: undefined | never) => { id: string; userId: string; amount: string | null; currency: string; status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED"; paypalOrderId?: string; paypalCaptureId?: string; createdAt: string; updatedAt: string };
   };
 
   "/api/payments/{id}": {
-    GET: (params: { id: string }, body: undefined | never) => { id: string; userId: string; amount: number; currency: string; status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED"; paypalOrderId?: string; paypalCaptureId?: string; createdAt: string; updatedAt: string };
+    GET: (params: { id: string }, body: undefined | never) => { id: string; userId: string; amount: string | null; currency: string; status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED"; paypalOrderId?: string; paypalCaptureId?: string; createdAt: string; updatedAt: string };
   };
 
   "/api/payments/{id}/status": {
-    PATCH: (params: { id: string }, body: { status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED" }) => { id: string; userId: string; amount: number; currency: string; status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED"; paypalOrderId?: string; paypalCaptureId?: string; createdAt: string; updatedAt: string };
+    PATCH: (params: { id: string }, body: { status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED" }) => { id: string; userId: string; amount: string | null; currency: string; status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED"; paypalOrderId?: string; paypalCaptureId?: string; createdAt: string; updatedAt: string };
   };
 
   "/api/sessions": {

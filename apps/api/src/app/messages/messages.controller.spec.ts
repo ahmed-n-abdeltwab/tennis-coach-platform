@@ -184,7 +184,7 @@ describe('MessagesController', () => {
     });
   });
 
-  describe('GET /api/messages/conversation/{userId}', () => {
+  describe('GET /api/messages/conversation/with-user/{userId}', () => {
     it('should return conversation between two users', async () => {
       const mockMessages = test.factory.message.createConversation(
         'cuser12345678901234567',
@@ -198,7 +198,7 @@ describe('MessagesController', () => {
         sub: 'cuser12345678901234567',
       });
       await test.http.authenticatedGet(
-        '/api/messages/conversation/cotheruser12345678901' as '/api/messages/conversation/{userId}',
+        '/api/messages/conversation/with-user/cotheruser12345678901' as '/api/messages/conversation/with-user/{userId}',
         userToken
       );
 
@@ -216,7 +216,7 @@ describe('MessagesController', () => {
         sub: 'cuser12345678901234567',
       });
       await test.http.authenticatedGet(
-        '/api/messages/conversation/cotheruser12345678901' as '/api/messages/conversation/{userId}',
+        '/api/messages/conversation/with-user/cotheruser12345678901' as '/api/messages/conversation/with-user/{userId}',
         userToken
       );
 

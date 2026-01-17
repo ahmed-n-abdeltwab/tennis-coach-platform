@@ -332,7 +332,7 @@ describe('Admin Workflow (E2E)', () => {
         body: {
           name: 'Admin Created Lesson',
           description: 'Created by admin',
-          basePrice: 150,
+          basePrice: '150',
         },
       });
 
@@ -373,7 +373,7 @@ describe('Admin Workflow (E2E)', () => {
       const createResponse = await test.http.authenticatedPost('/api/discounts', adminToken, {
         body: {
           code: 'ADMIN-DISCOUNT-20',
-          amount: 20,
+          amount: '20',
           maxUsage: 100,
           expiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         },
@@ -415,7 +415,7 @@ describe('Admin Workflow (E2E)', () => {
         adminToken,
         {
           body: {
-            amount: 25,
+            amount: '25',
             maxUsage: 50,
           },
         }

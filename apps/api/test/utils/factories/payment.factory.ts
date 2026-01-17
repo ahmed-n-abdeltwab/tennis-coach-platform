@@ -49,7 +49,7 @@ export class PaymentMockFactory extends BaseMockFactory<MockPayment> {
     const payment = {
       id,
       userId: overrides?.userId ?? this.generateId(),
-      amount: new Decimal(this.randomAmount()),
+      amount: new Decimal(this.randomAmount().toFixed(2)),
       currency: 'USD',
       status: PaymentStatus.PENDING,
       createdAt: now,
@@ -94,7 +94,7 @@ export class PaymentMockFactory extends BaseMockFactory<MockPayment> {
       status: 'COMPLETED',
       amount: {
         currency_code: 'USD',
-        value: this.randomAmount().toString(),
+        value: this.randomAmount().toFixed(2),
       },
       ...overrides,
     };

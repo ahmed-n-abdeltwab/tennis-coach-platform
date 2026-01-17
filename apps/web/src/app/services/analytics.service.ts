@@ -6,15 +6,15 @@ import { isAppError } from './error-handler';
 // ============================================================================
 
 export interface AnalyticsTimeRange {
-  LAST_7_DAYS: 'LAST_7_DAYS';
-  LAST_30_DAYS: 'LAST_30_DAYS';
-  LAST_90_DAYS: 'LAST_90_DAYS';
-  LAST_YEAR: 'LAST_YEAR';
-  CUSTOM: 'CUSTOM';
+  LAST_7_DAYS: 'last_7_days';
+  LAST_30_DAYS: 'last_30_days';
+  LAST_90_DAYS: 'last_90_days';
+  LAST_YEAR: 'last_year';
+  CUSTOM: 'custom';
 }
 
 export interface GetAnalyticsQuery {
-  timeRange: keyof AnalyticsTimeRange;
+  timeRange: 'last_7_days' | 'last_30_days' | 'last_90_days' | 'last_year' | 'custom';
   startDate?: string;
   endDate?: string;
 }

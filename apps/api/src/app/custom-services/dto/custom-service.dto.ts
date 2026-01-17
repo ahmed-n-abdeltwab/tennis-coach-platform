@@ -1,17 +1,8 @@
-import { IsCuid } from '@common';
+import { IsCuid, IsPositiveDecimal } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Decimal } from '@prisma/client/runtime/client';
 import { Transform, Type } from 'class-transformer';
-import {
-  IsBoolean,
-  IsDate,
-  IsDecimal,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  Min,
-} from 'class-validator';
+import { IsBoolean, IsDate, IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
 
 export class CustomServiceResponseDto {
   @ApiProperty({ example: 'custom-service-id-123' })
@@ -101,8 +92,7 @@ export class CreateCustomServiceDto {
   description?: string;
 
   @ApiProperty({ example: '99.99', description: 'Base price of the service' })
-  @IsDecimal({ decimal_digits: '0,2' })
-  @Min(0)
+  @IsPositiveDecimal()
   @IsNotEmpty()
   basePrice!: string;
 
@@ -172,8 +162,7 @@ export class UpdateCustomServiceDto {
   description?: string;
 
   @ApiPropertyOptional({ example: '99.99', description: 'Base price of the service' })
-  @IsDecimal({ decimal_digits: '0,2' })
-  @Min(0)
+  @IsPositiveDecimal()
   @IsOptional()
   basePrice?: string;
 

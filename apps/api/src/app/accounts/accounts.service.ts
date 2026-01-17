@@ -66,6 +66,14 @@ export class AccountsService {
   }
 
   /**
+   * Find account by ID with password hash - used by AuthenticationService for password change
+   * Returns null if not found (does not throw)
+   */
+  async findByIdWithPassword(id: string): Promise<Account | null> {
+    return (await this.findAccountInternal({ id }, { throwIfNotFound: false })) as Account | null;
+  }
+
+  /**
    * Check if email exists - used by AuthenticationService for signup validation
    */
   async emailExists(email: string): Promise<boolean> {

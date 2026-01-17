@@ -1,4 +1,4 @@
-import { IsCuid } from '@common';
+import { IsCuid, IsPositiveDecimal } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Decimal } from '@prisma/client/runtime/client';
 import { Type } from 'class-transformer';
@@ -93,10 +93,9 @@ export class CreateDiscountDto {
   @IsString()
   code: string;
 
-  @ApiProperty()
-  @IsNumber()
-  @Min(0)
-  amount: number;
+  @ApiProperty({ example: '10.00', description: 'Discount amount' })
+  @IsPositiveDecimal()
+  amount: string;
 
   @ApiProperty()
   @IsDateString()
@@ -115,11 +114,10 @@ export class CreateDiscountDto {
 }
 
 export class UpdateDiscountDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: '10.00', description: 'Discount amount' })
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  amount?: number;
+  @IsPositiveDecimal()
+  amount?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

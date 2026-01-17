@@ -89,7 +89,7 @@ describe('PaymentsService', () => {
       const sessionId = 'csession123456789012345';
       const createDto: CreatePaymentDto = {
         sessionId,
-        amount: 99.99,
+        amount: '99.99',
       };
 
       const mockSession = test.factory.session.createWithNulls({
@@ -144,7 +144,7 @@ describe('PaymentsService', () => {
       const sessionId = 'csession123456789012345';
       const createDto: CreatePaymentDto = {
         sessionId,
-        amount: 99.99,
+        amount: '99.99',
       };
 
       const mockSession = test.factory.session.createWithNulls({
@@ -166,7 +166,7 @@ describe('PaymentsService', () => {
       const sessionId = 'csession123456789012345';
       const createDto: CreatePaymentDto = {
         sessionId,
-        amount: 99.99,
+        amount: '99.99',
       };
 
       const mockSession = test.factory.session.createWithNulls({
@@ -188,7 +188,7 @@ describe('PaymentsService', () => {
       const sessionId = 'csession123456789012345';
       const createDto: CreatePaymentDto = {
         sessionId,
-        amount: 99.99,
+        amount: '99.99',
       };
 
       const mockSession = test.factory.session.createWithNulls({
@@ -434,7 +434,7 @@ describe('PaymentsService', () => {
       const result = await test.service.findById(mockPayment.id);
 
       expect(result.id).toBe(mockPayment.id);
-      expect(result.amount).toBe(Number(mockPayment.amount));
+      expect(result.amount.toString()).toBe(mockPayment.amount.toString());
       expect(result.status).toBe(PaymentStatus.COMPLETED);
     });
 
@@ -470,8 +470,8 @@ describe('PaymentsService', () => {
       const result = await test.service.findByUserId(userId);
 
       expect(result).toHaveLength(2);
-      expect(result[0]?.amount).toBe(99.99);
-      expect(result[1]?.amount).toBe(49.99);
+      expect(result[0]?.amount.toString()).toBe('99.99');
+      expect(result[1]?.amount.toString()).toBe('49.99');
     });
 
     it('should return empty array when no payments found', async () => {

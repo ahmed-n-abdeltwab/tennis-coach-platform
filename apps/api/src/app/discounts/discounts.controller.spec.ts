@@ -91,7 +91,7 @@ describe('DiscountsController', () => {
     it('should create a new discount', async () => {
       const createDto = {
         code: 'NEWCODE',
-        amount: 15,
+        amount: '15',
         expiry: '2025-12-31T23:59:59Z',
         maxUsage: 50,
         isActive: true,
@@ -122,7 +122,7 @@ describe('DiscountsController', () => {
   describe('PUT /discounts/:code', () => {
     it('should update an existing discount', async () => {
       const updateDto = {
-        amount: 20,
+        amount: '20',
         maxUsage: 200,
       };
       const updatedDiscount = test.factory.discount.createWithNulls({
@@ -238,7 +238,7 @@ describe('DiscountsController', () => {
       it('should return 403 when USER tries to create discount', async () => {
         const createDto = {
           code: 'NEWCODE',
-          amount: 15,
+          amount: '15',
           expiry: '2025-12-31T23:59:59Z',
         };
 
@@ -266,7 +266,7 @@ describe('DiscountsController', () => {
       });
 
       it('should return 403 when USER tries to update discount', async () => {
-        const updateDto = { amount: 20 };
+        const updateDto = { amount: '20' };
 
         const userToken = await test.auth.createToken({
           role: Role.USER,
@@ -310,7 +310,7 @@ describe('DiscountsController', () => {
         const response = await test.http.authenticatedPut(
           '/api/discounts/INVALID' as '/api/discounts/{code}',
           coachToken,
-          { body: { amount: 20 } }
+          { body: { amount: '20' } }
         );
 
         expect(response.status).toBe(404);
@@ -340,7 +340,7 @@ describe('DiscountsController', () => {
         const response = await test.http.authenticatedPost('/api/discounts', coachToken, {
           body: {
             code: 'EXISTING',
-            amount: 15,
+            amount: '15',
             expiry: '2025-12-31T23:59:59Z',
           },
         });

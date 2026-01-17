@@ -146,16 +146,31 @@ export default defineConfig({
 
   test: {
     globals: true,
-    cache: {
-      dir: '../../node_modules/.vitest',
-    },
     environment: 'jsdom',
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    setupFiles: ['src/test-setup.ts'],
 
     reporters: ['default'],
     coverage: {
       reportsDirectory: '../../coverage/apps/web',
       provider: 'v8',
     },
+
+    // Fix hanging tests and memory issues
+    testTimeout: 10000, // 10 second timeout per test
+    hookTimeout: 10000, // 10 second timeout for hooks
+    teardownTimeout: 5000, // 5 second timeout for teardown
+
+    // Reduce memory usage and prevent hanging
+    pool: 'forks', // Use forks instead of threads to prevent memory issues
+    singleFork: true, // Use single fork to reduce memory usage
+
+    // Force exit after tests complete
+    watch: false, // Disable watch mode by default
+    run: true, // Ensure tests run once and exit
+
+    // Reduce memory usage
+    isolate: false, // Don't isolate tests to reduce memory overhead
+    maxConcurrency: 1, // Run tests sequentially to reduce memory usage
   },
 });

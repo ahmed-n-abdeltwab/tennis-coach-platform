@@ -498,7 +498,7 @@ describe('Cross-Workflow E2E Tests', () => {
           body: {
             name: 'Private Lesson',
             description: 'One-on-one coaching session',
-            basePrice: 100,
+            basePrice: '100',
           },
         }
       );
@@ -518,7 +518,7 @@ describe('Cross-Workflow E2E Tests', () => {
           body: {
             name: 'Group Lesson',
             description: 'Small group coaching session (max 4 players)',
-            basePrice: 50,
+            basePrice: '50',
           },
         }
       );
@@ -678,7 +678,7 @@ describe('Cross-Workflow E2E Tests', () => {
         body: {
           name: 'Original Lesson',
           description: 'Original description',
-          basePrice: 75,
+          basePrice: '75',
         },
       });
 
@@ -695,7 +695,7 @@ describe('Cross-Workflow E2E Tests', () => {
           body: {
             name: 'Updated Lesson',
             description: 'Updated description',
-            basePrice: 85,
+            basePrice: '85',
           },
         }
       );
@@ -953,7 +953,7 @@ describe('Cross-Workflow E2E Tests', () => {
 
       // Retrieve conversation from user's perspective
       const userConversationResponse = await test.http.authenticatedGet(
-        `/api/messages/conversation/${testCoach.id}` as '/api/messages/conversation/{userId}',
+        `/api/messages/conversation/with-user/${testCoach.id}` as '/api/messages/conversation/with-user/{userId}',
         userToken
       );
 
@@ -965,7 +965,7 @@ describe('Cross-Workflow E2E Tests', () => {
 
       // Retrieve conversation from coach's perspective
       const coachConversationResponse = await test.http.authenticatedGet(
-        `/api/messages/conversation/${testUser.id}` as '/api/messages/conversation/{userId}',
+        `/api/messages/conversation/with-user/${testUser.id}` as '/api/messages/conversation/with-user/{userId}',
         coachToken
       );
 

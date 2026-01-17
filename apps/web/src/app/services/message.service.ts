@@ -195,6 +195,30 @@ export const messageService = {
 
     return response.data;
   },
+
+  /**
+   * Marks a message as read.
+   *
+   * @param messageId - The message ID to mark as read
+   * @returns The updated message
+   * @throws AppError if marking fails
+   *
+   * @example
+   * const message = await messageService.markAsRead('msg-123');
+   * console.log(`Message marked as read at ${message.readAt}`);
+   */
+  async markAsRead(messageId: string): Promise<Message> {
+    const response = await apiClient.patch('/api/messages/{id}/read', {
+      params: { id: messageId },
+      body: { isRead: true },
+    });
+
+    if (!response.ok) {
+      throw handleApiError(response);
+    }
+
+    return response.data;
+  },
 };
 
 export default messageService;

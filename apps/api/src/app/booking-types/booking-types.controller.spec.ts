@@ -83,7 +83,7 @@ describe('BookingTypesController', () => {
       const createData = {
         name: 'Personal Training',
         description: 'One-on-one training',
-        basePrice: 99.99,
+        basePrice: '99.99',
       };
 
       const coachId = 'ccoach1234567890123456';
@@ -112,7 +112,7 @@ describe('BookingTypesController', () => {
     it('should call update with provided id, data, and coach id', async () => {
       const updateData = {
         name: 'Updated Training',
-        basePrice: 149.99,
+        basePrice: '149.99',
       };
 
       const coachId = 'ccoach1234567890123456';

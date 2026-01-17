@@ -62,6 +62,8 @@ export default [
       '**/postcss.config.js',
       '**/postcss.config.mjs',
       'commitlint.config.js',
+      '**/bundle-analyzer.config.js',
+      'eslint.config.mjs',
     ],
   },
   ...typescriptEslint.configs.recommended,

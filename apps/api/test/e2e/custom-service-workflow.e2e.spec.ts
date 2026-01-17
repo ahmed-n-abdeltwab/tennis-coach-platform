@@ -89,7 +89,7 @@ describe('Custom Service Workflow (E2E)', () => {
 
       // Step 3: Verify message was created in chat system
       const messagesResponse = await test.http.authenticatedGet(
-        `/api/messages/conversation/${testCoach.id}` as '/api/messages/conversation/{userId}',
+        `/api/messages/conversation/with-user/${testCoach.id}` as '/api/messages/conversation/with-user/{userId}',
         userToken
       );
 
@@ -123,7 +123,7 @@ describe('Custom Service Workflow (E2E)', () => {
           body: {
             name: 'Premium Tennis Coaching',
             description: 'Advanced tennis coaching session with video analysis',
-            basePrice: 200,
+            basePrice: '200',
           },
         }
       );
@@ -405,7 +405,7 @@ describe('Custom Service Workflow (E2E)', () => {
 
       // Step 4: Verify message appears in conversation
       const messagesResponse = await test.http.authenticatedGet(
-        `/api/messages/conversation/${testUser.id}` as '/api/messages/conversation/{userId}',
+        `/api/messages/conversation/with-user/${testUser.id}` as '/api/messages/conversation/with-user/{userId}',
         coachToken
       );
 

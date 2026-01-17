@@ -375,7 +375,7 @@ describe('Role-Based Dashboard Workflow (E2E)', () => {
 
       // Step 4: User can access their messages
       const messagesResponse = await test.http.authenticatedGet(
-        `/api/messages/conversation/${testCoach.id}` as '/api/messages/conversation/{userId}',
+        `/api/messages/conversation/with-user/${testCoach.id}` as '/api/messages/conversation/with-user/{userId}',
         userToken
       );
 

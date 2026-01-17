@@ -317,7 +317,7 @@ describe('User Registration and Authentication Flow (E2E)', () => {
           body: {
             name: 'Private Lesson',
             description: 'One-on-one coaching session',
-            basePrice: 75,
+            basePrice: '75',
           },
         }
       );

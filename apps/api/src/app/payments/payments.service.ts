@@ -87,7 +87,7 @@ export class PaymentsService {
    */
   private async createPaymentInternal(data: {
     userId: string;
-    amount: number;
+    amount: string;
     currency?: string;
     paypalOrderId?: string;
     status?: PaymentStatus;
@@ -161,7 +161,7 @@ export class PaymentsService {
     return {
       id: payment.id,
       userId: payment.userId,
-      amount: Number(payment.amount),
+      amount: payment.amount,
       currency: payment.currency,
       status: payment.status,
       paypalOrderId: payment.paypalOrderId ?? undefined,
@@ -267,16 +267,26 @@ export class PaymentsService {
       },
     };
 
-    const response = await fetch(`${this.paypalBaseUrl}/v2/checkout/orders`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(orderData),
-    });
+    let response: Response;
+    let order: PayPalOrderResponse;
 
-    const order = (await response.json()) as PayPalOrderResponse;
+    try {
+      response = await fetch(`${this.paypalBaseUrl}/v2/checkout/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      order = (await response.json()) as PayPalOrderResponse;
+    } catch (error) {
+      // Mark payment as failed
+      await this.updatePaymentInternal(payment.id, { status: PaymentStatus.FAILED });
+      console.error(error);
+      throw new BadRequestException('Failed to connect to PayPal service');
+    }
 
     if (!response.ok) {
       // Mark payment as failed
@@ -323,15 +333,27 @@ export class PaymentsService {
     const accessToken = await this.getAccessToken();
 
     // Capture PayPal order
-    const response = await fetch(`${this.paypalBaseUrl}/v2/checkout/orders/${orderId}/capture`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    let response: Response;
+    let captureResult: PayPalCaptureResponse;
 
-    const captureResult = (await response.json()) as PayPalCaptureResponse;
+    try {
+      response = await fetch(`${this.paypalBaseUrl}/v2/checkout/orders/${orderId}/capture`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      captureResult = (await response.json()) as PayPalCaptureResponse;
+    } catch (error) {
+      // Mark payment as failed if we have a record
+      if (payment) {
+        await this.updatePaymentInternal(payment.id, { status: PaymentStatus.FAILED });
+      }
+      console.error(error);
+      throw new BadRequestException('Failed to connect to PayPal service');
+    }
 
     if (!response.ok || captureResult.status !== 'COMPLETED') {
       // Mark payment as failed if we have a record
@@ -370,16 +392,29 @@ export class PaymentsService {
       `${this.paymentsConfiguration.clientId}:${this.paymentsConfiguration.clientSecret}`
     ).toString('base64');
 
-    const response = await fetch(`${this.paypalBaseUrl}/v1/oauth2/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: `Basic ${auth}`,
-      },
-      body: 'grant_type=client_credentials',
-    });
+    let response: Response;
+    let data: PayPalTokenResponse;
 
-    const data = (await response.json()) as PayPalTokenResponse;
+    try {
+      response = await fetch(`${this.paypalBaseUrl}/v1/oauth2/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Basic ${auth}`,
+        },
+        body: 'grant_type=client_credentials',
+      });
+
+      data = (await response.json()) as PayPalTokenResponse;
+    } catch (error) {
+      console.error(error);
+      throw new BadRequestException('Failed to connect to PayPal authentication service');
+    }
+
+    if (!response.ok) {
+      throw new BadRequestException('Failed to authenticate with PayPal');
+    }
+
     return data.access_token;
   }
 }

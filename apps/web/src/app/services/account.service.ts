@@ -167,6 +167,135 @@ export const accountService = {
 
     return response.data;
   },
+
+  /**
+   * Changes the current user's password.
+   *
+   * @param data - The password change data
+   * @returns Success message
+   * @throws AppError if password change fails
+   *
+   * @example
+   * await accountService.changePassword({
+   *   currentPassword: 'oldPassword123',
+   *   newPassword: 'newPassword456!'
+   * });
+   */
+  async changePassword(data: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<{ message: string }> {
+    const response = await apiClient.post('/api/authentication/change-password', {
+      body: data,
+    });
+
+    if (!response.ok) {
+      throw handleApiError(response);
+    }
+
+    return response.data;
+  },
+
+  /**
+   * Checks profile completeness for an account.
+   *
+   * @param id - The account ID to check
+   * @returns Profile completeness information
+   * @throws AppError if request fails
+   *
+   * @example
+   * const completeness = await accountService.getProfileCompleteness('account-123');
+   * if (!completeness.isComplete) {
+   *   console.log('Missing fields:', completeness.missingFields);
+   * }
+   */
+  async getProfileCompleteness(id: string): Promise<{
+    isComplete: boolean;
+    completionPercentage: number;
+    missingFields: string[];
+    requiredFields: string[];
+    roleSpecificFields?: string[];
+  }> {
+    const response = await apiClient.get('/api/accounts/{id}/profile/completeness', {
+      params: { id },
+    });
+
+    if (!response.ok) {
+      throw handleApiError(response);
+    }
+
+    return response.data;
+  },
+
+  /**
+   * Bulk update account profile fields.
+   *
+   * @param id - The account ID to update
+   * @param data - The fields to update
+   * @returns The updated account
+   * @throws AppError if update fails
+   *
+   * @example
+   * const updated = await accountService.bulkUpdateProfile('account-123', {
+   *   name: 'New Name',
+   *   address: 'New Address',
+   *   country: 'New Country'
+   * });
+   */
+  async bulkUpdateProfile(
+    id: string,
+    data: {
+      name?: string;
+      email?: string;
+      gender?: 'male' | 'female' | 'other';
+      age?: number;
+      height?: number;
+      weight?: number;
+      country?: string;
+      address?: string;
+      bio?: string;
+      credentials?: string;
+      philosophy?: string;
+      disability?: boolean;
+      disabilityCause?: string;
+      notes?: string;
+    }
+  ): Promise<Account> {
+    const response = await apiClient.patch('/api/accounts/{id}/profile/bulk-update', {
+      params: { id },
+      body: data,
+    });
+
+    if (!response.ok) {
+      throw handleApiError(response);
+    }
+
+    return response.data;
+  },
+
+  /**
+   * Uploads a profile image for an account.
+   *
+   * @param id - The account ID
+   * @param imageUrl - The image URL to set
+   * @returns The updated account
+   * @throws AppError if upload fails
+   *
+   * @example
+   * const updated = await accountService.uploadProfileImage('account-123', 'https://example.com/image.jpg');
+   */
+  async uploadProfileImage(id: string, imageUrl: string): Promise<Account> {
+    const response = await apiClient.post('/api/accounts/{id}/profile/upload-image', {
+      params: { id },
+      body: { imageUrl },
+    });
+
+    if (!response.ok) {
+      throw handleApiError(response);
+    }
+
+    return response.data;
+  },
 };
 
 export default accountService;

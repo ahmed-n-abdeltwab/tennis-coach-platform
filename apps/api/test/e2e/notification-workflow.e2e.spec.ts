@@ -450,7 +450,7 @@ describe('Notification Workflow (E2E)', () => {
 
       // Retrieve conversation
       const response = await test.http.authenticatedGet(
-        `/api/messages/conversation/${testCoach.id}` as '/api/messages/conversation/{userId}',
+        `/api/messages/conversation/with-user/${testCoach.id}` as '/api/messages/conversation/with-user/{userId}',
         userToken
       );
 
