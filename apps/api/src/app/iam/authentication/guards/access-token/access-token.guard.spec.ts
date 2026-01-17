@@ -117,7 +117,7 @@ describe('AccessTokenGuard', () => {
     });
 
     it('should work with different user roles', async () => {
-      const roles = [Role.USER, Role.COACH, Role.ADMIN, Role.PREMIUM_USER];
+      const roles = [Role.USER, Role.COACH, Role.ADMIN];
 
       for (const role of roles) {
         test.resetMocks();

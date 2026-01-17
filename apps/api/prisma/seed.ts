@@ -129,11 +129,24 @@ async function seed() {
         notes: 'Beginner player looking to improve serve technique',
       },
     });
+
+    // --- Test Admin ---
+    await tx.account.upsert({
+      where: { email: 'admin@tennis.pro' },
+      update: {},
+      create: {
+        email: 'admin@tennis.pro',
+        name: 'Admin User',
+        role: Role.ADMIN,
+        passwordHash: await bcrypt.hash('adminpass123', 10),
+      },
+    });
   });
 
   console.info('✅ Database seeded successfully!');
   console.info('👩‍🏫 Coach: jane@tennis.pro / accountpass123');
   console.info('🎾 User : elena@example.com / userpass123');
+  console.info('🔑 Admin: admin@tennis.pro / adminpass123');
 }
 
 seed()

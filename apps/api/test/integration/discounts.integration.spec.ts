@@ -57,7 +57,7 @@ describe('Discounts Integration', () => {
 
         const createData = {
           code: 'SUMMER2024',
-          amount: 15,
+          amount: '15',
           expiry: futureDate.toISOString(),
           maxUsage: 10,
           isActive: true,
@@ -93,7 +93,7 @@ describe('Discounts Integration', () => {
 
         const createData = {
           code: 'ADMIN2024',
-          amount: 20,
+          amount: '20',
           expiry: futureDate.toISOString(),
           maxUsage: 5,
         };
@@ -115,7 +115,7 @@ describe('Discounts Integration', () => {
 
         const createData = {
           code: 'USERCODE',
-          amount: 10,
+          amount: '10',
           expiry: futureDate.toISOString(),
         };
 
@@ -135,7 +135,7 @@ describe('Discounts Integration', () => {
 
         const createData = {
           code: 'UNIQUE2024',
-          amount: 10,
+          amount: '10',
           expiry: futureDate.toISOString(),
         };
 
@@ -163,7 +163,7 @@ describe('Discounts Integration', () => {
 
         const createData = {
           code: 'NOAUTH',
-          amount: 10,
+          amount: '10',
           expiry: futureDate.toISOString(),
         };
 
@@ -370,7 +370,7 @@ describe('Discounts Integration', () => {
         const discount = await test.db.createTestDiscount({ coachId, isActive: true });
 
         const updateData = {
-          amount: 25,
+          amount: '25',
           maxUsage: 20,
         };
 
@@ -399,7 +399,7 @@ describe('Discounts Integration', () => {
         });
 
         const updateData = {
-          amount: 50,
+          amount: '50',
         };
 
         const response = await test.http.authenticatedPut(
@@ -418,7 +418,7 @@ describe('Discounts Integration', () => {
 
       it('should return 404 for non-existent discount code', async () => {
         const updateData = {
-          amount: 30,
+          amount: '30',
         };
 
         const response = await test.http.authenticatedPut(

@@ -18,11 +18,13 @@
     // Web-specific paths
     "baseUrl": "./src",
     "paths": {
-      "@api-sdk": ["../../libs/api-sdk/src/index.ts"],
+      "@api-sdk": ["../../../libs/api-sdk/src/index.ts"],
+      "@contracts": ["../../../libs/contracts/src/index.ts"],
       "@/*": ["./*"],
       "@components/*": ["app/components/*"],
       "@contexts/*": ["app/contexts/*"],
       "@pages/*": ["app/pages/*"],
+      "@routes/*": ["app/routes/*"],
       "@services/*": ["app/services/*"]
     }
   },

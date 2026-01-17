@@ -1,21 +1,62 @@
-import { Request } from 'express';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { Options } from 'express-rate-limit';
 import helmet from 'helmet';
 
 // Rate limiting configuration
-export const createRateLimiter = (windowMs: number = 15 * 60 * 1000, max: number = 100) => {
-  return rateLimit({
-    windowMs,
-    max,
+export const createRateLimiter = (windowMs?: number, max?: number) => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isTest = process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'testing';
+
+  // Environment-aware rate limiting
+  let rateLimitConfig: { windowMs: number; max: number };
+
+  if (isTest) {
+    // Disable rate limiting in test environment
+    rateLimitConfig = {
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 10000, // Very high limit for tests
+    };
+  } else if (isProduction) {
+    // Production: Strict rate limiting for security
+    rateLimitConfig = {
+      windowMs: windowMs ?? 15 * 60 * 1000, // 15 minutes
+      max: max ?? 100, // 100 requests per 15 minutes
+    };
+  } else {
+    // Development: Relaxed rate limiting for development workflow
+    rateLimitConfig = {
+      windowMs: windowMs ?? 15 * 60 * 1000, // 15 minutes
+      max: max ?? 1000, // 1000 requests per 15 minutes
+    };
+  }
+
+  const options: Partial<Options> = {
+    windowMs: rateLimitConfig.windowMs,
+    max: rateLimitConfig.max,
     message: {
       error: 'Too many requests from this IP, please try again later.',
+      limit: rateLimitConfig.max,
+      windowMs: rateLimitConfig.windowMs,
+      retryAfter: Math.ceil(rateLimitConfig.windowMs / 1000),
     },
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req: Request) => {
-      return req.ip ?? req.socket.remoteAddress ?? 'unknown';
+    // Use the default key generator which properly handles IPv6
+    // The default uses req.ip which is already normalized by express
+    validate: {
+      // Disable the IPv6 validation since we're using the default key generator
+      // which already handles IPv6 properly
+      xForwardedForHeader: false,
     },
-  });
+  };
+
+  // Add development debugging by logging when creating the rate limiter
+  if (!isProduction) {
+    console.log(
+      `[RATE LIMIT] Configured for ${isTest ? 'TEST' : 'DEVELOPMENT'}: ${rateLimitConfig.max} requests per ${rateLimitConfig.windowMs / 1000}s`
+    );
+  }
+
+  return rateLimit(options);
 };
 
 // Helmet security configuration
@@ -67,9 +108,34 @@ export const corsConfig = {
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      // Enhanced error message for debugging
+      const errorMessage = isProduction
+        ? 'Not allowed by CORS'
+        : `CORS: Origin '${origin}' not allowed. Allowed origins: ${allowedOrigins.join(', ')}`;
+
+      if (!isProduction) {
+        console.warn(`[CORS] Blocked request from origin: ${origin}`);
+        console.warn(`[CORS] Allowed origins: ${allowedOrigins.join(', ')}`);
+      }
+
+      callback(new Error(errorMessage));
     }
   },
   credentials: true,
   optionsSuccessStatus: 200,
+  // Explicitly allow common headers
+  allowedHeaders: [
+    'Origin',
+    'X-Requested-With',
+    'Content-Type',
+    'Accept',
+    'Authorization',
+    'Cache-Control',
+    'Pragma',
+    'Expires',
+  ],
+  // Explicitly allow common methods
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+  // Expose headers that the frontend might need
+  exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
 };

@@ -283,7 +283,7 @@ describe('Error Handling and Edge Cases (E2E)', () => {
 
   describe('Database Error Handling', () => {
     it('should return generic error for non-existent resource', async () => {
-      const nonExistentId = 'non-existent-session-id-12345';
+      const nonExistentId = 'cnonexistentsession123456';
 
       const response = await test.http.authenticatedGet(
         `/api/sessions/${nonExistentId}` as '/api/sessions/{id}',

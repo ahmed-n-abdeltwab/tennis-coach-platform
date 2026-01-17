@@ -17,9 +17,8 @@ datasource db {
 
 enum Role {
   USER
-  PREMIUM_USER
-  ADMIN
   COACH
+  ADMIN
 }
 
 enum SessionStatus {
@@ -28,6 +27,41 @@ enum SessionStatus {
   COMPLETED
   CANCELLED
   NO_SHOW
+}
+
+enum MessageType {
+  TEXT
+  CUSTOM_SERVICE
+  BOOKING_REQUEST
+}
+
+enum NotificationType {
+  CUSTOM_SERVICE
+  BOOKING_REMINDER
+  BOOKING_CONFIRMATION
+  ROLE_CHANGE
+  SYSTEM_ANNOUNCEMENT
+  MESSAGE_RECEIVED
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  WEBSOCKET
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
 }
 
 // ========================= //
@@ -62,17 +96,72 @@ model Account {
   updatedAt DateTime @updatedAt
 
   // Relations
-  bookingTypes     BookingType[]
-  timeSlots        TimeSlot[]
-  sessionsAsUser   Session[]      @relation("UserSessions")
-  sessionsAsCoach  Session[]      @relation("CoachSessions")
-  discounts        Discount[]
-  sentMessages     Message[]      @relation("AccountMessageSender")
-  receivedMessages Message[]      @relation("AccountMessageReceiver")
-  refreshTokens    RefreshToken[]
+  bookingTypes          BookingType[]
+  timeSlots             TimeSlot[]
+  sessionsAsUser        Session[]       @relation("UserSessions")
+  sessionsAsCoach       Session[]       @relation("CoachSessions")
+  discounts             Discount[]
+  sentMessages          Message[]       @relation("AccountMessageSender")
+  receivedMessages      Message[]       @relation("AccountMessageReceiver")
+  refreshTokens         RefreshToken[]
+  customServices        CustomService[] @relation("CoachCustomServices")
+  pinnedConversations   Conversation[]  @relation("ConversationPinnedBy")
+  sentNotifications     Notification[]  @relation("NotificationSender")
+  receivedNotifications Notification[]  @relation("NotificationRecipient")
+  payments              Payment[]
 
   @@index([email])
   @@map("accounts")
+}
+
+model CustomService {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  basePrice   Decimal  @db.Decimal(10, 2)
+  duration    Int // Duration in minutes
+  isTemplate  Boolean  @default(false)
+  isPublic    Boolean  @default(false)
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Pre-filled booking information
+  prefilledBookingTypeId String?
+  prefilledDateTime      DateTime?
+  prefilledTimeSlotId    String?
+
+  // Relations
+  coachId  String
+  coach    Account   @relation("CoachCustomServices", fields: [coachId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([coachId])
+  @@index([isTemplate])
+  @@index([isPublic])
+  @@map("custom_services")
+}
+
+model Conversation {
+  id             String    @id @default(cuid())
+  participantIds String[] // Array of participant account IDs
+  lastMessageId  String?   @unique
+  lastMessageAt  DateTime?
+  isPinned       Boolean   @default(false)
+  pinnedAt       DateTime?
+  pinnedBy       String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  lastMessage     Message?  @relation("ConversationLastMessage", fields: [lastMessageId], references: [id])
+  messages        Message[] @relation("ConversationMessages")
+  pinnedByAccount Account?  @relation("ConversationPinnedBy", fields: [pinnedBy], references: [id])
+
+  @@index([participantIds])
+  @@index([lastMessageAt])
+  @@index([isPinned])
+  @@map("conversations")
 }
 
 model BookingType {
@@ -136,13 +225,34 @@ model Session {
   bookingType BookingType @relation(fields: [bookingTypeId], references: [id])
   timeSlot    TimeSlot    @relation(fields: [timeSlotId], references: [id])
   discount    Discount?   @relation(fields: [discountId], references: [id])
+  payment     Payment?    @relation(fields: [paymentId], references: [id])
   messages    Message[]
 
   @@index([userId])
   @@index([coachId])
   @@index([status])
   @@index([dateTime])
+  @@index([paymentId])
   @@map("sessions")
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  userId          String
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("USD")
+  status          PaymentStatus @default(PENDING)
+  paypalOrderId   String?
+  paypalCaptureId String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user     Account   @relation(fields: [userId], references: [id])
+  sessions Session[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("payments")
 }
 
 model Discount {
@@ -166,20 +276,31 @@ model Discount {
 }
 
 model Message {
-  id           String   @id @default(cuid())
-  content      String
-  sentAt       DateTime @default(now())
-  senderId     String
-  receiverId   String
-  sessionId    String?
-  senderType   Role
-  receiverType Role
+  id              String      @id @default(cuid())
+  content         String
+  sentAt          DateTime    @default(now())
+  senderId        String
+  receiverId      String
+  sessionId       String?
+  senderType      Role
+  receiverType    Role
+  messageType     MessageType @default(TEXT)
+  customServiceId String?
+  conversationId  String?
+  isRead          Boolean     @default(false)
+  readAt          DateTime?
 
-  sender   Account  @relation("AccountMessageSender", fields: [senderId], references: [id])
-  receiver Account  @relation("AccountMessageReceiver", fields: [receiverId], references: [id])
-  session  Session? @relation(fields: [sessionId], references: [id])
+  sender                    Account        @relation("AccountMessageSender", fields: [senderId], references: [id])
+  receiver                  Account        @relation("AccountMessageReceiver", fields: [receiverId], references: [id])
+  session                   Session?       @relation(fields: [sessionId], references: [id])
+  customService             CustomService? @relation(fields: [customServiceId], references: [id])
+  conversation              Conversation?  @relation("ConversationMessages", fields: [conversationId], references: [id])
+  conversationAsLastMessage Conversation?  @relation("ConversationLastMessage")
 
   @@index([sessionId])
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([receiverId])
   @@map("messages")
 }
 
@@ -194,4 +315,32 @@ model RefreshToken {
 
   @@index([accountId])
   @@map("refresh_tokens")
+}
+
+model Notification {
+  id           String                @id @default(cuid())
+  type         NotificationType
+  title        String
+  message      String
+  recipientId  String
+  senderId     String?
+  priority     NotificationPriority  @default(MEDIUM)
+  channels     NotificationChannel[]
+  metadata     Json                  @default("{}")
+  isRead       Boolean               @default(false)
+  readAt       DateTime?
+  scheduledFor DateTime?
+  sentAt       DateTime?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  // Relations
+  recipient Account  @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  sender    Account? @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([recipientId])
+  @@index([type])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
 }

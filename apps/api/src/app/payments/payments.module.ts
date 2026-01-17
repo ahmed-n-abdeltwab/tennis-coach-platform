@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
+import { PrismaModule } from '../prisma/prisma.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { TimeSlotsModule } from '../time-slots/time-slots.module';
 
@@ -9,7 +10,7 @@ import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
 
 @Module({
-  imports: [ConfigModule.forFeature(paymentsConfig), SessionsModule, TimeSlotsModule],
+  imports: [PrismaModule, ConfigModule.forFeature(paymentsConfig), SessionsModule, TimeSlotsModule],
   controllers: [PaymentsController],
   providers: [PaymentsService],
   exports: [PaymentsService],

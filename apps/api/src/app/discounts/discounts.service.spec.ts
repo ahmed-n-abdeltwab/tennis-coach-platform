@@ -71,7 +71,7 @@ describe('DiscountsService', () => {
         ];
         test.mocks.PrismaService.discount.findMany.mockResolvedValue(mockDiscounts);
 
-        const result = await test.service.findByCoach('coach-123');
+        const result = await test.service.findByCoach('ccoach1234567890123456');
 
         expect(Array.isArray(result)).toBe(true);
         expect(result).toHaveLength(2);
@@ -81,7 +81,7 @@ describe('DiscountsService', () => {
       it('should return empty array when isMany=true and no results (via findByCoach)', async () => {
         test.mocks.PrismaService.discount.findMany.mockResolvedValue([]);
 
-        const result = await test.service.findByCoach('coach-123');
+        const result = await test.service.findByCoach('ccoach1234567890123456');
 
         expect(Array.isArray(result)).toBe(true);
         expect(result).toHaveLength(0);
@@ -271,11 +271,11 @@ describe('DiscountsService', () => {
       ];
       test.mocks.PrismaService.discount.findMany.mockResolvedValue(mockDiscounts);
 
-      const result = await test.service.findByCoach('coach-123');
+      const result = await test.service.findByCoach('ccoach1234567890123456');
 
       expect(result).toHaveLength(2);
       expect(test.mocks.PrismaService.discount.findMany).toHaveBeenCalledWith({
-        where: { coachId: 'coach-123' },
+        where: { coachId: 'ccoach1234567890123456' },
         orderBy: { createdAt: 'desc' },
         include: {
           coach: {
@@ -292,7 +292,7 @@ describe('DiscountsService', () => {
     it('should return empty array when coach has no discounts', async () => {
       test.mocks.PrismaService.discount.findMany.mockResolvedValue([]);
 
-      const result = await test.service.findByCoach('coach-456');
+      const result = await test.service.findByCoach('ccoach4567890123456789');
 
       expect(result).toEqual([]);
     });
@@ -317,7 +317,7 @@ describe('DiscountsService', () => {
       test.mocks.PrismaService.discount.findFirst.mockResolvedValueOnce(null);
       test.mocks.PrismaService.discount.create.mockResolvedValue(mockDiscount);
 
-      const result = await test.service.create(createDto, 'coach-123');
+      const result = await test.service.create(createDto, 'ccoach1234567890123456');
 
       expect(result.code).toBe('NEWCODE');
       expect(test.mocks.PrismaService.discount.findFirst).toHaveBeenCalledWith({
@@ -336,7 +336,7 @@ describe('DiscountsService', () => {
         data: {
           ...createDto,
           expiry: new Date(createDto.expiry),
-          coachId: 'coach-123',
+          coachId: 'ccoach1234567890123456',
         },
         include: {
           coach: {
@@ -354,10 +354,10 @@ describe('DiscountsService', () => {
       const existingDiscount = test.factory.discount.createWithNulls({ code: 'NEWCODE' });
       test.mocks.PrismaService.discount.findFirst.mockResolvedValue(existingDiscount);
 
-      await expect(test.service.create(createDto, 'coach-123')).rejects.toThrow(
+      await expect(test.service.create(createDto, 'ccoach1234567890123456')).rejects.toThrow(
         BadRequestException
       );
-      await expect(test.service.create(createDto, 'coach-123')).rejects.toThrow(
+      await expect(test.service.create(createDto, 'ccoach1234567890123456')).rejects.toThrow(
         'Discount code already exists'
       );
       expect(test.mocks.PrismaService.discount.create).not.toHaveBeenCalled();
@@ -371,16 +371,18 @@ describe('DiscountsService', () => {
     };
 
     it('should update an existing discount', async () => {
-      const existingDiscount = test.factory.discount.createWithNulls({ coachId: 'coach-123' });
+      const existingDiscount = test.factory.discount.createWithNulls({
+        coachId: 'ccoach1234567890123456',
+      });
       const updatedDiscount = test.factory.discount.createWithNulls({
         amount: new Decimal(20),
         maxUsage: 200,
-        coachId: 'coach-123',
+        coachId: 'ccoach1234567890123456',
       });
       test.mocks.PrismaService.discount.findFirst.mockResolvedValue(existingDiscount);
       test.mocks.PrismaService.discount.update.mockResolvedValue(updatedDiscount);
 
-      const result = await test.service.update('SUMMER2024', updateDto, 'coach-123');
+      const result = await test.service.update('SUMMER2024', updateDto, 'ccoach1234567890123456');
 
       expect(result.amount).toEqual(20);
       expect(test.mocks.PrismaService.discount.findFirst).toHaveBeenCalledWith({
@@ -414,7 +416,9 @@ describe('DiscountsService', () => {
     });
 
     it('should update discount with new expiry date', async () => {
-      const existingDiscount = test.factory.discount.createWithNulls({ coachId: 'coach-123' });
+      const existingDiscount = test.factory.discount.createWithNulls({
+        coachId: 'ccoach1234567890123456',
+      });
       const updateDtoWithExpiry = {
         ...updateDto,
         expiry: '2026-06-30T23:59:59Z',
@@ -422,12 +426,12 @@ describe('DiscountsService', () => {
       const updatedDiscount = test.factory.discount.createWithNulls({
         amount: new Decimal(20),
         expiry: new Date('2026-06-30T23:59:59Z'),
-        coachId: 'coach-123',
+        coachId: 'ccoach1234567890123456',
       });
       test.mocks.PrismaService.discount.findFirst.mockResolvedValue(existingDiscount);
       test.mocks.PrismaService.discount.update.mockResolvedValue(updatedDiscount);
 
-      await test.service.update('SUMMER2024', updateDtoWithExpiry, 'coach-123');
+      await test.service.update('SUMMER2024', updateDtoWithExpiry, 'ccoach1234567890123456');
 
       expect(test.mocks.PrismaService.discount.update).toHaveBeenCalledWith({
         where: { code: 'SUMMER2024' },
@@ -450,37 +454,41 @@ describe('DiscountsService', () => {
     it('should throw NotFoundException when discount not found', async () => {
       test.mocks.PrismaService.discount.findFirst.mockResolvedValue(null);
 
-      await expect(test.service.update('INVALID', updateDto, 'coach-123')).rejects.toThrow(
-        NotFoundException
-      );
-      await expect(test.service.update('INVALID', updateDto, 'coach-123')).rejects.toThrow(
-        'Discount not found'
-      );
+      await expect(
+        test.service.update('INVALID', updateDto, 'ccoach1234567890123456')
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        test.service.update('INVALID', updateDto, 'ccoach1234567890123456')
+      ).rejects.toThrow('Discount not found');
     });
 
     it('should throw ForbiddenException when coach is not owner', async () => {
-      const existingDiscount = test.factory.discount.createWithNulls({ coachId: 'other-coach' });
+      const existingDiscount = test.factory.discount.createWithNulls({
+        coachId: 'cothercoach1234567890',
+      });
       test.mocks.PrismaService.discount.findFirst.mockResolvedValue(existingDiscount);
 
-      await expect(test.service.update('SUMMER2024', updateDto, 'coach-123')).rejects.toThrow(
-        ForbiddenException
-      );
-      await expect(test.service.update('SUMMER2024', updateDto, 'coach-123')).rejects.toThrow(
-        'Not authorized to update this discount'
-      );
+      await expect(
+        test.service.update('SUMMER2024', updateDto, 'ccoach1234567890123456')
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        test.service.update('SUMMER2024', updateDto, 'ccoach1234567890123456')
+      ).rejects.toThrow('Not authorized to update this discount');
     });
   });
 
   describe('remove', () => {
     it('should soft delete a discount by setting isActive to false', async () => {
-      const existingDiscount = test.factory.discount.createWithNulls({ coachId: 'coach-123' });
+      const existingDiscount = test.factory.discount.createWithNulls({
+        coachId: 'ccoach1234567890123456',
+      });
       test.mocks.PrismaService.discount.findFirst.mockResolvedValue(existingDiscount);
       test.mocks.PrismaService.discount.update.mockResolvedValue({
         ...existingDiscount,
         isActive: false,
       });
 
-      await test.service.remove('SUMMER2024', 'coach-123');
+      await test.service.remove('SUMMER2024', 'ccoach1234567890123456');
 
       expect(test.mocks.PrismaService.discount.findFirst).toHaveBeenCalledWith({
         where: { code: 'SUMMER2024' },
@@ -503,20 +511,24 @@ describe('DiscountsService', () => {
     it('should throw NotFoundException when discount not found', async () => {
       test.mocks.PrismaService.discount.findFirst.mockResolvedValue(null);
 
-      await expect(test.service.remove('INVALID', 'coach-123')).rejects.toThrow(NotFoundException);
-      await expect(test.service.remove('INVALID', 'coach-123')).rejects.toThrow(
+      await expect(test.service.remove('INVALID', 'ccoach1234567890123456')).rejects.toThrow(
+        NotFoundException
+      );
+      await expect(test.service.remove('INVALID', 'ccoach1234567890123456')).rejects.toThrow(
         'Discount not found'
       );
     });
 
     it('should throw ForbiddenException when coach is not owner', async () => {
-      const existingDiscount = test.factory.discount.createWithNulls({ coachId: 'other-coach' });
+      const existingDiscount = test.factory.discount.createWithNulls({
+        coachId: 'cothercoach1234567890',
+      });
       test.mocks.PrismaService.discount.findFirst.mockResolvedValue(existingDiscount);
 
-      await expect(test.service.remove('SUMMER2024', 'coach-123')).rejects.toThrow(
+      await expect(test.service.remove('SUMMER2024', 'ccoach1234567890123456')).rejects.toThrow(
         ForbiddenException
       );
-      await expect(test.service.remove('SUMMER2024', 'coach-123')).rejects.toThrow(
+      await expect(test.service.remove('SUMMER2024', 'ccoach1234567890123456')).rejects.toThrow(
         'Not authorized to delete this discount'
       );
     });

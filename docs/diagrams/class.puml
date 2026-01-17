@@ -1,7 +1,6 @@
 @startuml
 enum Role {
   USER
-  PREMIUM_USER
   ADMIN
   COACH
 }
@@ -132,7 +131,6 @@ note right of Account
   Unified model for all user types.
   Role field determines capabilities:
   - USER: Can book sessions
-  - PREMIUM_USER: Enhanced user features
   - ADMIN: System administration
   - COACH: Can create booking types,
     manage availability, create discounts

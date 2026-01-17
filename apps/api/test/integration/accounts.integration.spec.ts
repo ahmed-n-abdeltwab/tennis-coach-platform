@@ -145,7 +145,7 @@ describe('Accounts Integration', () => {
 
       it('should return 404 for non-existent account', async () => {
         const response = await test.http.authenticatedGet(
-          '/api/accounts/non-existent-id' as any,
+          '/api/accounts/cnonexistentaccount123' as any,
           adminToken
         );
 
@@ -274,7 +274,7 @@ describe('Accounts Integration', () => {
         };
 
         const response = await test.http.authenticatedPatch(
-          '/api/accounts/non-existent-id' as any,
+          '/api/accounts/cnonexistentaccount123' as any,
           adminToken,
           {
             body: updateData,
@@ -343,7 +343,7 @@ describe('Accounts Integration', () => {
 
       it('should return 404 when deleting non-existent account', async () => {
         const response = await test.http.authenticatedDelete(
-          '/api/accounts/non-existent-id' as any,
+          '/api/accounts/cnonexistentaccount123' as any,
           adminToken
         );
 
@@ -360,7 +360,6 @@ describe('Accounts Integration', () => {
       { role: Role.ADMIN, shouldHaveAccess: true, description: 'ADMIN' },
       { role: Role.COACH, shouldHaveAccess: true, description: 'COACH' },
       { role: Role.USER, shouldHaveAccess: false, description: 'USER' },
-      { role: Role.PREMIUM_USER, shouldHaveAccess: false, description: 'PREMIUM_USER' },
     ] as const;
 
     it.each(roleTestCases)(
@@ -494,7 +493,6 @@ describe('Accounts Integration', () => {
         { role: Role.ADMIN, shouldSucceed: true, description: 'ADMIN' },
         { role: Role.COACH, shouldSucceed: true, description: 'COACH' },
         { role: Role.USER, shouldSucceed: false, description: 'USER' },
-        { role: Role.PREMIUM_USER, shouldSucceed: false, description: 'PREMIUM_USER' },
       ] as const;
 
       it.each(deleteTestCases)(

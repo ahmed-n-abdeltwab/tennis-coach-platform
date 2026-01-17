@@ -1,8 +1,7 @@
-/// <reference types='vitest' />
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   root: __dirname,
@@ -27,10 +26,13 @@ export default defineConfig({
 
   resolve: {
     alias: {
+      '@api-sdk': path.resolve(__dirname, '../../libs/api-sdk/src/index.ts'),
+      '@/*': path.resolve(__dirname, './*'),
       '@app': path.resolve(__dirname, './src/app'),
       '@components': path.resolve(__dirname, './src/app/components'),
       '@pages': path.resolve(__dirname, './src/app/pages'),
       '@contexts': path.resolve(__dirname, './src/app/contexts'),
+      '@routes': path.resolve(__dirname, './src/app/routes'),
       '@services': path.resolve(__dirname, './src/app/services'),
       '@hooks': path.resolve(__dirname, './src/app/hooks'),
       '@utils': path.resolve(__dirname, './src/app/utils'),
@@ -40,11 +42,6 @@ export default defineConfig({
       '@config': path.resolve(__dirname, './src/config'),
     },
   },
-
-  // Uncomment this if you are using workers.
-  // worker: {
-  //  plugins: [ nxViteTsPaths() ],
-  // },
 
   build: {
     outDir: '../../dist/apps/web',
@@ -56,12 +53,49 @@ export default defineConfig({
     // Production optimizations
     minify: 'esbuild',
     sourcemap: false,
-    // Code splitting for better caching
+    // Increase chunk size warning limit slightly but still optimize
+    chunkSizeWarningLimit: 500,
+    // Code splitting for better caching and smaller initial bundle
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          axios: ['axios'],
+        manualChunks: (id: string) => {
+          // Core React libraries - loaded on every page
+          if (
+            id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/scheduler/')
+          ) {
+            return 'react-core';
+          }
+
+          // React Router - loaded on every page
+          if (
+            id.includes('node_modules/react-router') ||
+            id.includes('node_modules/@remix-run/router')
+          ) {
+            return 'react-router';
+          }
+
+          // Axios - HTTP client
+          if (id.includes('node_modules/axios')) {
+            return 'axios';
+          }
+
+          // Socket.io - Real-time communication
+          if (id.includes('node_modules/socket.io')) {
+            return 'socket-io';
+          }
+
+          // Other node_modules go to vendor chunk
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+
+          // Don't split components and services to avoid circular dependencies
+          // Let Vite handle automatic chunking for app code
+
+          // Return undefined to let Vite handle the rest
+          return undefined;
         },
       },
     },
@@ -69,16 +103,46 @@ export default defineConfig({
 
   test: {
     globals: true,
-    cache: {
-      dir: '../../node_modules/.vitest',
-    },
     environment: 'jsdom',
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    setupFiles: ['src/test-setup.ts'],
 
     reporters: ['default'],
     coverage: {
       reportsDirectory: '../../coverage/apps/web',
       provider: 'v8',
+    },
+
+    // Fix hanging tests and memory issues
+    testTimeout: 10000, // 10 second timeout per test
+    hookTimeout: 10000, // 10 second timeout for hooks
+    teardownTimeout: 5000, // 5 second timeout for teardown
+
+    // Vitest 4 pool configuration (no more poolOptions)
+    pool: 'forks', // Use forks instead of threads to prevent memory issues
+
+    // Memory and performance settings
+    isolate: false, // Don't isolate tests to reduce memory overhead
+    maxConcurrency: 1, // Run tests sequentially to reduce memory usage
+
+    // Force exit settings
+    watch: false, // Disable watch mode by default
+
+    // Additional memory management
+    logHeapUsage: false, // Disable heap logging to reduce overhead
+    allowOnly: false, // Prevent .only tests in CI
+
+    // Environment cleanup
+    restoreMocks: true, // Restore mocks after each test
+    clearMocks: true, // Clear mock calls after each test
+
+    // Reduce DOM memory usage
+    environmentOptions: {
+      jsdom: {
+        resources: 'usable',
+        runScripts: 'dangerously',
+        pretendToBeVisual: false, // Reduce memory usage
+      },
     },
   },
 });

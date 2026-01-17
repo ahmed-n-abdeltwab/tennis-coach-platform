@@ -53,8 +53,8 @@ describe('CalendarService', () => {
 
   describe('createEvent', () => {
     it('should create a calendar event for a user', async () => {
-      const userId = 'user-123';
-      const sessionId = 'session-123';
+      const userId = 'cuser12345678901234567';
+      const sessionId = 'csession123456789012345';
 
       const createDto: CreateCalendarEventDto = {
         sessionId,
@@ -81,8 +81,8 @@ describe('CalendarService', () => {
     });
 
     it('should create a calendar event for a coach', async () => {
-      const coachId = 'coach-123';
-      const sessionId = 'session-123';
+      const coachId = 'ccoach1234567890123456';
+      const sessionId = 'csession123456789012345';
       const createDto: CreateCalendarEventDto = {
         sessionId,
       };
@@ -113,9 +113,9 @@ describe('CalendarService', () => {
     });
 
     it('should throw BadRequestException when session not found', async () => {
-      const userId = 'user-123';
+      const userId = 'cuser12345678901234567';
       const createDto: CreateCalendarEventDto = {
-        sessionId: 'non-existent',
+        sessionId: 'cnonexistent12345678901',
       };
 
       test.mocks.SessionsService.findOne.mockResolvedValue(null as any);
@@ -130,15 +130,15 @@ describe('CalendarService', () => {
     });
 
     it('should throw BadRequestException when user not authorized', async () => {
-      const userId = 'user-123';
-      const sessionId = 'session-123';
+      const userId = 'cuser12345678901234567';
+      const sessionId = 'csession123456789012345';
       const createDto: CreateCalendarEventDto = {
         sessionId,
       };
 
       const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
-        userId: 'other-user',
+        userId: 'cotheruser12345678901',
       });
 
       test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
@@ -153,64 +153,30 @@ describe('CalendarService', () => {
     });
 
     it('should throw BadRequestException when coach not authorized', async () => {
-      const sessionId = 'session-123';
+      const sessionId = 'csession123456789012345';
       const createDto: CreateCalendarEventDto = {
         sessionId,
       };
 
       const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
-        coachId: 'other-coach',
+        coachId: 'cothercoach1234567890',
       });
 
       test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
 
-      await expect(test.service.createEvent(createDto, 'coach-123', Role.COACH)).rejects.toThrow(
-        ForbiddenException
-      );
+      await expect(
+        test.service.createEvent(createDto, 'ccoach1234567890123456', Role.COACH)
+      ).rejects.toThrow(ForbiddenException);
       expect(test.mocks.SessionsService.update).not.toHaveBeenCalled();
-    });
-
-    it('should work for premium users', async () => {
-      const userId = 'premium-user-123';
-      const coachId = 'coach-1';
-      const sessionId = 'session-123';
-      const createDto: CreateCalendarEventDto = {
-        sessionId,
-      };
-
-      const mockSession = test.factory.session.createWithNulls({
-        id: sessionId,
-        coachId,
-        userId,
-      });
-
-      test.mocks.SessionsService.findOne.mockResolvedValue(mockSession);
-      test.mocks.SessionsService.update.mockResolvedValue(mockSession);
-
-      const result = await test.service.createEvent(createDto, userId, Role.PREMIUM_USER);
-
-      expect(result).toMatchObject({
-        eventId: expect.any(String),
-        summary: `${mockSession.bookingType.name} with ${mockSession.coach.name}`,
-        start: mockSession.dateTime,
-        end: new Date(mockSession.dateTime.getTime() + mockSession.durationMin * 60000),
-        attendees: [mockSession.user.email, mockSession.coach.email],
-      });
-
-      expect(test.mocks.SessionsService.findOne).toHaveBeenCalledWith(
-        sessionId,
-        userId,
-        Role.PREMIUM_USER
-      );
     });
   });
 
   describe('deleteEvent', () => {
     it('should delete a calendar event for a user', async () => {
-      const userId = 'user-123';
-      const eventId = 'event-123';
-      const sessionId = 'session-123';
+      const userId = 'cuser12345678901234567';
+      const eventId = 'ccalendarevent123456789';
+      const sessionId = 'csession123456789012345';
 
       const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
@@ -230,9 +196,9 @@ describe('CalendarService', () => {
     });
 
     it('should delete a calendar event for a coach', async () => {
-      const coachId = 'coach-123';
-      const eventId = 'event-123';
-      const sessionId = 'session-123';
+      const coachId = 'ccoach1234567890123456';
+      const eventId = 'ccalendarevent123456789';
+      const sessionId = 'csession123456789012345';
 
       const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
@@ -254,74 +220,52 @@ describe('CalendarService', () => {
     it('should throw BadRequestException when event not found', async () => {
       test.mocks.SessionsService.findFirstByCalendarId.mockResolvedValue(null as unknown as never);
 
-      await expect(test.service.deleteEvent('non-existent', 'user-123', Role.USER)).rejects.toThrow(
-        BadRequestException
-      );
-      await expect(test.service.deleteEvent('non-existent', 'user-123', Role.USER)).rejects.toThrow(
-        'Event not found'
-      );
+      await expect(
+        test.service.deleteEvent('cnonexistent12345678901', 'cuser12345678901234567', Role.USER)
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        test.service.deleteEvent('cnonexistent12345678901', 'cuser12345678901234567', Role.USER)
+      ).rejects.toThrow('Event not found');
       expect(test.mocks.SessionsService.update).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when user not authorized', async () => {
-      const eventId = 'event-123';
-      const sessionId = 'session-123';
+      const eventId = 'ccalendarevent123456789';
+      const sessionId = 'csession123456789012345';
 
       const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
-        userId: 'other-user',
+        userId: 'cotheruser12345678901',
         calendarEventId: eventId,
       });
 
       test.mocks.SessionsService.findFirstByCalendarId.mockResolvedValue(mockSession);
 
-      await expect(test.service.deleteEvent(eventId, 'user-123', Role.USER)).rejects.toThrow(
-        BadRequestException
-      );
-      await expect(test.service.deleteEvent(eventId, 'user-123', Role.USER)).rejects.toThrow(
-        'Not authorized'
-      );
+      await expect(
+        test.service.deleteEvent(eventId, 'cuser12345678901234567', Role.USER)
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        test.service.deleteEvent(eventId, 'cuser12345678901234567', Role.USER)
+      ).rejects.toThrow('Not authorized');
       expect(test.mocks.SessionsService.update).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when coach not authorized', async () => {
-      const eventId = 'event-123';
-      const sessionId = 'session-123';
+      const eventId = 'ccalendarevent123456789';
+      const sessionId = 'csession123456789012345';
 
       const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
-        coachId: 'other-coach',
+        coachId: 'cothercoach1234567890',
         calendarEventId: eventId,
       });
 
       test.mocks.SessionsService.findFirstByCalendarId.mockResolvedValue(mockSession);
 
-      await expect(test.service.deleteEvent(eventId, 'coach-123', Role.COACH)).rejects.toThrow(
-        BadRequestException
-      );
+      await expect(
+        test.service.deleteEvent(eventId, 'ccoach1234567890123456', Role.COACH)
+      ).rejects.toThrow(BadRequestException);
       expect(test.mocks.SessionsService.update).not.toHaveBeenCalled();
-    });
-
-    it('should work for premium users', async () => {
-      const userId = 'premium-user-123';
-      const eventId = 'event-123';
-      const sessionId = 'session-123';
-
-      const mockSession = test.factory.session.createWithNulls({
-        id: sessionId,
-        userId,
-        calendarEventId: eventId,
-      });
-
-      test.mocks.SessionsService.findFirstByCalendarId.mockResolvedValue(mockSession);
-
-      const result = await test.service.deleteEvent(eventId, userId, Role.PREMIUM_USER);
-
-      expect(result).toMatchObject({
-        eventId,
-        summary: 'The calender event successfully deleted',
-      });
-      expect(test.mocks.SessionsService.findFirstByCalendarId).toHaveBeenCalledWith(eventId);
     });
   });
 });

@@ -92,7 +92,7 @@ const config: Config = {
 
   // Custom reporters
   reporters: [
-    // 'default',
+    'default',
     [
       'jest-junit',
       {
@@ -104,7 +104,6 @@ const config: Config = {
         usePathForSuiteName: true,
       },
     ],
-    ['<rootDir>/test/reporters/jest-custom-reporter.js', { verbose: false }],
   ],
 };
 
