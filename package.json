@@ -191,7 +191,7 @@
     "prisma": "^7.2.0",
     "qs": "^6.14.1",
     "standard-version": "^9.5.0",
-    "supertest": "^7.1.4",
+    "supertest": "^7.2.2",
     "tailwindcss": "^4.1.18",
     "testcafe": "^3.7.3",
     "ts-jest": "^29.4.6",
