@@ -105,7 +105,7 @@ export class SessionMockFactory extends BaseMockFactory<MockSession> {
 
     const paymentId =
       overrides?.paymentId ??
-      this.payment.create({ amount: bookingType.basePrice, sessionId: id }).id;
+      this.payment.create({ amount: bookingType.basePrice, updatedAt: now, userId: user.id }).id;
 
     const calendarEventId = overrides?.calendarEventId ?? this.calendar.create().eventId;
 

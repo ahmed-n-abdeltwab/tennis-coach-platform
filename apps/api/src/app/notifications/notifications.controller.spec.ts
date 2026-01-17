@@ -50,14 +50,17 @@ describe('NotificationsController', () => {
 
       test.mocks.NotificationsService.sendEmail.mockResolvedValue(mockResponse);
 
-      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
+      const userToken = await test.auth.createToken({
+        role: Role.USER,
+        sub: 'cuser12345678901234567',
+      });
       await test.http.authenticatedPost('/api/notifications/email', userToken, {
         body: emailDto,
       });
 
       expect(test.mocks.NotificationsService.sendEmail).toHaveBeenCalledWith(
         emailDto,
-        'user-123',
+        'cuser12345678901234567',
         Role.USER
       );
     });
@@ -76,14 +79,17 @@ describe('NotificationsController', () => {
 
       test.mocks.NotificationsService.sendEmail.mockResolvedValue(mockResponse);
 
-      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({
+        role: Role.COACH,
+        sub: 'ccoach1234567890123456',
+      });
       await test.http.authenticatedPost('/api/notifications/email', coachToken, {
         body: emailDto,
       });
 
       expect(test.mocks.NotificationsService.sendEmail).toHaveBeenCalledWith(
         emailDto,
-        'coach-123',
+        'ccoach1234567890123456',
         Role.COACH
       );
     });
@@ -102,7 +108,10 @@ describe('NotificationsController', () => {
 
       test.mocks.NotificationsService.sendEmail.mockResolvedValue(mockResponse);
 
-      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
+      const userToken = await test.auth.createToken({
+        role: Role.USER,
+        sub: 'cuser12345678901234567',
+      });
       await test.http.authenticatedPost('/api/notifications/email', userToken, {
         body: emailDto,
       });
@@ -114,52 +123,61 @@ describe('NotificationsController', () => {
   describe('POST /api/notifications/confirm', () => {
     it('should call sendBookingConfirmation service method with correct parameters', async () => {
       const confirmDto: SendBookingConfirmationDto = {
-        sessionId: 'session-123',
+        sessionId: 'csession123456789012345',
       };
 
       test.mocks.NotificationsService.sendBookingConfirmation.mockResolvedValue(undefined);
 
-      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
+      const userToken = await test.auth.createToken({
+        role: Role.USER,
+        sub: 'cuser12345678901234567',
+      });
       await test.http.authenticatedPost('/api/notifications/confirm', userToken, {
         body: confirmDto,
       });
 
       expect(test.mocks.NotificationsService.sendBookingConfirmation).toHaveBeenCalledWith(
-        'session-123',
-        'user-123',
+        'csession123456789012345',
+        'cuser12345678901234567',
         Role.USER
       );
     });
 
     it('should allow coach to send booking confirmation', async () => {
       const confirmDto: SendBookingConfirmationDto = {
-        sessionId: 'session-456',
+        sessionId: 'csession456789012345678',
       };
 
       test.mocks.NotificationsService.sendBookingConfirmation.mockResolvedValue(undefined);
 
-      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({
+        role: Role.COACH,
+        sub: 'ccoach1234567890123456',
+      });
       await test.http.authenticatedPost('/api/notifications/confirm', coachToken, {
         body: confirmDto,
       });
 
       expect(test.mocks.NotificationsService.sendBookingConfirmation).toHaveBeenCalledWith(
-        'session-456',
-        'coach-123',
+        'csession456789012345678',
+        'ccoach1234567890123456',
         Role.COACH
       );
     });
 
     it('should handle session not found error', async () => {
       const confirmDto: SendBookingConfirmationDto = {
-        sessionId: 'non-existent-session',
+        sessionId: 'cnonexistentsession12345',
       };
 
       test.mocks.NotificationsService.sendBookingConfirmation.mockRejectedValue(
         new UnauthorizedException('you must create session first')
       );
 
-      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
+      const userToken = await test.auth.createToken({
+        role: Role.USER,
+        sub: 'cuser12345678901234567',
+      });
 
       const response = await test.http.authenticatedPost('/api/notifications/confirm', userToken, {
         body: confirmDto,

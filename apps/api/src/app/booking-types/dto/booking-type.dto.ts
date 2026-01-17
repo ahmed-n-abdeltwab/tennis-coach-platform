@@ -1,22 +1,26 @@
-import { createTypedApiDecorators } from '@common';
+import { IsCuid, IsPositiveDecimal } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Decimal } from '@prisma/client/runtime/client';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsDate, IsEmail, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsDate, IsEmail, IsOptional, IsString } from 'class-validator';
 export class CoachDto {
+  @ApiProperty({ example: 'ccoach1234567890123456' })
   @IsString()
+  @IsCuid()
   id: string;
 
+  @ApiProperty({ example: 'John Smith' })
   @IsString()
   name: string;
 
-  @IsOptional()
+  @ApiProperty({ example: 'coach@example.com' })
   @IsEmail()
   email: string;
 }
 export class BookingTypeResponseDto {
-  @ApiProperty()
+  @ApiProperty({ example: 'cbookingtype12345678901' })
   @IsString()
+  @IsCuid()
   id!: string;
 
   @ApiProperty({ type: Date, format: 'date-time' })
@@ -46,8 +50,9 @@ export class BookingTypeResponseDto {
   @IsBoolean()
   isActive: boolean;
 
-  @ApiProperty({ example: 'coach-id-123' })
+  @ApiProperty({ example: 'ccoach1234567890123456' })
   @IsString()
+  @IsCuid()
   coachId: string;
 
   @ApiProperty({ type: CoachDto })
@@ -58,47 +63,38 @@ export class BookingTypeResponseDto {
 export class GetAllBookingTypeResponseDto extends BookingTypeResponseDto {}
 
 export class CreateBookingTypeDto {
-  @ApiProperty()
+  @ApiProperty({ example: 'Personal Training Session' })
   @IsString()
   name: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'One-on-one coaching session focused on your goals' })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty({ example: 99.99, description: 'Base price in decimal format' })
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  basePrice: Decimal;
+  @ApiProperty({ example: '99.99', description: 'Base price in decimal format' })
+  @IsPositiveDecimal()
+  basePrice: string;
 }
 
 export class UpdateBookingTypeDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'Personal Training Session' })
   @IsOptional()
   @IsString()
   name?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'One-on-one coaching session focused on your goals' })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ example: 99.99, description: 'Base price in decimal format' })
+  @ApiPropertyOptional({ example: '99.99', description: 'Base price in decimal format' })
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  basePrice?: Decimal;
+  @IsPositiveDecimal()
+  basePrice?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: true })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 }
-
-// Create typed API decorators for booking types
-export const GetAllBookingTypeApiResponses = createTypedApiDecorators(GetAllBookingTypeResponseDto);
-
-export const BookingTypeApiResponses = createTypedApiDecorators(BookingTypeResponseDto);

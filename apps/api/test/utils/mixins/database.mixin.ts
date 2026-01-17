@@ -7,8 +7,12 @@
 import {
   Account,
   BookingType,
+  Conversation,
+  CustomService,
   Discount,
   Message,
+  Payment,
+  PaymentStatus,
   Prisma,
   Role,
   Session,
@@ -411,6 +415,64 @@ export class DatabaseMixin extends BaseMixin<DatabaseCapable> {
       coaches.push(await this.createTestCoach({ email: generateUniqueEmail(`test-coach-${i}`) }));
     }
     return coaches;
+  }
+
+  async createTestCustomService(overrides: Partial<CustomService> = {}): Promise<CustomService> {
+    const coachId = overrides.coachId ?? (await this.getCachedCoach()).id;
+
+    const customServiceData = {
+      coachId,
+      name: overrides.name ?? `Custom Service ${Date.now()}`,
+      description: overrides.description ?? 'Test custom service description',
+      basePrice: overrides.basePrice ?? 100.0,
+      duration: overrides.duration ?? 60,
+      isTemplate: overrides.isTemplate ?? false,
+      isPublic: overrides.isPublic ?? false,
+      usageCount: overrides.usageCount ?? 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...overrides,
+    };
+
+    return this.host.database.customService.create({ data: customServiceData });
+  }
+
+  async createTestConversation(overrides: Partial<Conversation> = {}): Promise<Conversation> {
+    const participantIds = overrides.participantIds ?? [
+      (await this.getCachedUser()).id,
+      (await this.getCachedCoach()).id,
+    ];
+
+    const conversationData = {
+      participantIds,
+      isPinned: overrides.isPinned ?? false,
+      pinnedAt: overrides.pinnedAt ?? null,
+      pinnedBy: overrides.pinnedBy ?? null,
+      lastMessageAt: overrides.lastMessageAt ?? new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...overrides,
+    };
+
+    return this.host.database.conversation.create({ data: conversationData });
+  }
+
+  async createTestPayment(overrides: Partial<Payment> = {}): Promise<Payment> {
+    const userId = overrides.userId ?? (await this.getCachedUser()).id;
+
+    const paymentData = {
+      userId,
+      amount: overrides.amount ?? 100.0,
+      currency: overrides.currency ?? 'USD',
+      status: overrides.status ?? PaymentStatus.PENDING,
+      paypalOrderId: overrides.paypalOrderId ?? null,
+      paypalCaptureId: overrides.paypalCaptureId ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...overrides,
+    };
+
+    return this.host.database.payment.create({ data: paymentData });
   }
 
   async withTransaction<T>(callback: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {

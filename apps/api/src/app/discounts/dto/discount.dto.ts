@@ -1,4 +1,4 @@
-import { createTypedApiDecorators } from '@common';
+import { IsCuid, IsPositiveDecimal } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Decimal } from '@prisma/client/runtime/client';
 import { Type } from 'class-transformer';
@@ -16,6 +16,7 @@ import { CoachSummaryDto } from '../../time-slots/dto/time-slot.dto';
 
 export class ValidateDiscountResponseDto {
   @ApiProperty({ example: 'SUMMER2024' })
+  @IsString()
   code: string;
 
   @ApiProperty({ example: 10.0, description: 'Discount amount' })
@@ -23,12 +24,14 @@ export class ValidateDiscountResponseDto {
   amount: Decimal;
 
   @ApiProperty({ example: true, description: 'Whether the discount code is valid' })
+  @IsBoolean()
   isValid: boolean;
 }
 
 export class DiscountResponseDto {
-  @ApiProperty({ example: 'discount-id-123' })
+  @ApiProperty()
   @IsString()
+  @IsCuid()
   id: string;
 
   @ApiProperty({ type: Date, format: 'date-time' })
@@ -71,8 +74,9 @@ export class DiscountResponseDto {
   @IsBoolean()
   isActive: boolean;
 
-  @ApiProperty({ example: 'coach-id-123' })
+  @ApiProperty()
   @IsString()
+  @IsCuid()
   coachId: string;
 
   @ApiPropertyOptional({
@@ -89,33 +93,31 @@ export class CreateDiscountDto {
   @IsString()
   code: string;
 
-  @ApiProperty()
-  @IsNumber()
-  @Min(0)
-  amount: number;
+  @ApiProperty({ example: '10.00', description: 'Discount amount' })
+  @IsPositiveDecimal()
+  amount: string;
 
   @ApiProperty()
   @IsDateString()
   expiry: string;
 
-  @ApiProperty({ default: 1 })
+  @ApiPropertyOptional({ default: 1 })
   @IsOptional()
   @IsNumber()
   @Min(1)
   maxUsage?: number;
 
-  @ApiProperty({ default: true })
+  @ApiPropertyOptional({ default: true })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 }
 
 export class UpdateDiscountDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: '10.00', description: 'Discount amount' })
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  amount?: number;
+  @IsPositiveDecimal()
+  amount?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -139,7 +141,3 @@ export class ValidateDiscountDto {
   @IsString()
   code: string;
 }
-
-// Create typed API decorators for discounts
-export const DiscountApiResponses = createTypedApiDecorators(DiscountResponseDto);
-export const ValidateDiscountApiResponses = createTypedApiDecorators(ValidateDiscountResponseDto);

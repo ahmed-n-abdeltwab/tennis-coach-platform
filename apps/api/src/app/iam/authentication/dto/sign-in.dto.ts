@@ -1,4 +1,3 @@
-import { createTypedApiDecorators } from '@common';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 
@@ -22,6 +21,3 @@ export class LogoutResponseDto {
   @IsString()
   message: string;
 }
-
-// Export typed API decorators for logout
-export const LogoutApiResponses = createTypedApiDecorators(LogoutResponseDto);
