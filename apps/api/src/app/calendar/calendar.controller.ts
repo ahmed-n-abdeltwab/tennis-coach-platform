@@ -1,3 +1,4 @@
+import { ApiResponses } from '@common';
 import { Body, Controller, Delete, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
@@ -5,11 +6,7 @@ import { CurrentUser } from '../iam/authentication/decorators/current-user.decor
 import { JwtPayload } from '../iam/interfaces/jwt.types';
 
 import { CalendarService } from './calendar.service';
-import {
-  CalendarEventApiResponse,
-  CalendarEventResponse,
-  CreateCalendarEventDto,
-} from './dto/calendar.dto';
+import { CalendarEventResponse, CreateCalendarEventDto } from './dto/calendar.dto';
 
 @ApiTags('calendar')
 @Controller('calendar')
@@ -19,7 +16,7 @@ export class CalendarController {
   @Post('event')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create calendar event' })
-  @CalendarEventApiResponse.Created('Calendar event successfully Created')
+  @(ApiResponses.for(CalendarEventResponse).Created('Calendar event successfully Created'))
   async createEvent(
     @Body() createDto: CreateCalendarEventDto,
     @CurrentUser() user: JwtPayload
@@ -30,7 +27,7 @@ export class CalendarController {
   @Delete('event/:eventId')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete calendar event' })
-  @CalendarEventApiResponse.Deleted('Calendar event successfully Deleted')
+  @(ApiResponses.for(CalendarEventResponse).Deleted('Calendar event successfully Deleted'))
   async deleteEvent(
     @Param('eventId') eventId: string,
     @CurrentUser() user: JwtPayload

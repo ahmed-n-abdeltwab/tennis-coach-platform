@@ -43,7 +43,7 @@ export class BookingTypeMockFactory extends BaseMockFactory<MockBookingType> {
       id,
       name: this.randomBookingTypeName(),
       description: this.randomDescription(),
-      basePrice: new Decimal(this.randomPrice()),
+      basePrice: new Decimal(this.randomPrice().toFixed(2)),
       isActive: true,
       coachId: coach.id,
       coach,

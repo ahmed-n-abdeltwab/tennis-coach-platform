@@ -591,35 +591,79 @@ export function createTypedApiDecorators<T extends Type<any>>(
   };
 }
 
-// Example usage - create typed decorators for specific DTOs
-// This would be done in each module's DTO file or controller file
+/**
+ * Singleton API Response Decorator Factory
+ *
+ * A cached factory that creates typed API response decorators on-demand.
+ * This eliminates the need to export decorator objects from each DTO file.
+ *
+ * Benefits:
+ * - Reduces boilerplate in DTO files
+ * - Keeps API response concerns in controllers where they're used
+ * - Caches decorators for performance (same DTO returns same decorator instance)
+ * - Cleaner separation of concerns
+ *
+ * @example
+ * ```typescript
+ * // In controller file - no need to import pre-created decorators
+ * import { ApiResponses } from '@common';
+ * import { UserResponseDto } from './dto/user.dto';
+ *
+ * @Controller('users')
+ * export class UsersController {
+ *   @Get(':id')
+ *   @ApiResponses.for(UserResponseDto).Found('User retrieved successfully')
+ *   async findOne(@Param('id') id: string) {
+ *     return this.usersService.findOne(id);
+ *   }
+ *
+ *   @Get()
+ *   @ApiResponses.for(UserResponseDto).FoundMany('Users retrieved successfully')
+ *   async findAll() {
+ *     return this.usersService.findAll();
+ *   }
+ * }
+ * ```
+ */
+class ApiResponsesFactory {
+  private cache = new Map<Type<unknown>, TypedApiDecorators<Type<unknown>>>();
 
-/*
-// In auth.dto.ts or auth.controller.ts
-export const AuthApiResponses = createTypedApiDecorators(AuthResponseDto);
+  /**
+   * Get or create typed API decorators for a DTO class
+   * Results are cached for performance
+   *
+   * @param dtoClass - The DTO class to create decorators for
+   * @returns TypedApiDecorators bound to the DTO type
+   */
+  for<T extends Type<unknown>>(dtoClass: T): TypedApiDecorators<T> {
+    if (!this.cache.has(dtoClass)) {
+      this.cache.set(dtoClass, createTypedApiDecorators(dtoClass));
+    }
+    return this.cache.get(dtoClass) as TypedApiDecorators<T>;
+  }
 
-// In user.dto.ts or users.controller.ts
-export const UserApiResponses = createTypedApiDecorators(UserResponseDto);
-
-// In time-slot.dto.ts or time-slots.controller.ts
-export const TimeSlotApiResponses = createTypedApiDecorators(TimeSlotResponseDto);
-
-// Usage in controllers:
-@Post('login')
-@AuthApiResponses.AuthSuccess('User logged in successfully')
-async login(@Body() loginDto: LoginDto) {
-  return this.authService.login(loginDto);
+  /**
+   * Clear the cache (useful for testing)
+   */
+  clearCache(): void {
+    this.cache.clear();
+  }
 }
 
-@Get(':id')
-@UserApiResponses.Found('User profile retrieved')
-async getUser(@Param('id') id: string) {
-  return this.userService.findOne(id);
-}
-
-@Get()
-@TimeSlotApiResponses.FoundMany('Available time slots')
-async getTimeSlots(@Query() query: GetTimeSlotsQuery) {
-  return this.timeSlotsService.findAvailable(query);
-}
-*/
+/**
+ * Singleton instance of the API Response Decorator Factory
+ *
+ * Use this to create typed API response decorators on-demand in controllers
+ * without needing to export decorator objects from DTO files.
+ *
+ * @example
+ * ```typescript
+ * import { ApiResponses } from '@common';
+ * import { SessionResponseDto } from './dto/session.dto';
+ *
+ * @Get(':id')
+ * @ApiResponses.for(SessionResponseDto).Found('Session retrieved')
+ * async findOne(@Param('id') id: string) { ... }
+ * ```
+ */
+export const ApiResponses = new ApiResponsesFactory();

@@ -1,3 +1,4 @@
+import { ApiResponses } from '@common';
 import { Body, Controller, Get, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
@@ -7,7 +8,6 @@ import { JwtPayload } from '../iam/interfaces/jwt.types';
 import {
   CreateSessionDto,
   GetSessionsQuery,
-  SessionApiResponses,
   SessionResponseDto,
   UpdateSessionDto,
 } from './dto/session.dto';
@@ -21,7 +21,7 @@ export class SessionsController {
   @Get()
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get users sessions' })
-  @SessionApiResponses.FoundMany('Sessions retrieved successfully')
+  @(ApiResponses.for(SessionResponseDto).FoundMany('Sessions retrieved successfully'))
   async findByUser(
     @Query() query: GetSessionsQuery,
     @CurrentUser() user: JwtPayload
@@ -32,7 +32,7 @@ export class SessionsController {
   @Get(':id')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get session by ID' })
-  @SessionApiResponses.Found('Session retrieved successfully')
+  @(ApiResponses.for(SessionResponseDto).Found('Session retrieved successfully'))
   async findOne(
     @Param('id') id: string,
     @CurrentUser() user: JwtPayload
@@ -43,7 +43,7 @@ export class SessionsController {
   @Post()
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create new session booking' })
-  @SessionApiResponses.Created('Session created successfully')
+  @(ApiResponses.for(SessionResponseDto).Created('Session created successfully'))
   async create(
     @Body() createDto: CreateSessionDto,
     @CurrentUser() user: JwtPayload
@@ -54,7 +54,7 @@ export class SessionsController {
   @Put(':id')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update session' })
-  @SessionApiResponses.Updated('Session updated successfully')
+  @(ApiResponses.for(SessionResponseDto).Updated('Session updated successfully'))
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateSessionDto,
@@ -66,7 +66,7 @@ export class SessionsController {
   @Patch(':id')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Partially update session' })
-  @SessionApiResponses.PartiallyUpdated('Session partially updated successfully')
+  @(ApiResponses.for(SessionResponseDto).PartiallyUpdated('Session partially updated successfully'))
   async partialUpdate(
     @Param('id') id: string,
     @Body() updateDto: UpdateSessionDto,
@@ -78,7 +78,7 @@ export class SessionsController {
   @Put(':id/cancel')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Cancel session' })
-  @SessionApiResponses.Updated('Session cancelled successfully')
+  @(ApiResponses.for(SessionResponseDto).Updated('Session cancelled successfully'))
   async cancel(
     @Param('id') id: string,
     @CurrentUser() user: JwtPayload

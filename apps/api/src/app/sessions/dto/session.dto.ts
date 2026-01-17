@@ -1,4 +1,4 @@
-import { createTypedApiDecorators, IsCuid } from '@common';
+import { IsCuid } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SessionStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
@@ -7,6 +7,7 @@ import {
   IsBoolean,
   IsDate,
   IsDateString,
+  IsEmail,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -21,8 +22,18 @@ import { TimeSlotResponseDto } from '../../time-slots/dto';
 // --- Shared/Sub DTOs ---
 
 export class SessionParticipantDto {
+  @ApiProperty({ description: 'Participant Id' })
+  @IsCuid()
   id: string;
+
+  @ApiProperty({ description: 'Participant Name' })
+  @IsString()
+  @IsNotEmpty()
   name: string;
+
+  @ApiProperty({ description: 'Participant Email' })
+  @IsEmail()
+  @IsNotEmpty()
   email: string;
 }
 
@@ -38,6 +49,7 @@ export class SessionParticipantDto {
 export class SessionResponseDto {
   @ApiProperty({ example: 'session-id', description: 'Session Id' })
   @IsString()
+  @IsCuid()
   id: string;
 
   @ApiProperty({
@@ -65,24 +77,26 @@ export class SessionResponseDto {
   @IsEnum(SessionStatus)
   status: SessionStatus;
 
-  @ApiProperty({ required: false, example: 'Please bring comfortable workout clothes' })
+  @ApiPropertyOptional({ example: 'Please bring comfortable workout clothes' })
   @IsOptional()
   @IsString()
   notes?: string;
 
-  @ApiProperty({ required: false, example: 'payment-id-123' })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @IsCuid()
   paymentId?: string;
 
-  @ApiProperty({ required: false, example: 'SUMMER2024' })
+  @ApiPropertyOptional({ example: 'SUMMER2024' })
   @IsOptional()
   @IsString()
   discountCode?: string;
 
-  @ApiProperty({ required: false, example: 'calendar-event-id-123' })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @IsCuid()
   calendarEventId?: string;
 
   @ApiProperty({ type: Date, format: 'date-time' })
@@ -96,22 +110,30 @@ export class SessionResponseDto {
   updatedAt: Date;
 
   // Relation IDs
-  @ApiProperty({ example: 'user-id-123' })
+  @ApiProperty()
   @IsString()
+  @IsCuid()
   userId: string;
 
-  @ApiProperty({ example: 'coach-id-456' })
+  @ApiProperty()
   @IsString()
+  @IsCuid()
   coachId: string;
 
-  @ApiProperty({ example: 'booking-type-id-789' })
+  @ApiProperty()
   @IsString()
+  @IsCuid()
   bookingTypeId: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsCuid()
   timeSlotId: string;
 
-  @ApiProperty({ example: 'time-slot-id-012' })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @IsCuid()
   discountId?: string;
 
   // Nested Objects
@@ -131,7 +153,7 @@ export class SessionResponseDto {
   @Type(() => TimeSlotResponseDto)
   timeSlot: TimeSlotResponseDto;
 
-  @ApiProperty({ type: DiscountResponseDto, description: 'Discount summary information' })
+  @ApiPropertyOptional({ type: DiscountResponseDto, description: 'Discount summary information' })
   @Type(() => DiscountResponseDto)
   @IsOptional()
   discount?: DiscountResponseDto;
@@ -193,6 +215,3 @@ export class GetSessionsQuery {
   @IsOptional()
   endDate?: string;
 }
-
-// Create typed API decorators for sessions
-export const SessionApiResponses = createTypedApiDecorators(SessionResponseDto);

@@ -786,7 +786,7 @@ describe('Booking Workflow (E2E)', () => {
 
         const createData = {
           sessionId: session.id,
-          amount: 100.0,
+          amount: '100.0',
         };
 
         // Attempt to create payment without authentication
@@ -820,7 +820,7 @@ describe('Booking Workflow (E2E)', () => {
 
         const createData = {
           sessionId: session.id,
-          amount: 100.0,
+          amount: '100.0',
         };
 
         // Attempt to create payment for another user's session
@@ -849,7 +849,7 @@ describe('Booking Workflow (E2E)', () => {
 
         const createData = {
           sessionId: session.id,
-          amount: 100.0,
+          amount: '100.0',
         };
 
         const response = await test.http.authenticatedPost(
@@ -868,7 +868,7 @@ describe('Booking Workflow (E2E)', () => {
       it('should return 400 for invalid session ID', async () => {
         const createData = {
           sessionId: 'non-existent-session-id',
-          amount: 100.0,
+          amount: '100.0',
         };
 
         const response = await test.http.authenticatedPost(
@@ -889,7 +889,7 @@ describe('Booking Workflow (E2E)', () => {
         const missingSessionResponse = await test.http.authenticatedPost(
           '/api/payments/create-order',
           userToken,
-          { body: { amount: 100.0 } }
+          { body: { amount: '100.0' } }
         );
 
         expect(missingSessionResponse.ok).toBe(false);
@@ -931,7 +931,7 @@ describe('Booking Workflow (E2E)', () => {
         const negativeResponse = await test.http.authenticatedPost(
           '/api/payments/create-order',
           userToken,
-          { body: { sessionId: session.id, amount: -10.0 } }
+          { body: { sessionId: session.id, amount: '-10.0' } }
         );
 
         expect(negativeResponse.ok).toBe(false);
@@ -943,7 +943,7 @@ describe('Booking Workflow (E2E)', () => {
         const zeroResponse = await test.http.authenticatedPost(
           '/api/payments/create-order',
           userToken,
-          { body: { sessionId: session.id, amount: 0 } }
+          { body: { sessionId: session.id, amount: '0' } }
         );
 
         expect(zeroResponse.ok).toBe(false);
@@ -1259,7 +1259,7 @@ describe('Booking Workflow (E2E)', () => {
         const response = await test.http.authenticatedPost(
           '/api/payments/create-order',
           userToken,
-          { body: { sessionId: session.id, amount: -10 } }
+          { body: { sessionId: session.id, amount: '-10' } }
         );
 
         expect(response.ok).toBe(false);
@@ -1299,7 +1299,7 @@ describe('Booking Workflow (E2E)', () => {
         const response = await test.http.authenticatedPost(
           '/api/payments/create-order',
           otherUserToken,
-          { body: { sessionId: session.id, amount: 100 } }
+          { body: { sessionId: session.id, amount: '100' } }
         );
 
         expect(response.ok).toBe(false);
@@ -1331,7 +1331,7 @@ describe('Booking Workflow (E2E)', () => {
         const response = await test.http.authenticatedPost(
           '/api/payments/create-order',
           userToken,
-          { body: { sessionId: session.id, amount: 100 } }
+          { body: { sessionId: session.id, amount: '100' } }
         );
 
         expect(response.ok).toBe(false);

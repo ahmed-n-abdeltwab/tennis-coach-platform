@@ -4,6 +4,10 @@ import { Decimal } from '@prisma/client/runtime/client';
 import { ServiceTest } from '@test-utils';
 import { DeepMocked } from '@test-utils/mixins/mock.mixin';
 
+import { AccountsService } from '../accounts/accounts.service';
+import { AppLoggerService } from '../logger';
+import { MessagesGateway } from '../messages/messages.gateway';
+import { PrismaService } from '../prisma/prisma.service';
 import { SessionsService } from '../sessions/sessions.service';
 
 import { SendEmailDto } from './dto/notification.dto';
@@ -14,12 +18,30 @@ import { NotificationsService } from './notifications.service';
  * NotificationMocks interface defines typed mocks for the NotificationsService dependencies.
  *
  * This interface provides IntelliSense support for:
+ * - PrismaService mock (notification table operations)
+ * - AccountsService mock (existsById, getAccounts methods)
+ * - MessagesGateway mock (sendCustomServiceNotification method)
  * - MailerService mock (sendMail method)
  * - SessionsService mock (findOne method)
+ * - AppLoggerService mock (logging methods)
  */
 interface NotificationMocks {
+  PrismaService: {
+    notification: {
+      create: jest.Mock;
+      findFirst: jest.Mock;
+      findMany: jest.Mock;
+      count: jest.Mock;
+      update: jest.Mock;
+      updateMany: jest.Mock;
+      delete: jest.Mock;
+    };
+  };
+  AccountsService: DeepMocked<AccountsService>;
+  MessagesGateway: DeepMocked<MessagesGateway>;
   MailerService: DeepMocked<MailerService>;
   SessionsService: DeepMocked<SessionsService>;
+  AppLoggerService: DeepMocked<AppLoggerService>;
 }
 
 describe('NotificationsService', () => {
@@ -28,7 +50,62 @@ describe('NotificationsService', () => {
   beforeEach(async () => {
     test = new ServiceTest({
       service: NotificationsService,
-      providers: [MailerService, SessionsService],
+      providers: [
+        {
+          provide: PrismaService,
+          useValue: {
+            notification: {
+              create: jest.fn(),
+              findFirst: jest.fn(),
+              findMany: jest.fn(),
+              count: jest.fn(),
+              update: jest.fn(),
+              updateMany: jest.fn(),
+              delete: jest.fn(),
+            },
+          },
+        },
+        {
+          provide: AccountsService,
+          useValue: {
+            existsById: jest.fn(),
+            getAccounts: jest.fn(),
+          },
+        },
+        {
+          provide: MessagesGateway,
+          useValue: {
+            sendCustomServiceNotification: jest.fn(),
+            notifyConversationUpdate: jest.fn(),
+            notifyMessageRead: jest.fn(),
+            getOnlineUsers: jest.fn(),
+            getUserStatus: jest.fn(),
+          },
+        },
+        {
+          provide: MailerService,
+          useValue: {
+            sendMail: jest.fn(),
+          },
+        },
+        {
+          provide: SessionsService,
+          useValue: {
+            findOne: jest.fn(),
+          },
+        },
+        {
+          provide: AppLoggerService,
+          useValue: {
+            setContext: jest.fn(),
+            log: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn(),
+            debug: jest.fn(),
+            verbose: jest.fn(),
+          },
+        },
+      ],
     });
 
     await test.setup();
@@ -54,7 +131,7 @@ describe('NotificationsService', () => {
 
       test.mocks.MailerService.sendMail.mockResolvedValue(mockResponse);
 
-      const result = await test.service.sendEmail(emailDto, 'user-123', Role.USER);
+      const result = await test.service.sendEmail(emailDto, 'cuser12345678901234567', Role.USER);
 
       expect(result).toEqual({
         success: true,
@@ -82,7 +159,7 @@ describe('NotificationsService', () => {
 
       test.mocks.MailerService.sendMail.mockResolvedValue(mockResponse);
 
-      const result = await test.service.sendEmail(emailDto, 'user-123', Role.USER);
+      const result = await test.service.sendEmail(emailDto, 'cuser12345678901234567', Role.USER);
 
       expect(result).toEqual({
         success: false,
@@ -104,7 +181,7 @@ describe('NotificationsService', () => {
 
       test.mocks.MailerService.sendMail.mockResolvedValue(mockResponse);
 
-      const result = await test.service.sendEmail(emailDto, 'user-123', Role.COACH);
+      const result = await test.service.sendEmail(emailDto, 'cuser12345678901234567', Role.COACH);
 
       expect(result.success).toBe(true);
       expect(test.mocks.MailerService.sendMail).toHaveBeenCalledWith({
@@ -118,15 +195,15 @@ describe('NotificationsService', () => {
 
   describe('sendBookingConfirmation', () => {
     it('should send booking confirmation email successfully', async () => {
-      const sessionId = 'session-123';
-      const userId = 'user-123';
+      const sessionId = 'csession123456789012345';
+      const userId = 'cuser12345678901234567';
       const role = Role.USER;
 
       const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
         userId,
         user: { id: userId, name: 'John Doe', email: 'john@example.com' },
-        coach: { id: 'coach-123', name: 'Coach Smith', email: 'coach@example.com' },
+        coach: { id: 'ccoach1234567890123456', name: 'Coach Smith', email: 'coach@example.com' },
         dateTime: new Date('2024-12-25T10:00:00Z'),
         durationMin: 60,
         price: new Decimal(100),
@@ -150,8 +227,8 @@ describe('NotificationsService', () => {
     });
 
     it('should throw UnauthorizedException when session not found', async () => {
-      const sessionId = 'non-existent';
-      const userId = 'user-123';
+      const sessionId = 'cnonexistent12345678901';
+      const userId = 'cuser12345678901234567';
       const role = Role.USER;
 
       test.mocks.SessionsService.findOne.mockResolvedValue(null as any);
@@ -163,15 +240,19 @@ describe('NotificationsService', () => {
     });
 
     it('should include session details in confirmation email', async () => {
-      const sessionId = 'session-456';
-      const userId = 'user-456';
+      const sessionId = 'csession456789012345678';
+      const userId = 'cuser45678901234567890';
       const role = Role.USER;
 
       const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
         userId,
         user: { id: userId, name: 'Jane Doe', email: 'jane@example.com' },
-        coach: { id: 'coach-456', name: 'Coach Johnson', email: 'johnson@example.com' },
+        coach: {
+          id: 'ccoach4567890123456789',
+          name: 'Coach Johnson',
+          email: 'johnson@example.com',
+        },
         dateTime: new Date('2024-12-30T14:00:00Z'),
         durationMin: 90,
         price: new Decimal(150),
