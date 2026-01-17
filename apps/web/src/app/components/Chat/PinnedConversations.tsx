@@ -65,11 +65,11 @@ function getPartnerName(
   // Try to get name from last message
   if (conversation.lastMessage) {
     const isOwnMessage = conversation.lastMessage.senderId === currentUserId;
-    if (!isOwnMessage && conversation.lastMessage.sender?.name) {
-      return conversation.lastMessage.sender.name;
+    if (!isOwnMessage && conversation.lastMessage.sender?.email) {
+      return conversation.lastMessage.sender.email;
     }
-    if (isOwnMessage && conversation.lastMessage.receiver?.name) {
-      return conversation.lastMessage.receiver.name;
+    if (isOwnMessage && conversation.lastMessage.receiver?.email) {
+      return conversation.lastMessage.receiver.email;
     }
   }
 
@@ -77,7 +77,7 @@ function getPartnerName(
   if (availableContacts) {
     const contact = availableContacts.find(c => c.id === partnerId);
     if (contact) {
-      return contact.name;
+      return contact.email;
     }
   }
 
@@ -197,11 +197,11 @@ function PinnedConversationItem({
   const partnerName = getPartnerName(conversation, currentUserId, availableContacts);
   const hasLastMessage =
     conversation.lastMessage !== null && conversation.lastMessage !== undefined;
-  const isOwnMessage = hasLastMessage && conversation.lastMessage!.senderId === currentUserId;
+  const isOwnMessage = hasLastMessage && conversation.lastMessage?.senderId === currentUserId;
   const messagePreview = hasLastMessage
     ? isOwnMessage
-      ? `You: ${truncateMessage(conversation.lastMessage!.content)}`
-      : truncateMessage(conversation.lastMessage!.content)
+      ? `You: ${truncateMessage(conversation.lastMessage?.content)}`
+      : truncateMessage(conversation.lastMessage?.content)
     : 'No messages yet';
 
   const handleUnpinClick = (e: React.MouseEvent) => {
@@ -251,7 +251,7 @@ function PinnedConversationItem({
               <h4 className='font-medium text-white text-sm truncate'>{partnerName}</h4>
               {hasLastMessage && (
                 <span className='text-xs text-gray-500 shrink-0 ml-2'>
-                  {formatPinnedDate(conversation.lastMessage!.sentAt)}
+                  {formatPinnedDate(conversation.lastMessage?.sentAt)}
                 </span>
               )}
             </div>

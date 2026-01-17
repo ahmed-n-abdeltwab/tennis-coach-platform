@@ -1,5 +1,7 @@
 import { isAppError } from '@services/error-handler';
-import { ChangeEvent, DragEvent, useCallback, useRef, useState } from 'react';
+import { ChangeEvent, DragEvent, useCallback, useEffect, useRef, useState } from 'react';
+
+import { accountService } from '../../services';
 
 // ============================================================================
 // Types
@@ -211,13 +213,13 @@ function ImageUploader({
   }, [previewUrl]);
 
   // Clean up preview URL on unmount
-  useState(() => {
+  useEffect(() => {
     return () => {
       if (previewUrl) {
         cleanupPreviewUrl(previewUrl);
       }
     };
-  });
+  }, [previewUrl]);
 
   return (
     <div className='bg-white rounded-lg shadow-md p-6'>
@@ -228,7 +230,7 @@ function ImageUploader({
         <div className='flex justify-center'>
           <div className='relative'>
             <img
-              src={previewUrl || currentImageUrl || '/default-avatar.png'}
+              src={previewUrl ?? currentImageUrl ?? '/default-avatar.png'}
               alt='Profile'
               className='w-32 h-32 rounded-full object-cover border-4 border-gray-200'
             />

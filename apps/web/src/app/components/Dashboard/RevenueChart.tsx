@@ -77,7 +77,7 @@ function SimpleBarChart({ data, maxValue }: { data: ChartDataPoint[]; maxValue: 
             {/* Bar */}
             <div className='w-full flex flex-col justify-end h-40 relative'>
               <div
-                className='w-full bg-gradient-to-t from-orange-500 to-orange-400 rounded-t-sm transition-all duration-300 group-hover:from-orange-400 group-hover:to-orange-300 relative'
+                className='w-full bg-linear-to-t from-orange-500 to-orange-400 rounded-t-sm transition-all duration-300 group-hover:from-orange-400 group-hover:to-orange-300 relative'
                 style={{ height: `${height}%` }}
               >
                 {/* Tooltip */}
@@ -128,7 +128,7 @@ function BookingTypePerformance({ bookingTypes }: { bookingTypes: BookingTypePer
           {/* Progress Bar */}
           <div className='w-full bg-gray-600 rounded-full h-2'>
             <div
-              className='bg-gradient-to-r from-orange-500 to-orange-400 h-2 rounded-full transition-all duration-300'
+              className='bg-linear-to-r from-orange-500 to-orange-400 h-2 rounded-full transition-all duration-300'
               style={{ width: `${type.percentage}%` }}
             />
           </div>
@@ -149,8 +149,8 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ className = '', showDetails
   const [financialData, setFinancialData] = useState<FinancialAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState<'LAST_30_DAYS' | 'LAST_90_DAYS' | 'LAST_YEAR'>(
-    'LAST_90_DAYS'
+  const [timeRange, setTimeRange] = useState<'last_30_days' | 'last_90_days' | 'last_year'>(
+    'last_90_days'
   );
 
   // Fetch financial analytics
@@ -216,8 +216,8 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ className = '', showDetails
   const maxRevenue = Math.max(...chartData.map(d => d.revenue), 0);
 
   // Calculate growth rate
-  const currentMonthRevenue = chartData[chartData.length - 1]?.revenue || 0;
-  const previousMonthRevenue = chartData[chartData.length - 2]?.revenue || 0;
+  const currentMonthRevenue = chartData[chartData.length - 1]?.revenue ?? 0;
+  const previousMonthRevenue = chartData[chartData.length - 2]?.revenue ?? 0;
   const growthRate = calculateGrowthRate(currentMonthRevenue, previousMonthRevenue);
 
   // Prepare booking type performance data
@@ -243,13 +243,13 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ className = '', showDetails
         <select
           value={timeRange}
           onChange={e =>
-            setTimeRange(e.target.value as 'LAST_30_DAYS' | 'LAST_90_DAYS' | 'LAST_YEAR')
+            setTimeRange(e.target.value as 'last_30_days' | 'last_90_days' | 'last_year')
           }
           className='bg-gray-700 border border-gray-600 rounded-lg px-3 py-1 text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500'
         >
-          <option value='LAST_30_DAYS'>Last 30 Days</option>
-          <option value='LAST_90_DAYS'>Last 90 Days</option>
-          <option value='LAST_YEAR'>Last Year</option>
+          <option value='last_30_days'>Last 30 Days</option>
+          <option value='last_90_days'>Last 90 Days</option>
+          <option value='last_year'>Last Year</option>
         </select>
       </div>
 

@@ -51,10 +51,10 @@ export function HomeContentEditor({ onSave, onCancel }: HomeContentEditorProps) 
       const accountData = await accountService.getAccount(account.id);
 
       const contentData: HomeContentData = {
-        bio: accountData.bio || '',
-        credentials: accountData.credentials || '',
-        philosophy: accountData.philosophy || '',
-        profileImage: accountData.profileImage || '',
+        bio: accountData.bio ?? '',
+        credentials: accountData.credentials ?? '',
+        philosophy: accountData.philosophy ?? '',
+        profileImage: accountData.profileImage ?? '',
       };
 
       setFormData(contentData);
@@ -96,10 +96,10 @@ export function HomeContentEditor({ onSave, onCancel }: HomeContentEditorProps) 
 
     try {
       await accountService.updateAccount(account.id, {
-        bio: formData.bio || null,
-        credentials: formData.credentials || null,
-        philosophy: formData.philosophy || null,
-        profileImage: formData.profileImage || null,
+        bio: formData.bio || undefined,
+        credentials: formData.credentials || undefined,
+        philosophy: formData.philosophy || undefined,
+        profileImage: formData.profileImage || undefined,
       });
 
       setOriginalData({ ...formData });
@@ -133,8 +133,8 @@ export function HomeContentEditor({ onSave, onCancel }: HomeContentEditorProps) 
       return formData.profileImage;
     }
 
-    if (account?.name) {
-      return `https://ui-avatars.com/api/?name=${encodeURIComponent(account.name)}&size=200&background=f97316&color=fff`;
+    if (account?.email) {
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(account.email)}&size=200&background=f97316&color=fff`;
     }
 
     return '';
@@ -250,7 +250,7 @@ export function HomeContentEditor({ onSave, onCancel }: HomeContentEditorProps) 
               className='w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent'
             />
             <p className='text-xs text-gray-500 mt-1'>
-              Leave empty to use a generated avatar based on your name
+              Leave empty to use a generated avatar based on your email
             </p>
           </div>
         </div>
@@ -262,21 +262,21 @@ export function HomeContentEditor({ onSave, onCancel }: HomeContentEditorProps) 
             <div className='text-center mb-6'>
               <img
                 src={getPreviewImageUrl()}
-                alt={`${account?.name || 'Coach'} - Preview`}
+                alt={`${account?.email ?? 'Coach'} - Preview`}
                 className='w-32 h-32 rounded-full mx-auto mb-4 object-cover'
                 onError={e => {
                   // Fallback to generated avatar if custom image fails to load
                   const target = e.target as HTMLImageElement;
                   if (
-                    account?.name &&
+                    account?.email &&
                     target.src !==
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(account.name)}&size=200&background=f97316&color=fff`
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(account.email)}&size=200&background=f97316&color=fff`
                   ) {
-                    target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(account.name)}&size=200&background=f97316&color=fff`;
+                    target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(account.email)}&size=200&background=f97316&color=fff`;
                   }
                 }}
               />
-              <h4 className='text-xl font-bold text-white'>{account?.name || 'Your Name'}</h4>
+              <h4 className='text-xl font-bold text-white'>{account?.email ?? 'Your Email'}</h4>
             </div>
 
             {formData.credentials && (

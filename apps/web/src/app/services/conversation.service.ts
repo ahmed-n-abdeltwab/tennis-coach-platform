@@ -38,12 +38,35 @@ export interface ConversationSummary {
     messageType: string;
     sender?: {
       id: string;
-      name: string;
+      email: string;
+      role: string;
     };
     receiver?: {
       id: string;
-      name: string;
+      email: string;
+      role: string;
     };
+  };
+}
+
+export interface ConversationMessage {
+  id: string;
+  content: string;
+  sentAt: string;
+  senderId: string;
+  receiverId: string;
+  messageType: string;
+  isRead: boolean;
+  readAt?: string;
+  sender?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  receiver?: {
+    id: string;
+    name: string;
+    email: string;
   };
 }
 
@@ -163,7 +186,7 @@ export const conversationService = {
    * const messages = await conversationService.getConversationMessages('conv-123');
    * console.log(`${messages.length} messages in conversation`);
    */
-  async getConversationMessages(conversationId: string): Promise<any[]> {
+  async getConversationMessages(conversationId: string): Promise<ConversationMessage[]> {
     const response = await apiClient.get('/api/messages/conversation/{conversationId}', {
       params: { conversationId },
     });
