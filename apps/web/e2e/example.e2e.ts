@@ -1,14 +1,14 @@
-import { Selector } from 'testcafe';
+import { Selector, t } from 'testcafe';
 
 fixture('Homepage').page('http://localhost:4200');
 
-test('should display the app title', async t => {
+test('should display the app title', async () => {
   const body = Selector('body');
 
   await t.expect(body.exists).ok('Page body should exist');
 });
 
-test('should navigate without errors', async t => {
+test('should navigate without errors', async () => {
   const { error } = await t.getBrowserConsoleMessages();
 
   // Filter out known benign errors (e.g., favicon, dev warnings, expected API errors)

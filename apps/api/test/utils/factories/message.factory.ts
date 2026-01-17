@@ -3,7 +3,7 @@
  */
 
 import { DeepPartial } from '@api-sdk/testing';
-import { Role } from '@prisma/client';
+import { MessageType, Role } from '@prisma/client';
 
 import { AccountMockFactory, MockAccount } from './account.factory';
 import { BaseMockFactory } from './base-factory';
@@ -19,6 +19,11 @@ export interface MockMessage {
   sessionId?: string;
   senderType: Role;
   receiverType: Role;
+  messageType: MessageType;
+  customServiceId?: string;
+  conversationId?: string;
+  isRead: boolean;
+  readAt?: Date;
   sender?: Pick<MockAccount, 'id' | 'name' | 'email'>;
   receiver?: Pick<MockAccount, 'id' | 'name' | 'email'>;
 }
@@ -60,6 +65,12 @@ export class MessageMockFactory extends BaseMockFactory<MockMessage> {
       senderId: sender.id,
       receiverType: overrides?.receiverType ?? Role.COACH,
       receiverId: receiver.id,
+      messageType: overrides?.messageType ?? MessageType.TEXT,
+      customServiceId: overrides?.customServiceId,
+      conversationId: overrides?.conversationId,
+      isRead: overrides?.isRead ?? false,
+      readAt: overrides?.readAt,
+      sessionId: overrides?.sessionId,
       sender,
       receiver,
       ...overrides,

@@ -290,47 +290,26 @@ describe('User Registration and Authentication Flow (E2E)', () => {
   });
 
   describe('Coach Registration Flow', () => {
-    it('should register coach and allow profile setup', async () => {
+    it('should register user and require admin to upgrade to coach role', async () => {
       const coachEmail = `coach-${Date.now()}@example.com`;
 
-      // Step 1: Register as coach
+      // Step 1: Register as user (all registrations default to USER role)
       const signupResponse = await test.http.post('/api/authentication/signup', {
         body: {
           email: coachEmail,
           password: 'password123',
           name: 'Test Coach',
-          role: Role.COACH,
         },
       });
 
       expect(signupResponse.ok).toBe(true);
       if (!signupResponse.ok) return;
 
-      expect(signupResponse.body.account.role).toBe(Role.COACH);
-      const { accessToken, account } = signupResponse.body;
+      // Should always be USER role regardless of any role parameter sent
+      expect(signupResponse.body.account.role).toBe(Role.USER);
+      const { accessToken } = signupResponse.body;
 
-      // Step 2: Update coach profile
-      const updateResponse = await test.http.authenticatedPatch(
-        `/api/accounts/${account.id}` as '/api/accounts/{id}',
-        accessToken,
-        {
-          body: {
-            bio: 'Experienced tennis coach with 10+ years of professional training.',
-            credentials: 'USPTA Certified Professional',
-            philosophy: 'Focus on fundamentals and consistent improvement.',
-          },
-        }
-      );
-
-      expect(updateResponse.ok).toBe(true);
-      if (updateResponse.ok) {
-        expect(updateResponse.body.bio).toBe(
-          'Experienced tennis coach with 10+ years of professional training.'
-        );
-        expect(updateResponse.body.credentials).toBe('USPTA Certified Professional');
-      }
-
-      // Step 3: Verify coach can create booking types
+      // Step 2: Verify user cannot create booking types (coach-only feature)
       const bookingTypeResponse = await test.http.authenticatedPost(
         '/api/booking-types',
         accessToken,
@@ -338,30 +317,89 @@ describe('User Registration and Authentication Flow (E2E)', () => {
           body: {
             name: 'Private Lesson',
             description: 'One-on-one coaching session',
-            basePrice: 75,
+            basePrice: '75',
           },
         }
       );
 
-      expect(bookingTypeResponse.ok).toBe(true);
-      if (bookingTypeResponse.ok) {
-        expect(bookingTypeResponse.body.name).toBe('Private Lesson');
-        expect(bookingTypeResponse.body.coachId).toBe(account.id);
+      // Should fail because user is not a coach
+      expect(bookingTypeResponse.ok).toBe(false);
+      if (!bookingTypeResponse.ok) {
+        expect(bookingTypeResponse.status).toBe(403); // Forbidden
       }
+    });
+
+    it('should ignore role parameter in registration request', async () => {
+      const userEmail = `user-${Date.now()}@example.com`;
+
+      // Try to register with COACH role - should be ignored
+      const signupResponse = await test.http.post('/api/authentication/signup', {
+        body: {
+          email: userEmail,
+          password: 'password123',
+          name: 'Test User',
+          role: Role.COACH, // This should be ignored
+        } as any,
+      });
+
+      expect(signupResponse.ok).toBe(true);
+      if (!signupResponse.ok) return;
+
+      // Should still be USER role despite sending COACH role
+      expect(signupResponse.body.account.role).toBe(Role.USER);
     });
   });
 
-  describe.skip('Password Reset Flow (Not Implemented)', () => {
+  describe('Password Reset Flow', () => {
     it('should request password reset', async () => {
-      // TODO: Implement when password reset endpoint is available
+      // First create a user
+      const email = `reset-test-${Date.now()}@example.com`;
+      const signupResponse = await test.http.post('/api/authentication/signup', {
+        body: {
+          email,
+          password: 'oldPassword123',
+          name: 'Reset Test User',
+        },
+      });
+
+      expect(signupResponse.ok).toBe(true);
+
+      // Request password reset
+      const forgotResponse = await test.http.post('/api/authentication/forgot-password', {
+        body: { email },
+      });
+
+      expect(forgotResponse.ok).toBe(true);
+      if (forgotResponse.ok) {
+        expect(forgotResponse.body.message).toContain('password reset');
+      }
     });
 
-    it('should reset password with valid token', async () => {
-      // TODO: Implement when password reset endpoint is available
+    it('should return success even for non-existent email (security)', async () => {
+      // Request password reset for non-existent email
+      const forgotResponse = await test.http.post('/api/authentication/forgot-password', {
+        body: { email: 'nonexistent@example.com' },
+      });
+
+      // Should still return success to prevent email enumeration
+      expect(forgotResponse.ok).toBe(true);
+      if (forgotResponse.ok) {
+        expect(forgotResponse.body.message).toContain('password reset');
+      }
     });
 
-    it('should allow login with new password after reset', async () => {
-      // TODO: Implement when password reset endpoint is available
+    it('should reject reset with invalid token', async () => {
+      const resetResponse = await test.http.post('/api/authentication/reset-password', {
+        body: {
+          token: 'invalid-token',
+          newPassword: 'newPassword123',
+        },
+      });
+
+      expect(resetResponse.ok).toBe(false);
+      if (!resetResponse.ok) {
+        expect(resetResponse.status).toBe(401);
+      }
     });
   });
 

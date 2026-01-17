@@ -223,9 +223,23 @@ export class DiscountsService {
       throw new ForbiddenException('Not authorized to delete this discount');
     }
 
+    // Soft delete by setting isActive to false
     await this.prisma.discount.update({
       where: { code },
       data: { isActive: false },
     });
+  }
+
+  // ============================================================
+  // Analytics Methods (Service Layer Pattern)
+  // ============================================================
+
+  /**
+   * Count discounts with optional filters - used by AnalyticsService
+   * @param where - Optional Prisma where clause for filtering
+   * @returns Count of matching discounts
+   */
+  async countDiscounts(where?: Prisma.DiscountWhereInput): Promise<number> {
+    return this.prisma.discount.count({ where });
   }
 }

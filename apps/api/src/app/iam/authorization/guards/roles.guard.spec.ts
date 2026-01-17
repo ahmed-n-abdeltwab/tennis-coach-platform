@@ -151,23 +151,6 @@ describe('RolesGuard', () => {
       expect(result).toBe(true);
     });
 
-    it('should work with PREMIUM_USER role', async () => {
-      const context = test.createMockExecutionContext(
-        {
-          user: {
-            sub: 'premium-id',
-            email: 'premium@example.com',
-            role: Role.PREMIUM_USER,
-          },
-        },
-        { [ROLES_KEY]: [Role.PREMIUM_USER] }
-      );
-
-      const result = await test.guard.canActivate(context);
-
-      expect(result).toBe(true);
-    });
-
     it('should deny COACH when only USER role is required', async () => {
       const context = test.createMockExecutionContext(
         {

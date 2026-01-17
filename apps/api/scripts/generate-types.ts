@@ -4,10 +4,11 @@
  * CLI script to generate TypeScript endpoint types from the API's Swagger documentation.
  *
  * This script:
- * 1. Bootstraps the NestJS application (without starting the server)
- * 2. Generates the Swagger/OpenAPI document
- * 3. Parses the document and generates TypeScript types
- * 4. Writes the types to libs/contracts/src/endpoints.generated.ts
+ * 1. Sets mock environment variables (only Swagger metadata is needed, not real connections)
+ * 2. Bootstraps the NestJS application (without starting the server)
+ * 3. Generates the Swagger/OpenAPI document
+ * 4. Parses the document and generates TypeScript types
+ * 5. Writes the types to libs/contracts/src/endpoints.generated.ts
  *
  * Usage:
  *   pnpm nx run api:generate-types
@@ -17,6 +18,21 @@
  * - In CI/CD before building the frontend
  * - Via pre-commit hook to keep types in sync
  */
+
+// Set mock environment variables BEFORE any imports that trigger validation
+// These are only needed to pass validation - no actual connections are made
+process.env.DATABASE_URL ??= 'postgresql://mock:mock@localhost:5432/mock';
+process.env.JWT_SECRET ??= 'mock-jwt-secret-for-type-generation';
+process.env.JWT_REFRESH_SECRET ??= 'mock-jwt-refresh-secret-for-type-generation';
+process.env.PAYPAL_CLIENT_ID ??= 'mock-paypal-client-id';
+process.env.PAYPAL_CLIENT_SECRET ??= 'mock-paypal-client-secret';
+process.env.GOOGLE_CLIENT_ID ??= 'mock-google-client-id';
+process.env.GOOGLE_CLIENT_SECRET ??= 'mock-google-client-secret';
+process.env.GOOGLE_REDIRECT_URI ??= 'http://localhost:3000/auth/google/callback';
+process.env.SMTP_SENDER_EMAIL ??= 'mock@example.com';
+process.env.SMTP_TOKEN ??= 'mock-smtp-token';
+process.env.REDIS_HOST ??= 'localhost';
+process.env.REDIS_PORT ??= '6379';
 
 import fs from 'fs';
 import path from 'path';
@@ -35,8 +51,9 @@ async function generateTypes(): Promise<void> {
   console.log('🚀 Generating API endpoint types...');
 
   // Create the NestJS application without starting the server
+  // Enable minimal logging to catch initialization errors
   const app = await NestFactory.create(AppModule, {
-    logger: false, // Suppress logs during generation
+    logger: ['error', 'warn'],
   });
 
   app.setGlobalPrefix('api');
@@ -81,6 +98,10 @@ generateTypes()
     process.exit(0);
   })
   .catch(error => {
-    console.error('❌ Generation failed:', error);
+    console.error('❌ Generation failed:');
+    console.error(error);
+    if (error instanceof Error) {
+      console.error('Stack:', error.stack);
+    }
     process.exit(1);
   });

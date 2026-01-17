@@ -7,8 +7,8 @@
  * Usage:
  * ```typescript
  * // No import needed after importing @contracts
-ype AllPaths = keyof Endpoints;
- * te LoginResponse = Endpoints['/api/authentication/login']['POST'];
+ * type AllPaths = keyof Endpoints;
+ * type LoginResponse = Endpoints['/api/authentication/login']['POST'];
  * ```
  *
  * To enable global Endpoints in your project:

@@ -1,5 +1,6 @@
+import { ApiResponses } from '@common';
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { JwtPayload } from '../interfaces/jwt.types';
 
@@ -7,17 +8,22 @@ import { AuthenticationService } from './authentication.service';
 import { Auth } from './decorators/auth.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import {
-  AuthApiResponses,
   AuthResponseDto,
+  ChangePasswordDto,
+  ChangePasswordResponseDto,
+  ForgotPasswordDto,
+  ForgotPasswordResponseDto,
   LoginDto,
   LogoutResponseDto,
-  RefreshApiResponses,
   RefreshResponseDto,
+  ResetPasswordDto,
+  ResetPasswordResponseDto,
   SignUpDto,
 } from './dto';
 import { AuthType } from './enums/auth-type.enum';
 import { JwtRefreshGuard } from './guards/jwt-refresh/jwt-refresh.guard';
 
+@ApiTags('authentication')
 @Controller('authentication')
 export class AuthenticationController {
   constructor(private authenticationService: AuthenticationService) {}
@@ -25,7 +31,7 @@ export class AuthenticationController {
   @Auth(AuthType.None)
   @Post('signup')
   @ApiOperation({ summary: 'Register a new user account' })
-  @AuthApiResponses.Created('User successfully registered')
+  @(ApiResponses.for(AuthResponseDto).Created('User successfully registered'))
   async signup(@Body() signupDto: SignUpDto): Promise<AuthResponseDto> {
     return this.authenticationService.signup(signupDto);
   }
@@ -33,7 +39,7 @@ export class AuthenticationController {
   @Auth(AuthType.None)
   @Post('login')
   @ApiOperation({ summary: 'Universal login endpoint for all account types' })
-  @AuthApiResponses.Found('Login successfully')
+  @(ApiResponses.for(AuthResponseDto).Found('Login successfully'))
   async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
     return this.authenticationService.login(loginDto);
   }
@@ -45,7 +51,7 @@ export class AuthenticationController {
   @Post('refresh')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
-  @RefreshApiResponses.AuthSuccess('Token refreshed successfully')
+  @(ApiResponses.for(RefreshResponseDto).AuthSuccess('Token refreshed successfully'))
   async refresh(@CurrentUser() user: JwtPayload): Promise<RefreshResponseDto> {
     return this.authenticationService.refreshToken(user);
   }
@@ -60,5 +66,41 @@ export class AuthenticationController {
   async logout(@CurrentUser() user: JwtPayload): Promise<LogoutResponseDto> {
     await this.authenticationService.logout(user);
     return { message: 'Logged out successfully' };
+  }
+
+  @Auth(AuthType.None)
+  @HttpCode(HttpStatus.OK)
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Request password reset email' })
+  @(ApiResponses.for(ForgotPasswordResponseDto).Found(
+    'Password reset email sent if account exists'
+  ))
+  async forgotPassword(
+    @Body() forgotPasswordDto: ForgotPasswordDto
+  ): Promise<ForgotPasswordResponseDto> {
+    return this.authenticationService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Auth(AuthType.None)
+  @HttpCode(HttpStatus.OK)
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password using token from email' })
+  @(ApiResponses.for(ResetPasswordResponseDto).Found('Password reset successful'))
+  async resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto
+  ): Promise<ResetPasswordResponseDto> {
+    return this.authenticationService.resetPassword(resetPasswordDto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('change-password')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Change password for authenticated user' })
+  @(ApiResponses.for(ChangePasswordResponseDto).Found('Password changed successfully'))
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @CurrentUser() user: JwtPayload
+  ): Promise<ChangePasswordResponseDto> {
+    return this.authenticationService.changePassword(user.sub, changePasswordDto);
   }
 }
