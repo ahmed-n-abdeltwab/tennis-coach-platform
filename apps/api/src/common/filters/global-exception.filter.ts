@@ -1,13 +1,7 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-  HttpStatus,
-  Logger,
-} from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
 
+import { AppLoggerService } from '../../app/logger/app-logger.service';
 import { ErrorResponseDto } from '../dto/base-response.dto';
 
 /**
@@ -22,11 +16,17 @@ import { ErrorResponseDto } from '../dto/base-response.dto';
  *
  * @example
  * // Register globally in main.ts
- * app.useGlobalFilters(new GlobalExceptionFilter());
+ * const appLogger = app.get(AppLoggerService);
+ * app.useGlobalFilters(new GlobalExceptionFilter(appLogger));
  */
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(GlobalExceptionFilter.name);
+  private readonly logger: AppLoggerService;
+
+  constructor(logger: AppLoggerService) {
+    this.logger = logger;
+    this.logger.setContext(GlobalExceptionFilter.name);
+  }
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();

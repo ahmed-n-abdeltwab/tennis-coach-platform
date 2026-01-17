@@ -3,6 +3,9 @@ export * from './decorators/api-responses.decorator';
 export * from './decorators/is-cuid.decorator';
 export * from './decorators/typed-api-responses.decorator';
 
+// Validators
+export * from './validators/is-positive-decimal.validator';
+
 // Filters
 export * from './filters/global-exception.filter';
 

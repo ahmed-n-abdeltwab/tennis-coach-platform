@@ -30,66 +30,48 @@ describe('CalendarController', () => {
   describe('POST /calendar/event', () => {
     it('should create a calendar event for a user', async () => {
       const createDto: CreateCalendarEventDto = {
-        sessionId: 'session-123',
+        sessionId: 'csession123456789012345',
       };
 
       const mockResponse = test.factory.calendar.createWithNulls();
 
       test.mocks.CalendarService.createEvent.mockResolvedValue(mockResponse);
 
-      const userToken = await test.auth.createToken({ role: Role.USER, sub: 'user-123' });
+      const userToken = await test.auth.createToken({
+        role: Role.USER,
+        sub: 'cuser12345678901234567',
+      });
       await test.http.authenticatedPost('/api/calendar/event', userToken, {
         body: createDto,
       });
 
       expect(test.mocks.CalendarService.createEvent).toHaveBeenCalledWith(
         createDto,
-        'user-123',
+        'cuser12345678901234567',
         Role.USER
-      );
-    });
-
-    it('should create a calendar event for a premium user', async () => {
-      const createDto: CreateCalendarEventDto = {
-        sessionId: 'session-456',
-      };
-
-      const mockResponse = test.factory.calendar.create();
-
-      test.mocks.CalendarService.createEvent.mockResolvedValue(mockResponse);
-
-      const premiumToken = await test.auth.createToken({
-        role: Role.PREMIUM_USER,
-        sub: 'premium-user-123',
-      });
-      await test.http.authenticatedPost('/api/calendar/event', premiumToken, {
-        body: createDto,
-      });
-
-      expect(test.mocks.CalendarService.createEvent).toHaveBeenCalledWith(
-        createDto,
-        'premium-user-123',
-        Role.PREMIUM_USER
       );
     });
 
     it('should create a calendar event for a coach', async () => {
       const createDto: CreateCalendarEventDto = {
-        sessionId: 'session-789',
+        sessionId: 'csession789012345678901',
       };
 
       const mockResponse = test.factory.calendar.create();
 
       test.mocks.CalendarService.createEvent.mockResolvedValue(mockResponse);
 
-      const coachToken = await test.auth.createToken({ role: Role.COACH, sub: 'coach-123' });
+      const coachToken = await test.auth.createToken({
+        role: Role.COACH,
+        sub: 'ccoach1234567890123456',
+      });
       await test.http.authenticatedPost('/api/calendar/event', coachToken, {
         body: createDto,
       });
 
       expect(test.mocks.CalendarService.createEvent).toHaveBeenCalledWith(
         createDto,
-        'coach-123',
+        'ccoach1234567890123456',
         Role.COACH
       );
     });
@@ -97,8 +79,8 @@ describe('CalendarController', () => {
 
   describe('DELETE /calendar/event/:eventId', () => {
     it('should delete a calendar event for a user', async () => {
-      const eventId = 'event-123';
-      const userId = 'user-123';
+      const eventId = 'ccalendarevent123456789';
+      const userId = 'cuser12345678901234567';
 
       const mockResponse = test.factory.calendar.create({
         eventId,
@@ -120,33 +102,9 @@ describe('CalendarController', () => {
       );
     });
 
-    it('should delete a calendar event for a premium user', async () => {
-      const eventId = 'event-456';
-      const userId = 'premium-user-123';
-
-      const mockResponse = test.factory.calendar.create({
-        eventId,
-        summary: 'The calender event successfully deleted',
-      });
-
-      test.mocks.CalendarService.deleteEvent.mockResolvedValue(mockResponse);
-
-      const premiumToken = await test.auth.createToken({ role: Role.PREMIUM_USER, sub: userId });
-      await test.http.authenticatedDelete(
-        `/api/calendar/event/${eventId}` as '/api/calendar/event/{eventId}',
-        premiumToken
-      );
-
-      expect(test.mocks.CalendarService.deleteEvent).toHaveBeenCalledWith(
-        eventId,
-        userId,
-        Role.PREMIUM_USER
-      );
-    });
-
     it('should delete a calendar event for a coach', async () => {
-      const eventId = 'event-789';
-      const coachId = 'coach-123';
+      const eventId = 'ccalendarevent789012345';
+      const coachId = 'ccoach1234567890123456';
       const mockResponse = test.factory.calendar.create({
         eventId,
         summary: 'The calender event successfully deleted',

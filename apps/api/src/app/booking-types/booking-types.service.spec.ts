@@ -51,9 +51,9 @@ describe('BookingTypesService', () => {
   describe('findAll', () => {
     it('should return all active booking types with coach information', async () => {
       const mockBookingTypes = test.factory.bookingType.createManyWithNulls(1, {
-        id: 'booking-type-1',
+        id: 'cbookingtype12345678901',
         name: 'Personal Training',
-        coachId: 'coach-1',
+        coachId: 'ccoach1234567890123456',
       });
 
       test.mocks.PrismaService.bookingType.findMany.mockResolvedValue(mockBookingTypes);
@@ -81,11 +81,11 @@ describe('BookingTypesService', () => {
 
   describe('findByCoach', () => {
     it('should return booking types for specific coach', async () => {
-      const coachId = 'coach-1';
+      const coachId = 'ccoach1234567890123456';
       const mockBookingTypes = test.factory.bookingType.createManyWithNulls(1, {
-        id: 'booking-type-1',
+        id: 'cbookingtype12345678901',
         name: 'Personal Training',
-        coachId: 'coach-1',
+        coachId: 'ccoach1234567890123456',
       });
 
       test.mocks.PrismaService.bookingType.findMany.mockResolvedValue(mockBookingTypes);
@@ -117,20 +117,20 @@ describe('BookingTypesService', () => {
   describe('findOne', () => {
     it('should return booking type by id', async () => {
       const mockBookingType = test.factory.bookingType.createWithNulls({
-        id: 'booking-type-1',
+        id: 'cbookingtype12345678901',
         name: 'Personal Training',
       });
 
       test.mocks.PrismaService.bookingType.findFirst.mockResolvedValue(mockBookingType);
 
-      const result = await test.service.findOne('booking-type-1');
+      const result = await test.service.findOne('cbookingtype12345678901');
 
       expect(result).toMatchObject({
-        id: 'booking-type-1',
+        id: 'cbookingtype12345678901',
         name: 'Personal Training',
       });
       expect(test.mocks.PrismaService.bookingType.findFirst).toHaveBeenCalledWith({
-        where: { id: 'booking-type-1' },
+        where: { id: 'cbookingtype12345678901' },
         include: {
           coach: {
             select: {
@@ -146,7 +146,9 @@ describe('BookingTypesService', () => {
     it('should throw NotFoundException when booking type not found', async () => {
       test.mocks.PrismaService.bookingType.findFirst.mockResolvedValue(null);
 
-      await expect(test.service.findOne('non-existent-id')).rejects.toThrow(NotFoundException);
+      await expect(test.service.findOne('cnonexistent12345678901')).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 
@@ -158,8 +160,8 @@ describe('BookingTypesService', () => {
         basePrice: new Decimal(99.99),
       };
 
-      const coachId = 'coach-1';
-      const bookingTypeId = 'booking-type-1';
+      const coachId = 'ccoach1234567890123456';
+      const bookingTypeId = 'cbookingtype12345678901';
 
       const mockBookingType = test.factory.bookingType.createWithNulls({
         id: bookingTypeId,
@@ -192,8 +194,8 @@ describe('BookingTypesService', () => {
         basePrice: new Decimal(149.99),
       };
 
-      const coachId = 'coach-1';
-      const bookingTypeId = 'booking-type-1';
+      const coachId = 'ccoach1234567890123456';
+      const bookingTypeId = 'cbookingtype12345678901';
 
       const existingBookingType = test.factory.bookingType.createWithNulls({
         id: bookingTypeId,
@@ -239,9 +241,9 @@ describe('BookingTypesService', () => {
 
       test.mocks.PrismaService.bookingType.findFirst.mockResolvedValue(null);
 
-      await expect(test.service.update('non-existent-id', updateDto, 'coach-1')).rejects.toThrow(
-        NotFoundException
-      );
+      await expect(
+        test.service.update('cnonexistent12345678901', updateDto, 'ccoach1234567890123456')
+      ).rejects.toThrow(NotFoundException);
       expect(test.mocks.PrismaService.bookingType.update).not.toHaveBeenCalled();
     });
 
@@ -249,14 +251,14 @@ describe('BookingTypesService', () => {
       const updateDto: UpdateBookingTypeDto = {
         name: 'Updated Training',
       };
-      const bookingTypeId = 'booking-type-1';
+      const bookingTypeId = 'cbookingtype12345678901';
 
       const existingBookingType = test.factory.bookingType.createWithNulls({ id: bookingTypeId });
 
       test.mocks.PrismaService.bookingType.findFirst.mockResolvedValue(existingBookingType);
 
       await expect(
-        test.service.update(bookingTypeId, updateDto, 'different-coach')
+        test.service.update(bookingTypeId, updateDto, 'cdifferentcoach123456')
       ).rejects.toThrow(ForbiddenException);
       expect(test.mocks.PrismaService.bookingType.update).not.toHaveBeenCalled();
     });
@@ -264,8 +266,8 @@ describe('BookingTypesService', () => {
 
   describe('remove', () => {
     it('should soft delete booking type successfully when owner', async () => {
-      const coachId = 'coach-1';
-      const bookingTypeId = 'booking-type-1';
+      const coachId = 'ccoach1234567890123456';
+      const bookingTypeId = 'cbookingtype12345678901';
 
       const existingBookingType = test.factory.bookingType.createWithNulls({
         id: bookingTypeId,
@@ -301,20 +303,20 @@ describe('BookingTypesService', () => {
     it('should throw NotFoundException when booking type not found', async () => {
       test.mocks.PrismaService.bookingType.findFirst.mockResolvedValue(null);
 
-      await expect(test.service.remove('non-existent-id', 'coach-1')).rejects.toThrow(
-        NotFoundException
-      );
+      await expect(
+        test.service.remove('cnonexistent12345678901', 'ccoach1234567890123456')
+      ).rejects.toThrow(NotFoundException);
       expect(test.mocks.PrismaService.bookingType.update).not.toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException when not the owner', async () => {
-      const bookingTypeId = 'booking-type-1';
+      const bookingTypeId = 'cbookingtype12345678901';
 
       const existingBookingType = test.factory.bookingType.createWithNulls({ id: bookingTypeId });
 
       test.mocks.PrismaService.bookingType.findFirst.mockResolvedValue(existingBookingType);
 
-      await expect(test.service.remove(bookingTypeId, 'different-coach')).rejects.toThrow(
+      await expect(test.service.remove(bookingTypeId, 'cdifferentcoach123456')).rejects.toThrow(
         ForbiddenException
       );
       expect(test.mocks.PrismaService.bookingType.update).not.toHaveBeenCalled();

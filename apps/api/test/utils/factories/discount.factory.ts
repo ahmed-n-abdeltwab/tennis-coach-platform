@@ -83,7 +83,8 @@ export class DiscountMockFactory extends BaseMockFactory<MockDiscount> {
 
   private randomAmount(): Decimal {
     const amounts = [10, 15, 20, 25, 30, 50]; // Dollar amounts
-    return new Decimal(amounts[Math.floor(Math.random() * amounts.length)] ?? 10);
+    const amount = amounts[Math.floor(Math.random() * amounts.length)] ?? 10;
+    return new Decimal(amount.toFixed(2));
   }
 
   private randomMaxUsage(): number {

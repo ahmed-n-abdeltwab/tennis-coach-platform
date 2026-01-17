@@ -1,5 +1,5 @@
-import { createTypedApiDecorators } from '@common';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsCuid } from '@common';
+import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { Type } from 'class-transformer';
 import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
@@ -8,7 +8,9 @@ import { BaseAuthDto } from './base.dto';
 
 /**
  * Sign up request DTO.
- * Extends BaseAuthDto with additional name and optional role fields.
+ * Extends BaseAuthDto with additional name field.
+ * All new registrations are assigned USER role by default.
+ * The role field is accepted but ignored for security reasons.
  */
 export class SignUpDto extends BaseAuthDto {
   @ApiProperty({
@@ -19,14 +21,15 @@ export class SignUpDto extends BaseAuthDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     enum: Role,
     example: Role.USER,
-    description: 'User role (defaults to USER)',
+    description: 'Account role (ignored - all signups default to USER)',
+    required: false,
   })
-  @IsEnum(Role)
   @IsOptional()
-  role?: Role;
+  @IsEnum(Role)
+  role?: Role; // Optional field that gets ignored in service
 }
 
 /**
@@ -40,6 +43,7 @@ export class AccountSummaryDto {
   })
   @IsString()
   @IsNotEmpty()
+  @IsCuid()
   id: string;
 
   @ApiProperty({
@@ -116,7 +120,3 @@ export class AuthResponseDto {
   @Type(() => AccountSummaryDto)
   account: AccountSummaryDto;
 }
-
-// Export typed API decorators for authentication
-export const AuthApiResponses = createTypedApiDecorators(AuthResponseDto);
-export const RefreshApiResponses = createTypedApiDecorators(RefreshResponseDto);

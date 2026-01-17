@@ -61,7 +61,7 @@ describe('Payments Integration', () => {
 
         const createData = {
           sessionId: session.id,
-          amount: 75.0,
+          amount: '75.0',
         };
 
         const response = await test.http.post('/api/payments/create-order', {
@@ -77,7 +77,7 @@ describe('Payments Integration', () => {
       it('should return 400 for invalid session ID', async () => {
         const createData = {
           sessionId: 'non-existent-session-id',
-          amount: 75.0,
+          amount: '75.0',
         };
 
         const response = await test.http.authenticatedPost(
@@ -106,7 +106,7 @@ describe('Payments Integration', () => {
 
         const createData = {
           sessionId: session.id,
-          amount: 75.0,
+          amount: '75.0',
         };
 
         const response = await test.http.authenticatedPost(
@@ -129,7 +129,7 @@ describe('Payments Integration', () => {
 
         const createData = {
           sessionId: session.id,
-          amount: 75.0,
+          amount: '75.0',
         };
 
         const response = await test.http.authenticatedPost(
@@ -149,7 +149,7 @@ describe('Payments Integration', () => {
 
       it('should return 400 for missing sessionId', async () => {
         const createData = {
-          amount: 75.0,
+          amount: '75.0',
         };
 
         const response = await test.http.authenticatedPost(
@@ -192,7 +192,7 @@ describe('Payments Integration', () => {
 
         const createData = {
           sessionId: session.id,
-          amount: -10.0,
+          amount: '-10.0',
         };
 
         const response = await test.http.authenticatedPost(
@@ -214,7 +214,7 @@ describe('Payments Integration', () => {
 
         const createData = {
           sessionId: session.id,
-          amount: 0,
+          amount: '0',
         };
 
         const response = await test.http.authenticatedPost(
@@ -395,7 +395,7 @@ describe('Payments Integration', () => {
 
       const createData = {
         sessionId: session.id,
-        amount: 75.0,
+        amount: '75.0',
       };
 
       const response = await test.http.authenticatedPost('/api/payments/create-order', userToken, {
@@ -425,7 +425,7 @@ describe('Payments Integration', () => {
         '/api/payments/create-order',
         userToken,
         {
-          body: { sessionId: userSession.id, amount: 75.0 },
+          body: { sessionId: userSession.id, amount: '75.0' },
         }
       );
 
@@ -443,7 +443,7 @@ describe('Payments Integration', () => {
         '/api/payments/create-order',
         userToken,
         {
-          body: { sessionId: otherUserSession.id, amount: 75.0 },
+          body: { sessionId: otherUserSession.id, amount: '75.0' },
         }
       );
 
