@@ -86,56 +86,13 @@ export default defineConfig({
             return 'socket-io';
           }
 
-          // Zod - Validation library
-          if (id.includes('node_modules/zod')) {
-            return 'zod';
-          }
-
-          // Class transformer/validator - DTO validation
-          if (
-            id.includes('node_modules/class-transformer') ||
-            id.includes('node_modules/class-validator')
-          ) {
-            return 'validation';
-          }
-
           // Other node_modules go to vendor chunk
           if (id.includes('node_modules')) {
             return 'vendor';
           }
 
-          // Split pages by role for better code splitting
-          if (id.includes('/pages/admin/')) {
-            return 'pages-admin';
-          }
-          if (id.includes('/pages/coach/')) {
-            return 'pages-coach';
-          }
-          if (id.includes('/pages/user/')) {
-            return 'pages-user';
-          }
-          if (id.includes('/pages/shared/')) {
-            return 'pages-shared';
-          }
-
-          // Split components by feature
-          if (id.includes('/components/Dashboard/')) {
-            return 'components-dashboard';
-          }
-          if (id.includes('/components/Chat/')) {
-            return 'components-chat';
-          }
-          if (id.includes('/components/CustomServices/')) {
-            return 'components-custom-services';
-          }
-          if (id.includes('/components/Booking/')) {
-            return 'components-booking';
-          }
-
-          // Services layer
-          if (id.includes('/services/')) {
-            return 'services';
-          }
+          // Don't split components and services to avoid circular dependencies
+          // Let Vite handle automatic chunking for app code
 
           // Return undefined to let Vite handle the rest
           return undefined;
