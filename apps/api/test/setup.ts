@@ -3,6 +3,11 @@
  * Runs BEFORE module imports - required for module-level mocking
  */
 
+// Import actual Prisma enums BEFORE any mocking to avoid initialization issues
+// This ensures all enums (Role, SessionStatus, MessageType, etc.) are available
+// without manual maintenance when new enums are added to the schema
+const actualPrismaClient = jest.requireActual('@prisma/client');
+
 import { setupTestEnvironment } from './setup/shared';
 import { nodemailerMock, RedisService } from './utils/mocks';
 
@@ -32,6 +37,9 @@ function createMockRepository() {
 }
 
 jest.mock('@prisma/client', () => ({
+  // Spread all actual exports (enums, types, etc.) to avoid manual maintenance
+  ...actualPrismaClient,
+  // Only override PrismaClient with a mock
   PrismaClient: jest.fn().mockImplementation(() => ({
     $connect: jest.fn().mockResolvedValue(undefined),
     $disconnect: jest.fn().mockResolvedValue(undefined),
@@ -48,30 +56,9 @@ jest.mock('@prisma/client', () => ({
     payment: createMockRepository(),
     refreshToken: createMockRepository(),
     notification: createMockRepository(),
+    conversation: createMockRepository(),
+    customService: createMockRepository(),
   })),
-  // Prisma enums - must be included for type checking
-  Role: {
-    USER: 'USER',
-    COACH: 'COACH',
-    ADMIN: 'ADMIN',
-    PREMIUM_USER: 'PREMIUM_USER',
-  },
-  SessionStatus: {
-    SCHEDULED: 'SCHEDULED',
-    COMPLETED: 'COMPLETED',
-    CANCELLED: 'CANCELLED',
-    NO_SHOW: 'NO_SHOW',
-  },
-  PaymentStatus: {
-    PENDING: 'PENDING',
-    COMPLETED: 'COMPLETED',
-    FAILED: 'FAILED',
-    REFUNDED: 'REFUNDED',
-  },
-  DiscountType: {
-    PERCENTAGE: 'PERCENTAGE',
-    FIXED: 'FIXED',
-  },
 }));
 
 jest.mock('nodemailer', () => nodemailerMock);

@@ -43,7 +43,7 @@
     "db:migrate:deploy": "dotenv -e .env -- prisma migrate deploy --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
     "db:migrate:prod": "prisma migrate deploy --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
     "db:seed": "dotenv -e .env -- tsx apps/api/prisma/seed.ts",
-    "db:reset": "dotenv -e .env -- prisma migrate reset --force --skip-seed --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
+    "db:reset": "dotenv -e .env -- prisma migrate reset --force --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
     "db:studio": "dotenv -e .env -- prisma studio --schema=./apps/api/prisma/schema.prisma --config=./apps/api/prisma/prisma.config.ts",
     "@comment:testing": "Centralized testing configuration powered by Nx and Jest.",
     "test": "nx run-many --target=test --all",
@@ -89,6 +89,14 @@
     "@nestjs/platform-socket.io": "^11.1.10",
     "@nestjs/swagger": "^11.2.3",
     "@nestjs/websockets": "^11.1.11",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.68.0",
+    "@opentelemetry/exporter-jaeger": "^2.4.0",
+    "@opentelemetry/exporter-prometheus": "^0.210.0",
+    "@opentelemetry/instrumentation-express": "^0.58.0",
+    "@opentelemetry/instrumentation-http": "^0.210.0",
+    "@opentelemetry/instrumentation-nestjs-core": "^0.56.0",
+    "@opentelemetry/sdk-node": "^0.210.0",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "@prisma/config": "^7.2.0",
@@ -144,6 +152,9 @@
     "@swc/core": "~1.15.7",
     "@swc/helpers": "0.5.18",
     "@tailwindcss/postcss": "^4.1.18",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
+    "@testing-library/user-event": "^14.6.1",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/ms": "^2.1.0",
@@ -224,19 +235,20 @@
   },
   "prisma": {
     "seed": "tsx apps/api/prisma/seed.ts",
-    "schema": "./apps/api/prisma/schema.prisma",
+    "schema": "apps/api/prisma/schema.prisma",
     "config": "apps/api/prisma/prisma.config.ts"
   },
   "pnpm": {
     "overrides": {
-      "hono": ">=4.10.2",
+      "hono": ">=4.11.4",
       "valibot": ">=1.2.0",
       "jws": ">=4.0.1",
       "validator": ">=13.15.22",
       "glob": ">=10.5.0",
       "test-exclude": ">=7.0.1",
       "tmp": ">=0.2.3",
-      "qs": ">=6.14.1"
+      "qs": ">=6.14.1",
+      "react-router": ">=7.12.0"
     },
     "ignoredBuiltDependencies": [
       "@prisma/engines",

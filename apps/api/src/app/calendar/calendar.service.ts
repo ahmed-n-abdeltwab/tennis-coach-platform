@@ -23,7 +23,7 @@ export class CalendarService {
     }
 
     // 1. Correct way to check for multiple roles
-    const isClientRole = ([Role.USER, Role.PREMIUM_USER] as Role[]).includes(role);
+    const isClientRole = ([Role.USER] as Role[]).includes(role);
     // 2. Logic to determine if the user owns this session
     const isAuthorized = isClientRole ? session.userId === userId : session.coachId === userId;
 
@@ -57,7 +57,7 @@ export class CalendarService {
     }
 
     // Check Authorization
-    const isClientRole = ([Role.USER, Role.PREMIUM_USER] as Role[]).includes(role);
+    const isClientRole = ([Role.USER] as Role[]).includes(role);
     const isAuthorized = isClientRole ? session.userId === userId : session.coachId === userId;
 
     if (!isAuthorized) {

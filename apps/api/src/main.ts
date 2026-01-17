@@ -6,8 +6,14 @@ import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app/app.module';
 import { AppLoggerService } from './app/logger/app-logger.service';
 import { HttpLoggingInterceptor } from './app/logger/http-logging.interceptor';
+import { APMService } from './app/monitoring/apm/apm.service';
+import { APMInterceptor } from './app/monitoring/interceptors/apm.interceptor';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { corsConfig, createRateLimiter } from './config/security.config';
+import { initializeAPM } from './instrumentation';
+
+// Initialize APM instrumentation BEFORE creating the app
+initializeAPM();
 
 async function bootstrap() {
   // Configure logger with environment-based log levels before application initialization
@@ -22,8 +28,12 @@ async function bootstrap() {
   // Register HTTP logging interceptor globally
   app.useGlobalInterceptors(new HttpLoggingInterceptor(appLogger));
 
+  // Register APM interceptor globally for performance monitoring
+  const apmService = app.get(APMService);
+  app.useGlobalInterceptors(new APMInterceptor(apmService));
+
   // Register global exception filter for consistent error responses
-  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalFilters(new GlobalExceptionFilter(appLogger));
 
   // Global prefix
   app.setGlobalPrefix('api');
@@ -45,8 +55,13 @@ async function bootstrap() {
   // API Documentation
   const options = new DocumentBuilder()
     .setTitle('Tennis Coach API')
-    .setDescription('API for tennis coach booking platform')
     .setVersion('1.0')
+    .setContact(
+      'Tennis Coach Platform',
+      'https://github.com/tennis-coach-platform',
+      'support@tenniscoach.com'
+    )
+    .setLicense('MIT', 'https://opensource.org/licenses/MIT')
     .addBearerAuth(
       {
         type: 'http',

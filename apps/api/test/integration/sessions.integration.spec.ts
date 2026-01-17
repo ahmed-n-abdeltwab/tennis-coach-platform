@@ -338,7 +338,7 @@ describe('Sessions Integration', () => {
 
       it('should return 404 for non-existent session', async () => {
         const response = await test.http.authenticatedGet(
-          '/api/sessions/non-existent-id' as '/api/sessions/{id}',
+          '/api/sessions/cnonexistentsession123' as '/api/sessions/{id}',
           userToken
         );
 
@@ -446,7 +446,7 @@ describe('Sessions Integration', () => {
         };
 
         const response = await test.http.authenticatedPut(
-          '/api/sessions/non-existent-id' as '/api/sessions/{id}',
+          '/api/sessions/cnonexistentsession123' as '/api/sessions/{id}',
           userToken,
           {
             body: updateData,
@@ -547,7 +547,7 @@ describe('Sessions Integration', () => {
 
       it('should return 404 when cancelling non-existent session', async () => {
         const response = await test.http.authenticatedPut(
-          '/api/sessions/non-existent-id/cancel' as '/api/sessions/{id}/cancel',
+          '/api/sessions/cnonexistentsession123/cancel' as '/api/sessions/{id}/cancel',
           userToken
         );
 

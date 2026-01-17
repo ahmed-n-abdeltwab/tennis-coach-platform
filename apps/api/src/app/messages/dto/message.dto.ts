@@ -1,8 +1,16 @@
-import { createTypedApiDecorators } from '@common';
+import { IsCuid } from '@common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { MessageType, Role } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { IsDate, IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsDate,
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 /**
  * Summary DTO for message participants (sender/receiver).
@@ -27,8 +35,9 @@ export class ParticipantSummaryDto {
  * Contains all message fields with proper decorators for Swagger and validation.
  */
 export class MessageResponseDto {
-  @ApiProperty({ example: 'message-id-123' })
+  @ApiProperty()
   @IsString()
+  @IsCuid()
   id!: string;
 
   @ApiProperty({ type: Date, format: 'date-time' })
@@ -63,6 +72,7 @@ export class MessageResponseDto {
     description: 'ID of the account that sent the message',
   })
   @IsString()
+  @IsCuid()
   senderId!: string;
 
   @ApiProperty({
@@ -70,6 +80,7 @@ export class MessageResponseDto {
     description: 'ID of the account that received the message',
   })
   @IsString()
+  @IsCuid()
   receiverId!: string;
 
   @ApiPropertyOptional({
@@ -78,6 +89,7 @@ export class MessageResponseDto {
   })
   @IsOptional()
   @IsString()
+  @IsCuid()
   sessionId?: string;
 
   @ApiProperty({
@@ -95,6 +107,50 @@ export class MessageResponseDto {
   })
   @IsEnum(Role)
   receiverType!: Role;
+
+  @ApiProperty({
+    enum: MessageType,
+    example: MessageType.TEXT,
+    description: 'Type of the message',
+  })
+  @IsEnum(MessageType)
+  messageType!: MessageType;
+
+  @ApiPropertyOptional({
+    example: 'custom-service-id-123',
+    description: 'Associated custom service ID if the message contains a custom service',
+  })
+  @IsOptional()
+  @IsString()
+  @IsCuid()
+  customServiceId?: string;
+
+  @ApiPropertyOptional({
+    example: 'conversation-id-456',
+    description: 'Associated conversation ID',
+  })
+  @IsOptional()
+  @IsString()
+  @IsCuid()
+  conversationId?: string;
+
+  @ApiProperty({
+    example: false,
+    description: 'Whether the message has been read',
+  })
+  @IsBoolean()
+  isRead!: boolean;
+
+  @ApiPropertyOptional({
+    type: String,
+    format: 'date-time',
+    example: '2024-11-10T10:30:00Z',
+    description: 'When the message was read',
+  })
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  readAt?: Date;
 
   @ApiPropertyOptional({
     description: 'Sender account summary information',
@@ -130,6 +186,7 @@ export class CreateMessageDto {
     description: 'ID of the account that will receive the message',
   })
   @IsString()
+  @IsCuid()
   receiverId!: string;
 
   @ApiPropertyOptional({
@@ -139,6 +196,23 @@ export class CreateMessageDto {
   @IsOptional()
   @IsString()
   sessionId?: string;
+
+  @ApiPropertyOptional({
+    enum: MessageType,
+    example: MessageType.TEXT,
+    description: 'Type of the message',
+  })
+  @IsEnum(MessageType)
+  @IsOptional()
+  messageType?: MessageType;
+
+  @ApiPropertyOptional({
+    example: 'custom-service-id-123',
+    description: 'Associated custom service ID if the message contains a custom service',
+  })
+  @IsOptional()
+  @IsCuid()
+  customServiceId?: string;
 }
 
 /**
@@ -160,7 +234,64 @@ export class GetMessagesQuery {
   @IsOptional()
   @IsString()
   conversationWith?: string;
+
+  @ApiPropertyOptional({
+    example: 'conversation-id-456',
+    description: 'Filter messages by conversation ID',
+  })
+  @IsOptional()
+  @IsString()
+  conversationId?: string;
+
+  @ApiPropertyOptional({
+    enum: MessageType,
+    example: MessageType.TEXT,
+    description: 'Filter messages by type',
+  })
+  @IsOptional()
+  @IsEnum(MessageType)
+  messageType?: MessageType;
 }
 
-// Create typed API decorators for messages
-export const MessageApiResponses = createTypedApiDecorators(MessageResponseDto);
+/**
+ * DTO for marking a message as read.
+ */
+export class MarkMessageReadDto {
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Whether the message is read',
+  })
+  @IsOptional()
+  @IsBoolean()
+  isRead?: boolean;
+}
+
+/**
+ * DTO for sending a booking request through chat.
+ * Used when a user requests to book a service directly from the chat interface.
+ */
+export class SendBookingRequestDto {
+  @ApiProperty({
+    example: 'cbookingtype12345678901',
+    description: 'ID of the booking type being requested',
+  })
+  @IsString()
+  @IsCuid()
+  bookingTypeId!: string;
+
+  @ApiProperty({
+    example: 'ccoach1234567890123456',
+    description: 'ID of the coach to send the booking request to',
+  })
+  @IsString()
+  @IsCuid()
+  coachId!: string;
+
+  @ApiPropertyOptional({
+    example: 'I would like to book a session for next week.',
+    description: 'Optional message to include with the booking request',
+  })
+  @IsOptional()
+  @IsString()
+  message?: string;
+}

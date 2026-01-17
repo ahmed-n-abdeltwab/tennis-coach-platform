@@ -14,7 +14,7 @@
         "outputPath": "dist/apps/api",
         "main": "apps/api/src/main.ts",
         "tsConfig": "apps/api/tsconfig.app.json",
-        "webpackConfig": "apps/api/webpack.config.js",
+        "webpackConfig": "apps/api/webpack.config.cjs",
         "assets": []
       },
       "configurations": {
@@ -48,7 +48,7 @@
     "generate-types": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx ts-node -r tsconfig-paths/register scripts/generate-types.ts",
+        "command": "npx ts-node --transpile-only -r tsconfig-paths/register scripts/generate-types.ts",
         "cwd": "{projectRoot}"
       },
       "outputs": ["{workspaceRoot}/libs/contracts/src/endpoints.generated.ts"]

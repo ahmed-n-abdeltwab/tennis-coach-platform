@@ -52,11 +52,21 @@ export class BatchCleanupManager {
    */
   private async cleanDatabaseParallel(prisma: PrismaClient): Promise<void> {
     try {
-      // First, delete refresh tokens and messages (leaf nodes)
-      await Promise.all([prisma.refreshToken.deleteMany({}), prisma.message.deleteMany({})]);
+      // First, delete refresh tokens, messages, and notifications (leaf nodes)
+      await Promise.all([
+        prisma.refreshToken.deleteMany({}),
+        prisma.message.deleteMany({}),
+        prisma.notification.deleteMany({}),
+      ]);
 
-      // Then delete sessions (depends on bookingType, timeSlot, discount, accounts)
+      // Then delete sessions (depends on bookingType, timeSlot, discount, accounts, payment)
       await prisma.session.deleteMany({});
+
+      // Then delete payments and conversations (depend on accounts)
+      await Promise.all([prisma.payment.deleteMany({}), prisma.conversation.deleteMany({})]);
+
+      // Then delete custom services (depends on accounts)
+      await prisma.customService.deleteMany({});
 
       // Then delete time slots, discounts, and booking types (depend on accounts)
       await Promise.all([
@@ -89,16 +99,26 @@ export class BatchCleanupManager {
       // 1. Delete leaf nodes first (no dependencies)
       await prisma.refreshToken.deleteMany({});
       await prisma.message.deleteMany({});
+      await prisma.notification.deleteMany({});
 
-      // 2. Delete sessions (depends on bookingType, timeSlot, discount, accounts)
+      // 2. Delete sessions (depends on bookingType, timeSlot, discount, accounts, payment)
       await prisma.session.deleteMany({});
 
-      // 3. Delete entities that depend only on accounts
+      // 3. Delete payments (depends on accounts)
+      await prisma.payment.deleteMany({});
+
+      // 4. Delete conversations (depends on accounts)
+      await prisma.conversation.deleteMany({});
+
+      // 5. Delete custom services (depends on accounts)
+      await prisma.customService.deleteMany({});
+
+      // 6. Delete entities that depend only on accounts
       await prisma.timeSlot.deleteMany({});
       await prisma.discount.deleteMany({});
       await prisma.bookingType.deleteMany({});
 
-      // 4. Finally delete accounts (root table)
+      // 7. Finally delete accounts (root table)
       await prisma.account.deleteMany({});
     } catch (error) {
       throw createDatabaseError(

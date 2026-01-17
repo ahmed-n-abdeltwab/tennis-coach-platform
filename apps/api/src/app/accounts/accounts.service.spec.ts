@@ -295,7 +295,7 @@ describe('AccountsService', () => {
       expect(result[0]?.passwordHash).toBeUndefined();
       expect(test.mocks.PrismaService.account.findMany).toHaveBeenCalledWith({
         where: {
-          role: { in: [Role.USER, Role.PREMIUM_USER] },
+          role: { in: [Role.USER] },
           isActive: true,
         },
       });

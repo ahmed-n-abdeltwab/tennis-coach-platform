@@ -42,7 +42,7 @@ export class TimeSlotsService {
           include: TIME_SLOT_INCLUDE,
         });
 
-    const isEmpty = isMany ? (result as any[]).length === 0 : result === null;
+    const isEmpty = Array.isArray(result) ? result.length === 0 : result === null;
 
     if (throwIfNotFound && isEmpty) {
       throw new NotFoundException('Time slot not found');
@@ -167,5 +167,18 @@ export class TimeSlotsService {
     }
 
     await this.prisma.timeSlot.delete({ where: { id } });
+  }
+
+  // ============================================================
+  // Analytics Methods (Service Layer Pattern)
+  // ============================================================
+
+  /**
+   * Count time slots with optional filters - used by AnalyticsService
+   * @param where - Optional Prisma where clause for filtering
+   * @returns Count of matching time slots
+   */
+  async countTimeSlots(where?: Prisma.TimeSlotWhereInput): Promise<number> {
+    return this.prisma.timeSlot.count({ where });
   }
 }

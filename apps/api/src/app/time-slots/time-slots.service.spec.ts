@@ -51,8 +51,12 @@ describe('TimeSlotsService', () => {
       it('should throw NotFoundException when throwIfNotFound=true and no results (via findOne)', async () => {
         test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(null);
 
-        await expect(test.service.findOne('nonexistent-id')).rejects.toThrow(NotFoundException);
-        await expect(test.service.findOne('nonexistent-id')).rejects.toThrow('Time slot not found');
+        await expect(test.service.findOne('cnonexistent12345678901')).rejects.toThrow(
+          NotFoundException
+        );
+        await expect(test.service.findOne('cnonexistent12345678901')).rejects.toThrow(
+          'Time slot not found'
+        );
       });
 
       it('should return empty array when throwIfNotFound=false and no results (via findAvailable)', async () => {
@@ -80,13 +84,15 @@ describe('TimeSlotsService', () => {
       });
 
       it('should return single object when isMany=false (via findOne)', async () => {
-        const mockTimeSlot = test.factory.timeSlot.createWithNulls({ id: 'slot-123' });
+        const mockTimeSlot = test.factory.timeSlot.createWithNulls({
+          id: 'ctimeslot1234567890123',
+        });
         test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(mockTimeSlot);
 
-        const result = await test.service.findOne('slot-123');
+        const result = await test.service.findOne('ctimeslot1234567890123');
 
         expect(Array.isArray(result)).toBe(false);
-        expect(result.id).toBe('slot-123');
+        expect(result.id).toBe('ctimeslot1234567890123');
         expect(test.mocks.PrismaService.timeSlot.findFirst).toHaveBeenCalled();
       });
     });
@@ -96,10 +102,10 @@ describe('TimeSlotsService', () => {
         const mockTimeSlot = test.factory.timeSlot.createWithNulls();
         test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(mockTimeSlot);
 
-        await test.service.findOne('slot-123');
+        await test.service.findOne('ctimeslot1234567890123');
 
         expect(test.mocks.PrismaService.timeSlot.findFirst).toHaveBeenCalledWith({
-          where: { id: 'slot-123' },
+          where: { id: 'ctimeslot1234567890123' },
           include: {
             coach: {
               select: {
@@ -180,16 +186,18 @@ describe('TimeSlotsService', () => {
     });
 
     it('should filter by coachId when provided', async () => {
-      const mockTimeSlots = [test.factory.timeSlot.createWithNulls({ coachId: 'coach-123' })];
+      const mockTimeSlots = [
+        test.factory.timeSlot.createWithNulls({ coachId: 'ccoach1234567890123456' }),
+      ];
       test.mocks.PrismaService.timeSlot.findMany.mockResolvedValue(mockTimeSlots);
 
-      const result = await test.service.findAvailable({ coachId: 'coach-123' });
+      const result = await test.service.findAvailable({ coachId: 'ccoach1234567890123456' });
 
       expect(result).toHaveLength(1);
       expect(test.mocks.PrismaService.timeSlot.findMany).toHaveBeenCalledWith({
         where: {
           isAvailable: true,
-          coachId: 'coach-123',
+          coachId: 'ccoach1234567890123456',
           dateTime: {
             gte: expect.any(Date),
             lte: undefined,
@@ -220,17 +228,17 @@ describe('TimeSlotsService', () => {
   describe('findByCoach', () => {
     it('should return time slots for specific coach', async () => {
       const mockTimeSlots = [
-        test.factory.timeSlot.createWithNulls({ coachId: 'coach-123' }),
-        test.factory.timeSlot.createWithNulls({ coachId: 'coach-123' }),
+        test.factory.timeSlot.createWithNulls({ coachId: 'ccoach1234567890123456' }),
+        test.factory.timeSlot.createWithNulls({ coachId: 'ccoach1234567890123456' }),
       ];
       test.mocks.PrismaService.timeSlot.findMany.mockResolvedValue(mockTimeSlots);
 
-      const result = await test.service.findByCoach('coach-123', {});
+      const result = await test.service.findByCoach('ccoach1234567890123456', {});
 
       expect(result).toHaveLength(2);
       expect(test.mocks.PrismaService.timeSlot.findMany).toHaveBeenCalledWith({
         where: {
-          coachId: 'coach-123',
+          coachId: 'ccoach1234567890123456',
           dateTime: {
             gte: expect.any(Date),
             lte: undefined,
@@ -250,10 +258,12 @@ describe('TimeSlotsService', () => {
     });
 
     it('should filter by date range for coach time slots', async () => {
-      const mockTimeSlots = [test.factory.timeSlot.createWithNulls({ coachId: 'coach-123' })];
+      const mockTimeSlots = [
+        test.factory.timeSlot.createWithNulls({ coachId: 'ccoach1234567890123456' }),
+      ];
       test.mocks.PrismaService.timeSlot.findMany.mockResolvedValue(mockTimeSlots);
 
-      const result = await test.service.findByCoach('coach-123', {
+      const result = await test.service.findByCoach('ccoach1234567890123456', {
         startDate: '2024-12-25T00:00:00Z',
         endDate: '2024-12-31T23:59:59Z',
       });
@@ -261,7 +271,7 @@ describe('TimeSlotsService', () => {
       expect(result).toHaveLength(1);
       expect(test.mocks.PrismaService.timeSlot.findMany).toHaveBeenCalledWith({
         where: {
-          coachId: 'coach-123',
+          coachId: 'ccoach1234567890123456',
           dateTime: {
             gte: new Date('2024-12-25T00:00:00Z'),
             lte: new Date('2024-12-31T23:59:59Z'),
@@ -283,7 +293,7 @@ describe('TimeSlotsService', () => {
     it('should return empty array when coach has no time slots', async () => {
       test.mocks.PrismaService.timeSlot.findMany.mockResolvedValue([]);
 
-      const result = await test.service.findByCoach('coach-456', {});
+      const result = await test.service.findByCoach('ccoach4567890123456789', {});
 
       expect(result).toEqual([]);
     });
@@ -291,15 +301,15 @@ describe('TimeSlotsService', () => {
 
   describe('findOne', () => {
     it('should return a time slot by ID', async () => {
-      const mockTimeSlot = test.factory.timeSlot.createWithNulls({ id: 'slot-123' });
+      const mockTimeSlot = test.factory.timeSlot.createWithNulls({ id: 'ctimeslot1234567890123' });
       test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(mockTimeSlot);
 
-      const result = await test.service.findOne('slot-123');
+      const result = await test.service.findOne('ctimeslot1234567890123');
 
       expect(result).toBeDefined();
-      expect(result.id).toBe('slot-123');
+      expect(result.id).toBe('ctimeslot1234567890123');
       expect(test.mocks.PrismaService.timeSlot.findFirst).toHaveBeenCalledWith({
-        where: { id: 'slot-123' },
+        where: { id: 'ctimeslot1234567890123' },
         include: {
           coach: {
             select: {
@@ -315,8 +325,12 @@ describe('TimeSlotsService', () => {
     it('should throw NotFoundException when time slot not found', async () => {
       test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(null);
 
-      await expect(test.service.findOne('nonexistent-id')).rejects.toThrow(NotFoundException);
-      await expect(test.service.findOne('nonexistent-id')).rejects.toThrow('Time slot not found');
+      await expect(test.service.findOne('cnonexistent12345678901')).rejects.toThrow(
+        NotFoundException
+      );
+      await expect(test.service.findOne('cnonexistent12345678901')).rejects.toThrow(
+        'Time slot not found'
+      );
     });
   });
 
@@ -331,18 +345,18 @@ describe('TimeSlotsService', () => {
         dateTime: new Date('2024-12-25T10:00:00Z'),
         durationMin: 60,
         isAvailable: true,
-        coachId: 'coach-123',
+        coachId: 'ccoach1234567890123456',
       });
       test.mocks.PrismaService.timeSlot.create.mockResolvedValue(mockTimeSlot);
 
-      const result = await test.service.create(createDto, 'coach-123');
+      const result = await test.service.create(createDto, 'ccoach1234567890123456');
 
       expect(result).toBeDefined();
       expect(test.mocks.PrismaService.timeSlot.create).toHaveBeenCalledWith({
         data: {
           ...createDto,
           dateTime: new Date('2024-12-25T10:00:00Z'),
-          coachId: 'coach-123',
+          coachId: 'ccoach1234567890123456',
         },
         include: {
           coach: {
@@ -362,18 +376,18 @@ describe('TimeSlotsService', () => {
       };
       const mockTimeSlot = test.factory.timeSlot.createWithNulls({
         dateTime: new Date('2024-12-25T10:00:00Z'),
-        coachId: 'coach-123',
+        coachId: 'ccoach1234567890123456',
       });
       test.mocks.PrismaService.timeSlot.create.mockResolvedValue(mockTimeSlot);
 
-      const result = await test.service.create(createDto, 'coach-123');
+      const result = await test.service.create(createDto, 'ccoach1234567890123456');
 
       expect(result).toBeDefined();
       expect(test.mocks.PrismaService.timeSlot.create).toHaveBeenCalledWith({
         data: {
           ...createDto,
           dateTime: new Date('2024-12-25T10:00:00Z'),
-          coachId: 'coach-123',
+          coachId: 'ccoach1234567890123456',
         },
         include: {
           coach: {
@@ -391,12 +405,12 @@ describe('TimeSlotsService', () => {
   describe('update', () => {
     it('should update a time slot successfully', async () => {
       const existingTimeSlot = test.factory.timeSlot.createWithNulls({
-        id: 'slot-123',
-        coachId: 'coach-123',
+        id: 'ctimeslot1234567890123',
+        coachId: 'ccoach1234567890123456',
       });
       const updatedTimeSlot = test.factory.timeSlot.createWithNulls({
-        id: 'slot-123',
-        coachId: 'coach-123',
+        id: 'ctimeslot1234567890123',
+        coachId: 'ccoach1234567890123456',
         isAvailable: false,
         durationMin: 90,
       });
@@ -404,14 +418,14 @@ describe('TimeSlotsService', () => {
       test.mocks.PrismaService.timeSlot.update.mockResolvedValue(updatedTimeSlot);
 
       const result = await test.service.update(
-        'slot-123',
+        'ctimeslot1234567890123',
         { dateTime: '2024-12-25T10:00:00Z', isAvailable: false, durationMin: 90 },
-        'coach-123'
+        'ccoach1234567890123456'
       );
 
       expect(result).toBeDefined();
       expect(test.mocks.PrismaService.timeSlot.findFirst).toHaveBeenCalledWith({
-        where: { id: 'slot-123' },
+        where: { id: 'ctimeslot1234567890123' },
         include: {
           coach: {
             select: {
@@ -423,7 +437,7 @@ describe('TimeSlotsService', () => {
         },
       });
       expect(test.mocks.PrismaService.timeSlot.update).toHaveBeenCalledWith({
-        where: { id: 'slot-123' },
+        where: { id: 'ctimeslot1234567890123' },
         data: {
           dateTime: new Date('2024-12-25T10:00:00Z'),
           isAvailable: false,
@@ -445,26 +459,42 @@ describe('TimeSlotsService', () => {
       test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(null);
 
       await expect(
-        test.service.update('nonexistent-id', { dateTime: '2024-12-25T10:00:00Z' }, 'coach-123')
+        test.service.update(
+          'cnonexistent12345678901',
+          { dateTime: '2024-12-25T10:00:00Z' },
+          'ccoach1234567890123456'
+        )
       ).rejects.toThrow(NotFoundException);
       await expect(
-        test.service.update('nonexistent-id', { dateTime: '2024-12-25T10:00:00Z' }, 'coach-123')
+        test.service.update(
+          'cnonexistent12345678901',
+          { dateTime: '2024-12-25T10:00:00Z' },
+          'ccoach1234567890123456'
+        )
       ).rejects.toThrow('Time slot not found');
       expect(test.mocks.PrismaService.timeSlot.update).not.toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException when coach does not own the time slot', async () => {
       const existingTimeSlot = test.factory.timeSlot.createWithNulls({
-        id: 'slot-123',
-        coachId: 'other-coach',
+        id: 'ctimeslot1234567890123',
+        coachId: 'cothercoach1234567890',
       });
       test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(existingTimeSlot);
 
       await expect(
-        test.service.update('slot-123', { dateTime: '2024-12-25T10:00:00Z' }, 'coach-123')
+        test.service.update(
+          'ctimeslot1234567890123',
+          { dateTime: '2024-12-25T10:00:00Z' },
+          'ccoach1234567890123456'
+        )
       ).rejects.toThrow(ForbiddenException);
       await expect(
-        test.service.update('slot-123', { dateTime: '2024-12-25T10:00:00Z' }, 'coach-123')
+        test.service.update(
+          'ctimeslot1234567890123',
+          { dateTime: '2024-12-25T10:00:00Z' },
+          'ccoach1234567890123456'
+        )
       ).rejects.toThrow('Not authorized to update this time slot');
       expect(test.mocks.PrismaService.timeSlot.update).not.toHaveBeenCalled();
     });
@@ -473,16 +503,16 @@ describe('TimeSlotsService', () => {
   describe('remove', () => {
     it('should delete a time slot successfully', async () => {
       const existingTimeSlot = test.factory.timeSlot.createWithNulls({
-        id: 'slot-123',
-        coachId: 'coach-123',
+        id: 'ctimeslot1234567890123',
+        coachId: 'ccoach1234567890123456',
       });
       test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(existingTimeSlot);
       test.mocks.PrismaService.timeSlot.delete.mockResolvedValue(existingTimeSlot);
 
-      await test.service.remove('slot-123', 'coach-123');
+      await test.service.remove('ctimeslot1234567890123', 'ccoach1234567890123456');
 
       expect(test.mocks.PrismaService.timeSlot.findFirst).toHaveBeenCalledWith({
-        where: { id: 'slot-123' },
+        where: { id: 'ctimeslot1234567890123' },
         include: {
           coach: {
             select: {
@@ -494,35 +524,35 @@ describe('TimeSlotsService', () => {
         },
       });
       expect(test.mocks.PrismaService.timeSlot.delete).toHaveBeenCalledWith({
-        where: { id: 'slot-123' },
+        where: { id: 'ctimeslot1234567890123' },
       });
     });
 
     it('should throw NotFoundException when time slot not found', async () => {
       test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(null);
 
-      await expect(test.service.remove('nonexistent-id', 'coach-123')).rejects.toThrow(
-        NotFoundException
-      );
-      await expect(test.service.remove('nonexistent-id', 'coach-123')).rejects.toThrow(
-        'Time slot not found'
-      );
+      await expect(
+        test.service.remove('cnonexistent12345678901', 'ccoach1234567890123456')
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        test.service.remove('cnonexistent12345678901', 'ccoach1234567890123456')
+      ).rejects.toThrow('Time slot not found');
       expect(test.mocks.PrismaService.timeSlot.delete).not.toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException when coach does not own the time slot', async () => {
       const existingTimeSlot = test.factory.timeSlot.createWithNulls({
-        id: 'slot-123',
-        coachId: 'other-coach',
+        id: 'ctimeslot1234567890123',
+        coachId: 'cothercoach1234567890',
       });
       test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(existingTimeSlot);
 
-      await expect(test.service.remove('slot-123', 'coach-123')).rejects.toThrow(
-        ForbiddenException
-      );
-      await expect(test.service.remove('slot-123', 'coach-123')).rejects.toThrow(
-        'Not authorized to delete this time slot'
-      );
+      await expect(
+        test.service.remove('ctimeslot1234567890123', 'ccoach1234567890123456')
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        test.service.remove('ctimeslot1234567890123', 'ccoach1234567890123456')
+      ).rejects.toThrow('Not authorized to delete this time slot');
       expect(test.mocks.PrismaService.timeSlot.delete).not.toHaveBeenCalled();
     });
   });
@@ -530,7 +560,7 @@ describe('TimeSlotsService', () => {
   describe('markAsUnavailableInternal', () => {
     it('should mark time slot as unavailable', async () => {
       const existingTimeSlot = test.factory.timeSlot.createWithNulls({
-        id: 'slot-123',
+        id: 'ctimeslot1234567890123',
         isAvailable: true,
       });
       test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(existingTimeSlot);
@@ -539,10 +569,10 @@ describe('TimeSlotsService', () => {
         isAvailable: false,
       });
 
-      await test.service.markAsUnavailableInternal('slot-123');
+      await test.service.markAsUnavailableInternal('ctimeslot1234567890123');
 
       expect(test.mocks.PrismaService.timeSlot.findFirst).toHaveBeenCalledWith({
-        where: { id: 'slot-123' },
+        where: { id: 'ctimeslot1234567890123' },
         include: {
           coach: {
             select: {
@@ -554,7 +584,7 @@ describe('TimeSlotsService', () => {
         },
       });
       expect(test.mocks.PrismaService.timeSlot.update).toHaveBeenCalledWith({
-        where: { id: 'slot-123' },
+        where: { id: 'ctimeslot1234567890123' },
         data: { isAvailable: false },
       });
     });
@@ -562,9 +592,9 @@ describe('TimeSlotsService', () => {
     it('should throw NotFoundException when time slot not found', async () => {
       test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(null);
 
-      await expect(test.service.markAsUnavailableInternal('nonexistent-id')).rejects.toThrow(
-        NotFoundException
-      );
+      await expect(
+        test.service.markAsUnavailableInternal('cnonexistent12345678901')
+      ).rejects.toThrow(NotFoundException);
       expect(test.mocks.PrismaService.timeSlot.update).not.toHaveBeenCalled();
     });
   });
@@ -572,7 +602,7 @@ describe('TimeSlotsService', () => {
   describe('markAsAvailableInternal', () => {
     it('should mark time slot as available', async () => {
       const existingTimeSlot = test.factory.timeSlot.createWithNulls({
-        id: 'slot-123',
+        id: 'ctimeslot1234567890123',
         isAvailable: false,
       });
       test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(existingTimeSlot);
@@ -581,10 +611,10 @@ describe('TimeSlotsService', () => {
         isAvailable: true,
       });
 
-      await test.service.markAsAvailableInternal('slot-123');
+      await test.service.markAsAvailableInternal('ctimeslot1234567890123');
 
       expect(test.mocks.PrismaService.timeSlot.findFirst).toHaveBeenCalledWith({
-        where: { id: 'slot-123' },
+        where: { id: 'ctimeslot1234567890123' },
         include: {
           coach: {
             select: {
@@ -596,7 +626,7 @@ describe('TimeSlotsService', () => {
         },
       });
       expect(test.mocks.PrismaService.timeSlot.update).toHaveBeenCalledWith({
-        where: { id: 'slot-123' },
+        where: { id: 'ctimeslot1234567890123' },
         data: { isAvailable: true },
       });
     });
@@ -604,7 +634,7 @@ describe('TimeSlotsService', () => {
     it('should throw NotFoundException when time slot not found', async () => {
       test.mocks.PrismaService.timeSlot.findFirst.mockResolvedValue(null);
 
-      await expect(test.service.markAsAvailableInternal('nonexistent-id')).rejects.toThrow(
+      await expect(test.service.markAsAvailableInternal('cnonexistent12345678901')).rejects.toThrow(
         NotFoundException
       );
       expect(test.mocks.PrismaService.timeSlot.update).not.toHaveBeenCalled();
