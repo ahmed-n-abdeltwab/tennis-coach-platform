@@ -5,8 +5,8 @@
  * - `generateEndpointsFromSwagger` - Generate TypeScript code from a Swagger document
  * - `generateEndpointsObject` - Generate a runtime object representation of endpoints
  *
- * For CLI usage, run:
- *   npx ts-node libs/api-sdk/src/generator/cli.ts [swagger-path] [output-path]
+ * For type generation, run:
+ *   pnpm nx run api:generate-types
  */
 
 export {

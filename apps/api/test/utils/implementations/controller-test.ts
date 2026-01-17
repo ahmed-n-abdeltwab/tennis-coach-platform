@@ -37,7 +37,7 @@
  * ```
  */
 
-import { CanActivate, Provider, Type } from '@nestjs/common';
+import { CanActivate, Provider, Type, ValidationPipe } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 
@@ -192,6 +192,15 @@ export class ControllerTest<
 
     this._app = this._module.createNestApplication();
     this._app.setGlobalPrefix('api');
+    // Add global validation pipe with transform enabled to match production behavior
+    // This ensures query parameters are properly transformed (e.g., "true" -> true)
+    this._app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      })
+    );
     this.auth.addAuthMiddleware(this._app);
     await this._app.init();
   }

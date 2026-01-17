@@ -3,17 +3,10 @@ import Footer from '@components/Layout/Footer';
 import Header from '@components/Layout/Header';
 import { AuthProvider } from '@contexts/AuthContext';
 import { NotificationProvider } from '@contexts/NotificationContext';
-import AdminDashboard from '@pages/AdminDashboard';
-import Book from '@pages/Book';
-import BookingTypes from '@pages/BookingTypes';
-import Chat from '@pages/Chat';
-import CoachProfile from '@pages/CoachProfile';
-import Dashboard from '@pages/Dashboard';
-import Home from '@pages/Home';
-import Login from '@pages/Login';
-import Register from '@pages/Register';
 import { Route, Routes } from 'react-router-dom';
+
 import './app.css';
+import { isPublicRoute, lazyRoutes } from './routes/lazy-routes.config';
 
 function App() {
   return (
@@ -23,43 +16,24 @@ function App() {
           <Header />
           <main className='flex-1'>
             <Routes>
-              <Route path='/' element={<Home />} />
-              <Route path='/coach/:id' element={<CoachProfile />} />
-              <Route path='/booking-types' element={<BookingTypes />} />
-              <Route path='/login' element={<Login />} />
-              <Route path='/register' element={<Register />} />
-              <Route
-                path='/book'
-                element={
-                  <ProtectedRoute>
-                    <Book />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path='/dashboard'
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path='/admin'
-                element={
-                  <ProtectedRoute requireCoach>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path='/chat'
-                element={
-                  <ProtectedRoute>
-                    <Chat />
-                  </ProtectedRoute>
-                }
-              />
+              {lazyRoutes.map(route => (
+                <Route
+                  key={route.path}
+                  path={route.path}
+                  element={
+                    isPublicRoute(route) ? (
+                      route.element
+                    ) : (
+                      <ProtectedRoute
+                        accessLevel={route.accessLevel as 'authenticated' | 'coach' | 'admin'}
+                        redirectTo={route.redirectTo}
+                      >
+                        {route.element}
+                      </ProtectedRoute>
+                    )
+                  }
+                />
+              ))}
             </Routes>
           </main>
           <Footer />

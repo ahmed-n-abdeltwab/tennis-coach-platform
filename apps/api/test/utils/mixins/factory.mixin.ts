@@ -9,12 +9,18 @@
 
 import {
   AccountMockFactory,
+  AnalyticsMockFactory,
+  AuthMockFactory,
   BookingTypeMockFactory,
   CalendarMockFactory,
+  ConversationMockFactory,
+  CustomServiceMockFactory,
   DiscountMockFactory,
+  EmailMockFactory,
   FactorySingletons,
   MessageMockFactory,
   NotificationMockFactory,
+  PaymentMockFactory,
   SessionMockFactory,
   TimeSlotMockFactory,
   type MockAccount,
@@ -67,6 +73,7 @@ export interface ConversationScenario {
  * const user = test.factory.account.createUser();
  * const coach = test.factory.account.createCoach();
  * const session = test.factory.session.create();
+ * const userPayload = test.factory.auth.createUserPayload();
  * ```
  */
 export class FactoryMixin {
@@ -78,10 +85,38 @@ export class FactoryMixin {
   }
 
   /**
+   * Analytics factory for creating mock dashboard analytics data.
+   */
+  get analytics(): AnalyticsMockFactory {
+    return FactorySingletons.analytics;
+  }
+
+  /**
+   * Auth factory for creating mock authentication payloads and tokens.
+   */
+  get auth(): AuthMockFactory {
+    return FactorySingletons.auth;
+  }
+
+  /**
    * Booking type factory for creating mock booking/session types.
    */
   get bookingType(): BookingTypeMockFactory {
     return FactorySingletons.bookingType;
+  }
+
+  /**
+   * Conversation factory for creating mock conversations.
+   */
+  get conversation(): ConversationMockFactory {
+    return FactorySingletons.conversation;
+  }
+
+  /**
+   * Custom service factory for creating mock custom services.
+   */
+  get customService(): CustomServiceMockFactory {
+    return FactorySingletons.customService;
   }
 
   /**
@@ -120,9 +155,23 @@ export class FactoryMixin {
   }
 
   /**
-   * Notification factory for creating mock email notifications.
+   * Notification factory for creating mock Prisma Notification records.
    */
   get notification(): NotificationMockFactory {
     return FactorySingletons.notification;
+  }
+
+  /**
+   * Email factory for creating mock email notifications (Nodemailer).
+   */
+  get email(): EmailMockFactory {
+    return FactorySingletons.email;
+  }
+
+  /**
+   * Payment factory for creating mock payment records and PayPal responses.
+   */
+  get payment(): PaymentMockFactory {
+    return FactorySingletons.payment;
   }
 }

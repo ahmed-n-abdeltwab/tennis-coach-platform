@@ -1,8 +1,8 @@
-import { Role } from '@prisma/client';
-import { AuthMockFactory, GatewayTest, MessageMockFactory, MockSocketClient } from '@test-utils';
+import { MessageType, Role } from '@prisma/client';
+import { GatewayTest, MockSocketClient } from '@test-utils';
 import { DeepMocked } from '@test-utils/mixins/mock.mixin';
 
-import { CreateMessageDto, MessageResponseDto } from './dto/message.dto';
+import { CreateMessageDto } from './dto/message.dto';
 import { MessagesGateway } from './messages.gateway';
 import { MessagesService } from './messages.service';
 
@@ -13,13 +13,8 @@ interface MessagesGatewayMocks {
 describe('MessagesGateway', () => {
   let test: GatewayTest<MessagesGateway, MessagesGatewayMocks>;
   let mockSocket: MockSocketClient;
-  let authFactory: AuthMockFactory;
-  let messageFactory: MessageMockFactory;
 
   beforeEach(async () => {
-    authFactory = new AuthMockFactory();
-    messageFactory = new MessageMockFactory();
-
     test = new GatewayTest<MessagesGateway, MessagesGatewayMocks>({
       gateway: MessagesGateway,
       providers: [MessagesService],
@@ -33,23 +28,6 @@ describe('MessagesGateway', () => {
     await test.cleanup();
   });
 
-  function createMockMessageResponse(overrides?: Partial<MessageResponseDto>): MessageResponseDto {
-    const mockMessage = messageFactory.create();
-    return {
-      id: mockMessage.id,
-      content: mockMessage.content,
-      sentAt: mockMessage.sentAt,
-      senderId: mockMessage.senderId ?? 'sender-id',
-      receiverId: mockMessage.receiverId ?? 'receiver-id',
-      sessionId: mockMessage.sessionId,
-      senderType: mockMessage.senderType,
-      receiverType: mockMessage.receiverType,
-      createdAt: mockMessage.sentAt,
-      updatedAt: mockMessage.sentAt,
-      ...overrides,
-    };
-  }
-
   describe('handleConnection', () => {
     it('should handle client connection', () => {
       expect(() => test.gateway.handleConnection(mockSocket.socket)).not.toThrow();
@@ -61,8 +39,8 @@ describe('MessagesGateway', () => {
       const disconnectSocket = test.createMockClient('disconnect-socket-id');
 
       test.gateway.handleJoinSession(disconnectSocket.socket, {
-        sessionId: 'session-1',
-        userId: 'user-1',
+        sessionId: 'csession123456789012345',
+        userId: 'cuser12345678901234567',
         role: Role.USER,
       });
 
@@ -79,58 +57,59 @@ describe('MessagesGateway', () => {
   describe('handleJoinSession', () => {
     it('should join client to session room', async () => {
       const data = {
-        sessionId: 'session-123',
-        userId: 'user-1',
+        sessionId: 'csession123456789012345',
+        userId: 'cuser12345678901234567',
         role: Role.USER,
       };
 
       await test.gateway.handleJoinSession(mockSocket.socket, data);
 
-      expect(mockSocket.join).toHaveBeenCalledWith('session-session-123');
+      expect(mockSocket.join).toHaveBeenCalledWith('session-csession123456789012345');
     });
 
     it('should add client to connected clients map', async () => {
       const data = {
-        sessionId: 'session-456',
-        userId: 'user-2',
+        sessionId: 'csession456789012345678',
+        userId: 'cuser23456789012345678',
         role: Role.COACH,
       };
 
       await test.gateway.handleJoinSession(mockSocket.socket, data);
 
-      expect(mockSocket.join).toHaveBeenCalledWith('session-session-456');
+      expect(mockSocket.join).toHaveBeenCalledWith('session-csession456789012345678');
     });
 
     it('should allow coach to join session', async () => {
       const data = {
-        sessionId: 'session-789',
-        userId: 'coach-1',
+        sessionId: 'csession789012345678901',
+        userId: 'ccoach1234567890123456',
         role: Role.COACH,
       };
 
       await test.gateway.handleJoinSession(mockSocket.socket, data);
 
-      expect(mockSocket.join).toHaveBeenCalledWith('session-session-789');
+      expect(mockSocket.join).toHaveBeenCalledWith('session-csession789012345678901');
     });
   });
 
   describe('handleSendMessage', () => {
     it('should create message and emit to session room', async () => {
-      const mockUser = authFactory.createUserPayload({ sub: 'user-1' });
+      const mockUser = test.factory.auth.createUserPayload({ sub: 'cuser12345678901234567' });
       const createDto: CreateMessageDto = {
         content: 'Hello, coach!',
-        receiverId: 'coach-1',
-        sessionId: 'session-123',
+        receiverId: 'ccoach1234567890123456',
+        sessionId: 'csession123456789012345',
       };
 
-      const expectedMessage = createMockMessageResponse({
-        id: 'message-1',
+      const expectedMessage = test.factory.message.createWithNulls({
+        id: 'cmessage12345678901234',
         content: 'Hello, coach!',
-        senderId: 'user-1',
-        receiverId: 'coach-1',
-        sessionId: 'session-123',
+        senderId: 'cuser12345678901234567',
+        receiverId: 'ccoach1234567890123456',
+        sessionId: 'csession123456789012345',
         senderType: Role.USER,
         receiverType: Role.COACH,
+        messageType: MessageType.TEXT,
       });
 
       test.mocks.MessagesService.create.mockResolvedValue(expectedMessage);
@@ -140,28 +119,29 @@ describe('MessagesGateway', () => {
       expect(result).toEqual(expectedMessage);
       expect(test.mocks.MessagesService.create).toHaveBeenCalledWith(
         createDto,
-        'user-1',
+        'cuser12345678901234567',
         Role.USER
       );
-      expect(test.server.to).toHaveBeenCalledWith('session-session-123');
+      expect(test.server.to).toHaveBeenCalledWith('session-csession123456789012345');
     });
 
     it('should allow coach to send message', async () => {
-      const mockCoach = authFactory.createCoachPayload({ sub: 'coach-1' });
+      const mockCoach = test.factory.auth.createCoachPayload({ sub: 'ccoach1234567890123456' });
       const createDto: CreateMessageDto = {
         content: 'Hello, user!',
-        receiverId: 'user-1',
-        sessionId: 'session-123',
+        receiverId: 'cuser12345678901234567',
+        sessionId: 'csession123456789012345',
       };
 
-      const expectedMessage = createMockMessageResponse({
-        id: 'message-2',
+      const expectedMessage = test.factory.message.createWithNulls({
+        id: 'cmessage23456789012345',
         content: 'Hello, user!',
-        senderId: 'coach-1',
-        receiverId: 'user-1',
-        sessionId: 'session-123',
+        senderId: 'ccoach1234567890123456',
+        receiverId: 'cuser12345678901234567',
+        sessionId: 'csession123456789012345',
         senderType: Role.COACH,
         receiverType: Role.USER,
+        messageType: MessageType.TEXT,
       });
 
       test.mocks.MessagesService.create.mockResolvedValue(expectedMessage);
@@ -171,26 +151,27 @@ describe('MessagesGateway', () => {
       expect(result).toEqual(expectedMessage);
       expect(test.mocks.MessagesService.create).toHaveBeenCalledWith(
         createDto,
-        'coach-1',
+        'ccoach1234567890123456',
         Role.COACH
       );
     });
 
-    it('should not emit to room when sessionId is not provided', async () => {
-      const mockUser = authFactory.createUserPayload({ sub: 'user-1' });
+    it('should not emit to session room when sessionId is not provided', async () => {
+      const mockUser = test.factory.auth.createUserPayload({ sub: 'cuser12345678901234567' });
       const createDto: CreateMessageDto = {
         content: 'Direct message',
-        receiverId: 'coach-1',
+        receiverId: 'ccoach1234567890123456',
       };
 
-      const expectedMessage = createMockMessageResponse({
-        id: 'message-3',
+      const expectedMessage = test.factory.message.createWithNulls({
+        id: 'cmessage34567890123456',
         content: 'Direct message',
-        senderId: 'user-1',
-        receiverId: 'coach-1',
+        senderId: 'cuser12345678901234567',
+        receiverId: 'ccoach1234567890123456',
         sessionId: undefined,
         senderType: Role.USER,
         receiverType: Role.COACH,
+        messageType: MessageType.TEXT,
       });
 
       test.mocks.MessagesService.create.mockResolvedValue(expectedMessage);
@@ -200,18 +181,21 @@ describe('MessagesGateway', () => {
       expect(result).toEqual(expectedMessage);
       expect(test.mocks.MessagesService.create).toHaveBeenCalledWith(
         createDto,
-        'user-1',
+        'cuser12345678901234567',
         Role.USER
       );
-      expect(test.server.to).not.toHaveBeenCalled();
+      // Should emit to user rooms for direct messaging, but not to session room
+      expect(test.server.to).toHaveBeenCalledWith('user-ccoach1234567890123456');
+      expect(test.server.to).toHaveBeenCalledWith('user-cuser12345678901234567');
+      expect(test.server.to).not.toHaveBeenCalledWith(expect.stringContaining('session-'));
     });
 
     it('should handle service errors gracefully', async () => {
-      const mockUser = authFactory.createUserPayload({ sub: 'user-1' });
+      const mockUser = test.factory.auth.createUserPayload({ sub: 'cuser12345678901234567' });
       const createDto: CreateMessageDto = {
         content: 'Test message',
-        receiverId: 'coach-1',
-        sessionId: 'session-123',
+        receiverId: 'ccoach1234567890123456',
+        sessionId: 'csession123456789012345',
       };
 
       test.mocks.MessagesService.create.mockRejectedValue(new Error('Service error'));
@@ -224,18 +208,18 @@ describe('MessagesGateway', () => {
 
   describe('handleLeaveSession', () => {
     it('should leave client from session room', async () => {
-      const data = { sessionId: 'session-123' };
+      const data = { sessionId: 'csession123456789012345' };
 
       await test.gateway.handleLeaveSession(mockSocket.socket, data);
 
-      expect(mockSocket.leave).toHaveBeenCalledWith('session-session-123');
+      expect(mockSocket.leave).toHaveBeenCalledWith('session-csession123456789012345');
     });
 
     it('should handle leaving non-existent session', async () => {
-      const data = { sessionId: 'non-existent-session' };
+      const data = { sessionId: 'cnonexistentsession12345' };
 
       await expect(test.gateway.handleLeaveSession(mockSocket.socket, data)).resolves.not.toThrow();
-      expect(mockSocket.leave).toHaveBeenCalledWith('session-non-existent-session');
+      expect(mockSocket.leave).toHaveBeenCalledWith('session-cnonexistentsession12345');
     });
   });
 

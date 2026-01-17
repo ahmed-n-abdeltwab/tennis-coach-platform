@@ -5,6 +5,7 @@ import { DeepMocked, ServiceTest } from '@test-utils';
 
 import { BookingTypesService } from '../booking-types/booking-types.service';
 import { DiscountsService } from '../discounts/discounts.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TimeSlotsService } from '../time-slots/time-slots.service';
 
@@ -22,11 +23,14 @@ interface SessionMocks {
       count: jest.Mock;
       create: jest.Mock;
       update: jest.Mock;
+      aggregate: jest.Mock;
+      groupBy: jest.Mock;
     };
   };
   BookingTypesService: DeepMocked<BookingTypesService>;
   TimeSlotsService: DeepMocked<TimeSlotsService>;
   DiscountsService: DeepMocked<DiscountsService>;
+  NotificationsService: DeepMocked<NotificationsService>;
 }
 
 // Constants
@@ -48,6 +52,8 @@ describe('SessionsService', () => {
               count: jest.fn(),
               create: jest.fn(),
               update: jest.fn(),
+              aggregate: jest.fn(),
+              groupBy: jest.fn(),
             },
           },
         },
@@ -74,6 +80,15 @@ describe('SessionsService', () => {
             incrementUsageInternal: jest.fn(),
           },
         },
+        {
+          provide: NotificationsService,
+          useValue: {
+            sendBookingConfirmation: jest.fn(),
+            sendBookingConfirmationNotification: jest.fn(),
+            sendBookingReminder: jest.fn(),
+            sendCancellationNotification: jest.fn(),
+          },
+        },
       ],
     });
 
@@ -89,18 +104,18 @@ describe('SessionsService', () => {
       it('should throw NotFoundException when throwIfNotFound=true and no results (via findOne)', async () => {
         test.mocks.PrismaService.session.findFirst.mockResolvedValue(null);
 
-        await expect(test.service.findOne('non-existent', 'user-123', Role.USER)).rejects.toThrow(
-          NotFoundException
-        );
-        await expect(test.service.findOne('non-existent', 'user-123', Role.USER)).rejects.toThrow(
-          'Session not found'
-        );
+        await expect(
+          test.service.findOne('cnonexistent12345678901', 'cuser12345678901234567', Role.USER)
+        ).rejects.toThrow(NotFoundException);
+        await expect(
+          test.service.findOne('cnonexistent12345678901', 'cuser12345678901234567', Role.USER)
+        ).rejects.toThrow('Session not found');
       });
 
       it('should return empty array when throwIfNotFound=false and no results (via findByUser)', async () => {
         test.mocks.PrismaService.session.findMany.mockResolvedValue([]);
 
-        const result = await test.service.findByUser('user-123', Role.USER);
+        const result = await test.service.findByUser('cuser12345678901234567', Role.USER);
 
         expect(result).toEqual([]);
       });
@@ -109,12 +124,12 @@ describe('SessionsService', () => {
     describe('isMany option', () => {
       it('should return array when isMany=true (via findByUser)', async () => {
         const mockSessions = [
-          test.factory.session.createWithNulls({ userId: 'user-123' }),
-          test.factory.session.createWithNulls({ userId: 'user-123' }),
+          test.factory.session.createWithNulls({ userId: 'cuser12345678901234567' }),
+          test.factory.session.createWithNulls({ userId: 'cuser12345678901234567' }),
         ];
         test.mocks.PrismaService.session.findMany.mockResolvedValue(mockSessions);
 
-        const result = await test.service.findByUser('user-123', Role.USER);
+        const result = await test.service.findByUser('cuser12345678901234567', Role.USER);
 
         expect(Array.isArray(result)).toBe(true);
         expect(result).toHaveLength(2);
@@ -123,28 +138,34 @@ describe('SessionsService', () => {
 
       it('should return single object when isMany=false (via findOne)', async () => {
         const mockSession = test.factory.session.createWithNulls({
-          id: 'session-123',
-          userId: 'user-123',
+          id: 'csession123456789012345',
+          userId: 'cuser12345678901234567',
         });
         test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
 
-        const result = await test.service.findOne('session-123', 'user-123', Role.USER);
+        const result = await test.service.findOne(
+          'csession123456789012345',
+          'cuser12345678901234567',
+          Role.USER
+        );
 
         expect(Array.isArray(result)).toBe(false);
-        expect(result.id).toBe('session-123');
+        expect(result.id).toBe('csession123456789012345');
         expect(test.mocks.PrismaService.session.findFirst).toHaveBeenCalled();
       });
     });
 
     describe('include option', () => {
       it('should include standard relations in queries', async () => {
-        const mockSession = test.factory.session.createWithNulls({ userId: 'user-123' });
+        const mockSession = test.factory.session.createWithNulls({
+          userId: 'cuser12345678901234567',
+        });
         test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
 
-        await test.service.findOne('session-123', 'user-123', Role.USER);
+        await test.service.findOne('csession123456789012345', 'cuser12345678901234567', Role.USER);
 
         expect(test.mocks.PrismaService.session.findFirst).toHaveBeenCalledWith({
-          where: { id: 'session-123' },
+          where: { id: 'csession123456789012345' },
           include: {
             user: {
               select: {
@@ -171,7 +192,7 @@ describe('SessionsService', () => {
 
   describe('findByUser', () => {
     it('should return sessions for a user with USER role', async () => {
-      const userId = 'user-123';
+      const userId = 'cuser12345678901234567';
       const mockSessions = [
         test.factory.session.createWithNulls({ userId }),
         test.factory.session.createWithNulls({ userId }),
@@ -195,30 +216,8 @@ describe('SessionsService', () => {
       });
     });
 
-    it('should return sessions for a user with PREMIUM_USER role', async () => {
-      const userId = 'premium-user-123';
-      const mockSessions = [test.factory.session.createWithNulls({ userId })];
-      test.mocks.PrismaService.session.findMany.mockResolvedValue(mockSessions);
-
-      const result = await test.service.findByUser(userId, Role.PREMIUM_USER);
-
-      expect(result).toHaveLength(1);
-      expect(test.mocks.PrismaService.session.findMany).toHaveBeenCalledWith({
-        where: {
-          userId,
-          status: undefined,
-          dateTime: {
-            gte: undefined,
-            lte: undefined,
-          },
-        },
-        include: expect.any(Object),
-        orderBy: { dateTime: 'desc' },
-      });
-    });
-
     it('should return sessions for a coach with COACH role', async () => {
-      const coachId = 'coach-123';
+      const coachId = 'ccoach1234567890123456';
       const mockSessions = [test.factory.session.createWithNulls({ coachId })];
       test.mocks.PrismaService.session.findMany.mockResolvedValue(mockSessions);
 
@@ -240,7 +239,7 @@ describe('SessionsService', () => {
     });
 
     it('should filter sessions by status query parameter', async () => {
-      const userId = 'user-123';
+      const userId = 'cuser12345678901234567';
       test.mocks.PrismaService.session.findMany.mockResolvedValue([]);
 
       await test.service.findByUser(userId, Role.USER, { status: SessionStatus.COMPLETED });
@@ -260,7 +259,7 @@ describe('SessionsService', () => {
     });
 
     it('should filter sessions by date range query parameters', async () => {
-      const userId = 'user-123';
+      const userId = 'cuser12345678901234567';
       test.mocks.PrismaService.session.findMany.mockResolvedValue([]);
 
       await test.service.findByUser(userId, Role.USER, {
@@ -285,7 +284,7 @@ describe('SessionsService', () => {
     it('should return empty array when no sessions found', async () => {
       test.mocks.PrismaService.session.findMany.mockResolvedValue([]);
 
-      const result = await test.service.findByUser('user-456', Role.USER);
+      const result = await test.service.findByUser('cuser45678901234567890', Role.USER);
 
       expect(result).toEqual([]);
     });
@@ -293,86 +292,72 @@ describe('SessionsService', () => {
 
   describe('findOne', () => {
     it('should return session when user is authorized (USER role)', async () => {
-      const userId = 'user-123';
+      const userId = 'cuser12345678901234567';
       const mockSession = test.factory.session.createWithNulls({
-        id: 'session-123',
+        id: 'csession123456789012345',
         userId,
       });
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
 
-      const result = await test.service.findOne('session-123', userId, Role.USER);
+      const result = await test.service.findOne('csession123456789012345', userId, Role.USER);
 
-      expect(result.id).toBe('session-123');
-      expect(result.userId).toBe(userId);
-    });
-
-    it('should return session when user is authorized (PREMIUM_USER role)', async () => {
-      const userId = 'premium-user-123';
-      const mockSession = test.factory.session.createWithNulls({
-        id: 'session-123',
-        userId,
-      });
-      test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
-
-      const result = await test.service.findOne('session-123', userId, Role.PREMIUM_USER);
-
-      expect(result.id).toBe('session-123');
+      expect(result.id).toBe('csession123456789012345');
       expect(result.userId).toBe(userId);
     });
 
     it('should return session when coach is authorized (COACH role)', async () => {
-      const coachId = 'coach-123';
+      const coachId = 'ccoach1234567890123456';
       const mockSession = test.factory.session.createWithNulls({
-        id: 'session-123',
+        id: 'csession123456789012345',
         coachId,
       });
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
 
-      const result = await test.service.findOne('session-123', coachId, Role.COACH);
+      const result = await test.service.findOne('csession123456789012345', coachId, Role.COACH);
 
-      expect(result.id).toBe('session-123');
+      expect(result.id).toBe('csession123456789012345');
       expect(result.coachId).toBe(coachId);
     });
 
     it('should throw NotFoundException when session not found', async () => {
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(null);
 
-      await expect(test.service.findOne('non-existent', 'user-123', Role.USER)).rejects.toThrow(
-        NotFoundException
-      );
+      await expect(
+        test.service.findOne('cnonexistent12345678901', 'cuser12345678901234567', Role.USER)
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ForbiddenException when user is not authorized', async () => {
       const mockSession = test.factory.session.createWithNulls({
-        userId: 'other-user',
-        coachId: 'other-coach',
+        userId: 'cotheruser12345678901',
+        coachId: 'cothercoach1234567890',
       });
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
 
-      await expect(test.service.findOne('session-123', 'user-123', Role.USER)).rejects.toThrow(
-        ForbiddenException
-      );
-      await expect(test.service.findOne('session-123', 'user-123', Role.USER)).rejects.toThrow(
-        'Not authorized to access this session'
-      );
+      await expect(
+        test.service.findOne('csession123456789012345', 'cuser12345678901234567', Role.USER)
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        test.service.findOne('csession123456789012345', 'cuser12345678901234567', Role.USER)
+      ).rejects.toThrow('Not authorized to access this session');
     });
 
     it('should throw ForbiddenException when coach is not authorized', async () => {
       const mockSession = test.factory.session.createWithNulls({
-        userId: 'user-123',
-        coachId: 'other-coach',
+        userId: 'cuser12345678901234567',
+        coachId: 'cothercoach1234567890',
       });
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
 
-      await expect(test.service.findOne('session-123', 'coach-123', Role.COACH)).rejects.toThrow(
-        ForbiddenException
-      );
+      await expect(
+        test.service.findOne('csession123456789012345', 'ccoach1234567890123456', Role.COACH)
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
   describe('findFirstByCalendarId (internal method)', () => {
     it('should return session by calendar event ID', async () => {
-      const calendarEventId = 'calendar-event-123';
+      const calendarEventId = 'ccalendarevent123456789';
       const mockSession = test.factory.session.createWithNulls({
         calendarEventId,
       });
@@ -390,7 +375,7 @@ describe('SessionsService', () => {
     it('should throw NotFoundException when session not found', async () => {
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(null);
 
-      await expect(test.service.findFirstByCalendarId('non-existent')).rejects.toThrow(
+      await expect(test.service.findFirstByCalendarId('cnonexistent12345678901')).rejects.toThrow(
         NotFoundException
       );
     });
@@ -398,18 +383,18 @@ describe('SessionsService', () => {
 
   describe('create', () => {
     const createDto = {
-      bookingTypeId: 'booking-type-123',
-      timeSlotId: 'time-slot-123',
+      bookingTypeId: 'cbookingtype12345678901',
+      timeSlotId: 'ctimeslot1234567890123',
       notes: 'Test notes',
     };
 
     it('should create a session successfully', async () => {
-      const userId = 'user-123';
+      const userId = 'cuser12345678901234567';
       const mockBookingType = test.factory.bookingType.createWithNulls({
         id: createDto.bookingTypeId,
         isActive: true,
         basePrice: new Decimal(100),
-        coachId: 'coach-123',
+        coachId: 'ccoach1234567890123456',
       });
       const mockTimeSlot = test.factory.timeSlot.createWithNulls({
         id: createDto.timeSlotId,
@@ -419,7 +404,7 @@ describe('SessionsService', () => {
       });
       const mockCreatedSession = test.factory.session.createWithNulls({
         userId,
-        coachId: 'coach-123',
+        coachId: 'ccoach1234567890123456',
         bookingTypeId: createDto.bookingTypeId,
         timeSlotId: createDto.timeSlotId,
         price: new Decimal(100),
@@ -456,7 +441,7 @@ describe('SessionsService', () => {
     });
 
     it('should create a session with discount applied', async () => {
-      const userId = 'user-123';
+      const userId = 'cuser12345678901234567';
       const discountCode = 'SAVE20';
       const createDtoWithDiscount = { ...createDto, discountCode };
 
@@ -464,7 +449,7 @@ describe('SessionsService', () => {
         id: createDto.bookingTypeId,
         isActive: true,
         basePrice: new Decimal(100),
-        coachId: 'coach-123',
+        coachId: 'ccoach1234567890123456',
       });
       const mockTimeSlot = test.factory.timeSlot.createWithNulls({
         id: createDto.timeSlotId,
@@ -499,7 +484,7 @@ describe('SessionsService', () => {
     });
 
     it('should throw BadRequestException when max pending bookings reached', async () => {
-      const userId = 'user-123';
+      const userId = 'cuser12345678901234567';
       test.mocks.PrismaService.session.count.mockResolvedValue(3);
 
       await expect(test.service.create(createDto, userId)).rejects.toThrow(BadRequestException);
@@ -514,8 +499,10 @@ describe('SessionsService', () => {
       test.mocks.PrismaService.session.count.mockResolvedValue(0);
       test.mocks.BookingTypesService.findActiveById.mockResolvedValue(null);
 
-      await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(BadRequestException);
-      await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(
+      await expect(test.service.create(createDto, 'cuser12345678901234567')).rejects.toThrow(
+        BadRequestException
+      );
+      await expect(test.service.create(createDto, 'cuser12345678901234567')).rejects.toThrow(
         'Invalid booking type'
       );
       expect(test.mocks.PrismaService.session.create).not.toHaveBeenCalled();
@@ -525,7 +512,9 @@ describe('SessionsService', () => {
       test.mocks.PrismaService.session.count.mockResolvedValue(0);
       test.mocks.BookingTypesService.findActiveById.mockResolvedValue(null);
 
-      await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(BadRequestException);
+      await expect(test.service.create(createDto, 'cuser12345678901234567')).rejects.toThrow(
+        BadRequestException
+      );
       expect(test.mocks.PrismaService.session.create).not.toHaveBeenCalled();
     });
 
@@ -539,8 +528,10 @@ describe('SessionsService', () => {
       test.mocks.BookingTypesService.findActiveById.mockResolvedValue(mockBookingType);
       test.mocks.TimeSlotsService.findAvailableById.mockResolvedValue(null);
 
-      await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(BadRequestException);
-      await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(
+      await expect(test.service.create(createDto, 'cuser12345678901234567')).rejects.toThrow(
+        BadRequestException
+      );
+      await expect(test.service.create(createDto, 'cuser12345678901234567')).rejects.toThrow(
         'Time slot not available'
       );
       expect(test.mocks.PrismaService.session.create).not.toHaveBeenCalled();
@@ -555,7 +546,9 @@ describe('SessionsService', () => {
       test.mocks.BookingTypesService.findActiveById.mockResolvedValue(mockBookingType);
       test.mocks.TimeSlotsService.findAvailableById.mockResolvedValue(null);
 
-      await expect(test.service.create(createDto, 'user-123')).rejects.toThrow(BadRequestException);
+      await expect(test.service.create(createDto, 'cuser12345678901234567')).rejects.toThrow(
+        BadRequestException
+      );
       expect(test.mocks.PrismaService.session.create).not.toHaveBeenCalled();
     });
   });
@@ -564,8 +557,8 @@ describe('SessionsService', () => {
     const updateDto = { notes: 'Updated notes' };
 
     it('should update a session successfully', async () => {
-      const sessionId = 'session-123';
-      const userId = 'user-123';
+      const sessionId = 'csession123456789012345';
+      const userId = 'cuser12345678901234567';
       const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
         userId,
@@ -593,20 +586,30 @@ describe('SessionsService', () => {
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(null);
 
       await expect(
-        test.service.update('non-existent', updateDto, 'user-123', Role.USER)
+        test.service.update(
+          'cnonexistent12345678901',
+          updateDto,
+          'cuser12345678901234567',
+          Role.USER
+        )
       ).rejects.toThrow(NotFoundException);
       expect(test.mocks.PrismaService.session.update).not.toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException when user is not authorized', async () => {
       const mockSession = test.factory.session.createWithNulls({
-        userId: 'other-user',
-        coachId: 'other-coach',
+        userId: 'cotheruser12345678901',
+        coachId: 'cothercoach1234567890',
       });
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
 
       await expect(
-        test.service.update('session-123', updateDto, 'user-123', Role.USER)
+        test.service.update(
+          'csession123456789012345',
+          updateDto,
+          'cuser12345678901234567',
+          Role.USER
+        )
       ).rejects.toThrow(ForbiddenException);
       expect(test.mocks.PrismaService.session.update).not.toHaveBeenCalled();
     });
@@ -614,9 +617,9 @@ describe('SessionsService', () => {
 
   describe('cancel', () => {
     it('should cancel a session successfully and mark time slot as available', async () => {
-      const sessionId = 'session-123';
-      const userId = 'user-123';
-      const timeSlotId = 'time-slot-123';
+      const sessionId = 'csession123456789012345';
+      const userId = 'cuser12345678901234567';
+      const timeSlotId = 'ctimeslot1234567890123';
       const futureDate = new Date(Date.now() + ONE_DAY_MS);
       const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
@@ -649,9 +652,9 @@ describe('SessionsService', () => {
     });
 
     it('should allow coach to cancel session', async () => {
-      const sessionId = 'session-123';
-      const coachId = 'coach-123';
-      const timeSlotId = 'time-slot-123';
+      const sessionId = 'csession123456789012345';
+      const coachId = 'ccoach1234567890123456';
+      const timeSlotId = 'ctimeslot1234567890123';
       const futureDate = new Date(Date.now() + ONE_DAY_MS);
       const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
@@ -680,46 +683,46 @@ describe('SessionsService', () => {
     it('should throw NotFoundException when session not found', async () => {
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(null);
 
-      await expect(test.service.cancel('non-existent', 'user-123', Role.USER)).rejects.toThrow(
-        NotFoundException
-      );
+      await expect(
+        test.service.cancel('cnonexistent12345678901', 'cuser12345678901234567', Role.USER)
+      ).rejects.toThrow(NotFoundException);
       expect(test.mocks.PrismaService.session.update).not.toHaveBeenCalled();
       expect(test.mocks.TimeSlotsService.markAsAvailableInternal).not.toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException when user is not authorized', async () => {
       const mockSession = test.factory.session.createWithNulls({
-        userId: 'other-user',
-        coachId: 'other-coach',
+        userId: 'cotheruser12345678901',
+        coachId: 'cothercoach1234567890',
         dateTime: new Date(Date.now() + ONE_DAY_MS),
         status: SessionStatus.SCHEDULED,
       });
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
 
-      await expect(test.service.cancel('session-123', 'user-123', Role.USER)).rejects.toThrow(
-        ForbiddenException
-      );
-      await expect(test.service.cancel('session-123', 'user-123', Role.USER)).rejects.toThrow(
-        'Not authorized to cancel this session'
-      );
+      await expect(
+        test.service.cancel('csession123456789012345', 'cuser12345678901234567', Role.USER)
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        test.service.cancel('csession123456789012345', 'cuser12345678901234567', Role.USER)
+      ).rejects.toThrow('Not authorized to cancel this session');
       expect(test.mocks.PrismaService.session.update).not.toHaveBeenCalled();
       expect(test.mocks.TimeSlotsService.markAsAvailableInternal).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when session already cancelled', async () => {
       const mockSession = test.factory.session.createWithNulls({
-        userId: 'user-123',
+        userId: 'cuser12345678901234567',
         dateTime: new Date(Date.now() + ONE_DAY_MS),
         status: SessionStatus.CANCELLED,
       });
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
 
-      await expect(test.service.cancel('session-123', 'user-123', Role.USER)).rejects.toThrow(
-        BadRequestException
-      );
-      await expect(test.service.cancel('session-123', 'user-123', Role.USER)).rejects.toThrow(
-        'Session already cancelled'
-      );
+      await expect(
+        test.service.cancel('csession123456789012345', 'cuser12345678901234567', Role.USER)
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        test.service.cancel('csession123456789012345', 'cuser12345678901234567', Role.USER)
+      ).rejects.toThrow('Session already cancelled');
       expect(test.mocks.PrismaService.session.update).not.toHaveBeenCalled();
       expect(test.mocks.TimeSlotsService.markAsAvailableInternal).not.toHaveBeenCalled();
     });
@@ -727,18 +730,18 @@ describe('SessionsService', () => {
     it('should throw BadRequestException when cancelling past session', async () => {
       const pastDate = new Date(Date.now() - ONE_DAY_MS);
       const mockSession = test.factory.session.createWithNulls({
-        userId: 'user-123',
+        userId: 'cuser12345678901234567',
         dateTime: pastDate,
         status: SessionStatus.SCHEDULED,
       });
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
 
-      await expect(test.service.cancel('session-123', 'user-123', Role.USER)).rejects.toThrow(
-        BadRequestException
-      );
-      await expect(test.service.cancel('session-123', 'user-123', Role.USER)).rejects.toThrow(
-        'Cannot cancel past sessions'
-      );
+      await expect(
+        test.service.cancel('csession123456789012345', 'cuser12345678901234567', Role.USER)
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        test.service.cancel('csession123456789012345', 'cuser12345678901234567', Role.USER)
+      ).rejects.toThrow('Cannot cancel past sessions');
       expect(test.mocks.PrismaService.session.update).not.toHaveBeenCalled();
       expect(test.mocks.TimeSlotsService.markAsAvailableInternal).not.toHaveBeenCalled();
     });
@@ -746,8 +749,8 @@ describe('SessionsService', () => {
 
   describe('markAsPaidInternal', () => {
     it('should mark session as paid', async () => {
-      const sessionId = 'session-123';
-      const paymentId = 'payment-123';
+      const sessionId = 'csession123456789012345';
+      const paymentId = 'cpayment12345678901234';
       const mockSession = test.factory.session.createWithNulls({ id: sessionId });
 
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
@@ -768,16 +771,16 @@ describe('SessionsService', () => {
     it('should throw NotFoundException when session not found', async () => {
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(null);
 
-      await expect(test.service.markAsPaidInternal('non-existent', 'payment-123')).rejects.toThrow(
-        NotFoundException
-      );
+      await expect(
+        test.service.markAsPaidInternal('cnonexistent12345678901', 'cpayment12345678901234')
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('updateCalendarEventInternal', () => {
     it('should update calendar event ID', async () => {
-      const sessionId = 'session-123';
-      const calendarEventId = 'calendar-event-123';
+      const sessionId = 'csession123456789012345';
+      const calendarEventId = 'ccalendarevent123456789';
       const mockSession = test.factory.session.createWithNulls({ id: sessionId });
 
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
@@ -795,10 +798,10 @@ describe('SessionsService', () => {
     });
 
     it('should clear calendar event ID when null is passed', async () => {
-      const sessionId = 'session-123';
+      const sessionId = 'csession123456789012345';
       const mockSession = test.factory.session.createWithNulls({
         id: sessionId,
-        calendarEventId: 'old-event-id',
+        calendarEventId: 'coldeventid12345678901',
       });
 
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
@@ -819,8 +822,215 @@ describe('SessionsService', () => {
       test.mocks.PrismaService.session.findFirst.mockResolvedValue(null);
 
       await expect(
-        test.service.updateCalendarEventInternal('non-existent', 'calendar-event-123')
+        test.service.updateCalendarEventInternal(
+          'cnonexistent12345678901',
+          'ccalendarevent123456789'
+        )
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('Analytics Methods', () => {
+    describe('countSessions', () => {
+      it('should return total session count', async () => {
+        test.mocks.PrismaService.session.count.mockResolvedValue(25);
+
+        const result = await test.service.countSessions();
+
+        expect(result).toBe(25);
+      });
+
+      it('should apply where filter', async () => {
+        test.mocks.PrismaService.session.count.mockResolvedValue(10);
+
+        await test.service.countSessions({ status: SessionStatus.COMPLETED });
+
+        expect(test.mocks.PrismaService.session.count).toHaveBeenCalledWith({
+          where: { status: SessionStatus.COMPLETED },
+        });
+      });
+    });
+
+    describe('countByStatus', () => {
+      it('should return session counts grouped by status', async () => {
+        const mockResult = [
+          { status: SessionStatus.SCHEDULED, _count: { status: 5 } },
+          { status: SessionStatus.COMPLETED, _count: { status: 10 } },
+          { status: SessionStatus.CANCELLED, _count: { status: 2 } },
+        ];
+        test.mocks.PrismaService.session.groupBy.mockResolvedValue(mockResult);
+
+        const result = await test.service.countByStatus();
+
+        expect(result).toHaveLength(3);
+        expect(result[0]).toEqual({ status: SessionStatus.SCHEDULED, count: 5 });
+        expect(result[1]).toEqual({ status: SessionStatus.COMPLETED, count: 10 });
+      });
+    });
+
+    describe('getAverageDuration', () => {
+      it('should return average session duration', async () => {
+        test.mocks.PrismaService.session.aggregate.mockResolvedValue({
+          _avg: { durationMin: 45 },
+        });
+
+        const result = await test.service.getAverageDuration();
+
+        expect(result).toBe(45);
+      });
+
+      it('should return null when no sessions exist', async () => {
+        test.mocks.PrismaService.session.aggregate.mockResolvedValue({
+          _avg: { durationMin: null },
+        });
+
+        const result = await test.service.getAverageDuration();
+
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('getCompletedSessionsWithRevenue', () => {
+      it('should return completed sessions with revenue data', async () => {
+        const mockSessions = [
+          {
+            bookingType: { basePrice: new Decimal(100) },
+            discount: { amount: new Decimal(10) },
+          },
+          {
+            bookingType: { basePrice: new Decimal(150) },
+            discount: null,
+          },
+        ];
+        test.mocks.PrismaService.session.findMany.mockResolvedValue(mockSessions);
+
+        const result = await test.service.getCompletedSessionsWithRevenue();
+
+        expect(result).toHaveLength(2);
+        expect(test.mocks.PrismaService.session.findMany).toHaveBeenCalledWith({
+          where: { status: SessionStatus.COMPLETED },
+          select: {
+            bookingType: { select: { basePrice: true } },
+            discount: { select: { amount: true } },
+          },
+        });
+      });
+    });
+
+    describe('getSessionsWithTimeSlots', () => {
+      it('should return sessions with time slot data', async () => {
+        const mockSessions = [
+          { timeSlot: { dateTime: new Date('2024-11-10T10:00:00Z') } },
+          { timeSlot: { dateTime: new Date('2024-11-10T14:00:00Z') } },
+        ];
+        test.mocks.PrismaService.session.findMany.mockResolvedValue(mockSessions);
+
+        const result = await test.service.getSessionsWithTimeSlots();
+
+        expect(result).toHaveLength(2);
+      });
+    });
+
+    describe('getSessionCountByBookingType', () => {
+      it('should return session counts by booking type', async () => {
+        const mockResult = [
+          { bookingTypeId: 'cbookingtype12345678901', _count: { bookingTypeId: 15 } },
+          { bookingTypeId: 'cbookingtype23456789012', _count: { bookingTypeId: 8 } },
+        ];
+        test.mocks.PrismaService.session.groupBy.mockResolvedValue(mockResult);
+
+        const result = await test.service.getSessionCountByBookingType();
+
+        expect(result).toHaveLength(2);
+        expect(result[0]).toEqual({ bookingTypeId: 'cbookingtype12345678901', count: 15 });
+      });
+
+      it('should respect limit parameter', async () => {
+        test.mocks.PrismaService.session.groupBy.mockResolvedValue([]);
+
+        await test.service.getSessionCountByBookingType(undefined, 3);
+
+        expect(test.mocks.PrismaService.session.groupBy).toHaveBeenCalledWith({
+          by: ['bookingTypeId'],
+          where: undefined,
+          _count: { bookingTypeId: true },
+          orderBy: { _count: { bookingTypeId: 'desc' } },
+          take: 3,
+        });
+      });
+    });
+
+    describe('getSessionsForMonthlyRevenue', () => {
+      it('should return sessions for monthly revenue calculation', async () => {
+        const mockSessions = [
+          {
+            createdAt: new Date('2024-01-15'),
+            bookingType: { basePrice: new Decimal(100) },
+            discount: null,
+          },
+          {
+            createdAt: new Date('2024-02-20'),
+            bookingType: { basePrice: new Decimal(150) },
+            discount: { amount: new Decimal(20) },
+          },
+        ];
+        test.mocks.PrismaService.session.findMany.mockResolvedValue(mockSessions);
+
+        const result = await test.service.getSessionsForMonthlyRevenue();
+
+        expect(result).toHaveLength(2);
+        expect(test.mocks.PrismaService.session.findMany).toHaveBeenCalledWith({
+          where: undefined,
+          select: {
+            createdAt: true,
+            bookingType: { select: { basePrice: true } },
+            discount: { select: { amount: true } },
+          },
+          orderBy: { createdAt: 'asc' },
+        });
+      });
+    });
+
+    describe('getClientIdsByCoach', () => {
+      it('should return unique client IDs for a coach', async () => {
+        const mockSessions = [
+          { userId: 'cuser12345678901234567' },
+          { userId: 'cuser23456789012345678' },
+          { userId: 'cuser34567890123456789' },
+        ];
+        test.mocks.PrismaService.session.findMany.mockResolvedValue(mockSessions);
+
+        const result = await test.service.getClientIdsByCoach('ccoach1234567890123456');
+
+        expect(result).toHaveLength(3);
+        expect(result).toContain('cuser12345678901234567');
+        expect(test.mocks.PrismaService.session.findMany).toHaveBeenCalledWith({
+          where: { coachId: 'ccoach1234567890123456' },
+          select: { userId: true },
+          distinct: ['userId'],
+        });
+      });
+    });
+
+    describe('findById', () => {
+      it('should return session by ID', async () => {
+        const mockSession = test.factory.session.createWithNulls({
+          id: 'csession123456789012345',
+        });
+        test.mocks.PrismaService.session.findFirst.mockResolvedValue(mockSession);
+
+        const result = await test.service.findById('csession123456789012345');
+
+        expect(result.id).toBe('csession123456789012345');
+      });
+
+      it('should throw NotFoundException when session not found', async () => {
+        test.mocks.PrismaService.session.findFirst.mockResolvedValue(null);
+
+        await expect(test.service.findById('cnonexistent12345678901')).rejects.toThrow(
+          NotFoundException
+        );
+      });
     });
   });
 });

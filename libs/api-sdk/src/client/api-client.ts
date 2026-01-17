@@ -12,13 +12,13 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse 
 import type { HttpMethod } from '../interfaces/IRoutes';
 import {
   buildPath,
-  type FlexibleApiPath,
-  type ShortPathsWithMethod,
   type ExtractMethods,
   type ExtractRequestBody,
   type ExtractRequestParams,
   type ExtractResponseType,
+  type FlexibleApiPath,
   type PathsWithMethod,
+  type ShortPathsWithMethod,
 } from '../utils/type-utils';
 
 /**
@@ -107,6 +107,11 @@ export interface ApiRequestPayload<
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class ApiClient<E extends Record<string, any> = Endpoints> {
   private readonly axios: AxiosInstance;
+  private onUnauthorized?: () => void;
+  private onForbidden?: (path: string) => void;
+  private onNotFound?: (path: string) => void;
+  private onServerError?: (status: number, message: string) => void;
+  private onNetworkError?: (message: string) => void;
 
   constructor(config: ApiClientConfig) {
     this.axios = axios.create({
@@ -115,6 +120,46 @@ export class ApiClient<E extends Record<string, any> = Endpoints> {
       timeout: config.timeout,
       withCredentials: config.withCredentials,
     });
+  }
+
+  /**
+   * Register a callback to be called when a 401 Unauthorized response is received.
+   * This is typically used to trigger logout and redirect to login page.
+   */
+  onUnauthorizedResponse(callback: () => void): void {
+    this.onUnauthorized = callback;
+  }
+
+  /**
+   * Register a callback to be called when a 403 Forbidden response is received.
+   * This is typically used to show an access denied message.
+   */
+  onForbiddenResponse(callback: (path: string) => void): void {
+    this.onForbidden = callback;
+  }
+
+  /**
+   * Register a callback to be called when a 404 Not Found response is received.
+   * This is typically used to show a not found message or redirect.
+   */
+  onNotFoundResponse(callback: (path: string) => void): void {
+    this.onNotFound = callback;
+  }
+
+  /**
+   * Register a callback to be called when a 5xx Server Error response is received.
+   * This is typically used to show a server error message.
+   */
+  onServerErrorResponse(callback: (status: number, message: string) => void): void {
+    this.onServerError = callback;
+  }
+
+  /**
+   * Register a callback to be called when a network error occurs (no response).
+   * This is typically used to show a connection error message.
+   */
+  onNetworkErrorResponse(callback: (message: string) => void): void {
+    this.onNetworkError = callback;
   }
 
   /** Set the authorization header for all subsequent requests */
@@ -172,17 +217,39 @@ export class ApiClient<E extends Record<string, any> = Endpoints> {
         ok: true,
       };
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        return {
-          error: error.response.data ?? {
-            statusCode: error.response.status,
-            message: error.message,
-          },
-          status: error.response.status,
-          headers: error.response.headers as Record<string, string>,
-          ok: false,
-        };
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          const status = error.response.status;
+          const errorMessage = error.response.data?.message ?? error.message;
+
+          // Call appropriate callback based on status code
+          if (status === 401 && this.onUnauthorized) {
+            this.onUnauthorized();
+          } else if (status === 403 && this.onForbidden) {
+            this.onForbidden(builtPath);
+          } else if (status === 404 && this.onNotFound) {
+            this.onNotFound(builtPath);
+          } else if (status >= 500 && this.onServerError) {
+            this.onServerError(status, errorMessage);
+          }
+
+          return {
+            error: error.response.data ?? {
+              statusCode: status,
+              message: error.message,
+            },
+            status,
+            headers: error.response.headers as Record<string, string>,
+            ok: false,
+          };
+        }
+
+        // Network error (no response received)
+        if (this.onNetworkError) {
+          this.onNetworkError(error.message);
+        }
       }
+
       return {
         error: {
           statusCode: 0,
