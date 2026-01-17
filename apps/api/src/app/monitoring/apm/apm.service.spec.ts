@@ -119,6 +119,24 @@ describe('APMService', () => {
       );
       expect(mockOperation).toHaveBeenCalled();
     });
+
+    it('should trace operation with custom attributes', async () => {
+      const mockOperation = jest.fn().mockResolvedValue('result');
+      const attributes = { 'custom.attribute': 'value' };
+      mockTracer.startActiveSpan.mockImplementation(async (name, fn, _attributes) => {
+        return await fn(mockSpan);
+      });
+
+      const result = await service.traceOperation('test-operation', mockOperation, attributes);
+
+      expect(result).toBe('result');
+      expect(mockOperation).toHaveBeenCalled();
+      expect(mockTracer.startActiveSpan).toHaveBeenCalledWith(
+        'test-operation',
+        mockOperation,
+        attributes
+      );
+    });
   });
 
   describe('recordAPIRequest', () => {
