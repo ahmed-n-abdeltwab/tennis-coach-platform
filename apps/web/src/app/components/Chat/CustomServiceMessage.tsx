@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import type { CustomService } from '../../services/custom-service.service';
-import type { AuthAccount, Message } from '../../services/types';
+import type { AuthAccount, CustomService, Message } from '../../services/types';
 
 interface CustomServiceMessageProps {
   /** The message containing the custom service */

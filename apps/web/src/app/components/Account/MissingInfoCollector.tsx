@@ -1,8 +1,12 @@
-import { useAuth } from '@contexts/AuthContext';
-import { accountService } from '@services/account.service';
-import { isAppError } from '@services/error-handler';
-import { type Account, type AccountUpdateRequest } from '@services/types';
 import { FormEvent, useCallback, useState } from 'react';
+
+import { useAuth } from '../../contexts/AuthContext';
+import {
+  accountService,
+  isAppError,
+  type Account,
+  type AccountUpdateRequest,
+} from '../../services';
 
 // ============================================================================
 // Types
@@ -191,7 +195,7 @@ function MissingInfoCollector({
         }
 
         onInfoCollected?.(updatedAccount);
-      } catch (error) {
+      } catch (error: unknown) {
         const errorMessage = isAppError(error) ? error.message : 'Failed to update profile';
         onError?.(errorMessage);
       } finally {

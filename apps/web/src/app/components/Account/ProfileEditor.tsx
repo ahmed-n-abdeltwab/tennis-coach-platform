@@ -1,8 +1,13 @@
-import { useAuth } from '@contexts/AuthContext';
-import { accountService } from '@services/account.service';
-import { isAppError } from '@services/error-handler';
-import { ACCOUNT_ROLES, type Account, type AccountUpdateRequest } from '@services/types';
 import { FormEvent, useCallback, useState } from 'react';
+
+import { useAuth } from '../../contexts/AuthContext';
+import {
+  ACCOUNT_ROLES,
+  accountService,
+  isAppError,
+  type Account,
+  type AccountUpdateRequest,
+} from '../../services';
 
 // ============================================================================
 // Types
@@ -125,7 +130,7 @@ function ProfileEditor({ account, onProfileUpdated, onError }: ProfileEditorProp
 
         setSuccessMessage('Profile updated successfully!');
         onProfileUpdated?.(updatedAccount);
-      } catch (error) {
+      } catch (error: unknown) {
         const errorMessage = isAppError(error) ? error.message : 'Failed to update profile';
         onError?.(errorMessage);
       } finally {

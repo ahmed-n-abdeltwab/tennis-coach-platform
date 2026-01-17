@@ -1,7 +1,7 @@
 import { isAppError } from '@services/error-handler';
 import { FormEvent, useCallback, useState } from 'react';
 
-import { accountService } from '../../services/account.service';
+import { accountService } from '../../services';
 
 // ============================================================================
 // Types
@@ -120,7 +120,7 @@ function PasswordChanger({ onPasswordChanged, onError }: PasswordChangerProps) {
           confirmPassword: '',
         });
         onPasswordChanged?.();
-      } catch (error) {
+      } catch (error: unknown) {
         const errorMessage = isAppError(error) ? error.message : 'Failed to change password';
         onError?.(errorMessage);
       } finally {

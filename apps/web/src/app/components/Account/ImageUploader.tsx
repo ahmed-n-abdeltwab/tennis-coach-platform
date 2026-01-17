@@ -1,7 +1,6 @@
-import { isAppError } from '@services/error-handler';
 import { ChangeEvent, DragEvent, useCallback, useEffect, useRef, useState } from 'react';
 
-import { accountService } from '../../services';
+import { accountService, isAppError } from '../../services';
 
 // ============================================================================
 // Types
@@ -188,7 +187,7 @@ function ImageUploader({
         cleanupPreviewUrl(previewUrl);
         setPreviewUrl(null);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       const errorMessage = isAppError(error) ? error.message : 'Failed to upload image';
       onError?.(errorMessage);
     } finally {

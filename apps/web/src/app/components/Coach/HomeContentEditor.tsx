@@ -2,8 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
-import { accountService } from '../../services/account.service';
-import { isAppError } from '../../services/error-handler';
+import { accountService, isAppError } from '../../services';
 import { LoadingSpinner } from '../Common';
 
 interface HomeContentData {

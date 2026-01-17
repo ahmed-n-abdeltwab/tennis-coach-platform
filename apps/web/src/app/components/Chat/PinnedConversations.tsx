@@ -1,4 +1,4 @@
-import type { ConversationSummary } from '../../services/conversation.service';
+import type { ConversationSummary } from '../../services';
 import type { Account, AuthAccount } from '../../services/types';
 
 interface PinnedConversationsProps {

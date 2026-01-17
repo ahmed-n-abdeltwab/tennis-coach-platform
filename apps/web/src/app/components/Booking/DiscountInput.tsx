@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
-import { discountService } from '../../services/discount.service';
-import type { DiscountValidation } from '../../services/types';
+import { discountService, type DiscountValidation } from '../../services';
 
 interface DiscountInputProps {
   /** Callback when a valid discount is applied */
