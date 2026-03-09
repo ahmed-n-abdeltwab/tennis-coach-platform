@@ -131,7 +131,7 @@ jobs:
           NX_CLOUD_ACCESS_TOKEN: ${{ env.NX_CLOUD_ENABLED == 'true' && secrets.NX_CLOUD_ACCESS_TOKEN || '' }}
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: success()
         with:
           name: build-artifacts
@@ -179,7 +179,7 @@ jobs:
           NX_CLOUD_ACCESS_TOKEN: ${{ env.NX_CLOUD_ENABLED == 'true' && secrets.NX_CLOUD_ACCESS_TOKEN || '' }}
 
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-reports-libs
@@ -290,7 +290,7 @@ jobs:
           verbose: true
 
       - name: Upload test reports
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-reports-${{ matrix.test-type }}
@@ -355,7 +355,7 @@ jobs:
           exit $TEST_EXIT_CODE
 
       - name: Upload TestCafe screenshots
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: testcafe-screenshots
@@ -363,7 +363,7 @@ jobs:
           retention-days: 7
 
       - name: Upload TestCafe reports
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-reports-e2e-web
@@ -745,7 +745,7 @@ jobs:
 
       - name: Upload analysis artifact
         if: steps.analyze.outputs.analysis_available == 'true'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: test-analysis
           path: test-reports/analysis.json
